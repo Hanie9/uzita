@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uzita/api_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/screens/otp_verify_pass_screen.dart';
@@ -6,7 +7,7 @@ import 'package:uzita/services.dart';
 import 'dart:convert';
 import 'package:uzita/utils/http_with_session.dart' as http;
 
-const String baseUrl2 = 'https://uzita-iot.ir/api';
+final String baseUrl2 = apiBaseUrl;
 
 Widget buildPasswordChangeForm({
   required String title,

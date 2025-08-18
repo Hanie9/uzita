@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:uzita/api_config.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
 
-const String baseUrl2 = 'https://uzita-iot.ir/api';
+final String baseUrl2 = apiBaseUrl;
 
 class OTPVerifyPassScreen extends StatefulWidget {
   final String newPassword;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uzita/api_config.dart';
 
 // Export the screens
 export 'screens/service_list_screen.dart';
@@ -19,7 +20,7 @@ class AppColors {
 }
 
 // Constants
-const String baseUrl5 = 'https://uzita-iot.ir/api';
+final String baseUrl5 = apiBaseUrl;
 const double kSpacing = 20.0;
 const double kRadius = 16.0;
 const double kIconSize = 28.0;

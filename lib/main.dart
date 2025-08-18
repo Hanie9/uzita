@@ -15,8 +15,9 @@ import 'dart:async';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/api_config.dart';
 
-const String baseUrl = 'https://uzita-iot.ir/api';
+final String baseUrl = apiBaseUrl;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
