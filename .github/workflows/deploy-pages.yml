@@ -32,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Enable Flutter web
+        run: flutter config --enable-web
+
       - name: Build Flutter web (PWA)
-        run: flutter build web --release --web-renderer html --base-href /uzita/
+        run: flutter build web --release --base-href /uzita/
 
       - name: Add 404.html for GitHub Pages SPA routing
         run: |
