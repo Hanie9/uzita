@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,7 +38,7 @@ jobs:
         run: flutter config --enable-web
 
       - name: Build Flutter web (PWA)
-        run: flutter build web --release --base-href /uzita/
+        run: flutter build web --release --base-href /uzita/ --dart-define=API_BASE_URL=$API_BASE_URL
 
       - name: Add 404.html for GitHub Pages SPA routing
         run: |
