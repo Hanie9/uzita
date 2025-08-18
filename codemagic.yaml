@@ -1,0 +1,109 @@
+workflows:
+  ios_app_store:
+    name: iOS App Store (TestFlight)
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: com.example.uzita # Change to your bundle id or override in Codemagic env vars
+        BUILD_NAME: 1.0.0
+        BUILD_NUMBER: 1
+        # Set these secure variables in Codemagic UI as encrypted env vars
+        APP_STORE_CONNECT_ISSUER_ID: Encrypted(put_in_codemagic)
+        APP_STORE_CONNECT_KEY_IDENTIFIER: Encrypted(put_in_codemagic)
+        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(put_in_codemagic)
+    cache:
+      cache_paths:
+        - "$FLUTTER_ROOT/.pub-cache"
+        - "$HOME/Library/Caches/CocoaPods"
+        - "~/.gradle/caches"
+    triggering:
+      events:
+        - manual
+      branch_patterns:
+        - pattern: "main"
+          include: true
+          source: true
+    scripts:
+      - name: Flutter clean & pub get
+        script: |
+          flutter --version
+          flutter clean
+          flutter pub get
+      - name: Set Bundle Identifier in Xcode project
+        script: |
+          if [ -n "$BUNDLE_ID" ]; then
+            echo "Setting bundle identifier to $BUNDLE_ID"
+            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [A-Za-z0-9\.\-]*/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID/g" ios/Runner.xcodeproj/project.pbxproj || true
+          fi
+      - name: iOS dependencies (CocoaPods)
+        script: |
+          cd ios
+          pod repo update
+          pod install
+          cd ..
+      - name: Set iOS versioning
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $BUILD_NAME" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/Runner/Info.plist
+      - name: Build IPA (App Store)
+        script: |
+          # Optionally override bundle id at build time
+          xcodebuild -version
+          flutter build ipa --release --export-method app-store --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/**/xcarchive.zip
+      - flutter_drive.log
+    publishing:
+      app_store_connect:
+        auth: api_key
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        beta_groups:
+          - Internal Testers
+
+  ios_adhoc:
+    name: iOS Ad Hoc (Device testing)
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: com.example.uzita # override in Codemagic
+        BUILD_NAME: 1.0.0
+        BUILD_NUMBER: 1
+        # Provide signing cert & provisioning profile via Codemagic automatic code signing or upload manually
+    cache:
+      cache_paths:
+        - "$FLUTTER_ROOT/.pub-cache"
+        - "$HOME/Library/Caches/CocoaPods"
+    triggering:
+      events:
+        - manual
+    scripts:
+      - name: Flutter clean & pub get
+        script: |
+          flutter clean
+          flutter pub get
+      - name: Set Bundle Identifier
+        script: |
+          if [ -n "$BUNDLE_ID" ]; then
+            sed -i '' "s/PRODUCT_BUNDLE_IDENTIFIER = [A-Za-z0-9\.\-]*/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID/g" ios/Runner.xcodeproj/project.pbxproj || true
+          fi
+      - name: Install pods
+        script: |
+          cd ios
+          pod install
+          cd ..
+      - name: Build IPA (Ad Hoc)
+        script: |
+          flutter build ipa --release --export-method ad-hoc --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER
+    artifacts:
+      - build/ios/ipa/*.ipa
+
