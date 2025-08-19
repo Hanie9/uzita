@@ -889,187 +889,186 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
 
                       SizedBox(height: 40), // Add spacing to push buttons down
-                      // Bottom registration buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.black.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    spreadRadius: 1,
-                                    blurRadius: 10,
-                                    offset: Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: SizedBox(
-                                height: 55,
-                                child: OutlinedButton(
-                                  onPressed: loading
-                                      ? null
-                                      : () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  UserRegisterScreen(),
-                                            ),
-                                          );
-                                        },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[700]
-                                        : Colors.grey[300], // light gray
-                                    foregroundColor:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.white
-                                        : Colors.black,
-                                    side: BorderSide(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[400]!,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        16,
-                                      ), // more rounded
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.login_user_register,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w500,
+                      // Bottom registration buttons (responsive)
+                      Builder(
+                        builder: (ctx) {
+                          final double availableWidth = MediaQuery.of(
+                            ctx,
+                          ).size.width;
+                          final bool isNarrow = availableWidth < 480;
+
+                          Widget userBtn = Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.black.withValues(alpha: 0.2),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: SizedBox(
+                              height: 55,
+                              child: OutlinedButton(
+                                onPressed: loading
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                UserRegisterScreen(),
                                           ),
+                                        );
+                                      },
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[700]
+                                      : Colors.grey[300],
+                                  foregroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                  side: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[600]!
+                                        : Colors.grey[400]!,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.login_user_register,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      SizedBox(width: 8),
-                                      Icon(
-                                        Icons.person_add_outlined,
-                                        size: 25,
-                                        color: AppColors.bronzeGold,
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      Icons.person_add_outlined,
+                                      size: isNarrow ? 22 : 25,
+                                      color: AppColors.bronzeGold,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ),
+                          );
 
-                          SizedBox(width: 12),
-
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.black.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    spreadRadius: 1,
-                                    blurRadius: 10,
-                                    offset: Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: SizedBox(
-                                height: 55,
-                                child: OutlinedButton(
-                                  onPressed: loading
-                                      ? null
-                                      : () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  AdminregisterScreen(),
-                                            ),
-                                          );
-                                        },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[700]
-                                        : Colors.grey[300], // light gray
-                                    foregroundColor:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.white
-                                        : Colors.black,
-                                    side: BorderSide(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[400]!,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        16,
-                                      ), // more rounded
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.login_admin_register,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w500,
+                          Widget adminBtn = Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.black.withValues(alpha: 0.2),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: SizedBox(
+                              height: 55,
+                              child: OutlinedButton(
+                                onPressed: loading
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                AdminregisterScreen(),
                                           ),
+                                        );
+                                      },
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[700]
+                                      : Colors.grey[300],
+                                  foregroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                  side: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[600]!
+                                        : Colors.grey[400]!,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.login_admin_register,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      SizedBox(width: 8),
-                                      Icon(
-                                        Icons.admin_panel_settings_outlined,
-                                        size: 25,
-                                        color: AppColors.bronzeGold,
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      Icons.admin_panel_settings_outlined,
+                                      size: isNarrow ? 22 : 25,
+                                      color: AppColors.bronzeGold,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          );
+
+                          return Row(
+                            children: [
+                              Expanded(child: userBtn),
+                              SizedBox(width: 12),
+                              Expanded(child: adminBtn),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
