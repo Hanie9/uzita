@@ -88,6 +88,12 @@ class SharedAppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final Size screenSize = MediaQuery.of(context).size;
+    // Responsive, consistent sizing across phones
+    final double headerHeight = (screenSize.width * 0.36).clamp(120.0, 180.0);
+    final double avatarRadius = (screenSize.width * 0.14).clamp(28.0, 40.0);
+    final double usernameFont = (screenSize.width * 0.052).clamp(16.0, 20.0);
+    final double roleFont = (screenSize.width * 0.036).clamp(12.0, 14.0);
 
     return Drawer(
       child: Column(
@@ -95,21 +101,21 @@ class SharedAppDrawer extends StatelessWidget {
           Container(
             width: double.infinity,
             color: AppColors.lapisLazuli,
-            padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
+            padding: EdgeInsets.only(left: 16, right: 16, bottom: 10),
             child: SafeArea(
               bottom: false,
               child: SizedBox(
-                height: 160,
+                height: headerHeight,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CircleAvatar(
-                      radius: 35,
+                      radius: avatarRadius,
                       backgroundColor: Colors.white,
                       child: Icon(
                         Icons.person,
-                        size: 40,
+                        size: avatarRadius + 5,
                         color: AppColors.lapisLazuli,
                       ),
                     ),
@@ -118,7 +124,7 @@ class SharedAppDrawer extends StatelessWidget {
                       username,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: usernameFont,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -127,7 +133,7 @@ class SharedAppDrawer extends StatelessWidget {
                       '${localizations.shareddrawer_level_user} $userRoleTitle',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 14,
+                        fontSize: roleFont,
                       ),
                     ),
                   ],
@@ -137,7 +143,9 @@ class SharedAppDrawer extends StatelessWidget {
           ),
           Expanded(
             child: ListView(
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom + 8,
+              ),
               children: [
                 ListTile(
                   leading: Icon(Icons.home_outlined),

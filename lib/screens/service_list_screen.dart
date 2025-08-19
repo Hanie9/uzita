@@ -283,7 +283,12 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: EdgeInsets.all(20),
+                            padding: EdgeInsets.only(
+                              left: 20,
+                              right: 20,
+                              top: 20,
+                              bottom: MediaQuery.of(context).padding.bottom,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.lapisLazuli.withValues(
                                 alpha: 0.1,

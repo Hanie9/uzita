@@ -534,9 +534,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final logoHeight = screenHeight * 0.25; // 25% of screen height
-    final svgHeight = logoHeight * 0.9; // 120% of logo container height
-    final svgWidth = screenWidth * 0.9; // 95% of screen width
+    // Consistent, clamped sizing across phones so UI keeps the same shape
+    final logoHeight = (screenHeight * 0.25).clamp(180.0, 260.0);
+    final svgHeight = (logoHeight * 0.9).clamp(150.0, 240.0);
+    final svgWidth = (screenWidth * 0.9).clamp(260.0, 420.0);
 
     if (userModir) {
       userRoleTitle = AppLocalizations.of(context)!.home_company_representative;
@@ -813,9 +814,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Stack(
                                     children: [
-                                      // Logo section remains the same
+                                      // Logo section with extra space to accommodate overlay cards
                                       SizedBox(
-                                        height: logoHeight,
+                                        height: logoHeight + 28,
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: [
@@ -834,127 +835,138 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                       // Statistics Cards with Positioning
                                       Positioned(
-                                        top:
-                                            logoHeight *
-                                            0.52, // Adjust this value to move cards up/down
+                                        top: logoHeight * 0.54,
                                         left: 0,
                                         right: 0,
-                                        child: Row(
+                                        child: Column(
                                           children: [
-                                            Expanded(
-                                              child: Container(
-                                                height: 100,
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).cardTheme.color,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.grey
-                                                          .withValues(
-                                                            alpha: 0.1,
-                                                          ),
-                                                      spreadRadius: 1,
-                                                      blurRadius: 5,
-                                                      offset: Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Text(
-                                                      activeDeviceCount
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                        fontSize: 24,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: AppColors
-                                                            .lapisLazuli,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      AppLocalizations.of(
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Container(
+                                                    height: 100,
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(
                                                         context,
-                                                      )!.home_active_devices,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium
-                                                          ?.copyWith(
+                                                      ).cardTheme.color,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.grey
+                                                              .withValues(
+                                                                alpha: 0.1,
+                                                              ),
+                                                          spreadRadius: 1,
+                                                          blurRadius: 5,
+                                                          offset: Offset(0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          activeDeviceCount
+                                                              .toString(),
+                                                          style: TextStyle(
+                                                            fontSize: 24,
                                                             fontWeight:
                                                                 FontWeight.bold,
-                                                            fontSize: 17,
+                                                            color: AppColors
+                                                                .lapisLazuli,
                                                           ),
+                                                        ),
+                                                        Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.home_active_devices,
+                                                          style: Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 17,
+                                                              ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Expanded(
-                                              child: Container(
-                                                height: 100,
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).cardTheme.color,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.grey
-                                                          .withValues(
-                                                            alpha: 0.1,
-                                                          ),
-                                                      spreadRadius: 1,
-                                                      blurRadius: 5,
-                                                      offset: Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Text(
-                                                      onlineUserCount
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                        fontSize: 24,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: AppColors
-                                                            .lapisLazuli,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      AppLocalizations.of(
+                                                SizedBox(width: 20),
+                                                Expanded(
+                                                  child: Container(
+                                                    height: 100,
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(
                                                         context,
-                                                      )!.home_active_users,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium
-                                                          ?.copyWith(
+                                                      ).cardTheme.color,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.grey
+                                                              .withValues(
+                                                                alpha: 0.1,
+                                                              ),
+                                                          spreadRadius: 1,
+                                                          blurRadius: 5,
+                                                          offset: Offset(0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          onlineUserCount
+                                                              .toString(),
+                                                          style: TextStyle(
+                                                            fontSize: 24,
                                                             fontWeight:
                                                                 FontWeight.bold,
-                                                            fontSize: 17,
+                                                            color: AppColors
+                                                                .lapisLazuli,
                                                           ),
+                                                        ),
+                                                        Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.home_active_users,
+                                                          style: Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 17,
+                                                              ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
+                                              ],
                                             ),
+                                            // const SizedBox(height: 20),
                                           ],
                                         ),
                                       ),
                                     ],
                                   ),
 
-                                  SizedBox(height: 20.0),
+                                  // SizedBox(height: 20),
 
                                   // Navigation Cards
                                   Column(
@@ -1044,44 +1056,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       SizedBox(height: 20),
-                                      // Advertisement Banner
+                                      // Advertisement Banner (responsive, no crop)
                                       if (showBanner)
                                         Stack(
                                           children: [
-                                            Container(
-                                              width: double.infinity,
-                                              height: 150,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                image: DecorationImage(
-                                                  image: bannerUrl.isNotEmpty
-                                                      ? NetworkImage(bannerUrl)
-                                                      : AssetImage(
-                                                              'assets/banner.jpg',
-                                                            )
-                                                            as ImageProvider,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.grey
-                                                        .withValues(alpha: 0.2),
-                                                    spreadRadius: 1,
-                                                    blurRadius: 5,
-                                                    offset: Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  onTap: () {
-                                                    // TODO: Add banner click action if needed
-                                                  },
-                                                ),
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child: Container(
+                                                width: double.infinity,
+                                                // height:
+                                                //     180, // fixed height for consistent look across mobiles
+                                                color: Theme.of(
+                                                  context,
+                                                ).cardTheme.color,
+                                                child: bannerUrl.isNotEmpty
+                                                    ? Image.network(
+                                                        bannerUrl,
+                                                        fit: BoxFit.contain,
+                                                        alignment:
+                                                            Alignment.center,
+                                                      )
+                                                    : Image.asset(
+                                                        'assets/banner.jpg',
+                                                        fit: BoxFit.contain,
+                                                        alignment:
+                                                            Alignment.center,
+                                                      ),
                                               ),
                                             ),
                                             // Close button
