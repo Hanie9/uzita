@@ -250,12 +250,18 @@ class _HomeScreenState extends State<HomeScreen> {
         await prefs.setBool('modir', data['modir'] ?? false);
         await prefs.setString('username', returnedUsername);
 
+        // Prefer HTTPS banner only; otherwise fall back to bundled asset
+        final String serverBanner = (data['banner'] ?? '').toString();
+        final String safeBanner = serverBanner.startsWith('https://')
+            ? serverBanner
+            : '';
+
         setState(() {
           username = returnedUsername;
           userLevel = data['level'] ?? 3;
           userActive = data['active'] ?? false;
           userModir = data['modir'] ?? false;
-          bannerUrl = data['banner'] ?? '';
+          bannerUrl = safeBanner;
           isLoading = false;
         });
 
