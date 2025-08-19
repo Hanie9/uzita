@@ -946,7 +946,7 @@ class AppLocalizations {
       'about_uzita_core_values_bullet_4': 'احترام به محیط زیست',
       'about_uzita_contact_title': 'اطلاعات تماس',
       'about_uzita_contact_email': 'ایمیل: info@uzita.ir',
-      'about_uzita_contact_phone': 'شماره تماس: ۰۲۱_۷۷۱۹۵۶۱۳',
+      'about_uzita_contact_phone': 'شماره تماس: ۷۷۱۹۵۶۱۳_۰۲۱',
       'about_uzita_contact_address':
           'آدرس: تهران، نارمک، خیابان شهید جهانشاهی (۷۸)، خیابان شهید اصغر حسینعلی (۳۹)، پلاک ۹، طبقه ۲، واحد ۳۶',
 

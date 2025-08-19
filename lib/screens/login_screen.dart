@@ -962,12 +962,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   Brightness.dark
                                               ? Colors.white
                                               : Colors.black,
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 8),
+                                    SizedBox(width: 6),
                                     Icon(
                                       Icons.person_add_outlined,
                                       size: isNarrow ? 22 : 25,
@@ -1044,12 +1044,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   Brightness.dark
                                               ? Colors.white
                                               : Colors.black,
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
-                                    SizedBox(width: 8),
+                                    SizedBox(width: 6),
                                     Icon(
                                       Icons.admin_panel_settings_outlined,
                                       size: isNarrow ? 22 : 25,
@@ -1064,7 +1064,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return Row(
                             children: [
                               Expanded(child: userBtn),
-                              SizedBox(width: 12),
+                              SizedBox(width: 17),
                               Expanded(child: adminBtn),
                             ],
                           );

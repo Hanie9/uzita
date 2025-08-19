@@ -201,21 +201,41 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                     )!.dls_camera_permission_denied;
                                   });
                                   if (permissionStatus.isPermanentlyDenied) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
+                                    await showDialog(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.dls_camera_permission_denied,
+                                        ),
                                         content: Text(
                                           AppLocalizations.of(
                                             context,
                                           )!.dls_camera_permission_denied_description,
                                         ),
-                                        action: SnackBarAction(
-                                          label: AppLocalizations.of(
-                                            context,
-                                          )!.dls_settings,
-                                          onPressed: () {
-                                            openAppSettings();
-                                          },
-                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(),
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.login_cancle,
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(ctx).pop();
+                                              openAppSettings();
+                                            },
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.dls_settings,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     );
                                   }
