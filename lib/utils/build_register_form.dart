@@ -28,9 +28,7 @@ Widget buildRegisterForm({
       final spacingAfterLogo = screenHeight * 0.02; // 5% of screen height
 
       return Directionality(
-        textDirection: Localizations.localeOf(context).languageCode == 'en'
-            ? TextDirection.ltr
-            : TextDirection.rtl,
+        textDirection: TextDirection.ltr,
         child: Scaffold(
           resizeToAvoidBottomInset: true, // Make sure this is true
           body: SafeArea(
@@ -722,20 +720,6 @@ Widget buildRegisterForm({
                                       context,
                                     ).languageCode ==
                                     'fa') ...[
-                                  Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.reg_login_before,
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
-                                      fontSize: screenWidth * 0.035,
-                                    ),
-                                  ),
-                                  SizedBox(width: screenWidth * 0.01),
                                   GestureDetector(
                                     onTap: () {
                                       Navigator.pushAndRemoveUntil(
@@ -753,6 +737,20 @@ Widget buildRegisterForm({
                                         fontSize: screenWidth * 0.035,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                    ),
+                                  ),
+                                  SizedBox(width: screenWidth * 0.01),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.reg_login_before,
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      fontSize: screenWidth * 0.035,
                                     ),
                                   ),
                                 ] else ...[
