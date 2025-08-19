@@ -1003,8 +1003,8 @@ class _UserListScreenState extends State<UserListScreen> {
           _lastBackPressedAt = now;
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('برای خروج دوباره دکمه بازگشت را فشار دهید'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.click_again_to_exit),
               duration: Duration(seconds: 2),
             ),
           );

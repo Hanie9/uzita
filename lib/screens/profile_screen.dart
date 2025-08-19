@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:uzita/app_localizations.dart';
@@ -522,8 +523,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
 
-    return WillPopScope(
-      onWillPop: _handleWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        // If drawer is open, close it instead of exiting
+        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _scaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBackPressedAt == null ||
+            now.difference(_lastBackPressedAt!) > const Duration(seconds: 2)) {
+          _lastBackPressedAt = now;
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.click_again_to_exit),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -941,27 +964,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
-  }
-
-  Future<bool> _handleWillPop() async {
-    // Close drawer first if it's open
-    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-      _scaffoldKey.currentState?.closeDrawer();
-      return false;
-    }
-    final now = DateTime.now();
-    if (_lastBackPressedAt == null ||
-        now.difference(_lastBackPressedAt!) > Duration(seconds: 2)) {
-      _lastBackPressedAt = now;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.click_again_to_exit),
-        ),
-      );
-      return false;
-    }
-    return true;
   }
 
   // Inactive state for level 3 users

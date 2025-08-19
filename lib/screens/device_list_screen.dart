@@ -108,7 +108,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     : body;
                 setDialogState(() {
                   localError =
-                      AppLocalizations.of(context)!.dls_error + ': $errText';
+                      '${AppLocalizations.of(context)!.dls_error}: $errText';
                 });
               }
             } catch (e) {
@@ -446,8 +446,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!.dls_error_fetching_devices +
-                  ' (${response.statusCode})',
+              '${AppLocalizations.of(context)!.dls_error_fetching_devices} (${response.statusCode})',
             ),
           ),
         );
@@ -620,8 +619,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                           ),
                           SizedBox(width: 6),
                           Text(
-                            AppLocalizations.of(context)!.dls_serial_number +
-                                ':',
+                            '${AppLocalizations.of(context)!.dls_serial_number}:',
                             style: TextStyle(
                               fontSize: 13,
                               color: Theme.of(
