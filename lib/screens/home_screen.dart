@@ -250,18 +250,29 @@ class _HomeScreenState extends State<HomeScreen> {
         await prefs.setBool('modir', data['modir'] ?? false);
         await prefs.setString('username', returnedUsername);
 
-        // Prefer HTTPS banner only; otherwise fall back to bundled asset
-        final String serverBanner = (data['banner'] ?? '').toString();
-        final String safeBanner = serverBanner.startsWith('https://')
-            ? serverBanner
+        // Prefer HTTP(S) banner; otherwise fall back to bundled asset
+        final String serverBanner = (data['banner'] ?? '').toString().trim();
+        final bool isHttpUrl =
+            serverBanner.startsWith('http://') ||
+            serverBanner.startsWith('https://');
+        final String safeBanner = isHttpUrl ? serverBanner : '';
+        // Add cache-busting fragment so updated server image reflects in app
+        // Fragment is not sent to server, avoids breaking signed/strict URLs
+        final String displayBanner = safeBanner.isNotEmpty
+            ? '${safeBanner}#ts=$ts'
             : '';
+        final bool bannerChanged =
+            displayBanner.isNotEmpty && displayBanner != bannerUrl;
 
         setState(() {
           username = returnedUsername;
           userLevel = data['level'] ?? 3;
           userActive = data['active'] ?? false;
           userModir = data['modir'] ?? false;
-          bannerUrl = safeBanner;
+          bannerUrl = displayBanner;
+          if (bannerChanged) {
+            showBanner = true; // ensure it shows again if server banner changed
+          }
           isLoading = false;
         });
 
@@ -538,6 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final logoHeight = (screenHeight * 0.25).clamp(180.0, 260.0);
     final svgHeight = (logoHeight * 0.9).clamp(150.0, 240.0);
     final svgWidth = (screenWidth * 0.9).clamp(260.0, 420.0);
+    final double horizontalPadding = (screenWidth * 0.05).clamp(12.0, 24.0);
 
     if (userModir) {
       userRoleTitle = AppLocalizations.of(context)!.home_company_representative;
@@ -803,9 +815,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         physics: AlwaysScrollableScrollPhysics(),
                         child: Padding(
                           padding: EdgeInsets.fromLTRB(
-                            20.0,
+                            horizontalPadding,
                             10.0,
-                            20.0,
+                            horizontalPadding,
                             20.0 + MediaQuery.of(context).padding.bottom,
                           ),
                           child: Column(
@@ -1076,6 +1088,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         fit: BoxFit.contain,
                                                         alignment:
                                                             Alignment.center,
+                                                        headers: const {
+                                                          'Cache-Control':
+                                                              'no-cache, no-store, must-revalidate',
+                                                          'Pragma': 'no-cache',
+                                                        },
                                                       )
                                                     : Image.asset(
                                                         'assets/banner.jpg',

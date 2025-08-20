@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -41,6 +42,10 @@ void main() async {
     SystemUiMode.edgeToEdge,
     overlays: [SystemUiOverlay.top],
   );
+
+  // Ensure Google Fonts are ready on web before first paint to match Android look
+  // and avoid font swapping in PWA.
+  await GoogleFonts.pendingFonts();
 
   runApp(
     MultiProvider(

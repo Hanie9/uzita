@@ -98,10 +98,11 @@ Widget buildPasswordChangeForm({
                           children: [
                             // REMOVE the Row with the logo from the form body
                             SizedBox(
-                              height: logoHeight,
+                              height: logoHeight + 20,
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
+                                  // Main logo image at the top
                                   Positioned(
                                     top: -logoHeight * 0.3,
                                     child: Image.asset(
@@ -112,26 +113,44 @@ Widget buildPasswordChangeForm({
                                     ),
                                   ),
 
+                                  // ELARRO text in gold/bronze in the middle
                                   Positioned(
                                     top: logoHeight * 0.44,
-                                    child: Text(
-                                      'ELARRO',
-                                      style: TextStyle(
-                                        fontSize: screenWidth * 0.08,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.bronzeGold,
-                                        letterSpacing: 4,
-                                        fontFamily: 'Nasalization',
-                                      ),
+                                    child: Builder(
+                                      builder: (_) {
+                                        final double elarroFontSize =
+                                            (screenWidth * 0.08)
+                                                .clamp(22.0, 32.0)
+                                                .toDouble();
+                                        return Text(
+                                          'ELARRO',
+                                          style: TextStyle(
+                                            fontSize: elarroFontSize,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.lapisLazuli,
+                                            letterSpacing: 4,
+                                            fontFamily: 'Nasalization',
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
 
+                                  // BIOKAVEH text in black at the bottom
                                   Positioned(
-                                    top: logoHeight * 0.6,
+                                    top:
+                                        (logoHeight * 0.38) +
+                                        ((screenWidth * 0.08)
+                                                .clamp(22.0, 32.0)
+                                                .toDouble() *
+                                            1.25) +
+                                        6,
                                     child: Text(
                                       'BIOKAVEH',
                                       style: TextStyle(
-                                        fontSize: screenWidth * 0.045,
+                                        fontSize: (screenWidth * 0.045)
+                                            .clamp(16.0, 22.0)
+                                            .toDouble(),
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.dark
@@ -296,38 +315,44 @@ Widget buildPasswordChangeForm({
                               child: SizedBox(
                                 width: double.infinity,
                                 height: screenHeight * 0.06,
-                                child: ElevatedButton(
-                                  onPressed: loading || !isFormValid
-                                      ? null
-                                      : onSubmit,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isFormValid
-                                        ? AppColors.emerald
-                                        : Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                child: AbsorbPointer(
+                                  absorbing: loading || !isFormValid,
+                                  child: ElevatedButton(
+                                    onPressed: loading || !isFormValid
+                                        ? null
+                                        : onSubmit,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isFormValid
+                                          ? AppColors.emerald
+                                          : Colors.grey,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      elevation: 1,
                                     ),
-                                    elevation: 1,
+                                    child: loading
+                                        ? SizedBox(
+                                            height: screenHeight * 0.022,
+                                            width: screenHeight * 0.022,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.editpassword_change_password,
+                                              style: TextStyle(
+                                                fontSize: screenWidth * 0.05,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
                                   ),
-                                  child: loading
-                                      ? SizedBox(
-                                          height: screenHeight * 0.022,
-                                          width: screenHeight * 0.022,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.editpassword_change_password,
-                                          style: TextStyle(
-                                            fontSize: screenWidth * 0.05,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
                                 ),
                               ),
                             ),

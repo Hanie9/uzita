@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider with ChangeNotifier {
@@ -14,7 +15,106 @@ class SettingsProvider with ChangeNotifier {
   double get textSize => _textSize;
   bool get isLoading => _isLoading;
 
-  ThemeData get currentTheme => _darkModeEnabled ? darkTheme : lightTheme;
+  ThemeData get currentTheme {
+    final ThemeData baseTheme = _darkModeEnabled ? darkTheme : lightTheme;
+    final bool isFarsi = _selectedLanguage != 'en';
+
+    // Choose high-quality, web-friendly fonts for each language
+    final TextTheme themedText = isFarsi
+        ? GoogleFonts.vazirmatnTextTheme(baseTheme.textTheme)
+        : GoogleFonts.interTextTheme(baseTheme.textTheme);
+
+    final RoundedRectangleBorder buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    );
+
+    final ButtonStyle commonButtonStyle = ButtonStyle(
+      // Avoid infinite width from Size.fromHeight which sets width to double.infinity
+      minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
+      shape: WidgetStatePropertyAll(buttonShape),
+      textStyle: WidgetStatePropertyAll(
+        themedText.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    );
+
+    final ColorScheme colorScheme = baseTheme.colorScheme;
+
+    return baseTheme.copyWith(
+      textTheme: themedText,
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: commonButtonStyle.copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return _darkModeEnabled ? Colors.grey[700] : Colors.grey[400];
+            }
+            return colorScheme.primary;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return _darkModeEnabled ? Colors.white70 : Colors.white;
+            }
+            return colorScheme.onPrimary;
+          }),
+          overlayColor: WidgetStatePropertyAll(
+            colorScheme.onPrimary.withValues(alpha: 0.08),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: commonButtonStyle.copyWith(
+          backgroundColor: WidgetStatePropertyAll(colorScheme.primary),
+          foregroundColor: WidgetStatePropertyAll(colorScheme.onPrimary),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: commonButtonStyle.copyWith(
+          side: WidgetStatePropertyAll(
+            BorderSide(color: colorScheme.primary, width: 1.4),
+          ),
+          foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
+          overlayColor: WidgetStatePropertyAll(
+            colorScheme.primary.withValues(alpha: 0.06),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: commonButtonStyle.copyWith(
+          foregroundColor: WidgetStatePropertyAll(colorScheme.primary),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
+        ),
+      ),
+      inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
+        filled: true,
+        fillColor: _darkModeEnabled ? const Color(0xFF1E1E1E) : Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
+        ),
+        labelStyle: themedText.bodyMedium,
+        hintStyle: themedText.bodyMedium?.copyWith(
+          color: _darkModeEnabled ? Colors.white60 : Colors.grey[500],
+        ),
+      ),
+    );
+  }
 
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -112,9 +212,27 @@ class SettingsProvider with ChangeNotifier {
     print('DEBUG: [SettingsProvider] Using language: $_selectedLanguage');
 
     _textSize = prefs.getDouble('textSize') ?? _textSize;
+    // Preload web fonts so PWA renders with correct typography from first frame.
+    await _preloadFontsForSelectedLanguage();
     _isLoading = false;
     notifyListeners();
     print('DEBUG: [SettingsProvider] Settings loaded and listeners notified');
+  }
+
+  Future<void> _preloadFontsForSelectedLanguage() async {
+    try {
+      // Trigger font requests for the selected language and await readiness.
+      final bool isFarsi = _selectedLanguage != 'en';
+      if (isFarsi) {
+        // Request creation triggers the font load via google_fonts on web.
+        GoogleFonts.vazirmatn();
+      } else {
+        GoogleFonts.inter();
+      }
+      await GoogleFonts.pendingFonts();
+    } catch (e) {
+      debugPrint('DEBUG: [SettingsProvider] Font preload skipped: $e');
+    }
   }
 
   Future<void> setDarkMode(bool value) async {
@@ -135,6 +253,11 @@ class SettingsProvider with ChangeNotifier {
 
       // Update the language without triggering a full rebuild
       _selectedLanguage = language;
+
+      // Preload fonts for the newly selected language to avoid visual swaps
+      // during the next frame. We do not block UI; fire-and-forget.
+      // Ignore result; any failure falls back to default fonts.
+      _preloadFontsForSelectedLanguage();
 
       // Only notify listeners after the SharedPreferences update is complete
       notifyListeners();

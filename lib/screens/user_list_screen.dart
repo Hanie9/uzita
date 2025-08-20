@@ -222,6 +222,8 @@ class _UserListScreenState extends State<UserListScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+            insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            actionsPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             title: Row(
               children: [
                 Icon(Icons.person_add, color: Color(0xFF007BA7), size: 24),
@@ -289,22 +291,40 @@ class _UserListScreenState extends State<UserListScreen> {
                         ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: 12,
+                          vertical: 10,
                         ),
                       ),
+                      isExpanded: true,
+                      isDense: true,
+                      menuMaxHeight: 280,
                       items: [
                         DropdownMenuItem(
                           value: 1,
-                          child: Text(AppLocalizations.of(context)!.uls_level1),
+                          child: Text(
+                            AppLocalizations.of(context)!.uls_level1,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
                         ),
                         DropdownMenuItem(
                           value: 2,
-                          child: Text(AppLocalizations.of(context)!.uls_level2),
+                          child: Text(
+                            AppLocalizations.of(context)!.uls_level2,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
                         ),
                         DropdownMenuItem(
                           value: 3,
-                          child: Text(AppLocalizations.of(context)!.uls_level3),
+                          child: Text(
+                            AppLocalizations.of(context)!.uls_level3,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
                         ),
                       ],
                       onChanged: (val) {
@@ -362,132 +382,158 @@ class _UserListScreenState extends State<UserListScreen> {
             ),
             actions: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(AppLocalizations.of(context)!.uls_cancel),
-                  ),
-                  SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            if (usernameController.text.isEmpty ||
-                                passwordController.text.isEmpty ||
-                                phoneController.text.isEmpty ||
-                                codeController.text.isEmpty) {
-                              setDialogState(() {
-                                message = AppLocalizations.of(
-                                  context,
-                                )!.uls_fill_all;
-                              });
-                              return;
-                            }
-
-                            // Phone min length validation: ensure exactly 10 digits (after removing leading zero if present)
-                            String phoneDigits = phoneController.text.trim();
-                            if (phoneDigits.startsWith('0')) {
-                              phoneDigits = phoneDigits.substring(1);
-                            }
-                            if (phoneDigits.length < 10) {
-                              setDialogState(() {
-                                message = AppLocalizations.of(
-                                  context,
-                                )!.uls_phone_length;
-                              });
-                              return;
-                            }
-
-                            setDialogState(() {
-                              isLoading = true;
-                              message = '';
-                            });
-
-                            try {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              final token = prefs.getString('token');
-
-                              // Default level to 3 if not chosen
-                              final int levelToSend =
-                                  (level == null || level == '')
-                                  ? 3
-                                  : int.tryParse('$level') ?? 3;
-
-                              final response = await http.post(
-                                Uri.parse('$baseUrl/adduser/'),
-                                headers: {
-                                  'Authorization': 'Bearer $token',
-                                  'Content-Type': 'application/json',
-                                },
-                                body: json.encode({
-                                  'username': usernameController.text.trim(),
-                                  'password': passwordController.text,
-                                  'phone': phoneDigits,
-                                  'code': codeController.text.trim(),
-                                  'level': levelToSend,
-                                }),
-                              );
-
-                              final data = json.decode(
-                                utf8.decode(response.bodyBytes),
-                              );
-
-                              setDialogState(() {
-                                message =
-                                    data['massage'] ??
-                                    data['error'] ??
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.uls_error_adding_user;
-                              });
-
-                              if (response.statusCode == 200 ||
-                                  response.statusCode == 201) {
-                                // Refresh user list
-                                await fetchUsers();
-
-                                // Close dialog after a short delay
-                                Future.delayed(Duration(seconds: 2), () {
-                                  if (Navigator.canPop(context)) {
-                                    Navigator.pop(context);
-                                  }
-                                });
-                              }
-                            } catch (e) {
-                              setDialogState(() {
-                                message = AppLocalizations.of(
-                                  context,
-                                )!.uls_error_connecting;
-                              });
-                            } finally {
-                              setDialogState(() {
-                                isLoading = false;
-                              });
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lapisLazuli,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          AppLocalizations.of(context)!.uls_cancel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
                       ),
                     ),
-                    child: isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              if (usernameController.text.isEmpty ||
+                                  passwordController.text.isEmpty ||
+                                  phoneController.text.isEmpty ||
+                                  codeController.text.isEmpty) {
+                                setDialogState(() {
+                                  message = AppLocalizations.of(
+                                    context,
+                                  )!.uls_fill_all;
+                                });
+                                return;
+                              }
+
+                              // Phone min length validation: ensure exactly 10 digits (after removing leading zero if present)
+                              String phoneDigits = phoneController.text.trim();
+                              if (phoneDigits.startsWith('0')) {
+                                phoneDigits = phoneDigits.substring(1);
+                              }
+                              if (phoneDigits.length < 10) {
+                                setDialogState(() {
+                                  message = AppLocalizations.of(
+                                    context,
+                                  )!.uls_phone_length;
+                                });
+                                return;
+                              }
+
+                              setDialogState(() {
+                                isLoading = true;
+                                message = '';
+                              });
+
+                              try {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                final token = prefs.getString('token');
+
+                                // Default level to 3 if not chosen
+                                final int levelToSend =
+                                    (level == null || level == '')
+                                    ? 3
+                                    : int.tryParse('$level') ?? 3;
+
+                                final response = await http.post(
+                                  Uri.parse('$baseUrl/adduser/'),
+                                  headers: {
+                                    'Authorization': 'Bearer $token',
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: json.encode({
+                                    'username': usernameController.text.trim(),
+                                    'password': passwordController.text,
+                                    'phone': phoneDigits,
+                                    'code': codeController.text.trim(),
+                                    'level': levelToSend,
+                                  }),
+                                );
+
+                                final data = json.decode(
+                                  utf8.decode(response.bodyBytes),
+                                );
+
+                                setDialogState(() {
+                                  message =
+                                      data['massage'] ??
+                                      data['error'] ??
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.uls_error_adding_user;
+                                });
+
+                                if (response.statusCode == 200 ||
+                                    response.statusCode == 201) {
+                                  // Refresh user list
+                                  await fetchUsers();
+
+                                  // Close dialog after a short delay
+                                  Future.delayed(Duration(seconds: 2), () {
+                                    if (Navigator.canPop(context)) {
+                                      Navigator.pop(context);
+                                    }
+                                  });
+                                }
+                              } catch (e) {
+                                setDialogState(() {
+                                  message = AppLocalizations.of(
+                                    context,
+                                  )!.uls_error_connecting;
+                                });
+                              } finally {
+                                setDialogState(() {
+                                  isLoading = false;
+                                });
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lapisLazuli,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        minimumSize: Size(0, 44),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: isLoading
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!.uls_add_user_title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
-                          )
-                        : Text(
-                            AppLocalizations.of(context)!.uls_add_user_title,
-                            style: TextStyle(color: Colors.white),
-                          ),
+                    ),
                   ),
                 ],
               ),
@@ -610,7 +656,7 @@ class _UserListScreenState extends State<UserListScreen> {
               ),
               SizedBox(width: 8),
               Text(
-                'فیلتر کاربران',
+                AppLocalizations.of(context)!.uls_filter_users,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -728,49 +774,34 @@ class _UserListScreenState extends State<UserListScreen> {
             ),
           ),
           actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    setState(() {
-                      filterUsername = null;
-                      filterPhone = null;
-                      filterLevel = null;
-                      filterActive = null;
-                    });
-                    fetchUsers();
-                  },
-                  child: Text(AppLocalizations.of(context)!.uls_clear),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(AppLocalizations.of(context)!.uls_cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  filterUsername = usernameController.text;
+                  filterPhone = phoneController.text;
+                  filterLevel = levelValue;
+                  filterActive = activeValue;
+                });
+                fetchUsers();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.lapisLazuli.withValues(alpha: 0.8),
+                textStyle: TextStyle(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    setState(() {
-                      filterUsername = usernameController.text;
-                      filterPhone = phoneController.text;
-                      filterLevel = levelValue;
-                      filterActive = activeValue;
-                    });
-                    fetchUsers();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lapisLazuli.withValues(
-                      alpha: 0.8,
-                    ),
-                    textStyle: TextStyle(color: Colors.white),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context)!.uls_apply,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.uls_apply,
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),

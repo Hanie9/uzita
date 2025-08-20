@@ -391,10 +391,17 @@ class _LoginScreenState extends State<LoginScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final theme = Theme.of(context);
 
-    final logoHeight = screenHeight * 0.25; // 25% of screen height
-    final svgHeight = logoHeight * 1.2; // 120% of logo container height
-    final svgWidth = screenWidth * 0.95; // 95% of screen width
-    final spacingAfterLogo = screenHeight * 0.03;
+    final double horizontalPadding = (screenWidth * 0.06).clamp(12.0, 24.0);
+    final double logoHeight = (screenHeight * 0.22).clamp(120.0, 220.0);
+    final double svgHeight = (logoHeight * 1.2).clamp(140.0, 300.0);
+    final double svgWidth = (screenWidth * 0.9).clamp(240.0, 520.0);
+    final double spacingAfterLogo = (screenHeight * 0.02).clamp(12.0, 24.0);
+    final double fieldHeight = (screenHeight * 0.06).clamp(44.0, 56.0);
+    final double fieldFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
+    final double hintFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
+    final double buttonHeight = fieldHeight;
+    final double buttonFontSize = (screenWidth * 0.05).clamp(15.0, 18.0);
+    final double fingerprintSize = (screenWidth * 0.18).clamp(56.0, 88.0);
 
     // Handle optional prefill from splash biometric flow
     final routeArgs = ModalRoute.of(context)?.settings.arguments;
@@ -422,661 +429,725 @@ class _LoginScreenState extends State<LoginScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             // Add this wrapper
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.06,
-                right: screenWidth * 0.06,
-                bottom: screenHeight * 0.06,
-              ),
-              child: Column(
-                children: [
-                  Column(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: horizontalPadding,
+                    right: horizontalPadding,
+                    bottom: screenHeight * 0.06,
+                  ),
+                  child: Column(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Column(
                         children: [
-                          Image.asset(
-                            'assets/logouzita.png',
-                            height: screenHeight * 0.08,
-                            width: screenHeight * 0.08,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Image.asset(
+                                'assets/logouzita.png',
+                                height: screenHeight * 0.08,
+                                width: screenHeight * 0.08,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: logoHeight,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Main logo image at the top
-                            Positioned(
-                              top: -logoHeight * 0.3,
-                              child: Image.asset(
-                                'assets/biokaveh.png',
-                                height: svgHeight,
-                                width: svgWidth,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-
-                            // ELARRO text in gold/bronze in the middle
-                            Positioned(
-                              top:
-                                  logoHeight *
-                                  0.44, // 54% of logo container height
-                              child: Text(
-                                'ELARRO',
-                                style: TextStyle(
-                                  fontSize:
-                                      screenWidth * 0.08, // 8% of screen width
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.lapisLazuli,
-                                  letterSpacing: 4,
-                                  fontFamily: 'Nasalization',
+                          SizedBox(
+                            height: logoHeight + 20,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Main logo image at the top
+                                Positioned(
+                                  top: -logoHeight * 0.3,
+                                  child: Image.asset(
+                                    'assets/biokaveh.png',
+                                    height: svgHeight,
+                                    width: svgWidth,
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
+
+                                // ELARRO text in gold/bronze in the middle
+                                Positioned(
+                                  top: logoHeight * 0.44,
+                                  child: Builder(
+                                    builder: (_) {
+                                      final double elarroFontSize =
+                                          (screenWidth * 0.08)
+                                              .clamp(22.0, 32.0)
+                                              .toDouble();
+                                      return Text(
+                                        'ELARRO',
+                                        style: TextStyle(
+                                          fontSize: elarroFontSize,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.lapisLazuli,
+                                          letterSpacing: 4,
+                                          fontFamily: 'Nasalization',
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+
+                                // BIOKAVEH text in black at the bottom
+                                Positioned(
+                                  top:
+                                      (logoHeight * 0.38) +
+                                      ((screenWidth * 0.08)
+                                              .clamp(22.0, 32.0)
+                                              .toDouble() *
+                                          1.25) +
+                                      6,
+                                  child: Text(
+                                    'BIOKAVEH',
+                                    style: TextStyle(
+                                      fontSize: (screenWidth * 0.045)
+                                          .clamp(16.0, 22.0)
+                                          .toDouble(),
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.white
+                                          : Colors.black,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 2,
+                                      fontFamily: 'Nasalization',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: spacingAfterLogo),
+
+                          // Username field
+                          Container(
+                            height: fieldHeight, // responsive height
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[800]
+                                  : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[300]!,
                               ),
                             ),
-
-                            // BIOKAVEH text in black at the bottom
-                            Positioned(
-                              top:
-                                  logoHeight *
-                                  0.6, // 70% of logo container height
-                              child: Text(
-                                'BIOKAVEH',
-                                style: TextStyle(
-                                  fontSize:
-                                      screenWidth *
-                                      0.045, // 4.5% of screen width
+                            child: TextField(
+                              controller: usernameController,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: fieldFontSize),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(
+                                  context,
+                                )!.login_username,
+                                hintStyle: TextStyle(
                                   color:
                                       Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 2,
-                                  fontFamily: 'Nasalization',
+                                      ? Colors.grey[400]
+                                      : const Color.fromARGB(255, 99, 97, 97),
+                                  fontSize: hintFontSize,
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(height: spacingAfterLogo),
-
-                      // Username field
-                      Container(
-                        height: screenHeight * 0.06, // 6% of screen height
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[800]
-                              : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.grey[600]!
-                                : Colors.grey[300]!,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: usernameController,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: screenWidth * 0.035,
-                          ), // 3.5% of screen width
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(
-                              context,
-                            )!.login_username,
-                            hintStyle: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[400]
-                                  : const Color.fromARGB(255, 99, 97, 97),
-                              fontSize:
-                                  screenWidth * 0.04, // 4% of screen width
-                            ),
-                            hintTextDirection: Directionality.of(context),
-                            suffixIcon: Padding(
-                              padding: EdgeInsets.all(
-                                screenWidth * 0.02,
-                              ), // 2% of screen width
-                              child: SvgPicture.asset(
-                                'assets/icons/user.svg',
-                                colorFilter: ColorFilter.mode(
-                                  Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? (Colors.grey[400] ?? Colors.grey)
-                                      : const Color.fromARGB(255, 80, 77, 77),
-                                  BlendMode.srcIn,
-                                ),
-                                width:
-                                    screenHeight * 0.03, // 4% of screen height
-                                height:
-                                    screenHeight * 0.03, // 4% of screen height
-                              ),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal:
-                                  screenWidth * 0.035, // 3.5% of screen width
-                              vertical:
-                                  screenHeight * 0.018, // 1.8% of screen height
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(
-                        height: screenHeight * 0.015,
-                      ), // 1.5% of screen height
-                      // Password field
-                      Container(
-                        height: screenHeight * 0.06, // 6% of screen height
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[800]
-                              : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.grey[600]!
-                                : Colors.grey[300]!,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: passwordController,
-                          textAlign: TextAlign.center,
-                          obscureText: true,
-                          style: TextStyle(
-                            fontSize: screenWidth * 0.035,
-                          ), // 3.5% of screen width
-                          onSubmitted: (_) => loading ? null : login(),
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(
-                              context,
-                            )!.login_password,
-                            hintStyle: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[400]
-                                  : const Color.fromARGB(255, 99, 97, 97),
-                              fontSize:
-                                  screenWidth * 0.04, // 4% of screen width
-                            ),
-                            hintTextDirection: Directionality.of(context),
-                            suffixIcon: Padding(
-                              padding: EdgeInsets.all(
-                                screenWidth * 0.02,
-                              ), // 2% of screen width
-                              child: SvgPicture.asset(
-                                'assets/icons/key.svg',
-                                colorFilter: ColorFilter.mode(
-                                  Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? (Colors.grey[400] ?? Colors.grey)
-                                      : const Color.fromARGB(255, 80, 77, 77),
-                                  BlendMode.srcIn,
-                                ),
-                                width:
-                                    screenHeight * 0.03, // 4% of screen height
-                                height:
-                                    screenHeight * 0.03, // 4% of screen height
-                              ),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal:
-                                  screenWidth * 0.035, // 3.5% of screen width
-                              vertical:
-                                  screenHeight * 0.018, // 1.8% of screen height
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(
-                        height: screenHeight * 0.03,
-                      ), // 3% of screen height
-                      // Login button
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.lapisLazuli.withValues(
-                                alpha: 0.5,
-                              ),
-                              spreadRadius: 2,
-                              blurRadius: 20,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: screenHeight * 0.06, // 6% of screen height
-                          child: ElevatedButton(
-                            onPressed: loading ? null : login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lapisLazuli,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 1,
-                            ),
-                            child: loading
-                                ? SizedBox(
-                                    height:
-                                        screenHeight *
-                                        0.022, // 2.2% of screen height
+                                hintTextDirection: Directionality.of(context),
+                                suffixIcon: Padding(
+                                  padding: EdgeInsets.all(
+                                    screenWidth * 0.02,
+                                  ), // 2% of screen width
+                                  child: SvgPicture.asset(
+                                    'assets/icons/user.svg',
+                                    colorFilter: ColorFilter.mode(
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? (Colors.grey[400] ?? Colors.grey)
+                                          : const Color.fromARGB(
+                                              255,
+                                              80,
+                                              77,
+                                              77,
+                                            ),
+                                      BlendMode.srcIn,
+                                    ),
                                     width:
                                         screenHeight *
-                                        0.022, // 2.2% of screen height
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    AppLocalizations.of(context)!.login,
-                                    style: TextStyle(
-                                      fontSize:
-                                          screenWidth *
-                                          0.05, // 5% of screen width
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                        0.03, // 4% of screen height
+                                    height:
+                                        screenHeight *
+                                        0.03, // 4% of screen height
                                   ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(
-                        height: screenHeight * 0.02,
-                      ), // 2.5% of screen height
-                      // Remember me checkbox
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context)!.login_remember_me,
-                            style: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[300]
-                                  : const Color.fromARGB(255, 53, 52, 52),
-                              fontSize:
-                                  screenWidth * 0.04, // 4% of screen width
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: (screenWidth * 0.035)
+                                      .clamp(12.0, 16.0)
+                                      .toDouble(),
+                                  vertical: (screenHeight * 0.018)
+                                      .clamp(10.0, 14.0)
+                                      .toDouble(),
+                                ),
+                              ),
                             ),
                           ),
+
                           SizedBox(
-                            width: screenWidth * 0.02,
-                          ), // 2% of screen width
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                rememberMe = !rememberMe;
-                              });
-                            },
-                            child: Container(
-                              width: screenHeight * 0.02, // 2% of screen height
-                              height:
-                                  screenHeight * 0.02, // 2% of screen height
-                              decoration: BoxDecoration(
-                                color: rememberMe
-                                    ? Color(0xFF007BA7)
-                                    : Colors.white,
-                                border: Border.all(
-                                  color: rememberMe
-                                      ? Color(0xFF007BA7)
-                                      : Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: rememberMe
-                                  ? Icon(
-                                      Icons.check,
-                                      size: screenHeight * 0.015,
-                                      color: Colors.white,
-                                    ) // 1.5% of screen height
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(
-                        height: screenHeight * 0.02,
-                      ), // 3.5% of screen height
-                      if (authAvailable)
-                        Column(
-                          children: [
-                            GestureDetector(
-                              onTap:
-                                  (loading ||
-                                      biometricLoading ||
-                                      !hasStoredCredentials)
-                                  ? null
-                                  : _tryBiometricLogin,
-                              child: Opacity(
-                                opacity:
-                                    (loading ||
-                                        biometricLoading ||
-                                        !hasStoredCredentials)
-                                    ? 0.5
-                                    : 1.0,
-                                child: Container(
-                                  width: screenWidth * 0.18,
-                                  height: screenWidth * 0.18,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.lapisLazuli.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        AppColors.lapisLazuli.withValues(
-                                          alpha: 0.05,
-                                        ),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    border: Border.all(
-                                      color: AppColors.lapisLazuli,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: biometricLoading
-                                      ? SizedBox(
-                                          width: screenHeight * 0.013,
-                                          height: screenHeight * 0.013,
-                                          child:
-                                              const CircularProgressIndicator(
-                                                strokeWidth: 1,
-                                                color: AppColors.lapisLazuli,
-                                              ),
-                                        )
-                                      : Icon(
-                                          Icons.fingerprint,
-                                          size: 40,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.white
-                                              : AppColors.lapisLazuli,
-                                        ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              hasStoredCredentials
-                                  ? AppLocalizations.of(
-                                      context,
-                                    )!.login_biometric
-                                  : AppLocalizations.of(
-                                      context,
-                                    )!.login_login_first,
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.035,
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white70
-                                    : AppColors.lapisLazuli,
-                              ),
-                            ),
-                          ],
-                        ),
-                      // Error display
-                      if (error.isNotEmpty) ...[
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(
-                            screenWidth * 0.025,
-                          ), // 2.5% of screen width
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.red[900]?.withValues(alpha: 0.3)
-                                : Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
+                            height: screenHeight * 0.015,
+                          ), // 1.5% of screen height
+                          // Password field
+                          Container(
+                            height: fieldHeight, // responsive height
+                            decoration: BoxDecoration(
                               color:
                                   Theme.of(context).brightness ==
                                       Brightness.dark
-                                  ? Colors.red[600]!
-                                  : Colors.red.shade200,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
+                                  ? Colors.grey[800]
+                                  : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.red[300]
-                                    : Colors.red,
-                                size: screenHeight * 0.025,
-                              ), // 2.5% of screen height
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[300]!,
+                              ),
+                            ),
+                            child: TextField(
+                              controller: passwordController,
+                              textAlign: TextAlign.center,
+                              obscureText: true,
+                              style: TextStyle(fontSize: fieldFontSize),
+                              onSubmitted: (_) => loading ? null : login(),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(
+                                  context,
+                                )!.login_password,
+                                hintStyle: TextStyle(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[400]
+                                      : const Color.fromARGB(255, 99, 97, 97),
+                                  fontSize: hintFontSize,
+                                ),
+                                hintTextDirection: Directionality.of(context),
+                                suffixIcon: Padding(
+                                  padding: EdgeInsets.all(
+                                    screenWidth * 0.02,
+                                  ), // 2% of screen width
+                                  child: SvgPicture.asset(
+                                    'assets/icons/key.svg',
+                                    colorFilter: ColorFilter.mode(
+                                      Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? (Colors.grey[400] ?? Colors.grey)
+                                          : const Color.fromARGB(
+                                              255,
+                                              80,
+                                              77,
+                                              77,
+                                            ),
+                                      BlendMode.srcIn,
+                                    ),
+                                    width:
+                                        screenHeight *
+                                        0.03, // 4% of screen height
+                                    height:
+                                        screenHeight *
+                                        0.03, // 4% of screen height
+                                  ),
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: (screenWidth * 0.035)
+                                      .clamp(12.0, 16.0)
+                                      .toDouble(),
+                                  vertical: (screenHeight * 0.018)
+                                      .clamp(10.0, 14.0)
+                                      .toDouble(),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(
+                            height: screenHeight * 0.03,
+                          ), // 3% of screen height
+                          // Login button
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  spreadRadius: 2,
+                                  blurRadius: 20,
+                                  offset: Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: buttonHeight,
+                              child: AbsorbPointer(
+                                absorbing: loading,
+                                child: ElevatedButton(
+                                  onPressed: login,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.lapisLazuli,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 1,
+                                  ),
+                                  child: loading
+                                      ? SizedBox(
+                                          height:
+                                              screenHeight *
+                                              0.022, // 2.2% of screen height
+                                          width:
+                                              screenHeight *
+                                              0.022, // 2.2% of screen height
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            AppLocalizations.of(context)!.login,
+                                            style: TextStyle(
+                                              fontSize: buttonFontSize,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(
+                            height: screenHeight * 0.02,
+                          ), // 2.5% of screen height
+                          // Remember me checkbox
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!.login_remember_me,
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[300]
+                                      : const Color.fromARGB(255, 53, 52, 52),
+                                  fontSize: (screenWidth * 0.04)
+                                      .clamp(13.0, 16.0)
+                                      .toDouble(),
+                                ),
+                              ),
                               SizedBox(
-                                width: screenWidth * 0.025,
-                              ), // 2.5% of screen width
-                              Expanded(
-                                child: Text(
-                                  error,
+                                width: screenWidth * 0.02,
+                              ), // 2% of screen width
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    rememberMe = !rememberMe;
+                                  });
+                                },
+                                child: Container(
+                                  width:
+                                      screenHeight *
+                                      0.02, // 2% of screen height
+                                  height:
+                                      screenHeight *
+                                      0.02, // 2% of screen height
+                                  decoration: BoxDecoration(
+                                    color: rememberMe
+                                        ? Color(0xFF007BA7)
+                                        : Colors.white,
+                                    border: Border.all(
+                                      color: rememberMe
+                                          ? Color(0xFF007BA7)
+                                          : Colors.grey,
+                                    ),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  child: rememberMe
+                                      ? Icon(
+                                          Icons.check,
+                                          size: screenHeight * 0.015,
+                                          color: Colors.white,
+                                        ) // 1.5% of screen height
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(
+                            height: screenHeight * 0.02,
+                          ), // 3.5% of screen height
+                          if (authAvailable)
+                            Column(
+                              children: [
+                                GestureDetector(
+                                  onTap:
+                                      (loading ||
+                                          biometricLoading ||
+                                          !hasStoredCredentials)
+                                      ? null
+                                      : _tryBiometricLogin,
+                                  child: Opacity(
+                                    opacity:
+                                        (loading ||
+                                            biometricLoading ||
+                                            !hasStoredCredentials)
+                                        ? 0.5
+                                        : 1.0,
+                                    child: Container(
+                                      width: fingerprintSize,
+                                      height: fingerprintSize,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppColors.lapisLazuli.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            AppColors.lapisLazuli.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        border: Border.all(
+                                          color: AppColors.lapisLazuli,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: biometricLoading
+                                          ? SizedBox(
+                                              width: screenHeight * 0.013,
+                                              height: screenHeight * 0.013,
+                                              child:
+                                                  const CircularProgressIndicator(
+                                                    strokeWidth: 1,
+                                                    color:
+                                                        AppColors.lapisLazuli,
+                                                  ),
+                                            )
+                                          : Icon(
+                                              Icons.fingerprint,
+                                              size: 40,
+                                              color:
+                                                  Theme.of(
+                                                        context,
+                                                      ).brightness ==
+                                                      Brightness.dark
+                                                  ? Colors.white
+                                                  : AppColors.lapisLazuli,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  hasStoredCredentials
+                                      ? AppLocalizations.of(
+                                          context,
+                                        )!.login_biometric
+                                      : AppLocalizations.of(
+                                          context,
+                                        )!.login_login_first,
                                   style: TextStyle(
+                                    fontSize: screenWidth * 0.035,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white70
+                                        : AppColors.lapisLazuli,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          // Error display
+                          if (error.isNotEmpty) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(
+                                screenWidth * 0.025,
+                              ), // 2.5% of screen width
+                              decoration: BoxDecoration(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.red[900]?.withValues(alpha: 0.3)
+                                    : Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.red[600]!
+                                      : Colors.red.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
                                     color:
                                         Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.red[300]
-                                        : Colors.red.shade700,
-                                    fontSize:
-                                        screenWidth *
-                                        0.035, // 3.5% of screen width
+                                        : Colors.red,
+                                    size: screenHeight * 0.025,
+                                  ), // 2.5% of screen height
+                                  SizedBox(
+                                    width: screenWidth * 0.025,
+                                  ), // 2.5% of screen width
+                                  Expanded(
+                                    child: Text(
+                                      error,
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.red[300]
+                                            : Colors.red.shade700,
+                                        fontSize:
+                                            screenWidth *
+                                            0.035, // 3.5% of screen width
+                                      ),
+                                      textAlign: TextAlign.right,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.right,
-                                ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+
+                          SizedBox(
+                            height: 40,
+                          ), // Add spacing to push buttons down
+                          // Bottom registration buttons (responsive)
+                          Builder(
+                            builder: (ctx) {
+                              final double availableWidth = MediaQuery.of(
+                                ctx,
+                              ).size.width;
+                              final bool isNarrow = availableWidth < 480;
+
+                              Widget userBtn = Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: SizedBox(
+                                  height: 55,
+                                  child: OutlinedButton(
+                                    onPressed: loading
+                                        ? null
+                                        : () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    UserRegisterScreen(),
+                                              ),
+                                            );
+                                          },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[700]
+                                          : Colors.grey[300],
+                                      foregroundColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.white
+                                          : Colors.black,
+                                      side: BorderSide(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[600]!
+                                            : Colors.grey[400]!,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Flexible(
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.login_user_register,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 6),
+                                        Icon(
+                                          Icons.person_add_outlined,
+                                          size: isNarrow ? 22 : 25,
+                                          color: AppColors.bronzeGold,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+
+                              Widget adminBtn = Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: SizedBox(
+                                  height: 55,
+                                  child: OutlinedButton(
+                                    onPressed: loading
+                                        ? null
+                                        : () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    AdminregisterScreen(),
+                                              ),
+                                            );
+                                          },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[700]
+                                          : Colors.grey[300],
+                                      foregroundColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.white
+                                          : Colors.black,
+                                      side: BorderSide(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[600]!
+                                            : Colors.grey[400]!,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Flexible(
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.login_admin_register,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
+                                                        Brightness.dark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 6),
+                                        Icon(
+                                          Icons.admin_panel_settings_outlined,
+                                          size: isNarrow ? 22 : 25,
+                                          color: AppColors.bronzeGold,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+
+                              return Row(
+                                children: [
+                                  Expanded(child: userBtn),
+                                  SizedBox(width: 17),
+                                  Expanded(child: adminBtn),
+                                ],
+                              );
+                            },
                           ),
-                        ),
-                      ],
-
-                      SizedBox(height: 40), // Add spacing to push buttons down
-                      // Bottom registration buttons (responsive)
-                      Builder(
-                        builder: (ctx) {
-                          final double availableWidth = MediaQuery.of(
-                            ctx,
-                          ).size.width;
-                          final bool isNarrow = availableWidth < 480;
-
-                          Widget userBtn = Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.black.withValues(alpha: 0.2),
-                                  spreadRadius: 1,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: SizedBox(
-                              height: 55,
-                              child: OutlinedButton(
-                                onPressed: loading
-                                    ? null
-                                    : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                UserRegisterScreen(),
-                                          ),
-                                        );
-                                      },
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[700]
-                                      : Colors.grey[300],
-                                  foregroundColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black,
-                                  side: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[600]!
-                                        : Colors.grey[400]!,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.login_user_register,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.white
-                                              : Colors.black,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 6),
-                                    Icon(
-                                      Icons.person_add_outlined,
-                                      size: isNarrow ? 22 : 25,
-                                      color: AppColors.bronzeGold,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-
-                          Widget adminBtn = Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.black.withValues(alpha: 0.2),
-                                  spreadRadius: 1,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: SizedBox(
-                              height: 55,
-                              child: OutlinedButton(
-                                onPressed: loading
-                                    ? null
-                                    : () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                AdminregisterScreen(),
-                                          ),
-                                        );
-                                      },
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[700]
-                                      : Colors.grey[300],
-                                  foregroundColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black,
-                                  side: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[600]!
-                                        : Colors.grey[400]!,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.login_admin_register,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.white
-                                              : Colors.black,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 6),
-                                    Icon(
-                                      Icons.admin_panel_settings_outlined,
-                                      size: isNarrow ? 22 : 25,
-                                      color: AppColors.bronzeGold,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-
-                          return Row(
-                            children: [
-                              Expanded(child: userBtn),
-                              SizedBox(width: 17),
-                              Expanded(child: adminBtn),
-                            ],
-                          );
-                        },
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

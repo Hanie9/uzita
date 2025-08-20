@@ -37,6 +37,13 @@
 
   <title>uzita</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Preload app fonts to avoid swap on PWA start -->
+  <link rel="preload" href="assets/fonts/Nasalization.otf" as="font" type="font/otf" crossorigin>
+
+  <!-- Improve connection time for Google Fonts (used via google_fonts package) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

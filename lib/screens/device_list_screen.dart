@@ -369,44 +369,73 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     ],
                   ),
             actions: [
-              TextButton(
-                onPressed: submitting
-                    ? null
-                    : () => Navigator.of(dialogCtx).pop(),
-                child: Text(
-                  returnedToken == null
-                      ? AppLocalizations.of(context)!.dls_cancel
-                      : AppLocalizations.of(context)!.dls_close,
-                ),
-              ),
-              if (returnedToken == null)
-                ElevatedButton.icon(
-                  onPressed: submitting ? null : submit,
-                  icon: submitting
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Icon(Icons.save, color: Colors.white),
-                  label: Text(
-                    submitting
-                        ? AppLocalizations.of(context)!.dls_submitting
-                        : AppLocalizations.of(context)!.dls_submit,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lapisLazuli,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: submitting
+                          ? null
+                          : () => Navigator.of(dialogCtx).pop(),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          returnedToken == null
+                              ? AppLocalizations.of(context)!.dls_cancel
+                              : AppLocalizations.of(context)!.dls_close,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  if (returnedToken == null) ...[
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: submitting ? null : submit,
+                        icon: submitting
+                            ? SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Icon(Icons.save, color: Colors.white),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            submitting
+                                ? AppLocalizations.of(context)!.dls_submitting
+                                : AppLocalizations.of(context)!.dls_submit,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lapisLazuli,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          minimumSize: Size(0, 44),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           );
         },

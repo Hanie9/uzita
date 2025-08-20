@@ -677,6 +677,7 @@ class AppLocalizations {
       'login_admin_register': 'Admin registration',
 
       // Registration Forms (reg_)
+      'reg_phone_98': '+98',
       'reg_user_register': 'User registration',
       'reg_admin_register': 'Admin registration',
       'reg_org_code': 'Organization code',
@@ -685,8 +686,8 @@ class AppLocalizations {
       'reg_verify_code': 'Verify code',
       'reg_name': 'Username',
       'reg_password': 'Password',
-      'reg_phone': 'Phone number',
-      'reg_phone_completely': 'Complete phone number: +98',
+      'reg_phone': '    Phone number',
+      'reg_phone_completely': 'Complete phone number:',
       'reg_attention_admin':
           'Note: Get the management code from the system administrator',
       'reg_attention_org':
@@ -1533,7 +1534,8 @@ class AppLocalizations {
       'reg_name': 'نام کاربری',
       'reg_password': 'رمز عبور',
       'reg_phone': '     شماره تلفن',
-      'reg_phone_completely': 'شماره کامل: +98',
+      'reg_phone_completely': 'شماره کامل:',
+      'reg_phone_98': '+98',
       'reg_attention_admin': 'توجه: کد مدیریت را از مسئول سیستم دریافت کنید',
       'reg_attention_org': 'توجه: کد سازمان را از مسئول مربوطه دریافت کنید',
       'reg_login': 'ورود',
@@ -2217,6 +2219,7 @@ class AppLocalizations {
   String get reg_password => _getLocalizedValue('reg_password');
   String get reg_phone => _getLocalizedValue('reg_phone');
   String get reg_phone_completely => _getLocalizedValue('reg_phone_completely');
+  String get reg_phone_98 => _getLocalizedValue('reg_phone_98');
   String get reg_attention_admin => _getLocalizedValue('reg_attention_admin');
   String get reg_attention_org => _getLocalizedValue('reg_attention_org');
   String get reg_login => _getLocalizedValue('reg_login');

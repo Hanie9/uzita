@@ -272,6 +272,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          actionsPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           title: Directionality(
             textDirection: Localizations.localeOf(context).languageCode == 'en'
                 ? TextDirection.ltr
@@ -298,179 +300,202 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             textDirection: Localizations.localeOf(context).languageCode == 'en'
                 ? TextDirection.ltr
                 : TextDirection.rtl,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: AppColors.lapisLazuli,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        '${AppLocalizations.of(context)!.uds_current_level} ${_getLevelText(widget.user['level'])}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).textTheme.titleMedium?.color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  AppLocalizations.of(context)!.uds_select_new_level,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                  ),
-                ),
-                SizedBox(height: 16),
-                ...List.generate(3, (index) {
-                  int level = index + 1;
-                  String levelTitle = '';
-                  String levelDescription = '';
-                  Color levelColor = AppColors.lapisLazuli;
-
-                  switch (level) {
-                    case 1:
-                      levelTitle = AppLocalizations.of(context)!.uds_level_1;
-                      levelDescription = AppLocalizations.of(
-                        context,
-                      )!.uds_level_1_description;
-                      levelColor = Colors.red; // destructive
-                      break;
-                    case 2:
-                      levelTitle = AppLocalizations.of(context)!.uds_level_2;
-                      levelDescription = AppLocalizations.of(
-                        context,
-                      )!.uds_level_2_description;
-                      levelColor = AppColors.lapisLazuli;
-                      break;
-                    case 3:
-                      levelTitle = AppLocalizations.of(context)!.uds_level_3;
-                      levelDescription = AppLocalizations.of(
-                        context,
-                      )!.uds_level_3_description;
-                      levelColor = AppColors.lapisLazuli;
-                      break;
-                  }
-
-                  bool isCurrentLevel = widget.user['level'] == level;
-
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 8),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 520),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isCurrentLevel
-                          ? levelColor.withValues(alpha: 0.1)
-                          : Theme.of(context).cardTheme.color,
-                      border: Border.all(
-                        color: isCurrentLevel
-                            ? levelColor
-                            : (Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.grey[600]!
-                                  : Colors.grey.shade300),
-                        width: isCurrentLevel ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: AppColors.lapisLazuli,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${AppLocalizations.of(context)!.uds_current_level} ${_getLevelText(widget.user['level'])}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    AppLocalizations.of(context)!.uds_select_new_level,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  ...List.generate(3, (index) {
+                    int level = index + 1;
+                    String levelTitle = '';
+                    String levelDescription = '';
+                    Color levelColor = AppColors.lapisLazuli;
+
+                    switch (level) {
+                      case 1:
+                        levelTitle = AppLocalizations.of(context)!.uds_level_1;
+                        levelDescription = AppLocalizations.of(
+                          context,
+                        )!.uds_level_1_description;
+                        levelColor = Colors.red; // destructive
+                        break;
+                      case 2:
+                        levelTitle = AppLocalizations.of(context)!.uds_level_2;
+                        levelDescription = AppLocalizations.of(
+                          context,
+                        )!.uds_level_2_description;
+                        levelColor = AppColors.lapisLazuli;
+                        break;
+                      case 3:
+                        levelTitle = AppLocalizations.of(context)!.uds_level_3;
+                        levelDescription = AppLocalizations.of(
+                          context,
+                        )!.uds_level_3_description;
+                        levelColor = AppColors.lapisLazuli;
+                        break;
+                    }
+
+                    bool isCurrentLevel = widget.user['level'] == level;
+
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: isCurrentLevel
+                            ? levelColor.withValues(alpha: 0.1)
+                            : Theme.of(context).cardTheme.color,
+                        border: Border.all(
+                          color: isCurrentLevel
+                              ? levelColor
+                              : (Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey[600]!
+                                    : Colors.grey.shade300),
+                          width: isCurrentLevel ? 2 : 1,
+                        ),
                         borderRadius: BorderRadius.circular(12),
-                        onTap: isCurrentLevel
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                                _confirmLevelChange(level);
-                              },
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isCurrentLevel
-                                      ? levelColor
-                                      : (Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[700]
-                                            : Colors.grey.shade200),
-                                  borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: isCurrentLevel
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  _confirmLevelChange(level);
+                                },
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isCurrentLevel
+                                        ? levelColor
+                                        : (Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey[700]
+                                              : Colors.grey.shade200),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.admin_panel_settings,
+                                    color: isCurrentLevel
+                                        ? Colors.white
+                                        : (Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[600]),
+                                    size: 20,
+                                  ),
                                 ),
-                                child: Icon(
-                                  Icons.admin_panel_settings,
-                                  color: isCurrentLevel
-                                      ? Colors.white
-                                      : (Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[400]
-                                            : Colors.grey[600]),
-                                  size: 20,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      levelTitle,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: isCurrentLevel
-                                            ? levelColor
-                                            : Theme.of(
-                                                context,
-                                              ).textTheme.titleMedium?.color,
-                                        fontSize: 14,
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        levelTitle,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: isCurrentLevel
+                                              ? levelColor
+                                              : Theme.of(
+                                                  context,
+                                                ).textTheme.titleMedium?.color,
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      levelDescription,
-                                      style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall?.color,
-                                        fontSize: 12,
+                                      SizedBox(height: 2),
+                                      Text(
+                                        levelDescription,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.color,
+                                          fontSize: 12,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              if (isCurrentLevel)
-                                Icon(
-                                  Icons.check_circle,
-                                  color: levelColor,
-                                  size: 20,
-                                ),
-                            ],
+                                if (isCurrentLevel)
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: levelColor,
+                                    size: 20,
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }),
-              ],
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                AppLocalizations.of(context)!.uds_cancle,
-                style: TextStyle(color: Colors.red),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppLocalizations.of(context)!.uds_cancle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -527,74 +552,100 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             textDirection: Localizations.localeOf(context).languageCode == 'en'
                 ? TextDirection.ltr
                 : TextDirection.rtl,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${AppLocalizations.of(context)!.uds_question_part_1} "${widget.user['user']['username']}" ${AppLocalizations.of(context)!.uds_question_part_2}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                ),
-                SizedBox(height: 12),
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: levelColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: levelColor.withValues(alpha: 0.3),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 520),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${AppLocalizations.of(context)!.uds_question_part_1} "${widget.user['user']['username']}" ${AppLocalizations.of(context)!.uds_question_part_2}',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                  ),
+                  SizedBox(height: 12),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: levelColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: levelColor.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.admin_panel_settings,
+                          color: levelColor,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          '${AppLocalizations.of(context)!.uds_new_level} $levelName',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: levelColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.admin_panel_settings,
-                        color: levelColor,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        '${AppLocalizations.of(context)!.uds_new_level} $levelName',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: levelColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    AppLocalizations.of(context)!.uds_no,
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppLocalizations.of(context)!.uds_no,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    editUserLevel(newLevel);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: levelColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      editUserLevel(newLevel);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: levelColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      minimumSize: Size(0, 44),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
                     ),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context)!.uds_yes,
-                    style: TextStyle(color: Colors.white),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppLocalizations.of(context)!.uds_yes,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -700,13 +751,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     children: [
                       // Compact User Profile Header
                       Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
                         padding: EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 16,
+                          vertical: 13,
                         ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
