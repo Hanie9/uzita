@@ -15,6 +15,7 @@ import 'package:uzita/services.dart';
 import 'package:uzita/screens/user_register_screen.dart';
 import 'package:uzita/screens/admin_register_screen.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -390,18 +391,78 @@ class _LoginScreenState extends State<LoginScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
     final theme = Theme.of(context);
+    final ui = UiScale(context);
 
-    final double horizontalPadding = (screenWidth * 0.06).clamp(12.0, 24.0);
-    final double logoHeight = (screenHeight * 0.22).clamp(120.0, 220.0);
-    final double svgHeight = (logoHeight * 1.2).clamp(140.0, 300.0);
-    final double svgWidth = (screenWidth * 0.9).clamp(240.0, 520.0);
-    final double spacingAfterLogo = (screenHeight * 0.02).clamp(12.0, 24.0);
-    final double fieldHeight = (screenHeight * 0.06).clamp(44.0, 56.0);
-    final double fieldFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
-    final double hintFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
-    final double buttonHeight = fieldHeight * 0.9;
-    final double buttonFontSize = (screenWidth * 0.085).clamp(28.0, 40.0);
-    final double fingerprintSize = (screenWidth * 0.18).clamp(56.0, 88.0);
+    // Adaptive sizing based on screen size
+    final double horizontalPadding = ui.scale(
+      base: screenWidth * 0.06,
+      min: 12.0,
+      max: 24.0,
+    );
+    final double logoHeight = ui.scale(
+      base: screenHeight * 0.22,
+      min: 100.0,
+      max: 200.0,
+    );
+    final double svgHeight = ui.scale(
+      base: logoHeight * 1.2,
+      min: 120.0,
+      max: 280.0,
+    );
+    final double svgWidth = ui.scale(
+      base: screenWidth * 0.9,
+      min: 220.0,
+      max: 480.0,
+    );
+
+    // Adaptive spacing that gets tighter on small screens
+    final double spacingAfterLogo = ui.scale(
+      base: screenHeight * 0.02,
+      min: 8.0,
+      max: 20.0,
+    );
+    final double fieldFontSize = ui.scale(
+      base: screenWidth * 0.035,
+      min: 12.0,
+      max: 16.0,
+    );
+    final double hintFontSize = ui.scale(
+      base: screenWidth * 0.04,
+      min: 13.0,
+      max: 17.0,
+    );
+    final double buttonHeight = ui.scale(
+      base: screenHeight * 0.065, // More appropriate base height
+      min: 44.0, // Minimum touch target size
+      max: 56.0, // Maximum height for large screens
+    );
+    final double buttonFontSize = ui.scale(
+      base: screenWidth * 0.05, // Reduced font size
+      min: 16.0, // Smaller minimum size
+      max: 24.0, // Smaller maximum size
+    );
+    final double fingerprintSize = ui.scale(
+      base: screenWidth * 0.18,
+      min: 48.0,
+      max: 80.0,
+    );
+
+    // Adaptive spacing between elements
+    final double smallSpacing = ui.scale(
+      base: screenHeight * 0.015,
+      min: 6.0,
+      max: 16.0,
+    );
+    final double mediumSpacing = ui.scale(
+      base: screenHeight * 0.02,
+      min: 8.0,
+      max: 20.0,
+    );
+    final double largeSpacing = ui.scale(
+      base: screenHeight * 0.03,
+      min: 12.0,
+      max: 24.0,
+    );
 
     // Handle optional prefill from splash biometric flow
     final routeArgs = ModalRoute.of(context)?.settings.arguments;
@@ -574,9 +635,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
-                          SizedBox(
-                            height: screenHeight * 0.015,
-                          ), // 1.5% of screen height
+                          SizedBox(height: smallSpacing),
                           // Password field
                           TextField(
                             controller: passwordController,
@@ -630,21 +689,39 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
-                          SizedBox(
-                            height: screenHeight * 0.03,
-                          ), // 3% of screen height
+                          SizedBox(height: largeSpacing),
                           // Login button
                           Container(
+                            margin: EdgeInsets.symmetric(
+                              horizontal: ui.scale(
+                                base: 4.0,
+                                min: 2.0,
+                                max: 8.0,
+                              ),
+                            ),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 15.0, min: 12.0, max: 20.0),
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppColors.lapisLazuli.withValues(
                                     alpha: 0.5,
                                   ),
-                                  spreadRadius: 2,
-                                  blurRadius: 20,
-                                  offset: Offset(0, 5),
+                                  spreadRadius: ui.scale(
+                                    base: 2.0,
+                                    min: 1.0,
+                                    max: 3.0,
+                                  ),
+                                  blurRadius: ui.scale(
+                                    base: 20.0,
+                                    min: 15.0,
+                                    max: 25.0,
+                                  ),
+                                  offset: Offset(
+                                    0,
+                                    ui.scale(base: 5.0, min: 3.0, max: 8.0),
+                                  ),
                                 ),
                               ],
                             ),
@@ -659,21 +736,51 @@ class _LoginScreenState extends State<LoginScreen> {
                                     backgroundColor: AppColors.lapisLazuli,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(
+                                        ui.scale(
+                                          base: 8.0,
+                                          min: 6.0,
+                                          max: 12.0,
+                                        ),
+                                      ),
                                     ),
-                                    elevation: 1,
+                                    elevation: ui.scale(
+                                      base: 1.0,
+                                      min: 0.5,
+                                      max: 2.0,
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: ui.scale(
+                                        base: 16.0,
+                                        min: 12.0,
+                                        max: 24.0,
+                                      ),
+                                      vertical: ui.scale(
+                                        base: 8.0,
+                                        min: 6.0,
+                                        max: 12.0,
+                                      ),
+                                    ),
                                   ),
                                   child: loading
                                       ? SizedBox(
-                                          height:
-                                              screenHeight *
-                                              0.022, // 2.2% of screen height
-                                          width:
-                                              screenHeight *
-                                              0.022, // 2.2% of screen height
+                                          height: ui.scale(
+                                            base: screenHeight * 0.022,
+                                            min: 16.0,
+                                            max: 24.0,
+                                          ),
+                                          width: ui.scale(
+                                            base: screenHeight * 0.022,
+                                            min: 16.0,
+                                            max: 24.0,
+                                          ),
                                           child: CircularProgressIndicator(
                                             color: Colors.white,
-                                            strokeWidth: 2,
+                                            strokeWidth: ui.scale(
+                                              base: 2.0,
+                                              min: 1.5,
+                                              max: 3.0,
+                                            ),
                                           ),
                                         )
                                       : FittedBox(
@@ -682,10 +789,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                             AppLocalizations.of(context)!.login,
                                             style: TextStyle(
                                               fontSize: buttonFontSize,
-                                              fontWeight: FontWeight.w500,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: ui.scale(
+                                                base: 0.5,
+                                                min: 0.3,
+                                                max: 1.0,
+                                              ),
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
                                           ),
                                         ),
                                 ),
@@ -693,9 +806,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
 
-                          SizedBox(
-                            height: screenHeight * 0.02,
-                          ), // 2.5% of screen height
+                          SizedBox(height: mediumSpacing),
                           // Remember me checkbox
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -752,9 +863,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
 
-                          SizedBox(
-                            height: screenHeight * 0.02,
-                          ), // 3.5% of screen height
+                          SizedBox(height: mediumSpacing),
                           if (authAvailable)
                             Column(
                               children: [
@@ -980,8 +1089,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                         Brightness.dark
                                                     ? Colors.white
                                                     : Colors.black,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: ui.scale(
+                                                  base: screenWidth * 0.045,
+                                                  min: 18.0,
+                                                  max: 28.0,
+                                                ),
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
@@ -1070,8 +1183,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                         Brightness.dark
                                                     ? Colors.white
                                                     : Colors.black,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: ui.scale(
+                                                  base: screenWidth * 0.045,
+                                                  min: 18.0,
+                                                  max: 28.0,
+                                                ),
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),

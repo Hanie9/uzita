@@ -22,16 +22,83 @@ Widget buildRegisterForm({
       final screenWidth = MediaQuery.of(context).size.width;
       final ui = UiScale(context);
 
-      final double horizontalPadding = (screenWidth * 0.06).clamp(12.0, 24.0);
-      final double logoHeight = (screenHeight * 0.22).clamp(120.0, 220.0);
-      final double svgHeight = (logoHeight * 1.2).clamp(140.0, 300.0);
-      final double svgWidth = (screenWidth * 0.9).clamp(240.0, 520.0);
-      final double spacingAfterLogo = (screenHeight * 0.02).clamp(12.0, 24.0);
-      final double fieldHeight = (screenHeight * 0.06).clamp(44.0, 56.0);
-      final double fieldFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
-      final double hintFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
-      final double buttonHeight = fieldHeight;
-      final double buttonFontSize = (screenWidth * 0.05).clamp(15.0, 18.0);
+      // Adaptive sizing based on screen size - more aggressive for small screens
+      final double horizontalPadding = ui.scale(
+        base: screenWidth * 0.06,
+        min: 10.0,
+        max: 24.0,
+      );
+
+      // Logo sizing to match login page
+      final double logoHeight = ui.scale(
+        base: screenHeight * 0.22, // Same as login page
+        min: 100.0, // Same as login page
+        max: 200.0, // Same as login page
+      );
+      final double svgHeight = ui.scale(
+        base: logoHeight * 1.2, // Same as login page
+        min: 120.0, // Same as login page
+        max: 280.0, // Same as login page
+      );
+      final double svgWidth = ui.scale(
+        base: screenWidth * 0.9, // Same as login page
+        min: 220.0, // Same as login page
+        max: 480.0, // Same as login page
+      );
+
+      // Adaptive spacing that gets tighter on small screens
+      final double spacingAfterLogo = ui.scale(
+        base: screenHeight * 0.02, // Same as login page
+        min: 8.0, // Same as login page
+        max: 20.0, // Same as login page
+      );
+      final double fieldHeight = ui.scale(
+        base: screenHeight * 0.055, // Reduced from 0.06
+        min: 36.0, // Reduced from 40.0
+        max: 48.0, // Reduced from 52.0
+      );
+      final double fieldFontSize = ui.scale(
+        base: screenWidth * 0.035,
+        min: 12.0,
+        max: 16.0,
+      );
+      final double hintFontSize = ui.scale(
+        base: screenWidth * 0.04,
+        min: 13.0,
+        max: 17.0,
+      );
+      final double buttonHeight = ui.scale(
+        base: fieldHeight,
+        min: 40.0,
+        max: 52.0,
+      );
+      final double buttonFontSize = ui.scale(
+        base: screenWidth * 0.05,
+        min: 14.0,
+        max: 18.0,
+      );
+
+      // Adaptive spacing between elements - ultra-tight for small screens
+      final double smallSpacing = ui.scale(
+        base: screenHeight * 0.012, // Reduced from 0.015
+        min: 3.0, // Reduced from 6.0
+        max: 12.0, // Reduced from 16.0
+      );
+      final double mediumSpacing = ui.scale(
+        base: screenHeight * 0.016, // Reduced from 0.02
+        min: 4.0, // Reduced from 8.0
+        max: 16.0, // Reduced from 20.0
+      );
+      final double largeSpacing = ui.scale(
+        base: screenHeight * 0.025, // Reduced from 0.03
+        min: 6.0, // Reduced from 12.0
+        max: 20.0, // Reduced from 24.0
+      );
+      final double extraLargeSpacing = ui.scale(
+        base: screenHeight * 0.03, // Reduced from 0.035
+        min: 8.0, // Reduced from 14.0
+        max: 24.0, // Reduced from 28.0
+      );
       // final double fingerprintSize = (screenWidth * 0.18).clamp(56.0, 88.0);
 
       return Directionality(
@@ -47,7 +114,11 @@ Widget buildRegisterForm({
                     padding: EdgeInsets.only(
                       left: horizontalPadding,
                       right: horizontalPadding,
-                      bottom: screenHeight * 0.06,
+                      bottom: ui.scale(
+                        base: screenHeight * 0.04, // Reduced from 0.06
+                        min: 16.0,
+                        max: 32.0,
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -78,7 +149,7 @@ Widget buildRegisterForm({
 
                                 // Main branding section
                                 SizedBox(
-                                  height: logoHeight + 20,
+                                  height: logoHeight + 20, // Same as login page
                                   child: Stack(
                                     alignment: Alignment.center,
                                     children: [
@@ -151,8 +222,18 @@ Widget buildRegisterForm({
                                 // Registration type indicator
                                 Container(
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.04,
-                                    vertical: screenHeight * 0.01,
+                                    horizontal: ui.scale(
+                                      base: screenWidth * 0.04,
+                                      min: 8.0,
+                                      max: 16.0,
+                                    ),
+                                    vertical: ui.scale(
+                                      base:
+                                          screenHeight *
+                                          0.008, // Reduced from 0.01
+                                      min: 2.0,
+                                      max: 8.0,
+                                    ),
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppColors.bronzeGold.withValues(
@@ -176,32 +257,38 @@ Widget buildRegisterForm({
                                                 context,
                                               )!.reg_user_register,
                                         style: TextStyle(
-                                          fontSize:
-                                              screenWidth *
-                                              0.035, // 3.5% of screen width
+                                          fontSize: ui.scale(
+                                            base: screenWidth * 0.035,
+                                            min: 12.0,
+                                            max: 16.0,
+                                          ),
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black,
                                         ),
                                       ),
                                       SizedBox(
-                                        width: screenWidth * 0.02,
-                                      ), // 2% of screen width
+                                        width: ui.scale(
+                                          base: screenWidth * 0.02,
+                                          min: 4.0,
+                                          max: 12.0,
+                                        ),
+                                      ),
                                       Icon(
                                         isAdmin
                                             ? Icons.admin_panel_settings
                                             : Icons.person_add,
-                                        size:
-                                            screenHeight *
-                                            0.025, // 2.5% of screen height
+                                        size: ui.scale(
+                                          base: screenHeight * 0.025,
+                                          min: 16.0,
+                                          max: 22.0,
+                                        ),
                                         color: AppColors.black,
                                       ),
                                     ],
                                   ),
                                 ),
 
-                                SizedBox(
-                                  height: screenHeight * 0.035,
-                                ), // 3.5% of screen height
+                                SizedBox(height: extraLargeSpacing),
                                 // Phone field
                                 TextField(
                                   controller: controllers['phone'],
@@ -258,13 +345,15 @@ Widget buildRegisterForm({
                                                 ),
                                           BlendMode.srcIn,
                                         ),
-                                        width: (screenHeight * 0.05).clamp(
-                                          22.0,
-                                          32.0,
+                                        width: ui.scale(
+                                          base: screenHeight * 0.05,
+                                          min: 20.0,
+                                          max: 30.0,
                                         ),
-                                        height: (screenHeight * 0.05).clamp(
-                                          22.0,
-                                          32.0,
+                                        height: ui.scale(
+                                          base: screenHeight * 0.05,
+                                          min: 20.0,
+                                          max: 30.0,
                                         ),
                                       ),
                                     ),
@@ -285,8 +374,16 @@ Widget buildRegisterForm({
                                 if (controllers['phone']!.text.isNotEmpty)
                                   Padding(
                                     padding: EdgeInsets.only(
-                                      top: screenHeight * 0.01,
-                                      right: screenWidth * 0.04,
+                                      top: ui.scale(
+                                        base: screenHeight * 0.01,
+                                        min: 4.0,
+                                        max: 8.0,
+                                      ),
+                                      right: ui.scale(
+                                        base: screenWidth * 0.04,
+                                        min: 8.0,
+                                        max: 16.0,
+                                      ),
                                     ),
                                     child: Text(
                                       '${AppLocalizations.of(context)!.reg_phone_98} ${AppLocalizations.of(context)!.reg_phone_completely} ${controllers['phone']!.text}',
@@ -296,9 +393,11 @@ Widget buildRegisterForm({
                                                 10
                                             ? Colors.green
                                             : Colors.orange,
-                                        fontSize:
-                                            screenWidth *
-                                            0.03, // 3% of screen width
+                                        fontSize: ui.scale(
+                                          base: screenWidth * 0.03,
+                                          min: 10.0,
+                                          max: 14.0,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -306,8 +405,16 @@ Widget buildRegisterForm({
                                 if (phoneError.isNotEmpty)
                                   Padding(
                                     padding: EdgeInsets.only(
-                                      top: screenHeight * 0.01,
-                                      right: screenWidth * 0.04,
+                                      top: ui.scale(
+                                        base: screenHeight * 0.01,
+                                        min: 4.0,
+                                        max: 8.0,
+                                      ),
+                                      right: ui.scale(
+                                        base: screenWidth * 0.04,
+                                        min: 8.0,
+                                        max: 16.0,
+                                      ),
                                     ),
                                     child: Text(
                                       phoneError,
@@ -317,16 +424,16 @@ Widget buildRegisterForm({
                                                 Brightness.dark
                                             ? Colors.red[300]
                                             : Colors.red,
-                                        fontSize:
-                                            screenWidth *
-                                            0.03, // 3% of screen width
+                                        fontSize: ui.scale(
+                                          base: screenWidth * 0.03,
+                                          min: 10.0,
+                                          max: 14.0,
+                                        ),
                                       ),
                                     ),
                                   ),
 
-                                SizedBox(
-                                  height: screenHeight * 0.015,
-                                ), // 1.5% of screen height
+                                SizedBox(height: smallSpacing),
                                 // Username field
                                 TextField(
                                   controller: controllers['username'],
@@ -370,13 +477,15 @@ Widget buildRegisterForm({
                                                 ),
                                           BlendMode.srcIn,
                                         ),
-                                        width: (screenHeight * 0.03).clamp(
-                                          18.0,
-                                          26.0,
+                                        width: ui.scale(
+                                          base: screenHeight * 0.03,
+                                          min: 16.0,
+                                          max: 24.0,
                                         ),
-                                        height: (screenHeight * 0.03).clamp(
-                                          18.0,
-                                          26.0,
+                                        height: ui.scale(
+                                          base: screenHeight * 0.03,
+                                          min: 16.0,
+                                          max: 24.0,
                                         ),
                                       ),
                                     ),
@@ -394,9 +503,7 @@ Widget buildRegisterForm({
                                   ),
                                 ),
 
-                                SizedBox(
-                                  height: screenHeight * 0.015,
-                                ), // 1.5% of screen height
+                                SizedBox(height: smallSpacing),
                                 // Password field
                                 TextField(
                                   controller: controllers['password'],
@@ -441,13 +548,15 @@ Widget buildRegisterForm({
                                                 ),
                                           BlendMode.srcIn,
                                         ),
-                                        width: (screenHeight * 0.035).clamp(
-                                          18.0,
-                                          28.0,
+                                        width: ui.scale(
+                                          base: screenHeight * 0.035,
+                                          min: 16.0,
+                                          max: 26.0,
                                         ),
-                                        height: (screenHeight * 0.035).clamp(
-                                          18.0,
-                                          28.0,
+                                        height: ui.scale(
+                                          base: screenHeight * 0.035,
+                                          min: 16.0,
+                                          max: 26.0,
                                         ),
                                       ),
                                     ),
@@ -465,9 +574,7 @@ Widget buildRegisterForm({
                                   ),
                                 ),
 
-                                SizedBox(
-                                  height: screenHeight * 0.015,
-                                ), // 1.5% of screen height
+                                SizedBox(height: smallSpacing),
                                 // Organization code field
                                 TextField(
                                   controller: controllers['organ_code'],
@@ -517,13 +624,15 @@ Widget buildRegisterForm({
                                                 ),
                                           BlendMode.srcIn,
                                         ),
-                                        width: (screenHeight * 0.03).clamp(
-                                          18.0,
-                                          26.0,
+                                        width: ui.scale(
+                                          base: screenHeight * 0.03,
+                                          min: 16.0,
+                                          max: 24.0,
                                         ),
-                                        height: (screenHeight * 0.03).clamp(
-                                          18.0,
-                                          26.0,
+                                        height: ui.scale(
+                                          base: screenHeight * 0.03,
+                                          min: 16.0,
+                                          max: 24.0,
                                         ),
                                       ),
                                     ),
@@ -541,9 +650,7 @@ Widget buildRegisterForm({
                                   ),
                                 ),
 
-                                SizedBox(
-                                  height: screenHeight * 0.03,
-                                ), // 3% of screen height
+                                SizedBox(height: largeSpacing),
                                 // Submit button
                                 Container(
                                   decoration: BoxDecoration(
@@ -586,12 +693,16 @@ Widget buildRegisterForm({
                                         ),
                                         child: loading
                                             ? SizedBox(
-                                                height:
-                                                    screenHeight *
-                                                    0.022, // 2.2% of screen height
-                                                width:
-                                                    screenHeight *
-                                                    0.022, // 2.2% of screen height
+                                                height: ui.scale(
+                                                  base: screenHeight * 0.022,
+                                                  min: 16.0,
+                                                  max: 24.0,
+                                                ),
+                                                width: ui.scale(
+                                                  base: screenHeight * 0.022,
+                                                  min: 16.0,
+                                                  max: 24.0,
+                                                ),
                                                 child:
                                                     CircularProgressIndicator(
                                                       color: Colors.white,
@@ -618,9 +729,7 @@ Widget buildRegisterForm({
                                   ),
                                 ),
 
-                                SizedBox(
-                                  height: screenHeight * 0.025,
-                                ), // 2.5% of screen height
+                                SizedBox(height: mediumSpacing),
                                 // Error display
                                 if (error.isNotEmpty) ...[
                                   Container(
@@ -681,9 +790,7 @@ Widget buildRegisterForm({
                                       ],
                                     ),
                                   ),
-                                  SizedBox(
-                                    height: screenHeight * 0.025,
-                                  ), // 2.5% of screen height
+                                  SizedBox(height: mediumSpacing),
                                 ],
 
                                 // Note text
@@ -697,16 +804,22 @@ Widget buildRegisterForm({
                                         )!.reg_attention_org,
                                   style: TextStyle(
                                     color: Colors.grey[600],
-                                    fontSize:
-                                        screenWidth *
-                                        0.03, // 3% of screen width
+                                    fontSize: ui.scale(
+                                      base: screenWidth * 0.03,
+                                      min: 10.0,
+                                      max: 14.0,
+                                    ),
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
 
                                 SizedBox(
-                                  height: screenHeight * 0.007,
-                                ), // Space before login text
+                                  height: ui.scale(
+                                    base: screenHeight * 0.007,
+                                    min: 4.0,
+                                    max: 8.0,
+                                  ),
+                                ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -731,12 +844,22 @@ Widget buildRegisterForm({
                                           )!.reg_login,
                                           style: TextStyle(
                                             color: AppColors.lapisLazuli,
-                                            fontSize: screenWidth * 0.035,
+                                            fontSize: ui.scale(
+                                              base: screenWidth * 0.035,
+                                              min: 12.0,
+                                              max: 16.0,
+                                            ),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ),
-                                      SizedBox(width: screenWidth * 0.01),
+                                      SizedBox(
+                                        width: ui.scale(
+                                          base: screenWidth * 0.01,
+                                          min: 2.0,
+                                          max: 8.0,
+                                        ),
+                                      ),
                                       Text(
                                         AppLocalizations.of(
                                           context,
@@ -747,7 +870,11 @@ Widget buildRegisterForm({
                                                   Brightness.dark
                                               ? Colors.grey[400]
                                               : Colors.grey[600],
-                                          fontSize: screenWidth * 0.035,
+                                          fontSize: ui.scale(
+                                            base: screenWidth * 0.035,
+                                            min: 12.0,
+                                            max: 16.0,
+                                          ),
                                         ),
                                       ),
                                     ] else ...[
@@ -761,10 +888,20 @@ Widget buildRegisterForm({
                                                   Brightness.dark
                                               ? Colors.grey[400]
                                               : Colors.grey[600],
-                                          fontSize: screenWidth * 0.035,
+                                          fontSize: ui.scale(
+                                            base: screenWidth * 0.035,
+                                            min: 12.0,
+                                            max: 16.0,
+                                          ),
                                         ),
                                       ),
-                                      SizedBox(width: screenWidth * 0.01),
+                                      SizedBox(
+                                        width: ui.scale(
+                                          base: screenWidth * 0.01,
+                                          min: 2.0,
+                                          max: 8.0,
+                                        ),
+                                      ),
                                       GestureDetector(
                                         onTap: () {
                                           Navigator.pushAndRemoveUntil(
@@ -782,7 +919,11 @@ Widget buildRegisterForm({
                                           )!.reg_login,
                                           style: TextStyle(
                                             color: AppColors.lapisLazuli,
-                                            fontSize: screenWidth * 0.035,
+                                            fontSize: ui.scale(
+                                              base: screenWidth * 0.035,
+                                              min: 12.0,
+                                              max: 16.0,
+                                            ),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -790,9 +931,7 @@ Widget buildRegisterForm({
                                     ],
                                   ],
                                 ),
-                                SizedBox(
-                                  height: screenHeight * 0.03,
-                                ), // Bottom padding
+                                SizedBox(height: largeSpacing),
                               ],
                             ),
                           ],
