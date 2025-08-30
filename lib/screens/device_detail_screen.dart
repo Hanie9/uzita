@@ -346,19 +346,16 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                       textDirection: Directionality.of(context),
                     ),
                     SizedBox(width: ui.scale(base: 8, min: 6, max: 12)),
-                    Expanded(
-                      child: Text(
-                        serialNumber,
-                        style: TextStyle(
-                          fontSize: ui.scale(base: 15, min: 13, max: 17),
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textDirection: Directionality.of(context),
-                        textAlign: TextAlign.right,
+                    Text(
+                      serialNumber,
+                      style: TextStyle(
+                        fontSize: ui.scale(base: 15, min: 13, max: 17),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: Directionality.of(context),
                     ),
                   ],
                 ),
@@ -385,19 +382,16 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                       textDirection: Directionality.of(context),
                     ),
                     SizedBox(width: ui.scale(base: 8, min: 6, max: 12)),
-                    Expanded(
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: ui.scale(base: 15, min: 13, max: 17),
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textDirection: Directionality.of(context),
-                        textAlign: TextAlign.right,
+                    Text(
+                      status,
+                      style: TextStyle(
+                        fontSize: ui.scale(base: 15, min: 13, max: 17),
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: Directionality.of(context),
                     ),
                   ],
                 ),

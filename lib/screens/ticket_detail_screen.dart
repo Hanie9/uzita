@@ -285,8 +285,16 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 
   Widget _buildTicketDetails() {
+    final ui = UiScale(context);
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 +
+            MediaQuery.of(context).padding.bottom +
+            ui.scale(base: 20, min: 16, max: 32),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
