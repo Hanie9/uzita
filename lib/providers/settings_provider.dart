@@ -16,6 +16,9 @@ class SettingsProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   ThemeData get currentTheme {
+    print(
+      'DEBUG: [SettingsProvider] Generating theme - Dark mode: $_darkModeEnabled',
+    );
     final ThemeData baseTheme = _darkModeEnabled ? darkTheme : lightTheme;
     final bool isFarsi = _selectedLanguage != 'en';
 
@@ -246,6 +249,14 @@ class SettingsProvider with ChangeNotifier {
     print('DEBUG: [SettingsProvider] Using language: $_selectedLanguage');
 
     _textSize = prefs.getDouble('textSize') ?? _textSize;
+
+    // Debug: Print all loaded values
+    print('DEBUG: [SettingsProvider] Loaded values:');
+    print('  - Dark Mode: $_darkModeEnabled');
+    print('  - Notifications: $_notificationsEnabled');
+    print('  - Text Size: $_textSize');
+    print('  - Language: $_selectedLanguage');
+
     // Preload web fonts so PWA renders with correct typography from first frame.
     await _preloadFontsForSelectedLanguage();
     _isLoading = false;
@@ -270,13 +281,21 @@ class SettingsProvider with ChangeNotifier {
   }
 
   Future<void> setDarkMode(bool value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('dark_mode_enabled', value);
-      _darkModeEnabled = value;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error setting dark mode: $e');
+    if (value != _darkModeEnabled) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('darkModeEnabled', value);
+
+        // Update the dark mode without triggering a full rebuild
+        _darkModeEnabled = value;
+
+        // Only notify listeners after the SharedPreferences update is complete
+        notifyListeners();
+
+        print('DEBUG: [SettingsProvider] Dark mode set to: $value');
+      } catch (e) {
+        debugPrint('Error setting dark mode: $e');
+      }
     }
   }
 
@@ -316,24 +335,40 @@ class SettingsProvider with ChangeNotifier {
   // }
 
   Future<void> setTextSize(double value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble('text_size', value);
-      _textSize = value;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error setting text size: $e');
+    if (value != _textSize) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setDouble('textSize', value);
+
+        // Update the text size without triggering a full rebuild
+        _textSize = value;
+
+        // Only notify listeners after the SharedPreferences update is complete
+        notifyListeners();
+
+        print('DEBUG: [SettingsProvider] Text size set to: $value');
+      } catch (e) {
+        debugPrint('Error setting text size: $e');
+      }
     }
   }
 
   Future<void> setNotifications(bool value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('notifications_enabled', value);
-      _notificationsEnabled = value;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error setting notifications: $e');
+    if (value != _notificationsEnabled) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('notificationsEnabled', value);
+
+        // Update the notifications without triggering a full rebuild
+        _notificationsEnabled = value;
+
+        // Only notify listeners after the SharedPreferences update is complete
+        notifyListeners();
+
+        print('DEBUG: [SettingsProvider] Notifications set to: $value');
+      } catch (e) {
+        debugPrint('Error setting notifications: $e');
+      }
     }
   }
 }
