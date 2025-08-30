@@ -332,7 +332,15 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                       onRefresh: fetchServices,
                       color: AppColors.lapisLazuli,
                       child: ListView.builder(
-                        padding: EdgeInsets.all(kSpacing),
+                        padding: EdgeInsets.only(
+                          left: kSpacing,
+                          right: kSpacing,
+                          top: kSpacing,
+                          bottom:
+                              kSpacing +
+                              MediaQuery.of(context).padding.bottom +
+                              20,
+                        ),
                         itemCount: services.length,
                         itemBuilder: (context, index) {
                           final service = services[index];
@@ -653,51 +661,56 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: EdgeInsets.all(kSpacing),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.lapisLazuli.withValues(alpha: 0.15),
-                  AppColors.lapisLazuli.withValues(alpha: 0.08),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom + 40,
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(kSpacing),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.lapisLazuli.withValues(alpha: 0.15),
+                    AppColors.lapisLazuli.withValues(alpha: 0.08),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                  width: 2,
+                ),
               ),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.lapisLazuli.withValues(alpha: 0.2),
-                width: 2,
+              child: Icon(
+                Icons.build_circle_outlined,
+                size: kIconSize * 2,
+                color: AppColors.lapisLazuli,
               ),
             ),
-            child: Icon(
-              Icons.build_circle_outlined,
-              size: kIconSize * 2,
-              color: AppColors.lapisLazuli,
+            SizedBox(height: kSpacing),
+            Text(
+              AppLocalizations.of(context)!.sls_no_request,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.lapisLazuli,
+              ),
             ),
-          ),
-          SizedBox(height: kSpacing),
-          Text(
-            AppLocalizations.of(context)!.sls_no_request,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.lapisLazuli,
+            SizedBox(height: 8),
+            Text(
+              AppLocalizations.of(context)!.sls_no_request_description,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context)!.sls_no_request_description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
