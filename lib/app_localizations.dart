@@ -516,7 +516,7 @@ class AppLocalizations {
       'cls_contact_admin':
           'Please contact the system administrator via phone or email.',
       'cls_contact_admin_button': 'Contact system administrator',
-      'cls_command_code': 'Command code:',
+      'cls_command_code': 'Command code',
       'cls_date': 'Date:',
 
       // Profile Screen (pro_)
@@ -1365,7 +1365,7 @@ class AppLocalizations {
       'cls_contact_admin':
           'لطفاً از طریق تلفن یا ایمیل با مدیر سیستم تماس بگیرید.',
       'cls_contact_admin_button': 'تماس با مدیر سیستم',
-      'cls_command_code': 'کد فرمان:',
+      'cls_command_code': 'کد فرمان',
       'cls_date': 'تاریخ:',
 
       // Profile Screen (pro_)
@@ -1810,10 +1810,10 @@ class AppLocalizations {
 
   // Settings Screen getters (set_*)
   String get set_title {
-    print('DEBUG: set_title getter called, locale: ${effectiveLanguageCode}');
+    print('DEBUG: set_title getter called, locale: $effectiveLanguageCode');
     final localeData = _localizedValues[effectiveLanguageCode];
     if (localeData == null) {
-      print('DEBUG: ERROR - No data for locale: ${effectiveLanguageCode}');
+      print('DEBUG: ERROR - No data for locale: $effectiveLanguageCode');
       print('DEBUG: Available locales: ${_localizedValues.keys.toList()}');
       return 'Settings'; // Fallback
     }
@@ -1821,14 +1821,14 @@ class AppLocalizations {
     final value = localeData['set_title'];
     if (value == null) {
       print(
-        'DEBUG: ERROR - No set_title key for locale: ${effectiveLanguageCode}',
+        'DEBUG: ERROR - No set_title key for locale: $effectiveLanguageCode',
       );
       print('DEBUG: Available keys: ${localeData.keys.toList()}');
       return 'Settings'; // Fallback
     }
 
     print(
-      'DEBUG: set_title called, locale: ${effectiveLanguageCode}, value: $value',
+      'DEBUG: set_title called, locale: $effectiveLanguageCode, value: $value',
     );
     return value;
   }

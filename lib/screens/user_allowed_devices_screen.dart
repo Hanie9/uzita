@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/main.dart';
 import 'package:uzita/services.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class UserAllowedDevicesScreen extends StatefulWidget {
   final Map user;
@@ -157,6 +158,7 @@ class _UserAllowedDevicesScreenState extends State<UserAllowedDevicesScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
+    final ui = UiScale(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -166,7 +168,9 @@ class _UserAllowedDevicesScreenState extends State<UserAllowedDevicesScreen> {
           color: theme.appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -192,8 +196,16 @@ class _UserAllowedDevicesScreenState extends State<UserAllowedDevicesScreen> {
                     children: [
                       Image.asset(
                         'assets/logouzita.png',
-                        height: screenHeight * 0.08,
-                        width: screenHeight * 0.08,
+                        height: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
+                        width: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
                       ),
                     ],
                   ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/main.dart';
 import 'package:uzita/services.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class AddUserScreen extends StatefulWidget {
   const AddUserScreen({super.key});
@@ -49,14 +50,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ui = UiScale(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.adduser_title),
         actions: [
-          // Uzita logo in app bar
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Image.asset('assets/logouzita.png', height: 32),
+            padding: EdgeInsets.symmetric(
+              horizontal: ui.scale(base: 16, min: 12, max: 20),
+            ),
+            child: Image.asset(
+              'assets/logouzita.png',
+              height: ui.scale(base: 32, min: 24, max: 40),
+            ),
           ),
           IconButton(
             onPressed: () => setState(() {}),
@@ -67,26 +73,32 @@ class _AddUserScreenState extends State<AddUserScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            16 + MediaQuery.of(context).padding.bottom,
+            ui.scale(base: 16, min: 12, max: 20),
+            ui.scale(base: 16, min: 12, max: 20),
+            ui.scale(base: 16, min: 12, max: 20),
+            ui.scale(base: 16, min: 12, max: 20) +
+                MediaQuery.of(context).padding.bottom,
           ),
           child: Card(
             elevation: 8,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(
+                ui.scale(base: 16, min: 12, max: 20),
+              ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(24),
+              padding: EdgeInsets.all(ui.scale(base: 24, min: 16, max: 28)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     AppLocalizations.of(context)!.adduser_new_info,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: ui.scale(base: 20, min: 16, max: 22),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  SizedBox(height: 24),
+                  SizedBox(height: ui.scale(base: 24, min: 16, max: 28)),
                   TextField(
                     controller: usernameController,
                     decoration: InputDecoration(
@@ -95,7 +107,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
                   TextField(
                     controller: passwordController,
                     obscureText: true,
@@ -105,7 +117,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
                   TextField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
@@ -115,7 +127,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
                   TextField(
                     controller: codeController,
                     keyboardType: TextInputType.number,
@@ -125,7 +137,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  SizedBox(height: 12),
+                  SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(
@@ -133,8 +145,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       )!.adduser_level_access,
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
+                        horizontal: ui.scale(base: 12, min: 10, max: 16),
+                        vertical: ui.scale(base: 4, min: 3, max: 6),
                       ),
                     ),
                     child: DropdownButtonHideUnderline(
@@ -155,12 +167,14 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: ui.scale(base: 20, min: 14, max: 26)),
                   ElevatedButton.icon(
                     icon: Icon(Icons.person_add),
                     label: Text(AppLocalizations.of(context)!.adduser_submit),
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(
+                        vertical: ui.scale(base: 14, min: 12, max: 16),
+                      ),
                     ),
                     onPressed: addUser,
                   ),

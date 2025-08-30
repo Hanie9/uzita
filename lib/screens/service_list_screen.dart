@@ -8,6 +8,7 @@ import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class ServiceListScreen extends StatefulWidget {
   const ServiceListScreen({super.key});
@@ -107,6 +108,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final ui = UiScale(context);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
@@ -115,7 +117,9 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
           color: Theme.of(context).appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -144,8 +148,16 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                     children: [
                       Image.asset(
                         'assets/logouzita.png',
-                        height: screenHeight * 0.08,
-                        width: screenHeight * 0.08,
+                        height: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
+                        width: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
                       ),
                     ],
                   ),

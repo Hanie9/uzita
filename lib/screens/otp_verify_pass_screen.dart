@@ -5,6 +5,7 @@ import 'package:uzita/api_config.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 final String baseUrl2 = apiBaseUrl;
 
@@ -172,6 +173,7 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ui = UiScale(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -188,24 +190,31 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(ui.scale(base: 16, min: 12, max: 20)),
         child: Column(
           children: [
-            SizedBox(height: 30),
-            Icon(Icons.sms, size: 60, color: Color(0xFF007BA7)),
-            SizedBox(height: 20),
+            SizedBox(height: ui.scale(base: 30, min: 20, max: 36)),
+            Icon(
+              Icons.sms,
+              size: ui.scale(base: 60, min: 44, max: 72),
+              color: Color(0xFF007BA7),
+            ),
+            SizedBox(height: ui.scale(base: 20, min: 12, max: 28)),
             Text(
               AppLocalizations.of(context)!.otpverifypass_type_code,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: ui.scale(base: 16, min: 13, max: 18)),
             ),
-            SizedBox(height: 30),
+            SizedBox(height: ui.scale(base: 30, min: 20, max: 36)),
             TextField(
               controller: otpController,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
               maxLength: 6,
-              style: TextStyle(fontSize: 24, letterSpacing: 8),
+              style: TextStyle(
+                fontSize: ui.scale(base: 24, min: 18, max: 28),
+                letterSpacing: ui.scale(base: 8, min: 6, max: 10),
+              ),
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context)!.otpverifypass_otp_code,
                 hintText: '------',
@@ -219,12 +228,12 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
               ),
               onSubmitted: (_) => loading ? null : verifyOtp(),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: ui.scale(base: 20, min: 12, max: 26)),
             if (secondsLeft > 0)
               Text(
                 "${AppLocalizations.of(context)!.otpverifypass_remaining_time} ${_formatTime(secondsLeft)}",
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: ui.scale(base: 16, min: 13, max: 18),
                   color: Color(0xFF007BA7),
                   fontWeight: FontWeight.bold,
                 ),
@@ -234,10 +243,12 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
                 onPressed: loading ? null : resendOTP,
                 child: Text(
                   AppLocalizations.of(context)!.otpverifypass_resend_code,
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: ui.scale(base: 16, min: 13, max: 18),
+                  ),
                 ),
               ),
-            SizedBox(height: 30),
+            SizedBox(height: ui.scale(base: 30, min: 20, max: 36)),
             ElevatedButton(
               onPressed: loading || otpController.text.length != 6
                   ? null
@@ -245,27 +256,35 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF007BA7),
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 40, min: 28, max: 48),
+                  vertical: ui.scale(base: 15, min: 12, max: 18),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 6,
-                minimumSize: Size(double.infinity, 50),
+                minimumSize: Size(
+                  double.infinity,
+                  ui.scale(base: 50, min: 44, max: 58),
+                ),
               ),
               child: loading
                   ? CircularProgressIndicator(
                       color: Colors.white,
-                      strokeWidth: 2,
+                      strokeWidth: ui.scale(base: 2, min: 1.6, max: 2.4),
                     )
                   : Text(
                       AppLocalizations.of(context)!.otpverifypass_submit,
-                      style: TextStyle(fontSize: 18),
+                      style: TextStyle(
+                        fontSize: ui.scale(base: 18, min: 15, max: 20),
+                      ),
                     ),
             ),
             if (error.isNotEmpty) ...[
-              SizedBox(height: 20),
+              SizedBox(height: ui.scale(base: 20, min: 14, max: 26)),
               Container(
-                padding: EdgeInsets.all(12),
+                padding: EdgeInsets.all(ui.scale(base: 12, min: 10, max: 14)),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8),
@@ -273,8 +292,12 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: ui.scale(base: 20, min: 18, max: 22),
+                    ),
+                    SizedBox(width: ui.scale(base: 8, min: 6, max: 10)),
                     Expanded(
                       child: Text(
                         error,

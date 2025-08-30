@@ -6,6 +6,7 @@ import 'package:uzita/screens/otp_verify_pass_screen.dart';
 import 'package:uzita/services.dart';
 import 'dart:convert';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/ui_scale.dart';
 
 final String baseUrl2 = apiBaseUrl;
 
@@ -34,7 +35,11 @@ Widget buildPasswordChangeForm({
             color: Theme.of(context).appBarTheme.backgroundColor,
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: UiScale(
+                    context,
+                  ).scale(base: 16, min: 12, max: 20),
+                ),
                 child: Row(
                   children: [
                     // Left side - Back button and title
@@ -57,7 +62,9 @@ Widget buildPasswordChangeForm({
                                 Theme.of(context).brightness == Brightness.dark
                                 ? Colors.white
                                 : Colors.grey[800],
-                            fontSize: 18,
+                            fontSize: UiScale(
+                              context,
+                            ).scale(base: 18, min: 16, max: 20),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -71,8 +78,16 @@ Widget buildPasswordChangeForm({
                         children: [
                           Image.asset(
                             'assets/logouzita.png',
-                            height: screenHeight * 0.08,
-                            width: screenHeight * 0.08,
+                            height: UiScale(context).scale(
+                              base: screenHeight * 0.08,
+                              min: 28,
+                              max: 56,
+                            ),
+                            width: UiScale(context).scale(
+                              base: screenHeight * 0.08,
+                              min: 28,
+                              max: 56,
+                            ),
                           ),
                         ],
                       ),
@@ -98,7 +113,11 @@ Widget buildPasswordChangeForm({
                           children: [
                             // REMOVE the Row with the logo from the form body
                             SizedBox(
-                              height: logoHeight + 20,
+                              height:
+                                  logoHeight +
+                                  UiScale(
+                                    context,
+                                  ).scale(base: 20, min: 16, max: 24),
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
@@ -128,7 +147,9 @@ Widget buildPasswordChangeForm({
                                             fontSize: elarroFontSize,
                                             fontWeight: FontWeight.bold,
                                             color: AppColors.lapisLazuli,
-                                            letterSpacing: 4,
+                                            letterSpacing: UiScale(
+                                              context,
+                                            ).scale(base: 4, min: 3, max: 5),
                                             fontFamily: 'Nasalization',
                                           ),
                                         );
@@ -144,7 +165,9 @@ Widget buildPasswordChangeForm({
                                                 .clamp(22.0, 32.0)
                                                 .toDouble() *
                                             1.25) +
-                                        6,
+                                        UiScale(
+                                          context,
+                                        ).scale(base: 6, min: 4, max: 8),
                                     child: Text(
                                       'BIOKAVEH',
                                       style: TextStyle(
@@ -157,7 +180,9 @@ Widget buildPasswordChangeForm({
                                             ? Colors.white
                                             : Colors.black,
                                         fontWeight: FontWeight.w600,
-                                        letterSpacing: 2,
+                                        letterSpacing: UiScale(
+                                          context,
+                                        ).scale(base: 2, min: 1, max: 3),
                                         fontFamily: 'Nasalization',
                                       ),
                                     ),
@@ -168,126 +193,80 @@ Widget buildPasswordChangeForm({
 
                             SizedBox(height: screenHeight * 0.06),
 
-                            Container(
-                              height: screenHeight * 0.06,
-                              decoration: BoxDecoration(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey[800]
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
+                            TextField(
+                              controller: controllers['newPassword'],
+                              obscureText: true,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: screenWidth * 0.035),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(
+                                  context,
+                                )!.editpassword_new_password,
+                                hintStyle: TextStyle(
                                   color:
                                       Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.grey[600]!
-                                      : Colors.grey[300]!,
+                                      ? Colors.grey[400]
+                                      : const Color.fromARGB(255, 99, 97, 97),
+                                  fontSize: screenWidth * 0.04,
                                 ),
-                              ),
-                              child: TextField(
-                                controller: controllers['newPassword'],
-                                obscureText: true,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: screenWidth * 0.035),
-                                decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(
-                                    context,
-                                  )!.editpassword_new_password,
-                                  hintStyle: TextStyle(
+                                hintTextDirection: TextDirection.rtl,
+                                suffixIcon: Padding(
+                                  padding: EdgeInsets.all(screenWidth * 0.02),
+                                  child: Icon(
+                                    Icons.lock_outline,
                                     color:
                                         Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.grey[400]
-                                        : const Color.fromARGB(255, 99, 97, 97),
-                                    fontSize: screenWidth * 0.04,
+                                        : const Color.fromARGB(255, 80, 77, 77),
+                                    size: screenHeight * 0.035,
                                   ),
-                                  hintTextDirection: TextDirection.rtl,
-                                  suffixIcon: Padding(
-                                    padding: EdgeInsets.all(screenWidth * 0.02),
-                                    child: Icon(
-                                      Icons.lock_outline,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[400]
-                                          : const Color.fromARGB(
-                                              255,
-                                              80,
-                                              77,
-                                              77,
-                                            ),
-                                      size: screenHeight * 0.035,
-                                    ),
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.035,
-                                    vertical: screenHeight * 0.018,
-                                  ),
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.035,
+                                  vertical: screenHeight * 0.018,
                                 ),
                               ),
                             ),
 
                             SizedBox(height: screenHeight * 0.015),
 
-                            Container(
-                              height: screenHeight * 0.06,
-                              decoration: BoxDecoration(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey[800]
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
+                            TextField(
+                              controller: controllers['confirmPassword'],
+                              obscureText: true,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: screenWidth * 0.035),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(
+                                  context,
+                                )!.editpassword_confirm_password,
+                                hintStyle: TextStyle(
                                   color:
                                       Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.grey[600]!
-                                      : Colors.grey[300]!,
+                                      ? Colors.grey[400]
+                                      : const Color.fromARGB(255, 99, 97, 97),
+                                  fontSize: screenWidth * 0.04,
                                 ),
-                              ),
-                              child: TextField(
-                                controller: controllers['confirmPassword'],
-                                obscureText: true,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: screenWidth * 0.035),
-                                decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(
-                                    context,
-                                  )!.editpassword_confirm_password,
-                                  hintStyle: TextStyle(
+                                hintTextDirection: TextDirection.rtl,
+                                suffixIcon: Padding(
+                                  padding: EdgeInsets.all(screenWidth * 0.02),
+                                  child: Icon(
+                                    Icons.lock_outline,
                                     color:
                                         Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.grey[400]
-                                        : const Color.fromARGB(255, 99, 97, 97),
-                                    fontSize: screenWidth * 0.04,
+                                        : const Color.fromARGB(255, 80, 77, 77),
+                                    size: screenHeight * 0.035,
                                   ),
-                                  hintTextDirection: TextDirection.rtl,
-                                  suffixIcon: Padding(
-                                    padding: EdgeInsets.all(screenWidth * 0.02),
-                                    child: Icon(
-                                      Icons.lock_outline,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[400]
-                                          : const Color.fromARGB(
-                                              255,
-                                              80,
-                                              77,
-                                              77,
-                                            ),
-                                      size: screenHeight * 0.035,
-                                    ),
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.035,
-                                    vertical: screenHeight * 0.018,
-                                  ),
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.035,
+                                  vertical: screenHeight * 0.018,
                                 ),
                               ),
                             ),
@@ -296,7 +275,11 @@ Widget buildPasswordChangeForm({
 
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
+                                borderRadius: BorderRadius.circular(
+                                  UiScale(
+                                    context,
+                                  ).scale(base: 15, min: 12, max: 18),
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: isFormValid
@@ -314,7 +297,7 @@ Widget buildPasswordChangeForm({
                               ),
                               child: SizedBox(
                                 width: double.infinity,
-                                height: screenHeight * 0.06,
+                                height: screenHeight * 0.062,
                                 child: AbsorbPointer(
                                   absorbing: loading || !isFormValid,
                                   child: ElevatedButton(
@@ -327,7 +310,11 @@ Widget buildPasswordChangeForm({
                                           : Colors.grey,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(
+                                          UiScale(
+                                            context,
+                                          ).scale(base: 8, min: 6, max: 10),
+                                        ),
                                       ),
                                       elevation: 1,
                                     ),
@@ -347,7 +334,12 @@ Widget buildPasswordChangeForm({
                                                 context,
                                               )!.editpassword_change_password,
                                               style: TextStyle(
-                                                fontSize: screenWidth * 0.05,
+                                                fontSize: UiScale(context)
+                                                    .scale(
+                                                      base: screenWidth * 0.08,
+                                                      min: 16,
+                                                      max: 20,
+                                                    ),
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -365,7 +357,11 @@ Widget buildPasswordChangeForm({
                                 padding: EdgeInsets.all(screenWidth * 0.03),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade50,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(
+                                    UiScale(
+                                      context,
+                                    ).scale(base: 8, min: 6, max: 10),
+                                  ),
                                   border: Border.all(
                                     color: Colors.red.shade200,
                                   ),

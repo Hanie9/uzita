@@ -16,6 +16,7 @@ import 'package:uzita/utils/shared_loading.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -72,17 +73,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       userLevel = prefs.getInt('level') ?? 3;
       userActive = prefs.getBool('active') ?? false;
 
-      // Set user role title
-      if (prefs.getBool('modir') ?? false) {
+      // Set user role title (modir overrides level)
+      final bool isModir = prefs.getBool('modir') ?? false;
+      if (isModir) {
         userRoleTitle = AppLocalizations.of(
           context,
         )!.pro_company_representative;
-      } else if (userLevel == 2) {
-        userRoleTitle = AppLocalizations.of(context)!.pro_installer;
-      } else if (userLevel == 3) {
-        userRoleTitle = AppLocalizations.of(context)!.pro_user;
       } else if (userLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
+      } else if (userLevel == 2) {
+        userRoleTitle = AppLocalizations.of(context)!.pro_installer;
+      } else {
+        userRoleTitle = AppLocalizations.of(context)!.pro_user;
       }
 
       // If user is not active, stop loading immediately
@@ -142,6 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         final Map<String, dynamic> data = Map<String, dynamic>.from(dataDyn);
+        final prefs = await SharedPreferences.getInstance();
         final Map<String, dynamic> profile = Map<String, dynamic>.from(
           (data['profile'] ?? {}),
         );
@@ -166,14 +169,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           allowedDevices = (profile['allowed_devices'] as List?) ?? [];
           organName = data['organ_name']?.toString();
 
-          // Update role title from fetched level
+          // Update role title from fetched level (modir overrides)
           if (level != null) {
             userLevel = level!;
-            if (userLevel == 1) {
+            final bool isModir =
+                (profile['modir'] == true) ||
+                (data['modir'] == true) ||
+                (prefs.getBool('modir') ?? false);
+            if (isModir) {
+              userRoleTitle = AppLocalizations.of(
+                context,
+              )!.pro_company_representative;
+            } else if (userLevel == 1) {
               userRoleTitle = AppLocalizations.of(context)!.pro_admin;
             } else if (userLevel == 2) {
               userRoleTitle = AppLocalizations.of(context)!.pro_installer;
-            } else if (userLevel == 3) {
+            } else {
               userRoleTitle = AppLocalizations.of(context)!.pro_user;
             }
           }
@@ -522,6 +533,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
+    final ui = UiScale(context);
 
     return PopScope(
       canPop: false,
@@ -565,7 +577,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
                 child: Row(
                   children: [
                     // Left side - Icons
@@ -603,8 +617,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Right side - Logo
                     Image.asset(
                       'assets/logouzita.png',
-                      height: screenHeight * 0.08,
-                      width: screenHeight * 0.08,
+                      height: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
+                      width: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
                     ),
                   ],
                 ),
@@ -662,12 +684,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Compact Profile Header
                         Container(
                           margin: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: ui.scale(base: 16, min: 12, max: 20),
+                            vertical: ui.scale(base: 6, min: 4, max: 10),
                           ),
                           padding: EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
+                            horizontal: ui.scale(base: 20, min: 14, max: 24),
+                            vertical: ui.scale(base: 12, min: 10, max: 16),
                           ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -678,36 +700,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(
+                              ui.scale(base: 16, min: 12, max: 20),
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: AppColors.lapisLazuli.withValues(
                                   alpha: 0.2,
                                 ),
-                                blurRadius: 8,
-                                offset: Offset(0, 3),
+                                blurRadius: ui.scale(base: 8, min: 6, max: 12),
+                                offset: Offset(
+                                  0,
+                                  ui.scale(base: 3, min: 2, max: 4),
+                                ),
                               ),
                             ],
                           ),
+                          constraints: BoxConstraints(
+                            minHeight: ui.scale(base: 78, min: 66, max: 96),
+                          ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               // Avatar
                               CircleAvatar(
-                                radius: 35,
+                                radius: ui.scale(base: 35, min: 28, max: 40),
                                 backgroundColor: Colors.white.withValues(
                                   alpha: 0.2,
                                 ),
                                 child: CircleAvatar(
-                                  radius: 30,
+                                  radius: ui.scale(base: 30, min: 24, max: 36),
                                   backgroundColor: Colors.white,
                                   child: Icon(
                                     Icons.person,
-                                    size: 35,
+                                    size: ui.scale(base: 35, min: 28, max: 42),
                                     color: AppColors.lapisLazuli,
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              SizedBox(
+                                width: ui.scale(base: 16, min: 12, max: 20),
+                              ),
                               // User Info
                               Expanded(
                                 child: Column(
@@ -721,32 +754,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           : username,
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 20,
+                                        fontSize: ui.scale(
+                                          base: 20,
+                                          min: 16,
+                                          max: 22,
+                                        ),
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    SizedBox(height: 4),
+                                    SizedBox(
+                                      height: ui.scale(base: 4, min: 3, max: 8),
+                                    ),
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
+                                        horizontal: ui.scale(
+                                          base: 10,
+                                          min: 8,
+                                          max: 14,
+                                        ),
+                                        vertical: ui.scale(
+                                          base: 4,
+                                          min: 3,
+                                          max: 6,
+                                        ),
                                       ),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withValues(
                                           alpha: 0.25,
                                         ),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(
+                                          ui.scale(base: 12, min: 10, max: 16),
+                                        ),
                                       ),
                                       child: Text(
                                         userRoleTitle,
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 12,
+                                          fontSize: ui.scale(
+                                            base: 12,
+                                            min: 10,
+                                            max: 14,
+                                          ),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
-                                    SizedBox(height: 8),
+                                    SizedBox(
+                                      height: ui.scale(
+                                        base: 8,
+                                        min: 6,
+                                        max: 12,
+                                      ),
+                                    ),
                                     Row(
                                       children: [
                                         Icon(
@@ -754,9 +815,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           color: Colors.white.withValues(
                                             alpha: 0.8,
                                           ),
-                                          size: 14,
+                                          size: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 18,
+                                          ),
                                         ),
-                                        SizedBox(width: 4),
+                                        SizedBox(
+                                          width: ui.scale(
+                                            base: 4,
+                                            min: 3,
+                                            max: 6,
+                                          ),
+                                        ),
                                         Text(
                                           AppLocalizations.of(
                                             context,
@@ -765,7 +836,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             color: Colors.white.withValues(
                                               alpha: 0.9,
                                             ),
-                                            fontSize: 12,
+                                            fontSize: ui.scale(
+                                              base: 12,
+                                              min: 10,
+                                              max: 14,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -777,18 +852,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: IconButton(
-                                  onPressed: _openEditDialog,
-                                  icon: Icon(
-                                    Icons.edit,
-                                    color: Colors.white,
-                                    size: 20,
+                                  borderRadius: BorderRadius.circular(
+                                    ui.scale(base: 12, min: 10, max: 16),
                                   ),
-                                  tooltip: AppLocalizations.of(
-                                    context,
-                                  )!.pro_edit_profile,
+                                ),
+                                padding: EdgeInsets.all(
+                                  ui.scale(base: 4, min: 3, max: 8),
+                                ),
+                                child: SizedBox(
+                                  width: ui.scale(base: 40, min: 34, max: 48),
+                                  height: ui.scale(base: 40, min: 34, max: 48),
+                                  child: IconButton(
+                                    onPressed: _openEditDialog,
+                                    icon: Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: ui.scale(
+                                        base: 20,
+                                        min: 16,
+                                        max: 24,
+                                      ),
+                                    ),
+                                    tooltip: AppLocalizations.of(
+                                      context,
+                                    )!.pro_edit_profile,
+                                  ),
                                 ),
                               ),
                             ],
@@ -797,7 +885,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         // Profile Content
                         Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: EdgeInsets.fromLTRB(
+                            ui.scale(base: 16, min: 12, max: 20),
+                            ui.scale(base: 8, min: 6, max: 12),
+                            ui.scale(base: 16, min: 12, max: 20),
+                            ui.scale(base: 16, min: 12, max: 20),
+                          ),
                           child: Column(
                             children: [
                               // Details display
@@ -887,10 +980,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         AppLocalizations.of(
                                           context,
                                         )!.pro_change_password,
+                                        style: TextStyle(
+                                          fontSize: UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 14, max: 18),
+                                        ),
                                       ),
                                       trailing: Icon(
                                         Icons.arrow_forward_ios,
-                                        size: 16,
+                                        size: UiScale(
+                                          context,
+                                        ).scale(base: 16, min: 14, max: 18),
                                       ),
                                       contentPadding: EdgeInsets.zero,
                                       onTap: () {
@@ -911,10 +1011,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         AppLocalizations.of(
                                           context,
                                         )!.pro_notification_settings,
+                                        style: TextStyle(
+                                          fontSize: UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 14, max: 18),
+                                        ),
                                       ),
                                       trailing: Icon(
                                         Icons.arrow_forward_ios,
-                                        size: 16,
+                                        size: UiScale(
+                                          context,
+                                        ).scale(base: 16, min: 14, max: 18),
                                       ),
                                       contentPadding: EdgeInsets.zero,
                                       onTap: () {
@@ -930,10 +1037,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       leading: Icon(Icons.help_outline),
                                       title: Text(
                                         AppLocalizations.of(context)!.pro_help,
+                                        style: TextStyle(
+                                          fontSize: UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 14, max: 18),
+                                        ),
                                       ),
                                       trailing: Icon(
                                         Icons.arrow_forward_ios,
-                                        size: 16,
+                                        size: UiScale(
+                                          context,
+                                        ).scale(base: 16, min: 14, max: 18),
                                       ),
                                       contentPadding: EdgeInsets.zero,
                                       onTap: () {

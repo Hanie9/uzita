@@ -19,6 +19,7 @@ import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/utils/shared_loading.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -432,11 +433,14 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final ui = UiScale(context);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 12, min: 10, max: 14),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.1),
@@ -450,21 +454,25 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            ui.scale(base: 12, min: 10, max: 14),
+          ),
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(ui.scale(base: 16, min: 12, max: 20)),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: ui.scale(base: 40, min: 32, max: 48),
+                  height: ui.scale(base: 40, min: 32, max: 48),
                   decoration: BoxDecoration(
                     color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 8, min: 6, max: 10),
+                    ),
                   ),
                   child: Center(child: icon),
                 ),
-                SizedBox(width: 12),
+                SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,16 +480,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         title,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: 16,
+                          fontSize: ui.scale(base: 16, min: 14, max: 18),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      SizedBox(height: ui.scale(base: 2, min: 2, max: 4)),
                       Text(
                         subtitle,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: ui.scale(base: 12, min: 10, max: 14),
+                        ),
                       ),
                     ],
                   ),
@@ -491,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.grey[500]
                       : Colors.grey[400],
-                  size: 16,
+                  size: ui.scale(base: 16, min: 14, max: 18),
                 ),
               ],
             ),
@@ -544,6 +552,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+    final ui = UiScale(context);
 
     // Consistent, clamped sizing across phones so UI keeps the same shape
     final logoHeight = (screenHeight * 0.25).clamp(180.0, 260.0);
@@ -893,6 +902,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                 .lapisLazuli,
                                                           ),
                                                         ),
+                                                        SizedBox(
+                                                          height: ui.scale(
+                                                            base: 6,
+                                                            min: 4,
+                                                            max: 10,
+                                                          ),
+                                                        ),
                                                         Text(
                                                           AppLocalizations.of(
                                                             context,
@@ -949,6 +965,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                 FontWeight.bold,
                                                             color: AppColors
                                                                 .lapisLazuli,
+                                                          ),
+                                                        ),
+                                                        SizedBox(
+                                                          height: ui.scale(
+                                                            base: 6,
+                                                            min: 4,
+                                                            max: 10,
                                                           ),
                                                         ),
                                                         Text(

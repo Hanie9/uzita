@@ -10,6 +10,7 @@ import 'package:uzita/services.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -894,13 +895,15 @@ class _UserListScreenState extends State<UserListScreen> {
             }
           },
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(
+              UiScale(context).scale(base: 20, min: 12, max: 22),
+            ),
             child: Row(
               children: [
                 // User Avatar
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: UiScale(context).scale(base: 60, min: 48, max: 68),
+                  height: UiScale(context).scale(base: 60, min: 48, max: 68),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [levelColor, levelColor.withValues(alpha: 0.7)],
@@ -1017,6 +1020,7 @@ class _UserListScreenState extends State<UserListScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final ui = UiScale(context);
     final theme = Theme.of(context);
 
     return PopScope(
@@ -1061,7 +1065,9 @@ class _UserListScreenState extends State<UserListScreen> {
             ),
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
                 child: Row(
                   children: [
                     // Left side - Icons
@@ -1102,8 +1108,16 @@ class _UserListScreenState extends State<UserListScreen> {
                     // Right side - Logo
                     Image.asset(
                       'assets/logouzita.png',
-                      height: screenHeight * 0.08,
-                      width: screenHeight * 0.08,
+                      height: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
+                      width: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
                     ),
                   ],
                 ),
@@ -1143,8 +1157,14 @@ class _UserListScreenState extends State<UserListScreen> {
             children: [
               // Compact Header Section with Stats
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                margin: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 8, min: 6, max: 12),
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 12, min: 8, max: 16),
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -1154,7 +1174,9 @@ class _UserListScreenState extends State<UserListScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 12, min: 10, max: 14),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.lapisLazuli.withValues(alpha: 0.2),
@@ -1166,15 +1188,19 @@ class _UserListScreenState extends State<UserListScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: ui.scale(base: 40, min: 32, max: 48),
+                      height: ui.scale(base: 40, min: 32, max: 48),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.group, color: Colors.white, size: 20),
+                      child: Icon(
+                        Icons.group,
+                        color: Colors.white,
+                        size: ui.scale(base: 20, min: 16, max: 24),
+                      ),
                     ),
-                    SizedBox(width: 12),
+                    SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
                     Expanded(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1186,7 +1212,11 @@ class _UserListScreenState extends State<UserListScreen> {
                               Text(
                                 AppLocalizations.of(context)!.uls_users_header,
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: ui.scale(
+                                    base: 14,
+                                    min: 12,
+                                    max: 16,
+                                  ),
                                   color: Colors.white.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1195,10 +1225,22 @@ class _UserListScreenState extends State<UserListScreen> {
                                   ? Row(
                                       children: [
                                         SizedBox(
-                                          width: 14,
-                                          height: 14,
+                                          width: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
+                                          ),
+                                          height: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
+                                          ),
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                            strokeWidth: ui.scale(
+                                              base: 2,
+                                              min: 1.5,
+                                              max: 2.5,
+                                            ),
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
                                                   Colors.white,
@@ -1210,7 +1252,11 @@ class _UserListScreenState extends State<UserListScreen> {
                                   : Text(
                                       '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: ui.scale(
+                                          base: 18,
+                                          min: 16,
+                                          max: 20,
+                                        ),
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                       ),
@@ -1219,12 +1265,14 @@ class _UserListScreenState extends State<UserListScreen> {
                           ),
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: ui.scale(base: 8, min: 6, max: 10),
+                              vertical: ui.scale(base: 4, min: 3, max: 6),
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 8, min: 6, max: 10),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -1232,14 +1280,20 @@ class _UserListScreenState extends State<UserListScreen> {
                                 Icon(
                                   Icons.admin_panel_settings,
                                   color: Colors.white,
-                                  size: 16,
+                                  size: ui.scale(base: 16, min: 14, max: 18),
                                 ),
-                                SizedBox(width: 4),
+                                SizedBox(
+                                  width: ui.scale(base: 4, min: 3, max: 6),
+                                ),
                                 Text(
                                   AppLocalizations.of(context)!.uls_manager,
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 12,
+                                    fontSize: ui.scale(
+                                      base: 12,
+                                      min: 10,
+                                      max: 14,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),

@@ -119,10 +119,28 @@ class _MyAppState extends State<MyApp> {
                 ? TextDirection.ltr
                 : TextDirection.rtl;
 
+            // Adaptive text scaling for small/large phones
+            final mq = MediaQuery.of(context);
+            final shortestSide = mq.size.shortestSide;
+            double deviceAdjustment;
+            if (shortestSide <= 340) {
+              deviceAdjustment = 0.92; // very small phones
+            } else if (shortestSide <= 360) {
+              deviceAdjustment = 0.96; // small phones
+            } else if (shortestSide >= 480) {
+              deviceAdjustment = 1.08; // large phones / small tablets
+            } else if (shortestSide >= 420) {
+              deviceAdjustment = 1.04; // larger phones
+            } else {
+              deviceAdjustment = 1.0; // normal phones
+            }
+            final double effectiveTextScale =
+                (settings.textSize * deviceAdjustment).clamp(0.9, 1.15);
+
             return MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(settings.textSize)),
+              data: mq.copyWith(
+                textScaler: TextScaler.linear(effectiveTextScale),
+              ),
               child: Directionality(
                 textDirection: textDirection,
                 child: SessionTimeoutWrapper(child: child!),

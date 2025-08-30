@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class SharedBottomNavigation extends StatelessWidget {
   final int selectedIndex;
@@ -16,11 +17,13 @@ class SharedBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final mq = MediaQuery.of(context);
+    final ui = UiScale(context);
+    final bottomPadding = mq.padding.bottom;
     final localizations = AppLocalizations.of(context)!;
 
-    // Fixed height for consistency across devices
-    const navBarHeight = 68.0;
+    // Adaptive height using UiScale for consistency across phones
+    final double navBarHeight = ui.scale(base: 66, min: 56, max: 74);
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -127,15 +130,17 @@ class SharedBottomNavigation extends StatelessWidget {
   }) {
     return Builder(
       builder: (context) {
-        // Fixed sizes for consistency
-        const iconSize = 24.0;
-        const fontSize = 11.0;
+        // Adaptive sizes via UiScale
+        final ui = UiScale(context);
+        final double iconSize = ui.scale(base: 24, min: 20, max: 28);
+        final double fontSize = ui.scale(base: 11.5, min: 9.5, max: 13);
+        final double activeLift = ui.scale(base: 6, min: 4, max: 7);
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return GestureDetector(
           onTap: onTap,
           child: Transform.translate(
-            offset: Offset(0, isActive ? -6 : 0),
+            offset: Offset(0, isActive ? -activeLift : 0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -147,7 +152,7 @@ class SharedBottomNavigation extends StatelessWidget {
                     color: isActive
                         ? color
                         : (isDark ? Colors.grey[500] : Colors.grey[400]),
-                    size: iconSize.clamp(20.0, 28.0),
+                    size: iconSize.clamp(20.0, 30.0),
                   ),
                 ),
                 Text(
@@ -156,7 +161,7 @@ class SharedBottomNavigation extends StatelessWidget {
                     color: isActive
                         ? color
                         : (isDark ? Colors.grey[500] : Colors.grey[400]),
-                    fontSize: fontSize.clamp(10.0, 12.0),
+                    fontSize: fontSize.clamp(9.5, 13.0),
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),

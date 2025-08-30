@@ -399,8 +399,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final double fieldHeight = (screenHeight * 0.06).clamp(44.0, 56.0);
     final double fieldFontSize = (screenWidth * 0.035).clamp(13.0, 16.0);
     final double hintFontSize = (screenWidth * 0.04).clamp(14.0, 18.0);
-    final double buttonHeight = fieldHeight;
-    final double buttonFontSize = (screenWidth * 0.05).clamp(15.0, 18.0);
+    final double buttonHeight = fieldHeight * 0.9;
+    final double buttonFontSize = (screenWidth * 0.085).clamp(28.0, 40.0);
     final double fingerprintSize = (screenWidth * 0.18).clamp(56.0, 88.0);
 
     // Handle optional prefill from splash biometric flow
@@ -524,75 +524,52 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(height: spacingAfterLogo),
 
                           // Username field
-                          Container(
-                            height: fieldHeight, // responsive height
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
+                          TextField(
+                            controller: usernameController,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: fieldFontSize),
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(
+                                context,
+                              )!.login_username,
+                              hintStyle: TextStyle(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.grey[600]!
-                                    : Colors.grey[300]!,
+                                    ? Colors.grey[400]
+                                    : const Color.fromARGB(255, 99, 97, 97),
+                                fontSize: hintFontSize,
                               ),
-                            ),
-                            child: TextField(
-                              controller: usernameController,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: fieldFontSize),
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(
-                                  context,
-                                )!.login_username,
-                                hintStyle: TextStyle(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[400]
-                                      : const Color.fromARGB(255, 99, 97, 97),
-                                  fontSize: hintFontSize,
-                                ),
-                                hintTextDirection: Directionality.of(context),
-                                suffixIcon: Padding(
-                                  padding: EdgeInsets.all(
-                                    screenWidth * 0.02,
-                                  ), // 2% of screen width
-                                  child: SvgPicture.asset(
-                                    'assets/icons/user.svg',
-                                    colorFilter: ColorFilter.mode(
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? (Colors.grey[400] ?? Colors.grey)
-                                          : const Color.fromARGB(
-                                              255,
-                                              80,
-                                              77,
-                                              77,
-                                            ),
-                                      BlendMode.srcIn,
-                                    ),
-                                    width:
-                                        screenHeight *
-                                        0.03, // 4% of screen height
-                                    height:
-                                        screenHeight *
-                                        0.03, // 4% of screen height
+                              hintTextDirection: Directionality.of(context),
+                              suffixIcon: Padding(
+                                padding: EdgeInsets.all(
+                                  screenWidth * 0.02,
+                                ), // 2% of screen width
+                                child: SvgPicture.asset(
+                                  'assets/icons/user.svg',
+                                  colorFilter: ColorFilter.mode(
+                                    Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? (Colors.grey[400] ?? Colors.grey)
+                                        : const Color.fromARGB(255, 80, 77, 77),
+                                    BlendMode.srcIn,
                                   ),
+                                  width:
+                                      screenHeight *
+                                      0.03, // 4% of screen height
+                                  height:
+                                      screenHeight *
+                                      0.03, // 4% of screen height
                                 ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: (screenWidth * 0.035)
-                                      .clamp(12.0, 16.0)
-                                      .toDouble(),
-                                  vertical: (screenHeight * 0.018)
-                                      .clamp(10.0, 14.0)
-                                      .toDouble(),
-                                ),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: (screenWidth * 0.035)
+                                    .clamp(12.0, 16.0)
+                                    .toDouble(),
+                                vertical: (screenHeight * 0.018)
+                                    .clamp(10.0, 14.0)
+                                    .toDouble(),
                               ),
                             ),
                           ),
@@ -601,77 +578,54 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: screenHeight * 0.015,
                           ), // 1.5% of screen height
                           // Password field
-                          Container(
-                            height: fieldHeight, // responsive height
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
+                          TextField(
+                            controller: passwordController,
+                            textAlign: TextAlign.center,
+                            obscureText: true,
+                            style: TextStyle(fontSize: fieldFontSize),
+                            onSubmitted: (_) => loading ? null : login(),
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(
+                                context,
+                              )!.login_password,
+                              hintStyle: TextStyle(
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.grey[600]!
-                                    : Colors.grey[300]!,
+                                    ? Colors.grey[400]
+                                    : const Color.fromARGB(255, 99, 97, 97),
+                                fontSize: hintFontSize,
                               ),
-                            ),
-                            child: TextField(
-                              controller: passwordController,
-                              textAlign: TextAlign.center,
-                              obscureText: true,
-                              style: TextStyle(fontSize: fieldFontSize),
-                              onSubmitted: (_) => loading ? null : login(),
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(
-                                  context,
-                                )!.login_password,
-                                hintStyle: TextStyle(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[400]
-                                      : const Color.fromARGB(255, 99, 97, 97),
-                                  fontSize: hintFontSize,
-                                ),
-                                hintTextDirection: Directionality.of(context),
-                                suffixIcon: Padding(
-                                  padding: EdgeInsets.all(
-                                    screenWidth * 0.02,
-                                  ), // 2% of screen width
-                                  child: SvgPicture.asset(
-                                    'assets/icons/key.svg',
-                                    colorFilter: ColorFilter.mode(
-                                      Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? (Colors.grey[400] ?? Colors.grey)
-                                          : const Color.fromARGB(
-                                              255,
-                                              80,
-                                              77,
-                                              77,
-                                            ),
-                                      BlendMode.srcIn,
-                                    ),
-                                    width:
-                                        screenHeight *
-                                        0.03, // 4% of screen height
-                                    height:
-                                        screenHeight *
-                                        0.03, // 4% of screen height
+                              hintTextDirection: Directionality.of(context),
+                              suffixIcon: Padding(
+                                padding: EdgeInsets.all(
+                                  screenWidth * 0.02,
+                                ), // 2% of screen width
+                                child: SvgPicture.asset(
+                                  'assets/icons/key.svg',
+                                  colorFilter: ColorFilter.mode(
+                                    Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? (Colors.grey[400] ?? Colors.grey)
+                                        : const Color.fromARGB(255, 80, 77, 77),
+                                    BlendMode.srcIn,
                                   ),
+                                  width:
+                                      screenHeight *
+                                      0.03, // 4% of screen height
+                                  height:
+                                      screenHeight *
+                                      0.03, // 4% of screen height
                                 ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: (screenWidth * 0.035)
-                                      .clamp(12.0, 16.0)
-                                      .toDouble(),
-                                  vertical: (screenHeight * 0.018)
-                                      .clamp(10.0, 14.0)
-                                      .toDouble(),
-                                ),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: (screenWidth * 0.035)
+                                    .clamp(12.0, 16.0)
+                                    .toDouble(),
+                                vertical: (screenHeight * 0.018)
+                                    .clamp(10.0, 14.0)
+                                    .toDouble(),
                               ),
                             ),
                           ),

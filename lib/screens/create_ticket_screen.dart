@@ -7,6 +7,7 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/main.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class CreateTicketScreen extends StatefulWidget {
   const CreateTicketScreen({super.key});
@@ -151,12 +152,20 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             backgroundColor: Theme.of(context).cardTheme.color,
             surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(
+                UiScale(context).scale(base: 16, min: 12, max: 20),
+              ),
             ),
             title: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green[600], size: 28),
-                SizedBox(width: 8),
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.green[600],
+                  size: UiScale(context).scale(base: 28, min: 20, max: 32),
+                ),
+                SizedBox(
+                  width: UiScale(context).scale(base: 8, min: 6, max: 12),
+                ),
                 Text(
                   AppLocalizations.of(context)!.ct_send_ticket_successfully,
                   style: TextStyle(
@@ -169,7 +178,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             ),
             content: Text(
               message,
-              style: TextStyle(fontSize: 14, height: 1.5, fontFamily: 'Vazir'),
+              style: TextStyle(
+                fontSize: UiScale(context).scale(base: 14, min: 12, max: 16),
+                height: 1.5,
+                fontFamily: 'Vazir',
+              ),
             ),
             actions: [
               TextButton(
@@ -203,12 +216,20 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             backgroundColor: Theme.of(context).cardTheme.color,
             surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(
+                UiScale(context).scale(base: 16, min: 12, max: 20),
+              ),
             ),
             title: Row(
               children: [
-                Icon(Icons.help_outline, color: Colors.orange[600], size: 28),
-                SizedBox(width: 8),
+                Icon(
+                  Icons.help_outline,
+                  color: Colors.orange[600],
+                  size: UiScale(context).scale(base: 28, min: 20, max: 32),
+                ),
+                SizedBox(
+                  width: UiScale(context).scale(base: 8, min: 6, max: 12),
+                ),
                 Text(
                   AppLocalizations.of(context)!.ct_send_submit,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -221,7 +242,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             content: Text(
               AppLocalizations.of(context)!.ct_are_you_sure,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 14,
+                fontSize: UiScale(context).scale(base: 14, min: 12, max: 16),
                 fontFamily: 'Vazir',
               ),
             ),
@@ -298,8 +319,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: screenHeight * 0.08,
-                          width: screenHeight * 0.08,
+                          height: UiScale(
+                            context,
+                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
+                          width: UiScale(
+                            context,
+                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
                         ),
                       ],
                     ),
@@ -321,10 +346,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             : TextDirection.rtl,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            20 + MediaQuery.of(context).padding.bottom,
+            UiScale(context).scale(base: 20, min: 16, max: 24),
+            UiScale(context).scale(base: 20, min: 16, max: 24),
+            UiScale(context).scale(base: 20, min: 16, max: 24),
+            UiScale(context).scale(base: 20, min: 16, max: 24) +
+                MediaQuery.of(context).padding.bottom,
           ),
           child: Form(
             key: _formKey,
@@ -334,12 +360,16 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                 // کارت راهنمایی
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(20),
+                  padding: EdgeInsets.all(
+                    UiScale(context).scale(base: 20, min: 16, max: 24),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.blue[900]?.withValues(alpha: 0.2)
                         : Color(0xFFE3F2FD),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      UiScale(context).scale(base: 16, min: 12, max: 20),
+                    ),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? (Colors.blue[700] ?? Colors.blue).withValues(
@@ -351,20 +381,30 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   child: Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(8),
+                        padding: EdgeInsets.all(
+                          UiScale(context).scale(base: 8, min: 6, max: 10),
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.blue[700]
                               : Color(0xFF2196F3),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                            UiScale(context).scale(base: 8, min: 6, max: 10),
+                          ),
                         ),
                         child: Icon(
                           Icons.info_outline,
                           color: Colors.white,
-                          size: 20,
+                          size: UiScale(
+                            context,
+                          ).scale(base: 20, min: 16, max: 24),
                         ),
                       ),
-                      SizedBox(width: 16),
+                      SizedBox(
+                        width: UiScale(
+                          context,
+                        ).scale(base: 16, min: 12, max: 20),
+                      ),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,17 +418,25 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                         Brightness.dark
                                     ? Colors.blue[300]
                                     : Color(0xFF1976D2),
-                                fontSize: 16,
+                                fontSize: UiScale(
+                                  context,
+                                ).scale(base: 16, min: 14, max: 18),
                                 fontFamily: 'Vazir',
                               ),
                             ),
-                            SizedBox(height: 4),
+                            SizedBox(
+                              height: UiScale(
+                                context,
+                              ).scale(base: 4, min: 2, max: 6),
+                            ),
                             Text(
                               AppLocalizations.of(
                                 context,
                               )!.ct_information_description,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: UiScale(
+                                  context,
+                                ).scale(base: 13, min: 11, max: 15),
                                 color:
                                     Theme.of(context).brightness ==
                                         Brightness.dark
@@ -405,15 +453,21 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   ),
                 ),
 
-                SizedBox(height: 32),
+                SizedBox(
+                  height: UiScale(context).scale(base: 32, min: 24, max: 40),
+                ),
 
                 // فیلد عنوان تیکت
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(20),
+                  padding: EdgeInsets.all(
+                    UiScale(context).scale(base: 20, min: 16, max: 24),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      UiScale(context).scale(base: 16, min: 12, max: 20),
+                    ),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.grey[700]!
@@ -433,23 +487,35 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(6),
+                            padding: EdgeInsets.all(
+                              UiScale(context).scale(base: 6, min: 4, max: 8),
+                            ),
                             decoration: BoxDecoration(
                               color: Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(
+                                UiScale(context).scale(base: 6, min: 4, max: 8),
+                              ),
                             ),
                             child: Icon(
                               Icons.title,
                               color: Colors.white,
-                              size: 16,
+                              size: UiScale(
+                                context,
+                              ).scale(base: 16, min: 12, max: 20),
                             ),
                           ),
-                          SizedBox(width: 12),
+                          SizedBox(
+                            width: UiScale(
+                              context,
+                            ).scale(base: 12, min: 8, max: 16),
+                          ),
                           Text(
                             AppLocalizations.of(context)!.ct_title,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                  fontSize: 16,
+                                  fontSize: UiScale(
+                                    context,
+                                  ).scale(base: 16, min: 14, max: 18),
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Vazir',
                                 ),
@@ -457,8 +523,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           Spacer(),
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: UiScale(
+                                context,
+                              ).scale(base: 8, min: 6, max: 12),
+                              vertical: UiScale(
+                                context,
+                              ).scale(base: 4, min: 2, max: 6),
                             ),
                             decoration: BoxDecoration(
                               color: titleCharCount > maxTitleLength
@@ -467,12 +537,18 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                             Brightness.dark
                                         ? Colors.grey[800]
                                         : Colors.grey[100]),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
                             ),
                             child: Text(
                               '$titleCharCount/$maxTitleLength',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: UiScale(
+                                  context,
+                                ).scale(base: 12, min: 10, max: 14),
                                 color: titleCharCount > maxTitleLength
                                     ? Colors.red[700]
                                     : Theme.of(
@@ -485,7 +561,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(
+                        height: UiScale(
+                          context,
+                        ).scale(base: 16, min: 12, max: 20),
+                      ),
                       TextFormField(
                         controller: titleController,
                         maxLength: maxTitleLength,
@@ -494,7 +574,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             context,
                           )!.ct_title_example,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(context).scale(base: 12, min: 8, max: 16),
+                            ),
                             borderSide: BorderSide(
                               color:
                                   Theme.of(context).brightness ==
@@ -504,14 +586,18 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(context).scale(base: 12, min: 8, max: 16),
+                            ),
                             borderSide: BorderSide(
                               color: Color(0xFF4CAF50),
                               width: 2,
                             ),
                           ),
                           errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(context).scale(base: 12, min: 8, max: 16),
+                            ),
                             borderSide: BorderSide(color: Colors.red, width: 2),
                           ),
                           filled: true,
@@ -522,8 +608,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                     : Colors.grey[50]),
                           counterText: '',
                           contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                            horizontal: UiScale(
+                              context,
+                            ).scale(base: 16, min: 12, max: 20),
+                            vertical: UiScale(
+                              context,
+                            ).scale(base: 12, min: 8, max: 16),
                           ),
                         ),
                         validator: (value) {
@@ -542,15 +632,21 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   ),
                 ),
 
-                SizedBox(height: 20),
+                SizedBox(
+                  height: UiScale(context).scale(base: 20, min: 16, max: 24),
+                ),
 
                 // فیلد توضیحات
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(20),
+                  padding: EdgeInsets.all(
+                    UiScale(context).scale(base: 20, min: 16, max: 24),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      UiScale(context).scale(base: 16, min: 12, max: 20),
+                    ),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.grey[700]!
@@ -570,22 +666,34 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(6),
+                            padding: EdgeInsets.all(
+                              UiScale(context).scale(base: 6, min: 4, max: 8),
+                            ),
                             decoration: BoxDecoration(
                               color: Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(
+                                UiScale(context).scale(base: 6, min: 4, max: 8),
+                              ),
                             ),
                             child: Icon(
                               Icons.description,
                               color: Colors.white,
-                              size: 16,
+                              size: UiScale(
+                                context,
+                              ).scale(base: 16, min: 12, max: 20),
                             ),
                           ),
-                          SizedBox(width: 12),
+                          SizedBox(
+                            width: UiScale(
+                              context,
+                            ).scale(base: 12, min: 8, max: 16),
+                          ),
                           Text(
                             AppLocalizations.of(context)!.ct_description_ticket,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: UiScale(
+                                context,
+                              ).scale(base: 16, min: 14, max: 18),
                               fontWeight: FontWeight.bold,
                               color: Theme.of(
                                 context,
@@ -596,8 +704,12 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           Spacer(),
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: UiScale(
+                                context,
+                              ).scale(base: 8, min: 6, max: 12),
+                              vertical: UiScale(
+                                context,
+                              ).scale(base: 4, min: 2, max: 6),
                             ),
                             decoration: BoxDecoration(
                               color: descriptionCharCount > maxDescriptionLength
@@ -606,12 +718,18 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                             Brightness.dark
                                         ? Colors.grey[800]
                                         : Colors.grey[100]),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
                             ),
                             child: Text(
                               '$descriptionCharCount/$maxDescriptionLength',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: UiScale(
+                                  context,
+                                ).scale(base: 12, min: 10, max: 14),
                                 color:
                                     descriptionCharCount > maxDescriptionLength
                                     ? Colors.red[700]
@@ -625,7 +743,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(
+                        height: UiScale(
+                          context,
+                        ).scale(base: 16, min: 12, max: 20),
+                      ),
                       TextFormField(
                         controller: descriptionController,
                         maxLines: 6,
@@ -635,7 +757,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             context,
                           )!.ct_description_ticket_hint,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(context).scale(base: 12, min: 8, max: 16),
+                            ),
                             borderSide: BorderSide(
                               color:
                                   Theme.of(context).brightness ==
@@ -645,14 +769,18 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(context).scale(base: 12, min: 8, max: 16),
+                            ),
                             borderSide: BorderSide(
                               color: Color(0xFF4CAF50),
                               width: 2,
                             ),
                           ),
                           errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(context).scale(base: 12, min: 8, max: 16),
+                            ),
                             borderSide: BorderSide(color: Colors.red, width: 2),
                           ),
                           filled: true,
@@ -662,7 +790,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                     ? Colors.grey[800]
                                     : Colors.grey[50]),
                           counterText: '',
-                          contentPadding: EdgeInsets.all(16),
+                          contentPadding: EdgeInsets.all(
+                            UiScale(context).scale(base: 16, min: 12, max: 20),
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -685,12 +815,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   ),
                 ),
 
-                SizedBox(height: 32),
+                SizedBox(
+                  height: UiScale(context).scale(base: 32, min: 24, max: 40),
+                ),
 
                 // دکمه ارسال
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: UiScale(context).scale(base: 56, min: 48, max: 64),
                   child: ElevatedButton(
                     onPressed: loading || !_isFormValid()
                         ? null
@@ -701,7 +833,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           : Colors.grey[300],
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(
+                          UiScale(context).scale(base: 16, min: 12, max: 20),
+                        ),
                       ),
                       elevation: _isFormValid() ? 4 : 0,
                       shadowColor: Color(0xFF4CAF50).withValues(alpha: 0.3),
@@ -711,20 +845,30 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: UiScale(
+                                  context,
+                                ).scale(base: 20, min: 16, max: 24),
+                                height: UiScale(
+                                  context,
+                                ).scale(base: 20, min: 16, max: 24),
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               ),
-                              SizedBox(width: 12),
+                              SizedBox(
+                                width: UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
                               Text(
                                 AppLocalizations.of(
                                   context,
                                 )!.ct_loading_sending,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: UiScale(
+                                    context,
+                                  ).scale(base: 16, min: 14, max: 18),
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Vazir',
                                 ),
@@ -737,13 +881,24 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                               Text(
                                 AppLocalizations.of(context)!.ct_send_ticket,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: UiScale(
+                                    context,
+                                  ).scale(base: 16, min: 14, max: 18),
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Vazir',
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              Icon(Icons.send, size: 20),
+                              SizedBox(
+                                width: UiScale(
+                                  context,
+                                ).scale(base: 8, min: 6, max: 12),
+                              ),
+                              Icon(
+                                Icons.send,
+                                size: UiScale(
+                                  context,
+                                ).scale(base: 20, min: 16, max: 24),
+                              ),
                             ],
                           ),
                   ),
@@ -751,13 +906,19 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
                 // نمایش خطا
                 if (error.isNotEmpty) ...[
-                  SizedBox(height: 20),
+                  SizedBox(
+                    height: UiScale(context).scale(base: 20, min: 16, max: 24),
+                  ),
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(
+                      UiScale(context).scale(base: 16, min: 12, max: 20),
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        UiScale(context).scale(base: 12, min: 8, max: 16),
+                      ),
                       border: Border.all(color: Colors.red[200]!),
                     ),
                     child: Row(
@@ -766,15 +927,23 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                         Icon(
                           Icons.error_outline,
                           color: Colors.red[600],
-                          size: 20,
+                          size: UiScale(
+                            context,
+                          ).scale(base: 20, min: 16, max: 24),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(
+                          width: UiScale(
+                            context,
+                          ).scale(base: 12, min: 8, max: 16),
+                        ),
                         Expanded(
                           child: Text(
                             error,
                             style: TextStyle(
                               color: Colors.red[700],
-                              fontSize: 14,
+                              fontSize: UiScale(
+                                context,
+                              ).scale(base: 14, min: 12, max: 16),
                               height: 1.4,
                               fontFamily: 'Vazir',
                             ),
@@ -785,17 +954,23 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   ),
                 ],
 
-                SizedBox(height: 24),
+                SizedBox(
+                  height: UiScale(context).scale(base: 24, min: 20, max: 28),
+                ),
 
                 // نکات مهم
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(20),
+                  padding: EdgeInsets.all(
+                    UiScale(context).scale(base: 20, min: 16, max: 24),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.orange[900]?.withValues(alpha: 0.2)
                         : Color(0xFFFFF8E1),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      UiScale(context).scale(base: 16, min: 12, max: 20),
+                    ),
                     border: Border.all(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? (Colors.orange[700] ?? Colors.orange).withValues(
@@ -810,22 +985,32 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(6),
+                            padding: EdgeInsets.all(
+                              UiScale(context).scale(base: 6, min: 4, max: 8),
+                            ),
                             decoration: BoxDecoration(
                               color:
                                   Theme.of(context).brightness ==
                                       Brightness.dark
                                   ? Colors.orange[700]
                                   : Color(0xFFFF9800),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(
+                                UiScale(context).scale(base: 6, min: 4, max: 8),
+                              ),
                             ),
                             child: Icon(
                               Icons.lightbulb_outline,
                               color: Colors.white,
-                              size: 16,
+                              size: UiScale(
+                                context,
+                              ).scale(base: 16, min: 12, max: 20),
                             ),
                           ),
-                          SizedBox(width: 12),
+                          SizedBox(
+                            width: UiScale(
+                              context,
+                            ).scale(base: 12, min: 8, max: 16),
+                          ),
                           Text(
                             AppLocalizations.of(context)!.ct_important_notes,
                             style: TextStyle(
@@ -835,17 +1020,25 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                       Brightness.dark
                                   ? Colors.orange[300]
                                   : Color(0xFFE65100),
-                              fontSize: 16,
+                              fontSize: UiScale(
+                                context,
+                              ).scale(base: 16, min: 14, max: 18),
                               fontFamily: 'Vazir',
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      SizedBox(
+                        height: UiScale(
+                          context,
+                        ).scale(base: 12, min: 8, max: 16),
+                      ),
                       Text(
                         "${AppLocalizations.of(context)!.ct_important_notes_part_1}\n${AppLocalizations.of(context)!.ct_important_notes_part_2}\n${AppLocalizations.of(context)!.ct_important_notes_part_3}",
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: UiScale(
+                            context,
+                          ).scale(base: 13, min: 11, max: 15),
                           color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.orange[200]
                               : Color(0xFFE65100),

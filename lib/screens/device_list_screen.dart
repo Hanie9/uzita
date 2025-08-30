@@ -18,6 +18,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class DeviceListScreen extends StatefulWidget {
   const DeviceListScreen({super.key});
@@ -574,13 +575,15 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
             MaterialPageRoute(builder: (_) => DeviceDetailScreen(device)),
           ),
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(
+              UiScale(context).scale(base: 20, min: 12, max: 22),
+            ),
             child: Row(
               children: [
                 // Device Avatar
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: UiScale(context).scale(base: 60, min: 48, max: 68),
+                  height: UiScale(context).scale(base: 60, min: 48, max: 68),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF007BA7), Color(0xFF006990)],
@@ -600,11 +603,13 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     child: Icon(
                       Icons.devices_other,
                       color: Colors.white,
-                      size: 28,
+                      size: UiScale(context).scale(base: 28, min: 22, max: 30),
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
+                SizedBox(
+                  width: UiScale(context).scale(base: 16, min: 10, max: 18),
+                ),
 
                 // Device Info
                 Expanded(
@@ -880,8 +885,27 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         floatingActionButton: userModir
             ? FloatingActionButton.extended(
                 onPressed: _openAddDeviceDialog,
-                icon: Icon(Icons.add),
-                label: Text(AppLocalizations.of(context)!.dls_add_device),
+                backgroundColor: AppColors.lapisLazuli,
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: UiScale(context).scale(base: 22, min: 20, max: 26),
+                ),
+                label: Text(
+                  AppLocalizations.of(context)!.dls_add_device,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: UiScale(
+                      context,
+                    ).scale(base: 14, min: 12, max: 16),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                extendedPadding: EdgeInsets.symmetric(
+                  horizontal: UiScale(
+                    context,
+                  ).scale(base: 16, min: 12, max: 20),
+                ),
               )
             : null,
         appBar: PreferredSize(

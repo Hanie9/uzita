@@ -13,6 +13,7 @@ import 'package:uzita/utils/shared_loading.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class TicketListScreen extends StatefulWidget {
   const TicketListScreen({super.key});
@@ -175,6 +176,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final ui = UiScale(context);
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -184,7 +186,9 @@ class _TicketListScreenState extends State<TicketListScreen> {
           color: theme.appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 children: [
                   // Left side - Back button and title
@@ -211,8 +215,16 @@ class _TicketListScreenState extends State<TicketListScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: screenHeight * 0.08,
-                          width: screenHeight * 0.08,
+                          height: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
+                          width: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
                         ),
                       ],
                     ),
@@ -226,7 +238,9 @@ class _TicketListScreenState extends State<TicketListScreen> {
       floatingActionButton: userActive
           ? Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(
+                  ui.scale(base: 16, min: 12, max: 20),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -242,20 +256,25 @@ class _TicketListScreenState extends State<TicketListScreen> {
                     MaterialPageRoute(builder: (_) => CreateTicketScreen()),
                   ).then((_) => fetchTickets());
                 },
-                icon: Icon(Icons.add, size: 22),
+                icon: Icon(
+                  Icons.add,
+                  size: ui.scale(base: 22, min: 18, max: 26),
+                ),
                 label: Text(
                   AppLocalizations.of(context)!.tls_new_ticket,
                   style: TextStyle(
                     fontFamily: 'Vazir',
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: ui.scale(base: 15, min: 13, max: 17),
                   ),
                 ),
                 backgroundColor: AppColors.lapisLazuli,
                 foregroundColor: Colors.white,
                 elevation: 6,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 16, min: 12, max: 20),
+                  ),
                 ),
               ),
             )
@@ -274,14 +293,15 @@ class _TicketListScreenState extends State<TicketListScreen> {
                     : TextDirection.rtl,
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
-                    12,
-                    8,
-                    12,
-                    8 + MediaQuery.of(context).padding.bottom,
+                    ui.scale(base: 12, min: 10, max: 16),
+                    ui.scale(base: 8, min: 6, max: 12),
+                    ui.scale(base: 12, min: 10, max: 16),
+                    ui.scale(base: 8, min: 6, max: 12) +
+                        MediaQuery.of(context).padding.bottom,
                   ),
                   child: Column(
                     children: [
-                      SizedBox(height: 8),
+                      SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                       Expanded(
                         child: loading
                             ? Center(
@@ -294,12 +314,18 @@ class _TicketListScreenState extends State<TicketListScreen> {
                             : error.isNotEmpty
                             ? Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(
+                                    ui.scale(base: 20, min: 14, max: 24),
+                                  ),
                                   child: Container(
-                                    padding: EdgeInsets.all(24),
+                                    padding: EdgeInsets.all(
+                                      ui.scale(base: 24, min: 16, max: 28),
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Theme.of(context).cardTheme.color,
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(
+                                        ui.scale(base: 16, min: 12, max: 20),
+                                      ),
                                       border: Border.all(
                                         color:
                                             Theme.of(context).brightness ==
@@ -330,7 +356,13 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Container(
-                                          padding: EdgeInsets.all(16),
+                                          padding: EdgeInsets.all(
+                                            ui.scale(
+                                              base: 16,
+                                              min: 12,
+                                              max: 20,
+                                            ),
+                                          ),
                                           decoration: BoxDecoration(
                                             color:
                                                 Theme.of(context).brightness ==
@@ -343,7 +375,11 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                           ),
                                           child: Icon(
                                             Icons.error_outline,
-                                            size: 48,
+                                            size: ui.scale(
+                                              base: 48,
+                                              min: 36,
+                                              max: 56,
+                                            ),
                                             color:
                                                 Theme.of(context).brightness ==
                                                     Brightness.dark
@@ -351,7 +387,13 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                                 : Colors.red[400],
                                           ),
                                         ),
-                                        SizedBox(height: 20),
+                                        SizedBox(
+                                          height: ui.scale(
+                                            base: 20,
+                                            min: 14,
+                                            max: 26,
+                                          ),
+                                        ),
                                         Text(
                                           AppLocalizations.of(
                                             context,
@@ -360,29 +402,56 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                             color: Theme.of(
                                               context,
                                             ).textTheme.titleMedium?.color,
-                                            fontSize: 18,
+                                            fontSize: ui.scale(
+                                              base: 18,
+                                              min: 15,
+                                              max: 20,
+                                            ),
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'Vazir',
                                           ),
                                         ),
-                                        SizedBox(height: 8),
+                                        SizedBox(
+                                          height: ui.scale(
+                                            base: 8,
+                                            min: 6,
+                                            max: 12,
+                                          ),
+                                        ),
                                         Text(
                                           error,
                                           style: TextStyle(
                                             color: Theme.of(
                                               context,
                                             ).textTheme.bodyMedium?.color,
-                                            fontSize: 14,
+                                            fontSize: ui.scale(
+                                              base: 14,
+                                              min: 12,
+                                              max: 16,
+                                            ),
                                             fontFamily: 'Vazir',
                                           ),
                                           textAlign: TextAlign.center,
                                         ),
-                                        SizedBox(height: 20),
+                                        SizedBox(
+                                          height: ui.scale(
+                                            base: 20,
+                                            min: 14,
+                                            max: 26,
+                                          ),
+                                        ),
                                         SizedBox(
                                           width: double.infinity,
                                           child: ElevatedButton.icon(
                                             onPressed: fetchTickets,
-                                            icon: Icon(Icons.refresh, size: 20),
+                                            icon: Icon(
+                                              Icons.refresh,
+                                              size: ui.scale(
+                                                base: 20,
+                                                min: 18,
+                                                max: 24,
+                                              ),
+                                            ),
                                             label: Text(
                                               AppLocalizations.of(
                                                 context,
@@ -397,11 +466,21 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                                   AppColors.lapisLazuli,
                                               foregroundColor: Colors.white,
                                               padding: EdgeInsets.symmetric(
-                                                vertical: 14,
+                                                vertical: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
+                                                ),
                                               ),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(
+                                                      ui.scale(
+                                                        base: 12,
+                                                        min: 10,
+                                                        max: 14,
+                                                      ),
+                                                    ),
                                               ),
                                               elevation: 2,
                                             ),
@@ -415,12 +494,16 @@ class _TicketListScreenState extends State<TicketListScreen> {
                             : tickets.isEmpty
                             ? Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(
+                                    ui.scale(base: 20, min: 14, max: 24),
+                                  ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.all(24),
+                                        padding: EdgeInsets.all(
+                                          ui.scale(base: 24, min: 16, max: 28),
+                                        ),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
@@ -443,17 +526,31 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                         ),
                                         child: Icon(
                                           Icons.support_agent,
-                                          size: 64,
+                                          size: ui.scale(
+                                            base: 64,
+                                            min: 48,
+                                            max: 72,
+                                          ),
                                           color: AppColors.lapisLazuli,
                                         ),
                                       ),
-                                      SizedBox(height: 24),
+                                      SizedBox(
+                                        height: ui.scale(
+                                          base: 24,
+                                          min: 16,
+                                          max: 28,
+                                        ),
+                                      ),
                                       Text(
                                         AppLocalizations.of(
                                           context,
                                         )!.tls_no_tickets,
                                         style: TextStyle(
-                                          fontSize: 22,
+                                          fontSize: ui.scale(
+                                            base: 22,
+                                            min: 18,
+                                            max: 24,
+                                          ),
                                           fontWeight: FontWeight.bold,
                                           color: Theme.of(
                                             context,
@@ -461,11 +558,25 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                           fontFamily: 'Vazir',
                                         ),
                                       ),
-                                      SizedBox(height: 12),
+                                      SizedBox(
+                                        height: ui.scale(
+                                          base: 12,
+                                          min: 8,
+                                          max: 16,
+                                        ),
+                                      ),
                                       Container(
                                         padding: EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 12,
+                                          horizontal: ui.scale(
+                                            base: 16,
+                                            min: 12,
+                                            max: 20,
+                                          ),
+                                          vertical: ui.scale(
+                                            base: 12,
+                                            min: 8,
+                                            max: 14,
+                                          ),
                                         ),
                                         decoration: BoxDecoration(
                                           color:
@@ -476,7 +587,11 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                                 )
                                               : Colors.blue[50],
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            ui.scale(
+                                              base: 12,
+                                              min: 10,
+                                              max: 14,
+                                            ),
                                           ),
                                           border: Border.all(
                                             color:
@@ -493,17 +608,31 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                           children: [
                                             Icon(
                                               Icons.info_outline,
-                                              size: 18,
+                                              size: ui.scale(
+                                                base: 18,
+                                                min: 14,
+                                                max: 20,
+                                              ),
                                               color: AppColors.lapisLazuli,
                                             ),
-                                            SizedBox(width: 8),
+                                            SizedBox(
+                                              width: ui.scale(
+                                                base: 8,
+                                                min: 6,
+                                                max: 12,
+                                              ),
+                                            ),
                                             Flexible(
                                               child: Text(
                                                 AppLocalizations.of(
                                                   context,
                                                 )!.tls_send_new_hint,
                                                 style: TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize: ui.scale(
+                                                    base: 14,
+                                                    min: 12,
+                                                    max: 16,
+                                                  ),
                                                   color: AppColors.lapisLazuli,
                                                   fontFamily: 'Vazir',
                                                   fontWeight: FontWeight.w500,

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:uzita/main.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class WifiConfigPage extends StatefulWidget {
   const WifiConfigPage({super.key});
@@ -38,7 +40,7 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.4.1/wifi'),
+        Uri.parse('$baseUrl/wifi'),
         body: {'ssid': ssid, 'password': password, 'token': deviceToken},
       );
 
@@ -76,6 +78,7 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final ui = UiScale(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -85,7 +88,9 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
           color: Theme.of(context).appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 children: [
                   // Left side - Back button and title
@@ -116,8 +121,16 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: screenHeight * 0.08,
-                          width: screenHeight * 0.08,
+                          height: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
+                          width: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
                         ),
                       ],
                     ),
@@ -139,17 +152,18 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
             : TextDirection.rtl,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            20 + MediaQuery.of(context).padding.bottom,
+            ui.scale(base: 20, min: 12, max: 24),
+            ui.scale(base: 20, min: 14, max: 28),
+            ui.scale(base: 20, min: 12, max: 24),
+            ui.scale(base: 20, min: 14, max: 28) +
+                MediaQuery.of(context).padding.bottom,
           ),
           child: Column(
             children: [
               // Header Section
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(ui.scale(base: 24, min: 16, max: 28)),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -159,41 +173,49 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 16, min: 12, max: 20),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.lapisLazuli.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                      blurRadius: ui.scale(base: 10, min: 8, max: 14),
+                      offset: Offset(0, ui.scale(base: 4, min: 3, max: 6)),
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(
+                        ui.scale(base: 16, min: 12, max: 20),
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.wifi, size: 40, color: Colors.white),
+                      child: Icon(
+                        Icons.wifi,
+                        size: ui.scale(base: 40, min: 28, max: 48),
+                        color: Colors.white,
+                      ),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                     Text(
                       AppLocalizations.of(context)!.wifi_header,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: ui.scale(base: 20, min: 16, max: 24),
                         fontWeight: FontWeight.bold,
                       ),
                       textDirection: Directionality.of(context),
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                     Text(
                       AppLocalizations.of(context)!.wifi_subtitle,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 14,
+                        fontSize: ui.scale(base: 14, min: 12, max: 16),
                       ),
                       textDirection: Directionality.of(context),
                     ),
@@ -201,27 +223,30 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                 ),
               ),
 
-              SizedBox(height: 24),
+              SizedBox(height: ui.scale(base: 24, min: 16, max: 28)),
 
               // Instructions Card
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.fromLTRB(
-                  20,
-                  20,
-                  20,
-                  20 + MediaQuery.of(context).padding.bottom,
+                  ui.scale(base: 20, min: 14, max: 24),
+                  ui.scale(base: 20, min: 14, max: 24),
+                  ui.scale(base: 20, min: 14, max: 24),
+                  ui.scale(base: 20, min: 14, max: 24) +
+                      MediaQuery.of(context).padding.bottom,
                 ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 16, min: 12, max: 20),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.black.withValues(alpha: 0.3)
                           : Colors.grey.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                      blurRadius: ui.scale(base: 10, min: 8, max: 14),
+                      offset: Offset(0, ui.scale(base: 4, min: 3, max: 6)),
                     ),
                   ],
                 ),
@@ -231,22 +256,26 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(8),
+                          padding: EdgeInsets.all(
+                            ui.scale(base: 8, min: 6, max: 12),
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              ui.scale(base: 8, min: 6, max: 12),
+                            ),
                           ),
                           child: Icon(
                             Icons.info_outline,
                             color: AppColors.lapisLazuli,
-                            size: 20,
+                            size: ui.scale(base: 20, min: 16, max: 24),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
                         Text(
                           AppLocalizations.of(context)!.wifi_steps_title,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: ui.scale(base: 16, min: 14, max: 18),
                             fontWeight: FontWeight.bold,
                             color: Theme.of(
                               context,
@@ -255,12 +284,12 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                     _buildInstructionStep(
                       number: '1',
                       text: AppLocalizations.of(context)!.wifi_step_1,
                     ),
-                    SizedBox(height: 12),
+                    SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
                     _buildInstructionStep(
                       number: '2',
                       text: AppLocalizations.of(context)!.wifi_step_2,
@@ -269,22 +298,24 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                 ),
               ),
 
-              SizedBox(height: 24),
+              SizedBox(height: ui.scale(base: 24, min: 16, max: 28)),
 
               // Form Card
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.all(ui.scale(base: 24, min: 16, max: 28)),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 16, min: 12, max: 20),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.black.withValues(alpha: 0.3)
                           : Colors.grey.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                      blurRadius: ui.scale(base: 10, min: 8, max: 14),
+                      offset: Offset(0, ui.scale(base: 4, min: 3, max: 6)),
                     ),
                   ],
                 ),
@@ -294,25 +325,25 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                     Text(
                       AppLocalizations.of(context)!.wifi_info_title,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: ui.scale(base: 18, min: 16, max: 20),
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                       textDirection: Directionality.of(context),
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
 
                     // SSID Field
                     Text(
                       AppLocalizations.of(context)!.wifi_ssid_label,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ui.scale(base: 14, min: 12, max: 16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.lapisLazuli,
                       ),
                       textDirection: TextDirection.rtl,
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                     TextFormField(
                       controller: _ssidController,
                       textDirection: Directionality.of(context),
@@ -326,11 +357,15 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                           alpha: 0.04,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 12, min: 10, max: 16),
+                          ),
                           borderSide: BorderSide.none,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 12, min: 10, max: 16),
+                          ),
                           borderSide: BorderSide(
                             color: AppColors.lapisLazuli,
                             width: 2,
@@ -343,19 +378,19 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                       ),
                     ),
 
-                    SizedBox(height: 20),
+                    SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
 
                     // Password Field
                     Text(
                       AppLocalizations.of(context)!.wifi_password_label,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ui.scale(base: 14, min: 12, max: 16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.lapisLazuli,
                       ),
                       textDirection: Directionality.of(context),
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                     TextFormField(
                       controller: _passwordController,
                       textDirection: Directionality.of(context),
@@ -372,11 +407,15 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                           alpha: 0.04,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 12, min: 10, max: 16),
+                          ),
                           borderSide: BorderSide.none,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 12, min: 10, max: 16),
+                          ),
                           borderSide: BorderSide(
                             color: AppColors.lapisLazuli,
                             width: 2,
@@ -389,19 +428,19 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                       ),
                     ),
 
-                    SizedBox(height: 20),
+                    SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
 
                     // Device Token Field
                     Text(
                       AppLocalizations.of(context)!.wifi_token_label,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ui.scale(base: 14, min: 12, max: 16),
                         fontWeight: FontWeight.w600,
                         color: AppColors.lapisLazuli,
                       ),
                       textDirection: Directionality.of(context),
                     ),
-                    SizedBox(height: 8),
+                    SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                     TextFormField(
                       controller: _deviceTokenController,
                       textDirection: Directionality.of(context),
@@ -415,11 +454,15 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                           alpha: 0.04,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 12, min: 10, max: 16),
+                          ),
                           borderSide: BorderSide.none,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 12, min: 10, max: 16),
+                          ),
                           borderSide: BorderSide(
                             color: AppColors.lapisLazuli,
                             width: 2,
@@ -432,26 +475,34 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                       ),
                     ),
 
-                    SizedBox(height: 24),
+                    SizedBox(height: ui.scale(base: 24, min: 16, max: 28)),
 
                     // Submit Button
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: ui.scale(base: 56, min: 44, max: 64),
                       child: ElevatedButton.icon(
                         onPressed: _isLoading ? null : sendWifiCredentials,
                         icon: _isLoading
                             ? SizedBox(
-                                width: 24,
-                                height: 24,
+                                width: ui.scale(base: 24, min: 18, max: 28),
+                                height: ui.scale(base: 24, min: 18, max: 28),
                                 child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     Colors.white,
                                   ),
-                                  strokeWidth: 2.5,
+                                  strokeWidth: ui.scale(
+                                    base: 2.5,
+                                    min: 2.0,
+                                    max: 3.0,
+                                  ),
                                 ),
                               )
-                            : Icon(Icons.send, color: Colors.white),
+                            : Icon(
+                                Icons.send,
+                                color: Colors.white,
+                                size: ui.scale(base: 20, min: 16, max: 24),
+                              ),
                         label: Text(
                           _isLoading
                               ? AppLocalizations.of(
@@ -460,7 +511,7 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                               : AppLocalizations.of(context)!.wifi_send_button,
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: ui.scale(base: 16, min: 14, max: 18),
                             fontWeight: FontWeight.bold,
                           ),
                           textDirection: Directionality.of(context),
@@ -468,7 +519,9 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.lapisLazuli,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              ui.scale(base: 12, min: 10, max: 16),
+                            ),
                           ),
                           elevation: 4,
                         ),
@@ -478,20 +531,22 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                 ),
               ),
 
-              SizedBox(height: 20),
+              SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
 
               // Status Message
               if (_statusMessage.isNotEmpty)
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(ui.scale(base: 16, min: 12, max: 20)),
                   decoration: BoxDecoration(
                     color: _statusMessage.contains('✅')
                         ? AppColors.lapisLazuli.withValues(alpha: 0.1)
                         : _statusMessage.contains('❌')
                         ? Colors.red.withValues(alpha: 0.1)
                         : AppColors.bronzeGold.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 12, min: 10, max: 16),
+                    ),
                     border: Border.all(
                       color: _statusMessage.contains('✅')
                           ? AppColors.lapisLazuli.withValues(alpha: 0.3)
@@ -513,16 +568,16 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
                             : _statusMessage.contains('❌')
                             ? Colors.red
                             : AppColors.bronzeGold,
-                        size: 20,
+                        size: ui.scale(base: 20, min: 16, max: 24),
                       ),
-                      SizedBox(width: 12),
+                      SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
                       Expanded(
                         child: Text(
                           _statusMessage
                               .replaceAll('✅', '')
                               .replaceAll('❌', ''),
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: ui.scale(base: 14, min: 12, max: 16),
                             color: Theme.of(
                               context,
                             ).textTheme.bodyMedium?.color,

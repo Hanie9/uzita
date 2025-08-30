@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/services.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 Widget buildRegisterForm({
   required String title,
@@ -19,6 +20,7 @@ Widget buildRegisterForm({
     builder: (context) {
       final screenHeight = MediaQuery.of(context).size.height;
       final screenWidth = MediaQuery.of(context).size.width;
+      final ui = UiScale(context);
 
       final double horizontalPadding = (screenWidth * 0.06).clamp(12.0, 24.0);
       final double logoHeight = (screenHeight * 0.22).clamp(120.0, 220.0);
@@ -60,8 +62,16 @@ Widget buildRegisterForm({
                                   children: [
                                     Image.asset(
                                       'assets/logouzita.png',
-                                      height: screenHeight * 0.08,
-                                      width: screenHeight * 0.08,
+                                      height: ui.scale(
+                                        base: screenHeight * 0.08,
+                                        min: 28,
+                                        max: 56,
+                                      ),
+                                      width: ui.scale(
+                                        base: screenHeight * 0.08,
+                                        min: 28,
+                                        max: 56,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -193,98 +203,80 @@ Widget buildRegisterForm({
                                   height: screenHeight * 0.035,
                                 ), // 3.5% of screen height
                                 // Phone field
-                                Container(
-                                  height: fieldHeight,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
+                                TextField(
+                                  controller: controllers['phone'],
+                                  keyboardType: TextInputType.number,
+                                  textDirection:
+                                      Localizations.localeOf(
+                                            context,
+                                          ).languageCode ==
+                                          'en'
+                                      ? TextDirection.ltr
+                                      : TextDirection.rtl,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: fieldFontSize),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(10),
+                                  ],
+                                  decoration: InputDecoration(
+                                    hintText: AppLocalizations.of(
+                                      context,
+                                    )!.reg_phone,
+                                    hintStyle: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[300]!,
+                                          ? Colors.grey[400]
+                                          : const Color.fromARGB(
+                                              255,
+                                              99,
+                                              97,
+                                              97,
+                                            ),
+                                      fontSize: hintFontSize,
                                     ),
-                                  ),
-                                  child: TextField(
-                                    controller: controllers['phone'],
-                                    keyboardType: TextInputType.number,
-                                    textDirection:
-                                        Localizations.localeOf(
-                                              context,
-                                            ).languageCode ==
-                                            'en'
-                                        ? TextDirection.ltr
-                                        : TextDirection.rtl,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: fieldFontSize),
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(10),
-                                    ],
-                                    decoration: InputDecoration(
-                                      hintText: AppLocalizations.of(
-                                        context,
-                                      )!.reg_phone,
-                                      hintStyle: TextStyle(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[400]
-                                            : const Color.fromARGB(
-                                                255,
-                                                99,
-                                                97,
-                                                97,
-                                              ),
-                                        fontSize: hintFontSize,
-                                      ),
-                                      hintTextDirection: TextDirection.rtl,
-                                      prefixText:
-                                          '${AppLocalizations.of(context)!.reg_phone_98} ',
-                                      suffixIcon: Padding(
-                                        padding: EdgeInsets.all(
-                                          screenWidth * 0.02,
-                                        ), // 2% of screen width
-                                        child: SvgPicture.asset(
-                                          'assets/icons/phone-plus.svg',
-                                          colorFilter: ColorFilter.mode(
-                                            Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? (Colors.grey[400] ??
-                                                      Colors.grey)
-                                                : const Color.fromARGB(
-                                                    255,
-                                                    80,
-                                                    77,
-                                                    77,
-                                                  ),
-                                            BlendMode.srcIn,
-                                          ),
-                                          width: (screenHeight * 0.05).clamp(
-                                            22.0,
-                                            32.0,
-                                          ),
-                                          height: (screenHeight * 0.05).clamp(
-                                            22.0,
-                                            32.0,
-                                          ),
+                                    hintTextDirection: TextDirection.rtl,
+                                    prefixText:
+                                        '${AppLocalizations.of(context)!.reg_phone_98} ',
+                                    suffixIcon: Padding(
+                                      padding: EdgeInsets.all(
+                                        screenWidth * 0.02,
+                                      ), // 2% of screen width
+                                      child: SvgPicture.asset(
+                                        'assets/icons/phone-plus.svg',
+                                        colorFilter: ColorFilter.mode(
+                                          Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? (Colors.grey[400] ??
+                                                    Colors.grey)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  80,
+                                                  77,
+                                                  77,
+                                                ),
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: (screenHeight * 0.05).clamp(
+                                          22.0,
+                                          32.0,
+                                        ),
+                                        height: (screenHeight * 0.05).clamp(
+                                          22.0,
+                                          32.0,
                                         ),
                                       ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: (screenWidth * 0.035).clamp(
-                                          12.0,
-                                          16.0,
-                                        ),
-                                        vertical: (screenHeight * 0.018).clamp(
-                                          10.0,
-                                          14.0,
-                                        ),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: (screenWidth * 0.035).clamp(
+                                        12.0,
+                                        16.0,
+                                      ),
+                                      vertical: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
                                       ),
                                     ),
                                   ),
@@ -336,85 +328,67 @@ Widget buildRegisterForm({
                                   height: screenHeight * 0.015,
                                 ), // 1.5% of screen height
                                 // Username field
-                                Container(
-                                  height: fieldHeight,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
+                                TextField(
+                                  controller: controllers['username'],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: fieldFontSize),
+                                  decoration: InputDecoration(
+                                    hintText: AppLocalizations.of(
+                                      context,
+                                    )!.reg_name,
+                                    hintMaxLines: 2,
+                                    hintStyle: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[300]!,
+                                          ? Colors.grey[400]
+                                          : const Color.fromARGB(
+                                              255,
+                                              99,
+                                              97,
+                                              97,
+                                            ),
+                                      fontSize: hintFontSize,
                                     ),
-                                  ),
-                                  child: TextField(
-                                    controller: controllers['username'],
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: fieldFontSize),
-                                    decoration: InputDecoration(
-                                      hintText: AppLocalizations.of(
-                                        context,
-                                      )!.reg_name,
-                                      hintMaxLines: 2,
-                                      hintStyle: TextStyle(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[400]
-                                            : const Color.fromARGB(
-                                                255,
-                                                99,
-                                                97,
-                                                97,
-                                              ),
-                                        fontSize: hintFontSize,
-                                      ),
-                                      hintTextDirection: TextDirection.rtl,
-                                      suffixIcon: Padding(
-                                        padding: EdgeInsets.all(
-                                          screenWidth * 0.02,
-                                        ), // 2% of screen width
-                                        child: SvgPicture.asset(
-                                          'assets/icons/user.svg',
-                                          colorFilter: ColorFilter.mode(
-                                            Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? (Colors.grey[400] ??
-                                                      Colors.grey)
-                                                : const Color.fromARGB(
-                                                    255,
-                                                    80,
-                                                    77,
-                                                    77,
-                                                  ),
-                                            BlendMode.srcIn,
-                                          ),
-                                          width: (screenHeight * 0.03).clamp(
-                                            18.0,
-                                            26.0,
-                                          ),
-                                          height: (screenHeight * 0.03).clamp(
-                                            18.0,
-                                            26.0,
-                                          ),
+                                    hintTextDirection: TextDirection.rtl,
+                                    suffixIcon: Padding(
+                                      padding: EdgeInsets.all(
+                                        screenWidth * 0.02,
+                                      ), // 2% of screen width
+                                      child: SvgPicture.asset(
+                                        'assets/icons/user.svg',
+                                        colorFilter: ColorFilter.mode(
+                                          Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? (Colors.grey[400] ??
+                                                    Colors.grey)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  80,
+                                                  77,
+                                                  77,
+                                                ),
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: (screenHeight * 0.03).clamp(
+                                          18.0,
+                                          26.0,
+                                        ),
+                                        height: (screenHeight * 0.03).clamp(
+                                          18.0,
+                                          26.0,
                                         ),
                                       ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: (screenWidth * 0.035).clamp(
-                                          12.0,
-                                          16.0,
-                                        ),
-                                        vertical: (screenHeight * 0.018).clamp(
-                                          10.0,
-                                          14.0,
-                                        ),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: (screenWidth * 0.035).clamp(
+                                        12.0,
+                                        16.0,
+                                      ),
+                                      vertical: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
                                       ),
                                     ),
                                   ),
@@ -424,86 +398,68 @@ Widget buildRegisterForm({
                                   height: screenHeight * 0.015,
                                 ), // 1.5% of screen height
                                 // Password field
-                                Container(
-                                  height: fieldHeight,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
+                                TextField(
+                                  controller: controllers['password'],
+                                  obscureText: true,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: fieldFontSize),
+                                  decoration: InputDecoration(
+                                    hintText: AppLocalizations.of(
+                                      context,
+                                    )!.reg_password,
+                                    hintMaxLines: 2,
+                                    hintStyle: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[300]!,
+                                          ? Colors.grey[400]
+                                          : const Color.fromARGB(
+                                              255,
+                                              99,
+                                              97,
+                                              97,
+                                            ),
+                                      fontSize: hintFontSize,
                                     ),
-                                  ),
-                                  child: TextField(
-                                    controller: controllers['password'],
-                                    obscureText: true,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: fieldFontSize),
-                                    decoration: InputDecoration(
-                                      hintText: AppLocalizations.of(
-                                        context,
-                                      )!.reg_password,
-                                      hintMaxLines: 2,
-                                      hintStyle: TextStyle(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[400]
-                                            : const Color.fromARGB(
-                                                255,
-                                                99,
-                                                97,
-                                                97,
-                                              ),
-                                        fontSize: hintFontSize,
-                                      ),
-                                      hintTextDirection: TextDirection.rtl,
-                                      suffixIcon: Padding(
-                                        padding: EdgeInsets.all(
-                                          screenWidth * 0.02,
-                                        ), // 2% of screen width
-                                        child: SvgPicture.asset(
-                                          'assets/icons/key.svg',
-                                          colorFilter: ColorFilter.mode(
-                                            Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? (Colors.grey[400] ??
-                                                      Colors.grey)
-                                                : const Color.fromARGB(
-                                                    255,
-                                                    80,
-                                                    77,
-                                                    77,
-                                                  ),
-                                            BlendMode.srcIn,
-                                          ),
-                                          width: (screenHeight * 0.035).clamp(
-                                            18.0,
-                                            28.0,
-                                          ),
-                                          height: (screenHeight * 0.035).clamp(
-                                            18.0,
-                                            28.0,
-                                          ),
+                                    hintTextDirection: TextDirection.rtl,
+                                    suffixIcon: Padding(
+                                      padding: EdgeInsets.all(
+                                        screenWidth * 0.02,
+                                      ), // 2% of screen width
+                                      child: SvgPicture.asset(
+                                        'assets/icons/key.svg',
+                                        colorFilter: ColorFilter.mode(
+                                          Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? (Colors.grey[400] ??
+                                                    Colors.grey)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  80,
+                                                  77,
+                                                  77,
+                                                ),
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: (screenHeight * 0.035).clamp(
+                                          18.0,
+                                          28.0,
+                                        ),
+                                        height: (screenHeight * 0.035).clamp(
+                                          18.0,
+                                          28.0,
                                         ),
                                       ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: (screenWidth * 0.035).clamp(
-                                          12.0,
-                                          16.0,
-                                        ),
-                                        vertical: (screenHeight * 0.018).clamp(
-                                          10.0,
-                                          14.0,
-                                        ),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: (screenWidth * 0.035).clamp(
+                                        12.0,
+                                        16.0,
+                                      ),
+                                      vertical: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
                                       ),
                                     ),
                                   ),
@@ -513,91 +469,73 @@ Widget buildRegisterForm({
                                   height: screenHeight * 0.015,
                                 ), // 1.5% of screen height
                                 // Organization code field
-                                Container(
-                                  height: fieldHeight,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
+                                TextField(
+                                  controller: controllers['organ_code'],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: fieldFontSize),
+                                  decoration: InputDecoration(
+                                    hintText: isAdmin
+                                        ? AppLocalizations.of(
+                                            context,
+                                          )!.reg_admin_code
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.reg_org_code,
+                                    hintMaxLines: 2,
+                                    hintStyle: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[300]!,
+                                          ? Colors.grey[400]
+                                          : const Color.fromARGB(
+                                              255,
+                                              99,
+                                              97,
+                                              97,
+                                            ),
+                                      fontSize: hintFontSize,
                                     ),
-                                  ),
-                                  child: TextField(
-                                    controller: controllers['organ_code'],
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: fieldFontSize),
-                                    decoration: InputDecoration(
-                                      hintText: isAdmin
-                                          ? AppLocalizations.of(
-                                              context,
-                                            )!.reg_admin_code
-                                          : AppLocalizations.of(
-                                              context,
-                                            )!.reg_org_code,
-                                      hintMaxLines: 2,
-                                      hintStyle: TextStyle(
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[400]
-                                            : const Color.fromARGB(
-                                                255,
-                                                99,
-                                                97,
-                                                97,
-                                              ),
-                                        fontSize: hintFontSize,
-                                      ),
-                                      hintTextDirection: TextDirection.rtl,
-                                      suffixIcon: Padding(
-                                        padding: EdgeInsets.all(
-                                          screenWidth * 0.02,
-                                        ), // 2% of screen width
-                                        child: SvgPicture.asset(
-                                          isAdmin
-                                              ? 'assets/icons/admin.svg'
-                                              : 'assets/icons/office.svg',
-                                          colorFilter: ColorFilter.mode(
-                                            Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? (Colors.grey[400] ??
-                                                      Colors.grey)
-                                                : const Color.fromARGB(
-                                                    255,
-                                                    80,
-                                                    77,
-                                                    77,
-                                                  ),
-                                            BlendMode.srcIn,
-                                          ),
-                                          width: (screenHeight * 0.03).clamp(
-                                            18.0,
-                                            26.0,
-                                          ),
-                                          height: (screenHeight * 0.03).clamp(
-                                            18.0,
-                                            26.0,
-                                          ),
+                                    hintTextDirection: TextDirection.rtl,
+                                    suffixIcon: Padding(
+                                      padding: EdgeInsets.all(
+                                        screenWidth * 0.02,
+                                      ), // 2% of screen width
+                                      child: SvgPicture.asset(
+                                        isAdmin
+                                            ? 'assets/icons/admin.svg'
+                                            : 'assets/icons/office.svg',
+                                        colorFilter: ColorFilter.mode(
+                                          Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? (Colors.grey[400] ??
+                                                    Colors.grey)
+                                              : const Color.fromARGB(
+                                                  255,
+                                                  80,
+                                                  77,
+                                                  77,
+                                                ),
+                                          BlendMode.srcIn,
+                                        ),
+                                        width: (screenHeight * 0.03).clamp(
+                                          18.0,
+                                          26.0,
+                                        ),
+                                        height: (screenHeight * 0.03).clamp(
+                                          18.0,
+                                          26.0,
                                         ),
                                       ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: (screenWidth * 0.035).clamp(
-                                          12.0,
-                                          16.0,
-                                        ),
-                                        vertical: (screenHeight * 0.018).clamp(
-                                          10.0,
-                                          14.0,
-                                        ),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: (screenWidth * 0.035).clamp(
+                                        12.0,
+                                        16.0,
+                                      ),
+                                      vertical: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
                                       ),
                                     ),
                                   ),

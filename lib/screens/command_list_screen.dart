@@ -14,6 +14,7 @@ import 'package:uzita/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class CommandListScreen extends StatefulWidget {
   const CommandListScreen({super.key});
@@ -388,8 +389,12 @@ class _CommandListScreenState extends State<CommandListScreen> {
   }
 
   Widget _buildFilterButton() {
+    final ui = UiScale(context);
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: EdgeInsets.symmetric(
+        horizontal: ui.scale(base: 16, min: 12, max: 20),
+        vertical: ui.scale(base: 12, min: 8, max: 16),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -399,7 +404,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 16, min: 12, max: 20),
+        ),
         boxShadow: [
           BoxShadow(
             color: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -411,20 +418,29 @@ class _CommandListScreenState extends State<CommandListScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(
+            ui.scale(base: 16, min: 12, max: 20),
+          ),
           onTap: showFilterDialog,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: ui.scale(base: 20, min: 14, max: 24),
+              vertical: ui.scale(base: 16, min: 12, max: 20),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.filter_list, color: Colors.white, size: 24),
-                SizedBox(width: 12),
+                Icon(
+                  Icons.filter_list,
+                  color: Colors.white,
+                  size: ui.scale(base: 24, min: 20, max: 28),
+                ),
+                SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
                 Text(
                   AppLocalizations.of(context)!.cls_filtering_search,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: ui.scale(base: 16, min: 14, max: 18),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -437,6 +453,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
   }
 
   Widget _buildCommandCard(command) {
+    final ui = UiScale(context);
     final dateInfo = formatLocalizedDate(command['created_at'] ?? '');
     final parts = dateInfo.split('|');
     final date = parts[0].trim();
@@ -444,10 +461,15 @@ class _CommandListScreenState extends State<CommandListScreen> {
 
     final theme = Theme.of(context);
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: ui.scale(base: 16, min: 12, max: 20),
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 16, min: 12, max: 20),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -459,16 +481,18 @@ class _CommandListScreenState extends State<CommandListScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(
+            ui.scale(base: 16, min: 12, max: 20),
+          ),
           onTap: () {},
           child: Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(ui.scale(base: 20, min: 14, max: 24)),
             child: Row(
               children: [
                 // Command Icon
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: ui.scale(base: 60, min: 48, max: 72),
+                  height: ui.scale(base: 60, min: 48, max: 72),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -478,7 +502,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 16, min: 12, max: 20),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -488,10 +514,14 @@ class _CommandListScreenState extends State<CommandListScreen> {
                     ],
                   ),
                   child: Center(
-                    child: Icon(Icons.code, color: Colors.white, size: 28),
+                    child: Icon(
+                      Icons.code,
+                      color: Colors.white,
+                      size: ui.scale(base: 28, min: 22, max: 34),
+                    ),
                   ),
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: ui.scale(base: 16, min: 12, max: 20)),
 
                 // Command Info
                 Flexible(
@@ -504,23 +534,29 @@ class _CommandListScreenState extends State<CommandListScreen> {
                             child: Text(
                               '${AppLocalizations.of(context)!.cls_user}: ${command['profile']?['user']?['username'] ?? "---"}',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: ui.scale(base: 16, min: 14, max: 18),
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.grey[800],
                               ),
                             ),
                           ),
-                          SizedBox(width: 5),
+                          SizedBox(width: ui.scale(base: 5, min: 4, max: 8)),
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: ui.scale(base: 8, min: 6, max: 10),
+                              vertical: ui.scale(base: 4, min: 3, max: 6),
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.lapisLazuli.withValues(
                                 alpha: 0.1,
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 12, min: 10, max: 14),
+                              ),
                               border: Border.all(
                                 color: AppColors.lapisLazuli.withValues(
                                   alpha: 0.3,
@@ -531,7 +567,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
                             child: Text(
                               AppLocalizations.of(context)!.cls_command,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: ui.scale(base: 12, min: 10, max: 14),
                                 color: Color(0xFF00A86B),
                                 fontWeight: FontWeight.bold,
                               ),
@@ -539,19 +575,19 @@ class _CommandListScreenState extends State<CommandListScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
+                      SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
                       _buildInfoRow(
                         Icons.devices_other,
                         AppLocalizations.of(context)!.cls_device,
                         (command['device']?['name'] ?? "---").toString(),
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                       _buildInfoRow(
                         Icons.code,
                         AppLocalizations.of(context)!.cls_command_code,
                         (command['code'] ?? "---").toString(),
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                       _buildInfoRow(
                         Icons.access_time,
                         AppLocalizations.of(context)!.cls_date,
@@ -569,27 +605,28 @@ class _CommandListScreenState extends State<CommandListScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final ui = UiScale(context);
     return Row(
       children: [
         Icon(
           icon,
           color: Theme.of(context).textTheme.bodyMedium?.color,
-          size: 16,
+          size: ui.scale(base: 16, min: 14, max: 18),
         ),
-        SizedBox(width: 6),
+        SizedBox(width: ui.scale(base: 6, min: 4, max: 8)),
         Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: ui.scale(base: 13, min: 12, max: 15),
             color: Theme.of(context).textTheme.bodyMedium?.color,
           ),
         ),
-        SizedBox(width: 4),
+        SizedBox(width: ui.scale(base: 4, min: 3, max: 6)),
         Flexible(
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: ui.scale(base: 13, min: 12, max: 15),
               fontWeight: FontWeight.w600,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
@@ -646,8 +683,12 @@ class _CommandListScreenState extends State<CommandListScreen> {
   }
 
   Widget _buildLoadMoreButton() {
+    final ui = UiScale(context);
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: ui.scale(base: 16, min: 12, max: 20),
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -657,7 +698,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 16, min: 12, max: 20),
+        ),
         boxShadow: [
           BoxShadow(
             color: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -669,32 +712,41 @@ class _CommandListScreenState extends State<CommandListScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(
+            ui.scale(base: 16, min: 12, max: 20),
+          ),
           onTap: isLoadingMore ? null : () => fetchCommands(),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: ui.scale(base: 20, min: 14, max: 24),
+              vertical: ui.scale(base: 16, min: 12, max: 20),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (isLoadingMore)
                   SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: ui.scale(base: 20, min: 16, max: 22),
+                    height: ui.scale(base: 20, min: 16, max: 22),
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                      strokeWidth: ui.scale(base: 2, min: 1.6, max: 2.4),
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                 else
-                  Icon(Icons.arrow_downward, color: Colors.white, size: 24),
-                SizedBox(width: 12),
+                  Icon(
+                    Icons.arrow_downward,
+                    color: Colors.white,
+                    size: ui.scale(base: 24, min: 20, max: 28),
+                  ),
+                SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
                 Text(
                   isLoadingMore
                       ? AppLocalizations.of(context)!.cls_loading
                       : AppLocalizations.of(context)!.cls_loading_more,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: ui.scale(base: 16, min: 14, max: 18),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -720,13 +772,23 @@ class _CommandListScreenState extends State<CommandListScreen> {
         child: AlertDialog(
           backgroundColor: Theme.of(context).cardTheme.color,
           surfaceTintColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: UiScale(context).scale(base: 16, min: 12, max: 20),
+            vertical: UiScale(context).scale(base: 24, min: 16, max: 28),
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(
+              UiScale(context).scale(base: 16, min: 12, max: 20),
+            ),
           ),
           title: Row(
             children: [
-              Icon(Icons.filter_list, color: AppColors.lapisLazuli, size: 24),
-              SizedBox(width: 8),
+              Icon(
+                Icons.filter_list,
+                color: AppColors.lapisLazuli,
+                size: UiScale(context).scale(base: 24, min: 20, max: 28),
+              ),
+              SizedBox(width: UiScale(context).scale(base: 8, min: 6, max: 12)),
               Text(
                 AppLocalizations.of(context)!.cls_filter_reports,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -742,7 +804,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
                   label: AppLocalizations.of(context)!.cls_name_device,
                   icon: Icons.devices_other,
                 ),
-                SizedBox(height: 16),
+                SizedBox(
+                  height: UiScale(context).scale(base: 16, min: 12, max: 20),
+                ),
                 // Hide username filter for level 3 users (they can only see their own reports)
                 if (userLevel < 3) ...[
                   _buildFilterField(
@@ -750,14 +814,18 @@ class _CommandListScreenState extends State<CommandListScreen> {
                     label: AppLocalizations.of(context)!.cls_username,
                     icon: Icons.person,
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(
+                    height: UiScale(context).scale(base: 16, min: 12, max: 20),
+                  ),
                 ],
                 _buildFilterField(
                   controller: codeController,
                   label: AppLocalizations.of(context)!.cls_command_code,
                   icon: Icons.code,
                 ),
-                SizedBox(height: 16),
+                SizedBox(
+                  height: UiScale(context).scale(base: 16, min: 12, max: 20),
+                ),
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -769,7 +837,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      UiScale(context).scale(base: 16, min: 12, max: 20),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -781,12 +851,18 @@ class _CommandListScreenState extends State<CommandListScreen> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        UiScale(context).scale(base: 12, min: 10, max: 14),
+                      ),
                       onTap: () => _pickJalaliDate(),
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: UiScale(
+                            context,
+                          ).scale(base: 16, min: 12, max: 20),
+                          vertical: UiScale(
+                            context,
+                          ).scale(base: 12, min: 8, max: 16),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -794,9 +870,15 @@ class _CommandListScreenState extends State<CommandListScreen> {
                             Icon(
                               Icons.calendar_today,
                               color: Colors.white,
-                              size: 20,
+                              size: UiScale(
+                                context,
+                              ).scale(base: 20, min: 16, max: 24),
                             ),
-                            SizedBox(width: 8),
+                            SizedBox(
+                              width: UiScale(
+                                context,
+                              ).scale(base: 8, min: 6, max: 12),
+                            ),
                             Text(
                               AppLocalizations.of(context)!.cls_choosing_date,
                               style: TextStyle(
@@ -811,9 +893,13 @@ class _CommandListScreenState extends State<CommandListScreen> {
                   ),
                 ),
                 if (filterDate != null) ...[
-                  SizedBox(height: 12),
+                  SizedBox(
+                    height: UiScale(context).scale(base: 12, min: 10, max: 16),
+                  ),
                   Container(
-                    padding: EdgeInsets.all(12),
+                    padding: EdgeInsets.all(
+                      UiScale(context).scale(base: 12, min: 10, max: 16),
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -823,7 +909,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        UiScale(context).scale(base: 16, min: 12, max: 20),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -834,8 +922,18 @@ class _CommandListScreenState extends State<CommandListScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.white, size: 16),
-                        SizedBox(width: 8),
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.white,
+                          size: UiScale(
+                            context,
+                          ).scale(base: 16, min: 14, max: 18),
+                        ),
+                        SizedBox(
+                          width: UiScale(
+                            context,
+                          ).scale(base: 8, min: 6, max: 12),
+                        ),
                         Flexible(
                           child: Text(
                             '${AppLocalizations.of(context)!.cls_choosed_date}: ${filterDateDisplay ?? filterDate}',
@@ -993,17 +1091,34 @@ class _CommandListScreenState extends State<CommandListScreen> {
               return AlertDialog(
                 backgroundColor: Theme.of(context).cardTheme.color,
                 surfaceTintColor: Colors.transparent,
+                insetPadding: EdgeInsets.symmetric(
+                  horizontal: UiScale(
+                    context,
+                  ).scale(base: 16, min: 12, max: 20),
+                  vertical: UiScale(context).scale(base: 24, min: 16, max: 28),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    UiScale(context).scale(base: 16, min: 12, max: 20),
+                  ),
+                ),
                 title: Text(
                   AppLocalizations.of(context)!.cls_select_date_shamsi,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: UiScale(
+                      context,
+                    ).scale(base: 18, min: 16, max: 20),
                   ),
                 ),
                 content: SizedBox(
-                  width: screenWidth * 1.2,
-                  height: screenHeight * 0.4,
+                  width: UiScale(
+                    context,
+                  ).scale(base: screenWidth * 0.9, min: 260, max: 520),
+                  height: UiScale(
+                    context,
+                  ).scale(base: screenHeight * 0.45, min: 260, max: 520),
                   child: JalaliDatePickerWidget(
                     initialDate: selectedDate!,
                     onDateSelected: (date) {
@@ -1034,6 +1149,19 @@ class _CommandListScreenState extends State<CommandListScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.lapisLazuli,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          UiScale(context).scale(base: 10, min: 8, max: 12),
+                        ),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: UiScale(
+                          context,
+                        ).scale(base: 16, min: 12, max: 20),
+                        vertical: UiScale(
+                          context,
+                        ).scale(base: 10, min: 8, max: 14),
+                      ),
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.cls_submit,
@@ -1095,7 +1223,11 @@ class _CommandListScreenState extends State<CommandListScreen> {
             ),
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: UiScale(
+                    context,
+                  ).scale(base: 16, min: 12, max: 20),
+                ),
                 child: Row(
                   children: [
                     // Left side - Icons
@@ -1134,8 +1266,12 @@ class _CommandListScreenState extends State<CommandListScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: screenHeight * 0.08,
-                          width: screenHeight * 0.08,
+                          height: UiScale(
+                            context,
+                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
+                          width: UiScale(
+                            context,
+                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
                         ),
                       ],
                     ),
@@ -1185,12 +1321,20 @@ class _CommandListScreenState extends State<CommandListScreen> {
                         Container(
                           width: double.infinity,
                           margin: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                            horizontal: UiScale(
+                              context,
+                            ).scale(base: 16, min: 12, max: 20),
+                            vertical: UiScale(
+                              context,
+                            ).scale(base: 8, min: 6, max: 12),
                           ),
                           padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
+                            horizontal: UiScale(
+                              context,
+                            ).scale(base: 16, min: 12, max: 20),
+                            vertical: UiScale(
+                              context,
+                            ).scale(base: 12, min: 8, max: 16),
                           ),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -1201,7 +1345,11 @@ class _CommandListScreenState extends State<CommandListScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              UiScale(
+                                context,
+                              ).scale(base: 12, min: 10, max: 14),
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: AppColors.lapisLazuli.withValues(
@@ -1215,19 +1363,33 @@ class _CommandListScreenState extends State<CommandListScreen> {
                           child: Row(
                             children: [
                               Container(
-                                width: 40,
-                                height: 40,
+                                width: UiScale(
+                                  context,
+                                ).scale(base: 40, min: 32, max: 48),
+                                height: UiScale(
+                                  context,
+                                ).scale(base: 40, min: 32, max: 48),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.25),
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(
+                                    UiScale(
+                                      context,
+                                    ).scale(base: 10, min: 8, max: 12),
+                                  ),
                                 ),
                                 child: Icon(
                                   Icons.terminal,
                                   color: Colors.white,
-                                  size: 20,
+                                  size: UiScale(
+                                    context,
+                                  ).scale(base: 20, min: 16, max: 24),
                                 ),
                               ),
-                              SizedBox(width: 12),
+                              SizedBox(
+                                width: UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
                               Expanded(
                                 child: Row(
                                   mainAxisAlignment:
@@ -1243,7 +1405,9 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                             context,
                                           )!.cls_commands,
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: UiScale(
+                                              context,
+                                            ).scale(base: 14, min: 12, max: 16),
                                             color: Colors.white.withValues(
                                               alpha: 0.9,
                                             ),
@@ -1254,10 +1418,27 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                             ? Row(
                                                 children: [
                                                   SizedBox(
-                                                    width: 14,
-                                                    height: 14,
+                                                    width: UiScale(context)
+                                                        .scale(
+                                                          base: 14,
+                                                          min: 12,
+                                                          max: 16,
+                                                        ),
+                                                    height: UiScale(context)
+                                                        .scale(
+                                                          base: 14,
+                                                          min: 12,
+                                                          max: 16,
+                                                        ),
                                                     child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
+                                                      strokeWidth:
+                                                          UiScale(
+                                                            context,
+                                                          ).scale(
+                                                            base: 2,
+                                                            min: 1.6,
+                                                            max: 2.4,
+                                                          ),
                                                       valueColor:
                                                           AlwaysStoppedAnimation<
                                                             Color
@@ -1269,7 +1450,12 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                             : Text(
                                                 '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
                                                 style: TextStyle(
-                                                  fontSize: 18,
+                                                  fontSize: UiScale(context)
+                                                      .scale(
+                                                        base: 18,
+                                                        min: 16,
+                                                        max: 20,
+                                                      ),
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white,
                                                 ),
@@ -1278,14 +1464,22 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                     ),
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
+                                        horizontal: UiScale(
+                                          context,
+                                        ).scale(base: 8, min: 6, max: 10),
+                                        vertical: UiScale(
+                                          context,
+                                        ).scale(base: 4, min: 3, max: 6),
                                       ),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withValues(
                                           alpha: 0.15,
                                         ),
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(
+                                          UiScale(
+                                            context,
+                                          ).scale(base: 8, min: 6, max: 10),
+                                        ),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -1293,16 +1487,26 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                           Icon(
                                             Icons.visibility,
                                             color: Colors.white,
-                                            size: 16,
+                                            size: UiScale(
+                                              context,
+                                            ).scale(base: 16, min: 14, max: 18),
                                           ),
-                                          SizedBox(width: 4),
+                                          SizedBox(
+                                            width: UiScale(
+                                              context,
+                                            ).scale(base: 4, min: 3, max: 6),
+                                          ),
                                           Text(
                                             AppLocalizations.of(
                                               context,
                                             )!.cls_observe,
                                             style: TextStyle(
                                               color: Colors.white,
-                                              fontSize: 12,
+                                              fontSize: UiScale(context).scale(
+                                                base: 12,
+                                                min: 10,
+                                                max: 14,
+                                              ),
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),

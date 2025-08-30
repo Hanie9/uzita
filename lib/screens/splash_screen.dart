@@ -96,6 +96,16 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    final shortest = size.shortestSide;
+    // Scale assets and text for different phone sizes
+    final double logoHeight = (shortest * 0.55).clamp(140.0, 260.0);
+    final double logoWidth = (shortest * 1.1).clamp(260.0, 520.0);
+    final double brandTitle = (shortest * 0.15).clamp(22.0, 34.0);
+    final double brandSub = (shortest * 0.085).clamp(14.0, 20.0);
+    final double uzitaSize = (shortest * 0.17).clamp(44.0, 70.0);
+    final double spacing1 = (size.height * 0.035).clamp(16.0, 36.0);
+    final double spacing2 = (size.height * 0.02).clamp(10.0, 24.0);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
@@ -118,15 +128,15 @@ class _SplashScreenState extends State<SplashScreen>
                             scale: _logoAnimation.value,
                             child: Image.asset(
                               'assets/biokaveh.png',
-                              height: 200,
-                              width: 400,
+                              height: logoHeight,
+                              width: logoWidth,
                               fit: BoxFit.contain,
                             ),
                           );
                         },
                       ),
 
-                      SizedBox(height: 30),
+                      SizedBox(height: spacing1),
 
                       // Brand text with animation
                       AnimatedBuilder(
@@ -139,18 +149,18 @@ class _SplashScreenState extends State<SplashScreen>
                                 Text(
                                   'ELARRO',
                                   style: TextStyle(
-                                    fontSize: 32,
+                                    fontSize: brandTitle,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.lapisLazuli,
                                     letterSpacing: 4,
                                     fontFamily: 'Nasalization',
                                   ),
                                 ),
-                                SizedBox(height: 8),
+                                SizedBox(height: spacing2),
                                 Text(
                                   'BIOKAVEH',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: brandSub,
                                     color:
                                         Theme.of(
                                           context,
@@ -177,19 +187,23 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   children: [
                     // Uzita logo
-                    Image.asset('assets/logouzita.png', height: 60, width: 60),
-                    SizedBox(height: 16),
+                    Image.asset(
+                      'assets/logouzita.png',
+                      height: uzitaSize,
+                      width: uzitaSize,
+                    ),
+                    SizedBox(height: spacing2),
                     Text(
                       AppLocalizations.of(context)!.splash_version,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: (brandSub * 0.78).clamp(12.0, 16.0),
                         color:
                             Theme.of(context).textTheme.bodyMedium?.color
                                 ?.withValues(alpha: 0.7) ??
                             Colors.grey[500],
                       ),
                     ),
-                    SizedBox(height: 30),
+                    SizedBox(height: spacing1),
                   ],
                 ),
               ),

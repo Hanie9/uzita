@@ -44,6 +44,40 @@ class SettingsProvider with ChangeNotifier {
 
     return baseTheme.copyWith(
       textTheme: themedText,
+      // Make spacing more compact across the app by default
+      visualDensity: const VisualDensity(horizontal: 0.0, vertical: -0.2),
+      listTileTheme: const ListTileThemeData(
+        dense: true,
+        minLeadingWidth: 28,
+        horizontalTitleGap: 10,
+        minVerticalPadding: 6,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12),
+      ),
+      // Unify card look & spacing across app
+      cardTheme: baseTheme.cardTheme.copyWith(
+        margin: const EdgeInsets.all(12),
+        clipBehavior: Clip.antiAlias,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      // Consistent, compact dialogs on all phones
+      dialogTheme: baseTheme.dialogTheme.copyWith(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        titleTextStyle: themedText.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: themedText.bodyMedium,
+        backgroundColor: baseTheme.cardTheme.color,
+      ),
+      // For M2, dialogTheme is used for AlertDialog as well; keep one source
+      bottomSheetTheme: baseTheme.bottomSheetTheme.copyWith(
+        backgroundColor: baseTheme.cardTheme.color,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        clipBehavior: Clip.antiAlias,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: commonButtonStyle.copyWith(
           backgroundColor: WidgetStateProperty.resolveWith((states) {

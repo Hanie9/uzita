@@ -9,6 +9,7 @@ import 'package:uzita/screens/home_screen.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/wifi.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class SharedAppDrawer extends StatelessWidget {
   final String username;
@@ -88,148 +89,375 @@ class SharedAppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final ui = UiScale(context);
     final Size screenSize = MediaQuery.of(context).size;
-    // Responsive, consistent sizing across phones
-    final double headerHeight = (screenSize.width * 0.36).clamp(120.0, 180.0);
-    final double avatarRadius = (screenSize.width * 0.14).clamp(28.0, 40.0);
-    final double usernameFont = (screenSize.width * 0.052).clamp(16.0, 20.0);
-    final double roleFont = (screenSize.width * 0.036).clamp(12.0, 14.0);
+    // Responsive, consistent sizing across phones using UiScale
+    final double headerHeight = ui.scale(
+      base: screenSize.width * 0.36,
+      min: 110,
+      max: 190,
+    );
+    final double usernameFont = ui.scale(
+      base: screenSize.width * 0.052,
+      min: 15,
+      max: 21,
+    );
+    final double roleFont = ui.scale(
+      base: screenSize.width * 0.036,
+      min: 11.5,
+      max: 15,
+    );
+
+    // Responsive drawer width (like the screenshots): ~82% of screen, clamped
+    final double drawerWidth = (MediaQuery.of(context).size.width * 0.75).clamp(
+      260.0,
+      360.0,
+    );
 
     return Drawer(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: AppColors.lapisLazuli,
-            padding: EdgeInsets.only(left: 16, right: 16, bottom: 10),
-            child: SafeArea(
-              bottom: false,
-              child: SizedBox(
-                height: headerHeight,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: avatarRadius,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.person,
-                        size: avatarRadius + 5,
-                        color: AppColors.lapisLazuli,
+      width: drawerWidth,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final int tileCount = 8 + (userModir ? 1 : 0);
+          const double approxTileHeight = 56.0;
+          final double estimatedContentHeight =
+              headerHeight + (tileCount * approxTileHeight);
+          final double availableHeight = constraints.maxHeight;
+          double scaleDown = 1.0;
+          if (estimatedContentHeight > availableHeight) {
+            scaleDown = (availableHeight - 24.0) / estimatedContentHeight;
+            if (scaleDown < 0.6) scaleDown = 0.6;
+          }
+
+          final double topPad = MediaQuery.of(context).padding.top;
+          final double headerH = (headerHeight * scaleDown).clamp(
+            110.0,
+            (availableHeight - topPad) * 0.30,
+          );
+          final double shortestSide = MediaQuery.of(context).size.shortestSide;
+          final double avatarR = (shortestSide * 0.11).clamp(24.0, 40.0);
+          // Consistent icon sizing across devices
+          final double iconSize = (shortestSide * 0.06).clamp(20.0, 24.0);
+          final bool isRTL = Directionality.of(context) == TextDirection.rtl;
+          final double usernameFs = (usernameFont * scaleDown).clamp(
+            16.0,
+            22.0,
+          );
+          final double roleFs = (roleFont * scaleDown).clamp(12.0, 16.0);
+          final double bottomPad =
+              (MediaQuery.of(context).padding.bottom +
+              ui.scale(base: 8, min: 6, max: 12));
+          final bool useDense = scaleDown < 0.98;
+          double verticalDensity = (-4.0 * (1.0 - scaleDown)).clamp(-3.5, 0.0);
+          // Make tiles closer on small phones regardless of scaleDown
+          if (ui.isVerySmallPhone && verticalDensity > -4.0) {
+            verticalDensity = -4.0;
+          } else if (ui.isSmallPhone && verticalDensity > -3.5) {
+            verticalDensity = -3.5;
+          }
+          // Additional compacting for small phones and when scaled
+          final double phoneFactor = ui.isVerySmallPhone
+              ? 0.75
+              : (ui.isSmallPhone ? 0.82 : 1.0);
+          final double densityFactor = scaleDown < phoneFactor
+              ? scaleDown
+              : phoneFactor;
+          final EdgeInsets tilePadding = EdgeInsets.symmetric(
+            horizontal: (16.0 * densityFactor).clamp(10.0, 18.0),
+          );
+          final double leadingWidth = (iconSize + 8).clamp(26.0, 32.0);
+          final double tileMinVerticalPad = ui.isVerySmallPhone
+              ? 0.0
+              : (ui.isSmallPhone ? 1.0 : 3.0);
+          final double horizontalTitleGap = ui.isVerySmallPhone
+              ? 2.0
+              : (ui.isSmallPhone ? 4.0 : 8.0);
+          // final bool shouldScroll = estimatedContentHeight > availableHeight; // no longer needed
+
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                color: AppColors.lapisLazuli,
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  bottom: 10 * scaleDown,
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    height: headerH,
+                    width: double.infinity,
+                    child: FittedBox(
+                      alignment: AlignmentDirectional.bottomStart,
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 10 * scaleDown),
+                          Align(
+                            alignment: isRTL
+                                ? AlignmentDirectional.topEnd
+                                : AlignmentDirectional.topStart,
+                            child: CircleAvatar(
+                              radius: avatarR,
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                Icons.person,
+                                size: avatarR + 5,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 8 * scaleDown),
+                          Text(
+                            username,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: usernameFs,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4 * scaleDown),
+                          Text(
+                            '${localizations.shareddrawer_level_user} $userRoleTitle',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: roleFs,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Spacer(),
-                    Text(
-                      username,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: usernameFont,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: CustomScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  slivers: [
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(Icons.home_outlined, size: iconSize),
+                          title: Text(
+                            localizations.shareddrawer_home,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () => Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => HomeScreen()),
+                          ),
+                        ),
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(Icons.refresh_outlined, size: iconSize),
+                          title: Text(
+                            localizations.shareddrawer_refresh_data,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            refreshUserData();
+                          },
+                        ),
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(Icons.lock_outline, size: iconSize),
+                          title: Text(
+                            localizations.shareddrawer_change_password,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChangePasswordScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(Icons.help_outline, size: iconSize),
+                          title: Text(
+                            localizations.shareddrawer_help,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => HelpScreen()),
+                            );
+                          },
+                        ),
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(Icons.info_outline, size: iconSize),
+                          title: Text(
+                            localizations.shareddrawer_about,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => AboutScreen()),
+                            );
+                          },
+                        ),
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(
+                            Icons.headset_mic_outlined,
+                            size: iconSize,
+                          ),
+                          title: Text(
+                            localizations.shareddrawer_support,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TicketListScreen(),
+                            ),
+                          ),
+                        ),
+                        if (userModir)
+                          ListTile(
+                            minLeadingWidth: leadingWidth,
+                            leading: Icon(
+                              Icons.settings_outlined,
+                              size: iconSize,
+                            ),
+                            title: Text(
+                              localizations.shareddrawer_services,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            contentPadding: tilePadding,
+                            minVerticalPadding: tileMinVerticalPad,
+                            horizontalTitleGap: horizontalTitleGap,
+                            dense: useDense,
+                            visualDensity: VisualDensity(
+                              vertical: verticalDensity,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ServiceListScreen(),
+                              ),
+                            ),
+                          ),
+                        ListTile(
+                          minLeadingWidth: leadingWidth,
+                          leading: Icon(Icons.wifi_outlined, size: iconSize),
+                          title: Text(
+                            localizations.shareddrawer_wifi_config,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: tilePadding,
+                          minVerticalPadding: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          dense: useDense,
+                          visualDensity: VisualDensity(
+                            vertical: verticalDensity,
+                          ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => WifiConfigPage()),
+                          ),
+                        ),
+                      ]),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      '${localizations.shareddrawer_level_user} $userRoleTitle',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: roleFont,
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Divider(),
+                          ListTile(
+                            minLeadingWidth: leadingWidth,
+                            leading: Icon(Icons.logout, size: iconSize),
+                            title: Text(
+                              localizations.shareddrawer_logout,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            contentPadding: tilePadding,
+                            minVerticalPadding: tileMinVerticalPad,
+                            horizontalTitleGap: horizontalTitleGap,
+                            dense: useDense,
+                            visualDensity: VisualDensity(
+                              vertical: verticalDensity,
+                            ),
+                            onTap: () => _confirmLogout(context),
+                          ),
+                          SizedBox(height: bottomPad),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).padding.bottom + 8,
-              ),
-              children: [
-                ListTile(
-                  leading: Icon(Icons.home_outlined),
-                  title: Text(localizations.shareddrawer_home),
-                  onTap: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => HomeScreen()),
-                  ),
-                ),
-                ListTile(
-                  leading: Icon(Icons.refresh_outlined),
-                  title: Text(localizations.shareddrawer_refresh_data),
-                  onTap: () {
-                    Navigator.pop(context);
-                    refreshUserData();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.lock_outline),
-                  title: Text(localizations.shareddrawer_change_password),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ChangePasswordScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.help_outline),
-                  title: Text(localizations.shareddrawer_help),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => HelpScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.info_outline),
-                  title: Text(localizations.shareddrawer_about),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => AboutScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.headset_mic_outlined),
-                  title: Text(localizations.shareddrawer_support),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => TicketListScreen()),
-                  ),
-                ),
-                if (userModir) ...{
-                  ListTile(
-                    leading: Icon(Icons.settings_outlined),
-                    title: Text(localizations.shareddrawer_services),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => ServiceListScreen()),
-                    ),
-                  ),
-                },
-                // Wifi config should be visible to all users
-                ListTile(
-                  leading: Icon(Icons.wifi_outlined),
-                  title: Text(localizations.shareddrawer_wifi_config),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => WifiConfigPage()),
-                  ),
-                ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.logout),
-                  title: Text(localizations.shareddrawer_logout),
-                  onTap: () => _confirmLogout(context),
-                ),
-              ],
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

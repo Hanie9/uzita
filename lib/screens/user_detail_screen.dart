@@ -8,6 +8,7 @@ import 'package:uzita/screens/user_allowed_devices_screen.dart';
 import 'package:uzita/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class UserDetailScreen extends StatefulWidget {
   final Map user;
@@ -270,10 +271,18 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           backgroundColor: Theme.of(context).cardTheme.color,
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(
+              UiScale(context).scale(base: 16, min: 12, max: 20),
+            ),
           ),
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          actionsPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: UiScale(context).scale(base: 16, min: 12, max: 20),
+            vertical: UiScale(context).scale(base: 24, min: 16, max: 28),
+          ),
+          actionsPadding: EdgeInsets.symmetric(
+            horizontal: UiScale(context).scale(base: 8, min: 6, max: 12),
+            vertical: UiScale(context).scale(base: 8, min: 6, max: 12),
+          ),
           title: Directionality(
             textDirection: Localizations.localeOf(context).languageCode == 'en'
                 ? TextDirection.ltr
@@ -283,9 +292,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 Icon(
                   Icons.admin_panel_settings,
                   color: AppColors.lapisLazuli,
-                  size: 24,
+                  size: UiScale(context).scale(base: 24, min: 20, max: 28),
                 ),
-                SizedBox(width: 8),
+                SizedBox(
+                  width: UiScale(context).scale(base: 8, min: 6, max: 10),
+                ),
                 Text(
                   AppLocalizations.of(context)!.uds_change_level_title,
                   style: TextStyle(
@@ -306,19 +317,29 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(12),
+                    padding: EdgeInsets.all(
+                      UiScale(context).scale(base: 12, min: 10, max: 16),
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(
+                        UiScale(context).scale(base: 8, min: 6, max: 12),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.info_outline,
                           color: AppColors.lapisLazuli,
-                          size: 20,
+                          size: UiScale(
+                            context,
+                          ).scale(base: 20, min: 18, max: 24),
                         ),
-                        SizedBox(width: 8),
+                        SizedBox(
+                          width: UiScale(
+                            context,
+                          ).scale(base: 8, min: 6, max: 12),
+                        ),
                         Expanded(
                           child: Text(
                             '${AppLocalizations.of(context)!.uds_current_level} ${_getLevelText(widget.user['level'])}',
@@ -336,7 +357,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(
+                    height: UiScale(context).scale(base: 16, min: 12, max: 20),
+                  ),
                   Text(
                     AppLocalizations.of(context)!.uds_select_new_level,
                     style: TextStyle(
@@ -344,7 +367,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(
+                    height: UiScale(context).scale(base: 16, min: 12, max: 20),
+                  ),
                   ...List.generate(3, (index) {
                     int level = index + 1;
                     String levelTitle = '';
@@ -661,6 +686,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final user = widget.user;
     final theme = Theme.of(context);
+    final ui = UiScale(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -670,7 +696,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
           color: theme.appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -696,8 +724,16 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     children: [
                       Image.asset(
                         'assets/logouzita.png',
-                        height: screenHeight * 0.08,
-                        width: screenHeight * 0.08,
+                        height: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
+                        width: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
                       ),
                     ],
                   ),
@@ -741,10 +777,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 color: theme.scaffoldBackgroundColor,
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    16 + MediaQuery.of(context).padding.bottom,
+                    ui.scale(base: 16, min: 12, max: 20),
+                    ui.scale(base: 16, min: 12, max: 20),
+                    ui.scale(base: 16, min: 12, max: 20),
+                    ui.scale(base: 16, min: 12, max: 20) +
+                        MediaQuery.of(context).padding.bottom,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,8 +789,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       // Compact User Profile Header
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 13,
+                          horizontal: ui.scale(base: 20, min: 14, max: 24),
+                          vertical: ui.scale(base: 13, min: 10, max: 16),
                         ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -764,7 +801,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(
+                            ui.scale(base: 16, min: 12, max: 20),
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.lapisLazuli.withValues(
@@ -779,21 +818,23 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                           children: [
                             // Avatar
                             CircleAvatar(
-                              radius: 35,
+                              radius: ui.scale(base: 35, min: 28, max: 40),
                               backgroundColor: Colors.white.withValues(
                                 alpha: 0.2,
                               ),
                               child: CircleAvatar(
-                                radius: 30,
+                                radius: ui.scale(base: 30, min: 24, max: 36),
                                 backgroundColor: Colors.white,
                                 child: Icon(
                                   Icons.person,
-                                  size: 35,
+                                  size: ui.scale(base: 35, min: 28, max: 42),
                                   color: AppColors.lapisLazuli,
                                 ),
                               ),
                             ),
-                            SizedBox(width: 16),
+                            SizedBox(
+                              width: ui.scale(base: 16, min: 12, max: 20),
+                            ),
                             // User Info
                             Expanded(
                               child: Column(
@@ -804,32 +845,54 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                         AppLocalizations.of(context)!.uds_user,
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 20,
+                                      fontSize: ui.scale(
+                                        base: 20,
+                                        min: 16,
+                                        max: 22,
+                                      ),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  SizedBox(
+                                    height: ui.scale(base: 4, min: 3, max: 6),
+                                  ),
                                   Container(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
+                                      horizontal: ui.scale(
+                                        base: 10,
+                                        min: 8,
+                                        max: 12,
+                                      ),
+                                      vertical: ui.scale(
+                                        base: 4,
+                                        min: 3,
+                                        max: 6,
+                                      ),
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.white.withValues(
                                         alpha: 0.25,
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(
+                                        ui.scale(base: 12, min: 10, max: 14),
+                                      ),
                                     ),
                                     child: Text(
                                       _getLevelText(user['level']),
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 12,
+                                        fontSize: ui.scale(
+                                          base: 12,
+                                          min: 10,
+                                          max: 14,
+                                        ),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ),
-                                  SizedBox(height: 8),
+                                  SizedBox(
+                                    height: ui.scale(base: 8, min: 6, max: 12),
+                                  ),
                                   Row(
                                     children: [
                                       Icon(
@@ -839,9 +902,19 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                         color: Colors.white.withValues(
                                           alpha: 0.8,
                                         ),
-                                        size: 14,
+                                        size: ui.scale(
+                                          base: 14,
+                                          min: 12,
+                                          max: 16,
+                                        ),
                                       ),
-                                      SizedBox(width: 4),
+                                      SizedBox(
+                                        width: ui.scale(
+                                          base: 4,
+                                          min: 3,
+                                          max: 6,
+                                        ),
+                                      ),
                                       Text(
                                         isUserActive
                                             ? AppLocalizations.of(
@@ -854,7 +927,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                           color: Colors.white.withValues(
                                             alpha: 0.9,
                                           ),
-                                          fontSize: 12,
+                                          fontSize: ui.scale(
+                                            base: 12,
+                                            min: 10,
+                                            max: 14,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -864,15 +941,19 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                             ),
                             // Status Indicator
                             Container(
-                              padding: EdgeInsets.all(8),
+                              padding: EdgeInsets.all(
+                                ui.scale(base: 8, min: 6, max: 10),
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  ui.scale(base: 12, min: 10, max: 14),
+                                ),
                               ),
                               child: Icon(
                                 Icons.person_outline,
                                 color: Colors.white,
-                                size: 20,
+                                size: ui.scale(base: 20, min: 16, max: 24),
                               ),
                             ),
                           ],
@@ -1039,15 +1120,31 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                           context,
                                         ).cardTheme.color,
                                         surfaceTintColor: Colors.transparent,
+                                        insetPadding: EdgeInsets.symmetric(
+                                          horizontal: UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 12, max: 20),
+                                          vertical: UiScale(
+                                            context,
+                                          ).scale(base: 24, min: 16, max: 28),
+                                        ),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            20,
+                                            UiScale(
+                                              context,
+                                            ).scale(base: 20, min: 14, max: 24),
                                           ),
                                         ),
                                         title: Row(
                                           children: [
                                             Container(
-                                              padding: EdgeInsets.all(8),
+                                              padding: EdgeInsets.all(
+                                                UiScale(context).scale(
+                                                  base: 8,
+                                                  min: 6,
+                                                  max: 10,
+                                                ),
+                                              ),
                                               decoration: BoxDecoration(
                                                 color: isUserActive
                                                     ? Colors.orange.withValues(
@@ -1057,7 +1154,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                         alpha: 0.1,
                                                       ),
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(
+                                                      UiScale(context).scale(
+                                                        base: 12,
+                                                        min: 10,
+                                                        max: 14,
+                                                      ),
+                                                    ),
                                               ),
                                               child: Icon(
                                                 isUserActive
@@ -1067,10 +1170,20 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                 color: isUserActive
                                                     ? Colors.orange
                                                     : Colors.green,
-                                                size: 24,
+                                                size: UiScale(context).scale(
+                                                  base: 24,
+                                                  min: 20,
+                                                  max: 28,
+                                                ),
                                               ),
                                             ),
-                                            SizedBox(width: 12),
+                                            SizedBox(
+                                              width: UiScale(context).scale(
+                                                base: 12,
+                                                min: 8,
+                                                max: 16,
+                                              ),
+                                            ),
                                             Expanded(
                                               child: Text(
                                                 AppLocalizations.of(
@@ -1078,7 +1191,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                 )!.uds_confirm_status_title,
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 18,
+                                                  fontSize: UiScale(context)
+                                                      .scale(
+                                                        base: 18,
+                                                        min: 16,
+                                                        max: 20,
+                                                      ),
                                                   color: Theme.of(context)
                                                       .textTheme
                                                       .titleMedium
@@ -1098,16 +1216,33 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                 context,
                                               )!.uds_confirm_status_msg,
                                               style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: UiScale(context)
+                                                    .scale(
+                                                      base: 16,
+                                                      min: 14,
+                                                      max: 18,
+                                                    ),
                                                 color: Theme.of(
                                                   context,
                                                 ).textTheme.bodyMedium?.color,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                            SizedBox(height: 16),
+                                            SizedBox(
+                                              height: UiScale(context).scale(
+                                                base: 16,
+                                                min: 12,
+                                                max: 20,
+                                              ),
+                                            ),
                                             Container(
-                                              padding: EdgeInsets.all(16),
+                                              padding: EdgeInsets.all(
+                                                UiScale(context).scale(
+                                                  base: 16,
+                                                  min: 12,
+                                                  max: 20,
+                                                ),
+                                              ),
                                               decoration: BoxDecoration(
                                                 color: isUserActive
                                                     ? Colors.orange.withValues(
@@ -1117,7 +1252,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                         alpha: 0.05,
                                                       ),
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(
+                                                      UiScale(context).scale(
+                                                        base: 12,
+                                                        min: 10,
+                                                        max: 14,
+                                                      ),
+                                                    ),
                                                 border: Border.all(
                                                   color: isUserActive
                                                       ? Colors.orange
@@ -1138,9 +1279,21 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                         : Icons.check_circle,
                                                     color:
                                                         AppColors.lapisLazuli,
-                                                    size: 20,
+                                                    size: UiScale(context)
+                                                        .scale(
+                                                          base: 20,
+                                                          min: 18,
+                                                          max: 24,
+                                                        ),
                                                   ),
-                                                  SizedBox(width: 12),
+                                                  SizedBox(
+                                                    width: UiScale(context)
+                                                        .scale(
+                                                          base: 12,
+                                                          min: 8,
+                                                          max: 16,
+                                                        ),
+                                                  ),
                                                   Expanded(
                                                     child: Column(
                                                       crossAxisAlignment:
@@ -1161,10 +1314,26 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                             color: isUserActive
                                                                 ? Colors.orange
                                                                 : Colors.green,
-                                                            fontSize: 14,
+                                                            fontSize:
+                                                                UiScale(
+                                                                  context,
+                                                                ).scale(
+                                                                  base: 14,
+                                                                  min: 12,
+                                                                  max: 16,
+                                                                ),
                                                           ),
                                                         ),
-                                                        SizedBox(height: 4),
+                                                        SizedBox(
+                                                          height:
+                                                              UiScale(
+                                                                context,
+                                                              ).scale(
+                                                                base: 4,
+                                                                min: 3,
+                                                                max: 6,
+                                                              ),
+                                                        ),
                                                         Text(
                                                           isUserActive
                                                               ? AppLocalizations.of(
@@ -1181,7 +1350,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                                     .textTheme
                                                                     .bodySmall
                                                                     ?.color,
-                                                            fontSize: 12,
+                                                            fontSize:
+                                                                UiScale(
+                                                                  context,
+                                                                ).scale(
+                                                                  base: 12,
+                                                                  min: 10,
+                                                                  max: 14,
+                                                                ),
                                                           ),
                                                         ),
                                                       ],
@@ -1287,28 +1463,52 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                     context,
                                   ).cardTheme.color,
                                   surfaceTintColor: Colors.transparent,
+                                  insetPadding: EdgeInsets.symmetric(
+                                    horizontal: UiScale(
+                                      context,
+                                    ).scale(base: 16, min: 12, max: 20),
+                                    vertical: UiScale(
+                                      context,
+                                    ).scale(base: 24, min: 16, max: 28),
+                                  ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(
+                                      UiScale(
+                                        context,
+                                      ).scale(base: 20, min: 14, max: 24),
+                                    ),
                                   ),
                                   title: Row(
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.all(8),
+                                        padding: EdgeInsets.all(
+                                          UiScale(
+                                            context,
+                                          ).scale(base: 8, min: 6, max: 10),
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.red.withValues(
                                             alpha: 0.1,
                                           ),
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            UiScale(
+                                              context,
+                                            ).scale(base: 12, min: 10, max: 14),
                                           ),
                                         ),
                                         child: Icon(
                                           Icons.warning_amber_rounded,
                                           color: Colors.red,
-                                          size: 24,
+                                          size: UiScale(
+                                            context,
+                                          ).scale(base: 24, min: 20, max: 28),
                                         ),
                                       ),
-                                      SizedBox(width: 12),
+                                      SizedBox(
+                                        width: UiScale(
+                                          context,
+                                        ).scale(base: 12, min: 8, max: 16),
+                                      ),
                                       Expanded(
                                         child: Text(
                                           AppLocalizations.of(
@@ -1316,7 +1516,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                           )!.uds_delete_user_title,
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 18,
+                                            fontSize: UiScale(
+                                              context,
+                                            ).scale(base: 18, min: 16, max: 20),
                                             color: Theme.of(
                                               context,
                                             ).textTheme.titleMedium?.color,
@@ -1335,22 +1537,34 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                           context,
                                         )!.uds_delete_user_message,
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 14, max: 18),
                                           color: Theme.of(
                                             context,
                                           ).textTheme.bodyMedium?.color,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      SizedBox(height: 16),
+                                      SizedBox(
+                                        height: UiScale(
+                                          context,
+                                        ).scale(base: 16, min: 12, max: 20),
+                                      ),
                                       Container(
-                                        padding: EdgeInsets.all(16),
+                                        padding: EdgeInsets.all(
+                                          UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 12, max: 20),
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.red.withValues(
                                             alpha: 0.05,
                                           ),
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            UiScale(
+                                              context,
+                                            ).scale(base: 12, min: 10, max: 14),
                                           ),
                                           border: Border.all(
                                             color: Colors.red.withValues(
@@ -1364,9 +1578,19 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                             Icon(
                                               Icons.delete_forever,
                                               color: Colors.red,
-                                              size: 20,
+                                              size: UiScale(context).scale(
+                                                base: 20,
+                                                min: 18,
+                                                max: 24,
+                                              ),
                                             ),
-                                            SizedBox(width: 12),
+                                            SizedBox(
+                                              width: UiScale(context).scale(
+                                                base: 12,
+                                                min: 8,
+                                                max: 16,
+                                              ),
+                                            ),
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
@@ -1380,10 +1604,22 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       color: Colors.red,
-                                                      fontSize: 14,
+                                                      fontSize: UiScale(context)
+                                                          .scale(
+                                                            base: 14,
+                                                            min: 12,
+                                                            max: 16,
+                                                          ),
                                                     ),
                                                   ),
-                                                  SizedBox(height: 4),
+                                                  SizedBox(
+                                                    height: UiScale(context)
+                                                        .scale(
+                                                          base: 4,
+                                                          min: 3,
+                                                          max: 6,
+                                                        ),
+                                                  ),
                                                   Text(
                                                     AppLocalizations.of(
                                                       context,
@@ -1393,7 +1629,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                           .textTheme
                                                           .bodySmall
                                                           ?.color,
-                                                      fontSize: 12,
+                                                      fontSize: UiScale(context)
+                                                          .scale(
+                                                            base: 12,
+                                                            min: 10,
+                                                            max: 14,
+                                                          ),
                                                     ),
                                                   ),
                                                 ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -26,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 settings.selectedLanguage == 'fa')
             ? settings.selectedLanguage
             : 'fa';
+        final ui = UiScale(context);
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: PreferredSize(
@@ -66,10 +68,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : TextDirection.rtl,
             child: ListView(
               padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                16 + MediaQuery.of(context).padding.bottom,
+                ui.scale(base: 16, min: 12, max: 20),
+                ui.scale(base: 16, min: 12, max: 20),
+                ui.scale(base: 16, min: 12, max: 20),
+                ui.scale(base: 16, min: 12, max: 20) +
+                    MediaQuery.of(context).padding.bottom,
               ),
               children: [
                 _buildSettingSection(
@@ -263,9 +266,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final theme = Theme.of(context);
     final isDark = Provider.of<SettingsProvider>(context).darkModeEnabled;
+    final ui = UiScale(context);
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: EdgeInsets.symmetric(
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
@@ -281,29 +287,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(ui.scale(base: 16, min: 12, max: 20)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: ui.scale(base: 16, min: 14, max: 18),
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             if (subtitle != null) ...[
-              SizedBox(height: 4),
+              SizedBox(height: ui.scale(base: 4, min: 3, max: 6)),
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: ui.scale(base: 12, min: 11, max: 14),
                   color: isDark ? Colors.white70 : Colors.grey[600],
                 ),
               ),
             ],
-            SizedBox(height: 16),
+            SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
             child,
           ],
         ),

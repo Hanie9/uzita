@@ -6,6 +6,7 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/main.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
   final Map device;
@@ -171,6 +172,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Widget _buildDeviceInfoCard() {
+    final ui = UiScale(context);
     final deviceName =
         (widget.device['name'] ?? AppLocalizations.of(context)!.dds_unknown)
             .toString();
@@ -185,11 +187,16 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
       padding: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 20, min: 12, max: 24),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -207,36 +214,25 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.lapisLazuli.withValues(alpha: 0.15)
                   : AppColors.lapisLazuli.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(ui.scale(base: 20, min: 12, max: 24)),
+              ),
             ),
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            padding: EdgeInsets.symmetric(
+              horizontal: ui.scale(base: 24, min: 16, max: 28),
+              vertical: ui.scale(base: 24, min: 16, max: 28),
+            ),
             child: Row(
               textDirection: Directionality.of(context),
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.lapisLazuli.withValues(alpha: 0.25)
-                        : AppColors.lapisLazuli.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.devices_other,
-                    color: AppColors.lapisLazuli,
-                    size: 32,
-                  ),
-                ),
-                SizedBox(width: 20),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         deviceName,
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: ui.scale(base: 22, min: 18, max: 26),
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
@@ -245,32 +241,40 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                         textDirection: Directionality.of(context),
                         textAlign: TextAlign.right,
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                              horizontal: ui.scale(base: 10, min: 8, max: 14),
+                              vertical: ui.scale(base: 4, min: 3, max: 6),
                             ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 8, min: 6, max: 12),
+                              ),
                             ),
                             child: Row(
                               textDirection: Directionality.of(context),
                               children: [
                                 Icon(
                                   isActive ? Icons.check_circle : Icons.cancel,
-                                  size: 16,
+                                  size: ui.scale(base: 16, min: 14, max: 20),
                                   color: statusColor,
                                 ),
-                                SizedBox(width: 6),
+                                SizedBox(
+                                  width: ui.scale(base: 6, min: 4, max: 10),
+                                ),
                                 Text(
                                   statusText,
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: ui.scale(
+                                      base: 13,
+                                      min: 11,
+                                      max: 15,
+                                    ),
                                     color: statusColor,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -284,6 +288,24 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                     ],
                   ),
                 ),
+                SizedBox(width: ui.scale(base: 20, min: 12, max: 24)),
+                Container(
+                  width: ui.scale(base: 60, min: 44, max: 72),
+                  height: ui.scale(base: 60, min: 44, max: 72),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.lapisLazuli.withValues(alpha: 0.25)
+                        : AppColors.lapisLazuli.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 16, min: 12, max: 20),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.devices_other,
+                    color: AppColors.lapisLazuli,
+                    size: ui.scale(base: 32, min: 24, max: 40),
+                  ),
+                ),
               ],
             ),
           ),
@@ -295,7 +317,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 : Colors.grey[200],
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: ui.scale(base: 24, min: 16, max: 28),
+              vertical: ui.scale(base: 20, min: 14, max: 24),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -304,28 +329,28 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                   children: [
                     Icon(
                       Icons.numbers,
-                      size: 18,
+                      size: ui.scale(base: 18, min: 16, max: 22),
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.grey[400]
                           : Colors.grey[600],
                     ),
-                    SizedBox(width: 12),
+                    SizedBox(width: ui.scale(base: 12, min: 10, max: 16)),
                     Text(
                       AppLocalizations.of(context)!.dds_serial_number,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ui.scale(base: 14, min: 12, max: 16),
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.grey[400]
                             : Colors.grey[600],
                       ),
                       textDirection: Directionality.of(context),
                     ),
-                    SizedBox(width: 8),
+                    SizedBox(width: ui.scale(base: 8, min: 6, max: 12)),
                     Expanded(
                       child: Text(
                         serialNumber,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: ui.scale(base: 15, min: 13, max: 17),
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
@@ -337,34 +362,34 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 14),
+                SizedBox(height: ui.scale(base: 14, min: 10, max: 18)),
                 Row(
                   textDirection: Directionality.of(context),
                   children: [
                     Icon(
                       Icons.info_outline,
-                      size: 18,
+                      size: ui.scale(base: 18, min: 16, max: 22),
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.grey[400]
                           : Colors.grey[600],
                     ),
-                    SizedBox(width: 12),
+                    SizedBox(width: ui.scale(base: 12, min: 10, max: 16)),
                     Text(
                       AppLocalizations.of(context)!.dds_status,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: ui.scale(base: 14, min: 12, max: 16),
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.grey[400]
                             : Colors.grey[600],
                       ),
                       textDirection: Directionality.of(context),
                     ),
-                    SizedBox(width: 8),
+                    SizedBox(width: ui.scale(base: 8, min: 6, max: 12)),
                     Expanded(
                       child: Text(
                         status,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: ui.scale(base: 15, min: 13, max: 17),
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
@@ -385,13 +410,19 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Widget _buildCommandCard() {
+    final ui = UiScale(context);
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-      padding: EdgeInsets.all(24),
+      margin: EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
+      padding: EdgeInsets.all(ui.scale(base: 24, min: 16, max: 28)),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 20, min: 12, max: 24),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -408,21 +439,27 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             textDirection: Directionality.of(context),
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: ui.scale(base: 50, min: 40, max: 60),
+                height: ui.scale(base: 50, min: 40, max: 60),
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? AppColors.lapisLazuli.withValues(alpha: 0.25)
                       : AppColors.lapisLazuli.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 12, min: 10, max: 14),
+                  ),
                 ),
-                child: Icon(Icons.send, color: AppColors.lapisLazuli, size: 24),
+                child: Icon(
+                  Icons.send,
+                  color: AppColors.lapisLazuli,
+                  size: ui.scale(base: 24, min: 20, max: 28),
+                ),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: ui.scale(base: 16, min: 12, max: 20)),
               Text(
                 AppLocalizations.of(context)!.dds_send_command,
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: ui.scale(base: 20, min: 16, max: 22),
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).textTheme.titleLarge?.color,
                 ),
@@ -430,7 +467,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             ],
           ),
 
-          SizedBox(height: 24),
+          SizedBox(height: ui.scale(base: 24, min: 16, max: 28)),
 
           // Command dropdown
           Container(
@@ -451,8 +488,8 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 12, min: 10, max: 14),
                 ),
                 labelText: AppLocalizations.of(context)!.dds_choose_command,
                 labelStyle: TextStyle(
@@ -475,24 +512,27 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             ),
           ),
 
-          SizedBox(height: 24),
+          SizedBox(height: ui.scale(base: 24, min: 16, max: 28)),
 
           // Send command button
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: ui.scale(base: 56, min: 44, max: 64),
             child: ElevatedButton.icon(
               onPressed: loading ? null : sendCommand,
               icon: loading
                   ? SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: ui.scale(base: 20, min: 16, max: 22),
+                      height: ui.scale(base: 20, min: 16, max: 22),
                       child: CircularProgressIndicator(
-                        strokeWidth: 2,
+                        strokeWidth: ui.scale(base: 2, min: 1.6, max: 2.6),
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Icon(Icons.send),
+                  : Icon(
+                      Icons.send,
+                      size: ui.scale(base: 20, min: 16, max: 24),
+                    ),
               label: Text(
                 loading
                     ? AppLocalizations.of(context)!.dds_sending
@@ -502,7 +542,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 backgroundColor: AppColors.lapisLazuli,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 16, min: 12, max: 20),
+                  ),
                 ),
                 elevation: 4,
                 shadowColor: AppColors.lapisLazuli.withValues(alpha: 0.3),
@@ -515,8 +557,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Widget _buildActionButtons() {
+    final ui = UiScale(context);
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
       child: Column(
         children: [
           // Hide disable and delete buttons for level 3 users
@@ -524,8 +570,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             // Activation toggle button
             Container(
               width: double.infinity,
-              height: 56,
-              margin: EdgeInsets.only(bottom: 12),
+              height: ui.scale(base: 56, min: 44, max: 64),
+              margin: EdgeInsets.only(
+                bottom: ui.scale(base: 12, min: 8, max: 14),
+              ),
               child: ElevatedButton.icon(
                 onPressed: toggleActivation,
                 icon: Icon(isActive ? Icons.block : Icons.check_circle),
@@ -541,7 +589,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                       : AppColors.lapisLazuli,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 16, min: 12, max: 20),
+                    ),
                   ),
                   elevation: 4,
                   shadowColor:
@@ -554,7 +604,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             // Delete button
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: ui.scale(base: 56, min: 44, max: 64),
               child: ElevatedButton.icon(
                 onPressed: deleteDevice,
                 icon: Icon(Icons.delete_forever),
@@ -566,7 +616,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 16, min: 12, max: 20),
+                    ),
                   ),
                   elevation: 4,
                   shadowColor: Colors.red.withValues(alpha: 0.3),
@@ -581,16 +633,21 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
   Widget _buildMessageCard() {
     if (message == null) return SizedBox.shrink();
-
+    final ui = UiScale(context);
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-      padding: EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: ui.scale(base: 8, min: 6, max: 12),
+      ),
+      padding: EdgeInsets.all(ui.scale(base: 20, min: 14, max: 24)),
       decoration: BoxDecoration(
         color: isSuccess
             ? Colors.green.withValues(alpha: 0.1)
             : Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          ui.scale(base: 16, min: 12, max: 20),
+        ),
         border: Border.all(
           color: isSuccess ? Colors.green : Colors.red,
           width: 1,
@@ -600,25 +657,27 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         textDirection: Directionality.of(context),
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: EdgeInsets.all(ui.scale(base: 8, min: 6, max: 10)),
             decoration: BoxDecoration(
               color: isSuccess ? Colors.green : Colors.red,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                ui.scale(base: 8, min: 6, max: 12),
+              ),
             ),
             child: Icon(
               isSuccess ? Icons.check_circle : Icons.error,
               color: Colors.white,
-              size: 20,
+              size: ui.scale(base: 20, min: 18, max: 24),
             ),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: ui.scale(base: 16, min: 12, max: 20)),
           Expanded(
             child: Text(
               message!,
               style: TextStyle(
                 color: isSuccess ? Colors.green : Colors.red,
                 fontWeight: FontWeight.w600,
-                fontSize: 15,
+                fontSize: ui.scale(base: 15, min: 13, max: 17),
               ),
               textDirection: Directionality.of(context),
             ),
@@ -631,6 +690,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final ui = UiScale(context);
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -640,7 +700,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
           color: theme.appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 children: [
                   // Left side - Back button and title
@@ -667,8 +729,16 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: screenHeight * 0.08,
-                          width: screenHeight * 0.08,
+                          height: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
+                          width: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
                         ),
                       ],
                     ),
@@ -685,10 +755,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             : TextDirection.rtl,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            12,
-            16,
-            12,
-            16 + MediaQuery.of(context).padding.bottom,
+            ui.scale(base: 12, min: 10, max: 16),
+            ui.scale(base: 16, min: 12, max: 20),
+            ui.scale(base: 12, min: 10, max: 16),
+            ui.scale(base: 16, min: 12, max: 20) +
+                MediaQuery.of(context).padding.bottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -722,23 +793,33 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             child: AlertDialog(
               backgroundColor: Theme.of(context).cardTheme.color,
               surfaceTintColor: Colors.transparent,
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: UiScale(context).scale(base: 16, min: 12, max: 20),
+                vertical: UiScale(context).scale(base: 24, min: 16, max: 28),
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(
+                  UiScale(context).scale(base: 16, min: 12, max: 20),
+                ),
               ),
               title: Row(
                 children: [
                   Icon(
                     Icons.help_outline,
                     color: AppColors.lapisLazuli,
-                    size: 24,
+                    size: UiScale(context).scale(base: 24, min: 20, max: 28),
                   ),
-                  SizedBox(width: 8),
+                  SizedBox(
+                    width: UiScale(context).scale(base: 8, min: 6, max: 12),
+                  ),
                   Text(
                     title,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontSize: 16,
+                      fontSize: UiScale(
+                        context,
+                      ).scale(base: 16, min: 14, max: 18),
                     ),
                   ),
                 ],
@@ -746,7 +827,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
               content: Text(
                 message,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: UiScale(context).scale(base: 14, min: 12, max: 16),
                   color: Theme.of(context).textTheme.bodyMedium?.color,
                   fontFamily: 'Vazir',
                 ),

@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class SendServiceScreen extends StatefulWidget {
   const SendServiceScreen({super.key});
@@ -221,6 +222,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final ui = UiScale(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -230,7 +232,9 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
           color: Theme.of(context).appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 children: [
                   // Left side - Back button and title
@@ -261,8 +265,16 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: screenHeight * 0.08,
-                          width: screenHeight * 0.08,
+                          height: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
+                          width: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
                         ),
                       ],
                     ),
@@ -287,7 +299,10 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
             // Header
             Container(
               width: double.infinity,
-              padding: EdgeInsets.only(bottom: 24, top: 8),
+              padding: EdgeInsets.only(
+                bottom: ui.scale(base: 24, min: 16, max: 28),
+                top: ui.scale(base: 8, min: 6, max: 12),
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -298,43 +313,49 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                   end: Alignment.bottomCenter,
                 ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
+                  bottomLeft: Radius.circular(
+                    ui.scale(base: 28, min: 18, max: 32),
+                  ),
+                  bottomRight: Radius.circular(
+                    ui.scale(base: 28, min: 18, max: 32),
+                  ),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.lapisLazuli.withValues(alpha: 0.10),
-                    blurRadius: 16,
-                    offset: Offset(0, 6),
+                    blurRadius: ui.scale(base: 16, min: 12, max: 24),
+                    offset: Offset(0, ui.scale(base: 6, min: 4, max: 8)),
                   ),
                 ],
               ),
               child: Column(
                 children: [
-                  SizedBox(height: 18),
+                  SizedBox(height: ui.scale(base: 18, min: 12, max: 22)),
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(
+                      ui.scale(base: 16, min: 12, max: 20),
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.build_circle,
-                      size: 44,
+                      size: ui.scale(base: 44, min: 32, max: 52),
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                   Text(
                     AppLocalizations.of(context)!.sss_send_service_request_form,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: ui.scale(base: 18, min: 16, max: 20),
                     ),
                     textDirection: Directionality.of(context),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                 ],
               ),
             ),
@@ -342,28 +363,33 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  24,
-                  24,
-                  24,
-                  24 + MediaQuery.of(context).padding.bottom,
+                  ui.scale(base: 24, min: 16, max: 28),
+                  ui.scale(base: 24, min: 16, max: 28),
+                  ui.scale(base: 24, min: 16, max: 28),
+                  ui.scale(base: 24, min: 16, max: 28) +
+                      MediaQuery.of(context).padding.bottom,
                 ),
                 child: Form(
                   key: _formKey,
                   child: Container(
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(
+                        ui.scale(base: 20, min: 12, max: 24),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.black.withValues(alpha: 0.3)
                               : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
+                          blurRadius: ui.scale(base: 12, min: 8, max: 16),
+                          offset: Offset(0, ui.scale(base: 4, min: 3, max: 6)),
                         ),
                       ],
                     ),
-                    padding: EdgeInsets.all(20),
+                    padding: EdgeInsets.all(
+                      ui.scale(base: 20, min: 14, max: 24),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -379,7 +405,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           ),
                           textDirection: Directionality.of(context),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                         TextFormField(
                           controller: _titleController,
                           textDirection: Directionality.of(context),
@@ -404,11 +430,15 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 ? Colors.grey[800]
                                 : AppColors.lapisLazuli.withValues(alpha: 0.04),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide(
                                 color: AppColors.lapisLazuli,
                                 width: 2,
@@ -428,7 +458,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
                         // Description Field
                         Text(
                           AppLocalizations.of(
@@ -441,7 +471,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           ),
                           textDirection: Directionality.of(context),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                         TextFormField(
                           controller: _descriptionController,
                           textDirection: Directionality.of(context),
@@ -467,11 +497,15 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 ? Colors.grey[800]
                                 : AppColors.lapisLazuli.withValues(alpha: 0.04),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide(
                                 color: AppColors.lapisLazuli,
                                 width: 2,
@@ -504,7 +538,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           ),
                           textDirection: Directionality.of(context),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                         DropdownButtonFormField<String>(
                           value: selectedPiece,
                           decoration: InputDecoration(
@@ -524,11 +558,15 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 ? Colors.grey[800]
                                 : AppColors.lapisLazuli.withValues(alpha: 0.04),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide(
                                 color: AppColors.lapisLazuli,
                                 width: 2,
@@ -562,7 +600,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
                         // Time Selection
                         Text(
                           AppLocalizations.of(
@@ -575,7 +613,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           ),
                           textDirection: Directionality.of(context),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
                         DropdownButtonFormField<String>(
                           value: selectedTime,
                           decoration: InputDecoration(
@@ -595,11 +633,15 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 ? Colors.grey[800]
                                 : AppColors.lapisLazuli.withValues(alpha: 0.04),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
                               borderSide: BorderSide(
                                 color: AppColors.lapisLazuli,
                                 width: 2,
@@ -699,7 +741,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 32),
+                        SizedBox(height: ui.scale(base: 32, min: 20, max: 36)),
                         // Submit Button
                         SizedBox(
                           width: double.infinity,
@@ -707,24 +749,40 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                             onPressed: isLoading ? null : submitRequest,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.lapisLazuli,
-                              padding: EdgeInsets.symmetric(vertical: 18),
+                              padding: EdgeInsets.symmetric(
+                                vertical: ui.scale(base: 18, min: 14, max: 22),
+                              ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(
+                                  ui.scale(base: 14, min: 12, max: 18),
+                                ),
                               ),
                               elevation: 4,
                             ),
                             icon: isLoading
                                 ? SizedBox(
-                                    width: 24,
-                                    height: 24,
+                                    width: ui.scale(base: 24, min: 18, max: 28),
+                                    height: ui.scale(
+                                      base: 24,
+                                      min: 18,
+                                      max: 28,
+                                    ),
                                     child: CircularProgressIndicator(
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         Colors.white,
                                       ),
-                                      strokeWidth: 2.5,
+                                      strokeWidth: ui.scale(
+                                        base: 2.5,
+                                        min: 2.0,
+                                        max: 3.0,
+                                      ),
                                     ),
                                   )
-                                : Icon(Icons.send, color: Colors.white),
+                                : Icon(
+                                    Icons.send,
+                                    color: Colors.white,
+                                    size: ui.scale(base: 20, min: 16, max: 24),
+                                  ),
                             label: Text(
                               isLoading
                                   ? AppLocalizations.of(
@@ -735,7 +793,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                     )!.sss_send_service_request_form_submit,
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: ui.scale(base: 16, min: 14, max: 18),
                                 fontWeight: FontWeight.bold,
                               ),
                               textDirection: Directionality.of(context),

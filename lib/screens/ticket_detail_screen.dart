@@ -9,6 +9,7 @@ import 'package:uzita/utils/ticket_class.dart';
 import 'package:uzita/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
+import 'package:uzita/utils/ui_scale.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   final int ticketId;
@@ -109,6 +110,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ui = UiScale(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
@@ -117,7 +119,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           color: theme.appBarTheme.backgroundColor,
           child: SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+              ),
               child: Row(
                 children: [
                   // Left side - Back button and title
@@ -144,8 +148,16 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: MediaQuery.of(context).size.height * 0.08,
-                          width: MediaQuery.of(context).size.height * 0.08,
+                          height: ui.scale(
+                            base: MediaQuery.of(context).size.height * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
+                          width: ui.scale(
+                            base: MediaQuery.of(context).size.height * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
                         ),
                       ],
                     ),
