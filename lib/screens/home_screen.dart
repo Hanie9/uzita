@@ -666,15 +666,37 @@ class _HomeScreenState extends State<HomeScreen> {
               refreshUserData: refreshUserData,
               logout: () async {
                 final prefs = await SharedPreferences.getInstance();
+                // Preserve user preferences
                 final saved = prefs.getString('saved_username');
                 final preservedLanguage = prefs.getString('selectedLanguage');
+                final preservedDarkMode = prefs.getBool('darkModeEnabled');
+                final preservedTextSize = prefs.getDouble('textSize');
+                final preservedNotifications = prefs.getBool(
+                  'notificationsEnabled',
+                );
+
                 await prefs.clear();
+
+                // Restore preserved settings
                 if (saved != null && saved.isNotEmpty) {
                   await prefs.setString('saved_username', saved);
                 }
                 if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
                   await prefs.setString('selectedLanguage', preservedLanguage);
                 }
+                if (preservedDarkMode != null) {
+                  await prefs.setBool('darkModeEnabled', preservedDarkMode);
+                }
+                if (preservedTextSize != null) {
+                  await prefs.setDouble('textSize', preservedTextSize);
+                }
+                if (preservedNotifications != null) {
+                  await prefs.setBool(
+                    'notificationsEnabled',
+                    preservedNotifications,
+                  );
+                }
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (_) => LoginScreen()),
@@ -798,15 +820,37 @@ class _HomeScreenState extends State<HomeScreen> {
           refreshUserData: refreshUserData,
           logout: () async {
             final prefs = await SharedPreferences.getInstance();
+            // Preserve user preferences
             final saved = prefs.getString('saved_username');
             final preservedLanguage = prefs.getString('selectedLanguage');
+            final preservedDarkMode = prefs.getBool('darkModeEnabled');
+            final preservedTextSize = prefs.getDouble('textSize');
+            final preservedNotifications = prefs.getBool(
+              'notificationsEnabled',
+            );
+
             await prefs.clear();
+
+            // Restore preserved settings
             if (saved != null && saved.isNotEmpty) {
               await prefs.setString('saved_username', saved);
             }
             if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
               await prefs.setString('selectedLanguage', preservedLanguage);
             }
+            if (preservedDarkMode != null) {
+              await prefs.setBool('darkModeEnabled', preservedDarkMode);
+            }
+            if (preservedTextSize != null) {
+              await prefs.setDouble('textSize', preservedTextSize);
+            }
+            if (preservedNotifications != null) {
+              await prefs.setBool(
+                'notificationsEnabled',
+                preservedNotifications,
+              );
+            }
+
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => LoginScreen()),
