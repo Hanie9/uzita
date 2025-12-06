@@ -1,11 +1,12 @@
 {
     "name": "uzita",
     "short_name": "uzita",
-    "start_url": ".",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "uzita - Device Control Application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

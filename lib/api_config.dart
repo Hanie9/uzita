@@ -11,7 +11,7 @@ String _computeApiBaseUrl() {
   // Default to public API domain (requires CORS if different origin)
   return const String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://uzita-iot.ir/api',
+    defaultValue: 'https://device-control.liara.run/api',
   );
 }
 
