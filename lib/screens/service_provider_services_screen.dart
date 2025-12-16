@@ -334,12 +334,16 @@ class _ServiceProviderServicesScreenState
           final status = service['status'] ?? 'open';
 
           return GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(
+            onTap: () async {
+              final result = await Navigator.pushNamed(
                 context,
                 '/service-provider-service-detail',
                 arguments: service,
               );
+              // If service was confirmed, refresh the list
+              if (result == true) {
+                fetchServices();
+              }
             },
             child: Container(
               margin: EdgeInsets.only(bottom: 12),
@@ -411,38 +415,57 @@ class _ServiceProviderServicesScreenState
                             textDirection: Directionality.of(context),
                           ),
                           SizedBox(height: 6),
-                          Row(
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 4,
                             textDirection: Directionality.of(context),
                             children: [
-                              Icon(
-                                Icons.attach_money,
-                                size: 14,
-                                color: AppColors.maroon,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '$hazine ${localizations.sls_tooman}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.maroon,
-                                ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
                                 textDirection: Directionality.of(context),
+                                children: [
+                                  Icon(
+                                    Icons.attach_money,
+                                    size: 14,
+                                    color: AppColors.maroon,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      '$hazine ${localizations.sls_tooman}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.maroon,
+                                      ),
+                                      textDirection: Directionality.of(context),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(width: 12),
-                              Icon(
-                                Icons.calendar_today,
-                                size: 14,
-                                color: AppColors.iranianGray,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                formatDate(createdAt),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.iranianGray,
-                                ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
                                 textDirection: Directionality.of(context),
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: AppColors.iranianGray,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      formatDate(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.iranianGray,
+                                      ),
+                                      textDirection: Directionality.of(context),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

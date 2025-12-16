@@ -23,6 +23,167 @@ class ServiceProviderServiceDetailScreen extends StatefulWidget {
 class _ServiceProviderServiceDetailScreenState
     extends State<ServiceProviderServiceDetailScreen> {
   bool isLoading = false;
+  String? currentStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    currentStatus = widget.service['status']?.toString();
+    print('Initial status from widget.service: $currentStatus');
+    // Check if service was previously confirmed
+    _checkConfirmedStatus();
+    // Fetch latest service data to ensure status is up to date
+    _fetchServiceDetails();
+  }
+
+  Future<void> _checkConfirmedStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final serviceId = widget.service['id']?.toString() ?? '';
+      if (serviceId.isNotEmpty) {
+        final confirmedStatus = prefs.getString('service_${serviceId}_status');
+        if (confirmedStatus != null && confirmedStatus != 'assigned') {
+          print(
+            'Found confirmed status in SharedPreferences: $confirmedStatus',
+          );
+          if (mounted) {
+            setState(() {
+              currentStatus = confirmedStatus;
+              widget.service['status'] = confirmedStatus;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error checking confirmed status: $e');
+    }
+  }
+
+  Future<void> _fetchServiceDetails() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final serviceId = widget.service['id']?.toString() ?? '';
+
+      if (serviceId.isEmpty) {
+        return;
+      }
+
+      await SessionManager().onNetworkRequest();
+
+      // Try to fetch from both pending and completed lists to get latest status
+      final ts = DateTime.now().millisecondsSinceEpoch;
+
+      // Check pending services
+      final pendingResponse = await http.get(
+        Uri.parse('$baseUrl5/serviceprovider/pending/?ts=$ts'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Connection': 'close',
+        },
+      );
+
+      // Check completed services
+      final completedResponse = await http.get(
+        Uri.parse('$baseUrl5/serviceprovider/completed/?ts=$ts'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Connection': 'close',
+        },
+      );
+
+      // Search for this service in both lists
+      Map<String, dynamic>? updatedService;
+
+      if (pendingResponse.statusCode == 200) {
+        final body = utf8.decode(pendingResponse.bodyBytes);
+        final dynamic data = json.decode(body);
+        if (data is List) {
+          for (var service in data) {
+            if (service is Map) {
+              final id = service['id'];
+              if (id != null && id.toString() == serviceId) {
+                updatedService = Map<String, dynamic>.from(service);
+                print(
+                  'Found service in pending list with status: ${updatedService['status']}',
+                );
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      if (completedResponse.statusCode == 200) {
+        final body = utf8.decode(completedResponse.bodyBytes);
+        final dynamic data = json.decode(body);
+        if (data is List) {
+          for (var service in data) {
+            if (service is Map) {
+              final id = service['id'];
+              if (id != null && id.toString() == serviceId) {
+                // If found in completed, use it (it's more up-to-date)
+                updatedService = Map<String, dynamic>.from(service);
+                print(
+                  'Found service in completed list with status: ${updatedService['status']}',
+                );
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // Update service data with latest from server
+      if (updatedService != null) {
+        final updatedStatus = updatedService['status']?.toString();
+        if (updatedStatus != null) {
+          print(
+            'Found service in API, updating status from $currentStatus to $updatedStatus',
+          );
+          if (mounted) {
+            setState(() {
+              currentStatus = updatedStatus;
+              widget.service['status'] = updatedStatus;
+              // Update other fields if needed
+              final technician = updatedService?['technician'];
+              if (technician != null) {
+                widget.service['technician'] = technician;
+              }
+            });
+          }
+        } else {
+          print('Service found in API but status is null');
+        }
+      } else {
+        print('Service not found in pending or completed lists');
+        print(
+          'Current status from widget.service: ${widget.service['status']}',
+        );
+        print('Current status from state: $currentStatus');
+        // If service not found in API but we have a status in widget.service, use it
+        // This handles the case where API hasn't updated yet but we confirmed locally
+        if (widget.service['status'] != null &&
+            widget.service['status'] != 'assigned') {
+          print(
+            'Using stored status from widget.service: ${widget.service['status']}',
+          );
+          if (mounted && currentStatus != widget.service['status']) {
+            setState(() {
+              currentStatus = widget.service['status']?.toString();
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Log error but continue with existing data
+      print('Error fetching service details: $e');
+    }
+  }
 
   String formatDate(String dateString, BuildContext context) {
     try {
@@ -114,7 +275,7 @@ class _ServiceProviderServiceDetailScreenState
     final sayerHazine = widget.service['sayer_hazine']?.toString() ?? '0';
     final time = widget.service['time']?.toString() ?? '0';
     final createdAt = widget.service['created_at'] ?? '';
-    final status = widget.service['status'] ?? 'open';
+    final status = currentStatus ?? widget.service['status'] ?? 'open';
     final technician = widget.service['technician'];
 
     return Scaffold(
@@ -707,7 +868,7 @@ class _ServiceProviderServiceDetailScreenState
                           ),
                           SizedBox(height: 8),
                           _buildStarRating(
-                            (technician['grade'] ?? 0).toDouble(),
+                            ((technician['grade'] ?? 0) as num).toDouble(),
                             context,
                           ),
                         ],
@@ -891,7 +1052,7 @@ class _ServiceProviderServiceDetailScreenState
                     Navigator.pop(dialogContext);
                     await _confirmService(
                       selectedRating,
-                      commentController.text,
+                      commentController.text.trim(),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -911,6 +1072,8 @@ class _ServiceProviderServiceDetailScreenState
   }
 
   Future<void> _confirmService(int grade, String comment) async {
+    if (!mounted) return;
+
     setState(() {
       isLoading = true;
     });
@@ -918,6 +1081,11 @@ class _ServiceProviderServiceDetailScreenState
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Token is missing. Please login again.');
+      }
+
       final serviceId = widget.service['id']?.toString() ?? '';
 
       if (serviceId.isEmpty) {
@@ -930,17 +1098,21 @@ class _ServiceProviderServiceDetailScreenState
       if (grade > 0) {
         requestBody['grade'] = grade;
       }
-      if (comment.isNotEmpty) {
-        requestBody['comment'] = comment;
+      if (comment.isNotEmpty && comment.trim().isNotEmpty) {
+        requestBody['comment'] = comment.trim();
       }
 
+      final url =
+          'https://device-control.liara.run/api/service-confirm/$serviceId';
+      print('Sending POST request to: $url');
+      print('Request body: ${json.encode(requestBody)}');
+
       final response = await http.post(
-        Uri.parse(
-          'https://device-control.liara.run/api/service-confirm/$serviceId',
-        ),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Connection': 'close',
@@ -948,7 +1120,41 @@ class _ServiceProviderServiceDetailScreenState
         body: json.encode(requestBody),
       );
 
+      print('Response status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = utf8.decode(response.bodyBytes);
+        final responseData = json.decode(body);
+
+        // Get updated status from response (could be 'confirm' or 'done')
+        // If technician also confirmed, status will be 'done', otherwise 'confirm'
+        // If status is not in response, default to 'confirm'
+        final updatedStatus = responseData['status']?.toString() ?? 'confirm';
+
+        print('Updated status from API response: $updatedStatus');
+
+        if (!mounted) return;
+
+        // Update service status locally immediately
+        setState(() {
+          currentStatus = updatedStatus;
+          widget.service['status'] = updatedStatus;
+          print('Status updated to: $updatedStatus (stored in widget.service)');
+        });
+
+        // Save confirmed status to SharedPreferences
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final serviceId = widget.service['id']?.toString() ?? '';
+          if (serviceId.isNotEmpty) {
+            await prefs.setString('service_${serviceId}_status', updatedStatus);
+            print('Status saved to SharedPreferences: $updatedStatus');
+          }
+        } catch (e) {
+          print('Error saving status to SharedPreferences: $e');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -957,26 +1163,44 @@ class _ServiceProviderServiceDetailScreenState
             backgroundColor: Colors.green,
           ),
         );
-        // Update service status locally
-        widget.service['status'] = 'confirm';
-        // Pop back to previous screen
-        Navigator.pop(context, true);
+
+        // Wait a bit for API to update, then fetch latest service data
+        // API might need time to move service from pending to completed
+        await Future.delayed(Duration(milliseconds: 1500));
+
+        // Fetch latest service data from API to get accurate status
+        print('Fetching latest service data after confirmation...');
+        await _fetchServiceDetails();
+        print('Current status after fetch: $currentStatus');
+
+        // Wait a bit for the snackbar to show, then pop
+        await Future.delayed(Duration(milliseconds: 500));
+
+        if (mounted) {
+          // Update UI and pop back to refresh the list
+          Navigator.pop(context, true);
+        }
       } else {
         final body = utf8.decode(response.bodyBytes);
+        print('Error response body: $body');
         final errorData = json.decode(body);
         final errorMessage =
             errorData['error']?.toString() ??
             errorData['message']?.toString() ??
-            AppLocalizations.of(context)!.sps_confirmation_error;
+            'Error: ${response.statusCode} - ${AppLocalizations.of(context)!.sps_confirmation_error}';
         throw Exception(errorMessage);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('Error in _confirmService: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {

@@ -477,42 +477,73 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                             ),
                                           ),
                                           SizedBox(height: 6),
-                                          Row(
+                                          Wrap(
+                                            spacing: 12,
+                                            runSpacing: 4,
                                             textDirection: Directionality.of(
                                               context,
                                             ),
                                             children: [
-                                              Icon(
-                                                Icons.attach_money,
-                                                size: 14,
-                                                color: AppColors.maroon,
-                                              ),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                '$hazine ${AppLocalizations.of(context)!.sls_tooman}',
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.maroon,
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                textDirection: Directionality.of(
+                                                  context,
                                                 ),
-                                                textDirection:
-                                                    Directionality.of(context),
+                                                children: [
+                                                  Icon(
+                                                    Icons.attach_money,
+                                                    size: 14,
+                                                    color: AppColors.maroon,
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      '$hazine ${AppLocalizations.of(context)!.sls_tooman}',
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: AppColors.maroon,
+                                                      ),
+                                                      textDirection:
+                                                          Directionality.of(
+                                                        context,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              SizedBox(width: 12),
-                                              Icon(
-                                                Icons.calendar_today,
-                                                size: 14,
-                                                color: AppColors.iranianGray,
-                                              ),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                formatDate(createdAt),
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: AppColors.iranianGray,
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                textDirection: Directionality.of(
+                                                  context,
                                                 ),
-                                                textDirection:
-                                                    Directionality.of(context),
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_today,
+                                                    size: 14,
+                                                    color: AppColors.iranianGray,
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      formatDate(createdAt),
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            AppColors.iranianGray,
+                                                      ),
+                                                      textDirection:
+                                                          Directionality.of(
+                                                        context,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
