@@ -1763,7 +1763,7 @@ class AppLocalizations {
       'sls_new': 'جدید',
       'sls_loading': 'در حال بارگذاری...',
       'sls_description': 'توضیحات:',
-      'sls_need_piece': 'قطعه مورد نیاز:',
+      'sls_need_piece': 'قطعه مورد نیاز',
       'sls_all_cost': 'هزینه کل:',
       'sls_tooman': 'تومان',
       'sls_date_register': 'تاریخ ثبت:',

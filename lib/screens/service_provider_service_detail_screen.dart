@@ -30,33 +30,8 @@ class _ServiceProviderServiceDetailScreenState
     super.initState();
     currentStatus = widget.service['status']?.toString();
     print('Initial status from widget.service: $currentStatus');
-    // Check if service was previously confirmed
-    _checkConfirmedStatus();
-    // Fetch latest service data to ensure status is up to date
+    // Fetch latest service data from API to ensure status is up to date
     _fetchServiceDetails();
-  }
-
-  Future<void> _checkConfirmedStatus() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final serviceId = widget.service['id']?.toString() ?? '';
-      if (serviceId.isNotEmpty) {
-        final confirmedStatus = prefs.getString('service_${serviceId}_status');
-        if (confirmedStatus != null && confirmedStatus != 'assigned') {
-          print(
-            'Found confirmed status in SharedPreferences: $confirmedStatus',
-          );
-          if (mounted) {
-            setState(() {
-              currentStatus = confirmedStatus;
-              widget.service['status'] = confirmedStatus;
-            });
-          }
-        }
-      }
-    } catch (e) {
-      print('Error checking confirmed status: $e');
-    }
   }
 
   Future<void> _fetchServiceDetails() async {
@@ -111,7 +86,7 @@ class _ServiceProviderServiceDetailScreenState
                 print(
                   'Found service in pending list with status: ${updatedService['status']}',
                 );
-                break;
+                // Don't break, check completed list too for more up-to-date status
               }
             }
           }
@@ -149,10 +124,14 @@ class _ServiceProviderServiceDetailScreenState
             setState(() {
               currentStatus = updatedStatus;
               widget.service['status'] = updatedStatus;
-              // Update other fields if needed
-              final technician = updatedService?['technician'];
-              if (technician != null) {
-                widget.service['technician'] = technician;
+              // Update all service fields from API response
+              if (updatedService != null) {
+                widget.service.addAll(updatedService);
+                // Update other fields if needed
+                final technician = updatedService['technician'];
+                if (technician != null) {
+                  widget.service['technician'] = technician;
+                }
               }
             });
           }
@@ -165,19 +144,8 @@ class _ServiceProviderServiceDetailScreenState
           'Current status from widget.service: ${widget.service['status']}',
         );
         print('Current status from state: $currentStatus');
-        // If service not found in API but we have a status in widget.service, use it
-        // This handles the case where API hasn't updated yet but we confirmed locally
-        if (widget.service['status'] != null &&
-            widget.service['status'] != 'assigned') {
-          print(
-            'Using stored status from widget.service: ${widget.service['status']}',
-          );
-          if (mounted && currentStatus != widget.service['status']) {
-            setState(() {
-              currentStatus = widget.service['status']?.toString();
-            });
-          }
-        }
+        // Keep current status from widget.service if service not found in API
+        // This is a fallback for when API doesn't return the service yet
       }
     } catch (e) {
       // Log error but continue with existing data
@@ -339,424 +307,41 @@ class _ServiceProviderServiceDetailScreenState
                 'en'
             ? TextDirection.ltr
             : TextDirection.rtl,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(kSpacing),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Status Banner
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  color: _getStatusBackgroundColor(status),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.white, size: 24),
-                    SizedBox(width: 12),
-                    Text(
-                      _getStatusText(status, localizations),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+        child: RefreshIndicator(
+          onRefresh: _fetchServiceDetails,
+          color: AppColors.lapisLazuli,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(kSpacing),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Status Banner
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: _getStatusBackgroundColor(status),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 24),
+                      SizedBox(width: 12),
+                      Text(
+                        _getStatusText(status, localizations),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
-
-              // Service Title
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha: 0.2)
-                          : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                    width: 1,
+                    ],
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.build_circle,
-                          color: AppColors.lapisLazuli,
-                          size: 24,
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.lapisLazuli.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            localizations.sls_description,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.lapisLazuli,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            description,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.color
-                                  ?.withValues(alpha: 0.8),
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
+                SizedBox(height: 24),
 
-              // Piece Information
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha: 0.2)
-                          : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.settings,
-                          color: AppColors.lapisLazuli,
-                          size: 24,
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          localizations.sls_need_piece,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${localizations.sls_need_piece}:',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.iranianGray,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                pieceName,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${localizations.sps_piece_code}:',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.iranianGray,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              pieceCode,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${localizations.sps_piece_price}:',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.iranianGray,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              '$piecePrice ${localizations.sls_tooman}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.maroon,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-
-              // Cost and Time Information
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha: 0.2)
-                          : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.attach_money,
-                          color: AppColors.bronzeGold,
-                          size: 24,
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          localizations.sps_cost_info,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${localizations.sps_piece_cost}:',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.iranianGray,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '$piecePrice ${localizations.sls_tooman}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${localizations.sps_other_costs}:',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.iranianGray,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '$sayerHazine ${localizations.sls_tooman}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.bronzeGold.withValues(alpha: 0.15),
-                            AppColors.bronzeGold.withValues(alpha: 0.08),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.bronzeGold.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            localizations.sls_all_cost,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.iranianGray,
-                            ),
-                          ),
-                          Text(
-                            '$hazine ${localizations.sls_tooman}',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.maroon,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          color: AppColors.iranianGray,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          '${localizations.sps_time_required}:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.iranianGray,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          '$time ${localizations.sps_minutes}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.lapisLazuli,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-
-              // Technician Information (if exists)
-              if (technician != null) ...[
+                // Service Title
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -784,13 +369,103 @@ class _ServiceProviderServiceDetailScreenState
                       Row(
                         children: [
                           Icon(
-                            Icons.person_outline,
+                            Icons.build_circle,
+                            color: AppColors.lapisLazuli,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.lapisLazuli.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              localizations.sls_description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              description,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.8),
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Piece Information
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.settings,
                             color: AppColors.lapisLazuli,
                             size: 24,
                           ),
                           SizedBox(width: 12),
                           Text(
-                            localizations.sps_technician,
+                            localizations.sls_need_piece,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -809,7 +484,7 @@ class _ServiceProviderServiceDetailScreenState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  localizations.sps_technician_name,
+                                  '${localizations.sls_need_piece}:',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.iranianGray,
@@ -818,7 +493,131 @@ class _ServiceProviderServiceDetailScreenState
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  '${technician['first_name'] ?? ''} ${technician['last_name'] ?? ''}',
+                                  pieceName,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${localizations.sps_piece_code}:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.iranianGray,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                pieceCode,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${localizations.sps_piece_price}:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.iranianGray,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '$piecePrice ${localizations.sls_tooman}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.maroon,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Cost and Time Information
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            color: AppColors.bronzeGold,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            localizations.sps_cost_info,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${localizations.sps_piece_cost}:',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.iranianGray,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '$piecePrice ${localizations.sls_tooman}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -833,7 +632,7 @@ class _ServiceProviderServiceDetailScreenState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  localizations.sps_technician_phone,
+                                  '${localizations.sps_other_costs}:',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.iranianGray,
@@ -842,7 +641,7 @@ class _ServiceProviderServiceDetailScreenState
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  technician['phone'] ?? '---',
+                                  '$sayerHazine ${localizations.sls_tooman}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -855,21 +654,70 @@ class _ServiceProviderServiceDetailScreenState
                         ],
                       ),
                       SizedBox(height: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.bronzeGold.withValues(alpha: 0.15),
+                              AppColors.bronzeGold.withValues(alpha: 0.08),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.bronzeGold.withValues(alpha: 0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              localizations.sls_all_cost,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.iranianGray,
+                              ),
+                            ),
+                            Text(
+                              '$hazine ${localizations.sls_tooman}',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.maroon,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
                         children: [
+                          Icon(
+                            Icons.access_time,
+                            color: AppColors.iranianGray,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
                           Text(
-                            localizations.sps_technician_grade,
+                            '${localizations.sps_time_required}:',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 14,
                               color: AppColors.iranianGray,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          _buildStarRating(
-                            ((technician['grade'] ?? 0) as num).toDouble(),
-                            context,
+                          SizedBox(width: 8),
+                          Text(
+                            '$time ${localizations.sps_minutes}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.lapisLazuli,
+                            ),
                           ),
                         ],
                       ),
@@ -877,83 +725,207 @@ class _ServiceProviderServiceDetailScreenState
                   ),
                 ),
                 SizedBox(height: 20),
-              ],
 
-              // Date Information
-              if (createdAt.isNotEmpty)
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.iranianGray.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: AppColors.iranianGray,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        '${localizations.sls_date_register} ${formatDate(createdAt, context)}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.iranianGray,
-                          fontWeight: FontWeight.w500,
+                // Technician Information (if exists)
+                if (technician != null) ...[
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              SizedBox(height: 20),
-
-              // Confirm Completion Button (only for assigned status)
-              if (status == 'assigned')
-                Container(
-                  width: double.infinity,
-                  margin: EdgeInsets.only(bottom: 20),
-                  child: ElevatedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () => _showRatingDialog(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lapisLazuli,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      ],
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
                       ),
                     ),
-                    child: isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.person_outline,
+                              color: AppColors.lapisLazuli,
+                              size: 24,
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              localizations.sps_technician,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check_circle, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text(
-                                localizations.sps_confirm_completion,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    localizations.sps_technician_name,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.iranianGray,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '${technician['first_name'] ?? ''} ${technician['last_name'] ?? ''}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.lapisLazuli,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    localizations.sps_technician_phone,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.iranianGray,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    technician['phone'] ?? '---',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.lapisLazuli,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              localizations.sps_technician_grade,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.iranianGray,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            _buildStarRating(
+                              ((technician['grade'] ?? 0) as num).toDouble(),
+                              context,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                ],
+
+                // Date Information
+                if (createdAt.isNotEmpty)
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.iranianGray.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 20,
+                          color: AppColors.iranianGray,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          '${localizations.sls_date_register} ${formatDate(createdAt, context)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.iranianGray,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                SizedBox(height: 20),
+
+                // Confirm Completion Button (only for assigned status)
+                if (status == 'assigned')
+                  Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.only(bottom: 20),
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () => _showRatingDialog(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lapisLazuli,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: isLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
                                 ),
                               ),
-                            ],
-                          ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  localizations.sps_confirm_completion,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1142,18 +1114,6 @@ class _ServiceProviderServiceDetailScreenState
           widget.service['status'] = updatedStatus;
           print('Status updated to: $updatedStatus (stored in widget.service)');
         });
-
-        // Save confirmed status to SharedPreferences
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          final serviceId = widget.service['id']?.toString() ?? '';
-          if (serviceId.isNotEmpty) {
-            await prefs.setString('service_${serviceId}_status', updatedStatus);
-            print('Status saved to SharedPreferences: $updatedStatus');
-          }
-        } catch (e) {
-          print('Error saving status to SharedPreferences: $e');
-        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

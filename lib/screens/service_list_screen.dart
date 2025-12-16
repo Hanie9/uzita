@@ -486,9 +486,8 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                             children: [
                                               Row(
                                                 mainAxisSize: MainAxisSize.min,
-                                                textDirection: Directionality.of(
-                                                  context,
-                                                ),
+                                                textDirection:
+                                                    Directionality.of(context),
                                                 children: [
                                                   Icon(
                                                     Icons.attach_money,
@@ -507,8 +506,8 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                                       ),
                                                       textDirection:
                                                           Directionality.of(
-                                                        context,
-                                                      ),
+                                                            context,
+                                                          ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
@@ -517,14 +516,14 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                               ),
                                               Row(
                                                 mainAxisSize: MainAxisSize.min,
-                                                textDirection: Directionality.of(
-                                                  context,
-                                                ),
+                                                textDirection:
+                                                    Directionality.of(context),
                                                 children: [
                                                   Icon(
                                                     Icons.calendar_today,
                                                     size: 14,
-                                                    color: AppColors.iranianGray,
+                                                    color:
+                                                        AppColors.iranianGray,
                                                   ),
                                                   SizedBox(width: 4),
                                                   Flexible(
@@ -532,13 +531,13 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                                       formatDate(createdAt),
                                                       style: TextStyle(
                                                         fontSize: 12,
-                                                        color:
-                                                            AppColors.iranianGray,
+                                                        color: AppColors
+                                                            .iranianGray,
                                                       ),
                                                       textDirection:
                                                           Directionality.of(
-                                                        context,
-                                                      ),
+                                                            context,
+                                                          ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),

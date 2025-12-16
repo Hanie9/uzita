@@ -842,7 +842,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 children: [
                                   Text(
                                     user['user']?['username'] ??
-                                        user['username'] ??
+                                    user['username'] ??
                                         AppLocalizations.of(context)!.uds_user,
                                     style: TextStyle(
                                       color: Colors.white,
