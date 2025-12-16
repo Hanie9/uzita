@@ -514,37 +514,61 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedNavIndex = index;
     });
 
-    // Handle navigation based on selected index
-    switch (index) {
-      case 0: // Home
-        if (ModalRoute.of(context)?.settings.name != '/home') {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-        break;
-      case 1: // Devices
-        if (ModalRoute.of(context)?.settings.name != '/devices') {
-          Navigator.pushReplacementNamed(context, '/devices');
-        }
-        break;
-      case 2: // Reports
-        if (userLevel == 3) {
-          if (ModalRoute.of(context)?.settings.name != '/reports') {
-            Navigator.pushReplacementNamed(context, '/reports');
+    // Handle navigation based on selected index and user level
+    if (userLevel == 2) {
+      // Service provider navigation: Home (0), Profile (1), Services (2)
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
           }
-        } else {
-          if (ModalRoute.of(context)?.settings.name != '/commands') {
-            Navigator.pushReplacementNamed(context, '/commands');
+          break;
+        case 1: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 2: // Services
+          if (ModalRoute.of(context)?.settings.name !=
+              '/service-provider-services') {
+            Navigator.pushReplacementNamed(
+              context,
+              '/service-provider-services',
+            );
           }
-        }
-        break;
-      case 3: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-      case 4: // Users
-        if (ModalRoute.of(context)?.settings.name != '/users') {
-          Navigator.pushReplacementNamed(context, '/users');
-        }
-        break;
+          break;
+      }
+    } else {
+      // Original navigation for other user levels
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+          break;
+        case 1: // Devices
+          if (ModalRoute.of(context)?.settings.name != '/devices') {
+            Navigator.pushReplacementNamed(context, '/devices');
+          }
+          break;
+        case 2: // Reports
+          if (userLevel == 3) {
+            if (ModalRoute.of(context)?.settings.name != '/reports') {
+              Navigator.pushReplacementNamed(context, '/reports');
+            }
+          } else {
+            if (ModalRoute.of(context)?.settings.name != '/commands') {
+              Navigator.pushReplacementNamed(context, '/commands');
+            }
+          }
+          break;
+        case 3: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 4: // Users
+          if (ModalRoute.of(context)?.settings.name != '/users') {
+            Navigator.pushReplacementNamed(context, '/users');
+          }
+          break;
+      }
     }
   }
 

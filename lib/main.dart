@@ -12,6 +12,8 @@ import 'package:uzita/screens/profile_screen.dart';
 import 'package:uzita/screens/settings_screen.dart';
 import 'package:uzita/screens/splash_screen.dart';
 import 'package:uzita/screens/user_list_screen.dart';
+import 'package:uzita/screens/service_provider_services_screen.dart';
+import 'package:uzita/screens/service_provider_service_detail_screen.dart';
 import 'dart:async';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/app_localizations.dart';
@@ -158,6 +160,14 @@ class _MyAppState extends State<MyApp> {
             '/users': (context) => UserListScreen(),
             '/settings': (context) => SettingsScreen(),
             '/profile': (context) => ProfileScreen(),
+            '/service-provider-services': (context) =>
+                ServiceProviderServicesScreen(),
+            '/service-provider-service-detail': (context) {
+              final service =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
+              return ServiceProviderServiceDetailScreen(service: service);
+            },
           },
         );
       },

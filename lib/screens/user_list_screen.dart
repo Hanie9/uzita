@@ -183,21 +183,38 @@ class _UserListScreenState extends State<UserListScreen> {
       selectedNavIndex = index;
     });
 
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1: // Devices
-        Navigator.pushReplacementNamed(context, '/devices');
-        break;
-      case 2: // Reports
-        Navigator.pushReplacementNamed(context, '/commands');
-        break;
-      case 3: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-      case 4: // Users - already here
-        break;
+    // Handle navigation based on user level
+    if (userLevel == 2) {
+      // Service provider navigation: Home (0), Profile (1), Services (2)
+      switch (index) {
+        case 0: // Home
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 1: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 2: // Services
+          Navigator.pushReplacementNamed(context, '/service-provider-services');
+          break;
+      }
+    } else {
+      // Original navigation for other user levels
+      switch (index) {
+        case 0: // Home
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 1: // Devices
+          Navigator.pushReplacementNamed(context, '/devices');
+          break;
+        case 2: // Reports
+          Navigator.pushReplacementNamed(context, '/commands');
+          break;
+        case 3: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 4: // Users - already here
+          break;
+      }
     }
   }
 
@@ -851,18 +868,24 @@ class _UserListScreenState extends State<UserListScreen> {
     final code = user['code']?.toString() ?? '-';
     final isActive = user['active'] ?? false;
 
+    // Normalize role title for each user to match the rest of the app and drawer
     String userRoleTitle = '';
     Color levelColor = Colors.grey;
+    final bool isModir =
+        (user['modir'] == true) || (userData?['modir'] == true);
 
-    if (level == '1') {
-      userRoleTitle = AppLocalizations.of(context)!.uls_full_admin;
+    if (isModir) {
+      userRoleTitle = AppLocalizations.of(context)!.uls_company_representative;
+      levelColor = Colors.red;
+    } else if (level == '1') {
+      userRoleTitle = AppLocalizations.of(context)!.uls_admin;
       levelColor = Colors.red;
     } else if (level == '2') {
-      userRoleTitle = AppLocalizations.of(context)!.uls_manager;
+      userRoleTitle = AppLocalizations.of(context)!.uls_installer;
       levelColor = Colors.orange;
     } else if (level == '3') {
-      userRoleTitle = AppLocalizations.of(context)!.uls_regular_user;
-      levelColor = Color(0xFF007BA7);
+      userRoleTitle = AppLocalizations.of(context)!.uls_user;
+      levelColor = const Color(0xFF007BA7);
     }
 
     final theme = Theme.of(context);

@@ -1385,6 +1385,22 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       selectedNavIndex = index;
     });
 
+    // Handle navigation based on user level
+    if (userLevel == 2) {
+      // Service provider navigation: Home (0), Profile (1), Services (2)
+      switch (index) {
+        case 0: // Home
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 1: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 2: // Services
+          Navigator.pushReplacementNamed(context, '/service-provider-services');
+          break;
+      }
+    } else {
+      // Original navigation for other user levels
     switch (index) {
       case 0: // Home
         Navigator.pushReplacementNamed(context, '/home');
@@ -1400,6 +1416,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       case 4: // Users
         Navigator.pushReplacementNamed(context, '/users');
         break;
+      }
     }
   }
 

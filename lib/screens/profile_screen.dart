@@ -72,6 +72,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       username = prefs.getString('username') ?? '';
       userLevel = prefs.getInt('level') ?? 3;
       userActive = prefs.getBool('active') ?? false;
+      // Set correct selectedNavIndex based on user level
+      if (userLevel == 2) {
+        selectedNavIndex = 1; // Profile is index 1 for level 2 users
+      } else {
+        selectedNavIndex = 3; // Profile is index 3 for other users
+      }
 
       // Set user role title (modir overrides level)
       final bool isModir = prefs.getBool('modir') ?? false;
@@ -495,7 +501,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       selectedNavIndex = index;
     });
 
-    // Handle navigation based on selected index
+    // Handle navigation based on selected index and user level
+    if (userLevel == 2) {
+      // Service provider navigation: Home (0), Profile (1), Services (2)
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+          break;
+        case 1: // Profile - already here
+          break;
+        case 2: // Services
+          if (ModalRoute.of(context)?.settings.name !=
+              '/service-provider-services') {
+            Navigator.pushReplacementNamed(context, '/service-provider-services');
+          }
+          break;
+      }
+    } else {
+      // Original navigation for other user levels
     switch (index) {
       case 0: // Home
         if (ModalRoute.of(context)?.settings.name != '/home') {
@@ -518,14 +543,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
         }
         break;
-      case 3: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
+        case 3: // Profile - already here
         break;
       case 4: // Users
         if (ModalRoute.of(context)?.settings.name != '/users') {
           Navigator.pushReplacementNamed(context, '/users');
         }
         break;
+      }
     }
   }
 

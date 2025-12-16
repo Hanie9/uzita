@@ -20,6 +20,39 @@ class ServiceListScreen extends StatefulWidget {
 class _ServiceListScreenState extends State<ServiceListScreen> {
   List services = [];
   bool isLoading = true;
+  int userLevel = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userLevel = prefs.getInt('level') ?? 3;
+    });
+    // Check if user has access (only level 1)
+    if (userLevel != 1) {
+      // Show error and go back
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.sls_error_fetching_services_status_code_403,
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pop(context);
+      });
+      return;
+    }
+    fetchServices();
+  }
 
   Future<void> fetchServices() async {
     try {
@@ -81,12 +114,6 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
         ),
       );
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    fetchServices();
   }
 
   String formatDate(String dateString) {
@@ -345,308 +372,168 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                         itemBuilder: (context, index) {
                           final service = services[index];
                           final title = service['title'] ?? '---';
-                          final description = service['description'] ?? '---';
-                          final pieceName = service['piece']?['name'] ?? '---';
-                          final hazine = service['hazine']?.toString() ?? '0';
+                          final hazine =
+                              service['hazine']?.toString() ??
+                              service['cost']?.toString() ??
+                              '0';
                           final createdAt = service['created_at'] ?? '';
-                          return Container(
-                            margin: EdgeInsets.only(bottom: 20),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
+                          final status = service['status'] ?? 'open';
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/service-provider-service-detail',
+                                arguments: service,
+                              );
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.black.withValues(alpha: 0.2)
+                                        : AppColors.lapisLazuli.withValues(
+                                            alpha: 0.06,
+                                          ),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(
                                   color:
                                       Theme.of(context).brightness ==
                                           Brightness.dark
-                                      ? Colors.black.withValues(alpha: 0.3)
+                                      ? Colors.grey[700]!
                                       : AppColors.lapisLazuli.withValues(
                                           alpha: 0.08,
                                         ),
-                                  blurRadius: 15,
-                                  offset: Offset(0, 6),
+                                  width: 1,
                                 ),
-                              ],
-                              border: Border.all(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey[600]!
-                                    : AppColors.lapisLazuli.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                width: 1,
                               ),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Row(
-                                    textDirection: Directionality.of(context),
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.lapisLazuli.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                              AppColors.lapisLazuli.withValues(
-                                                alpha: 0.08,
-                                              ),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: AppColors.lapisLazuli
-                                                .withValues(alpha: 0.2),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.build_circle,
-                                          color: AppColors.lapisLazuli,
-                                          size: 32,
-                                        ),
-                                      ),
-                                      SizedBox(width: 20),
-                                      Expanded(
-                                        child: Text(
-                                          title,
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(
-                                              context,
-                                            ).textTheme.bodyMedium?.color,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          textDirection: Directionality.of(
-                                            context,
-                                          ),
-                                          textAlign:
-                                              Directionality.of(context) ==
-                                                  TextDirection.rtl
-                                              ? TextAlign.right
-                                              : TextAlign.left,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 18),
-                                  Container(
-                                    padding: EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.lapisLazuli.withValues(
-                                        alpha: 0.05,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: AppColors.lapisLazuli.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.sls_description,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.lapisLazuli,
-                                          ),
-                                          textDirection: Directionality.of(
-                                            context,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          description,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.color
-                                                ?.withValues(alpha: 0.8),
-                                            height: 1.4,
-                                          ),
-                                          textDirection: Directionality.of(
-                                            context,
-                                          ),
-                                          textAlign:
-                                              Directionality.of(context) ==
-                                                  TextDirection.rtl
-                                              ? TextAlign.right
-                                              : TextAlign.left,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: 18),
-                                  Row(
-                                    textDirection: Directionality.of(context),
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                          padding: EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.lapisLazuli
-                                                .withValues(alpha: 0.05),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: AppColors.lapisLazuli
-                                                  .withValues(alpha: 0.1),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              Text(
-                                                AppLocalizations.of(
-                                                  context,
-                                                )!.sls_need_piece,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: AppColors.iranianGray,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                                textDirection:
-                                                    Directionality.of(context),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                pieceName,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.lapisLazuli,
-                                                ),
-                                                textDirection:
-                                                    Directionality.of(context),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 16),
-                                      Container(
-                                        padding: EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.bronzeGold.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                              AppColors.bronzeGold.withValues(
-                                                alpha: 0.08,
-                                              ),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: AppColors.bronzeGold
-                                                .withValues(alpha: 0.2),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.sls_all_cost,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.iranianGray,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              textDirection: Directionality.of(
-                                                context,
-                                              ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              '$hazine ${AppLocalizations.of(context)!.sls_tooman}',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.maroon,
-                                              ),
-                                              textDirection: Directionality.of(
-                                                context,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (createdAt.isNotEmpty) ...[
-                                    SizedBox(height: 16),
+                              child: Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Row(
+                                  textDirection: Directionality.of(context),
+                                  children: [
+                                    // Status badge
                                     Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
+                                        horizontal: 10,
+                                        vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.iranianGray.withValues(
-                                          alpha: 0.1,
-                                        ),
+                                        color: _getStatusColor(
+                                          status,
+                                        ).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: _getStatusColor(
+                                            status,
+                                          ).withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
                                       ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                      child: Text(
+                                        _getStatusText(
+                                          status,
+                                          AppLocalizations.of(context)!,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: _getStatusColor(status),
+                                        ),
                                         textDirection: Directionality.of(
                                           context,
                                         ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    // Service info
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Icon(
-                                            Icons.calendar_today,
-                                            size: 16,
-                                            color: AppColors.iranianGray,
-                                          ),
-                                          SizedBox(width: 8),
                                           Text(
-                                            '${AppLocalizations.of(context)!.sls_date_register} ${formatDate(createdAt)}',
+                                            title,
                                             style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.iranianGray,
-                                              fontWeight: FontWeight.w500,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.color,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             textDirection: Directionality.of(
                                               context,
                                             ),
                                           ),
+                                          SizedBox(height: 6),
+                                          Row(
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
+                                            children: [
+                                              Icon(
+                                                Icons.attach_money,
+                                                size: 14,
+                                                color: AppColors.maroon,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                '$hazine ${AppLocalizations.of(context)!.sls_tooman}',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.maroon,
+                                                ),
+                                                textDirection:
+                                                    Directionality.of(context),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Icon(
+                                                Icons.calendar_today,
+                                                size: 14,
+                                                color: AppColors.iranianGray,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                formatDate(createdAt),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors.iranianGray,
+                                                ),
+                                                textDirection:
+                                                    Directionality.of(context),
+                                              ),
+                                            ],
+                                          ),
                                         ],
                                       ),
                                     ),
+                                    Icon(
+                                      Icons.chevron_left,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withValues(alpha: 0.5),
+                                      textDirection:
+                                          Directionality.of(context) ==
+                                              TextDirection.rtl
+                                          ? TextDirection.ltr
+                                          : TextDirection.rtl,
+                                    ),
                                   ],
-                                ],
+                                ),
                               ),
                             ),
                           );
@@ -713,5 +600,33 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
         ),
       ),
     );
+  }
+
+  String _getStatusText(String status, AppLocalizations localizations) {
+    switch (status) {
+      case 'open':
+        return localizations.sps_status_open;
+      case 'assigned':
+        return localizations.sps_status_assigned;
+      case 'confirm':
+        return localizations.sps_status_confirm;
+      case 'done':
+        return localizations.sps_status_done;
+      case 'canceled':
+        return localizations.sps_status_canceled;
+      default:
+        return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'done':
+        return Colors.green;
+      case 'canceled':
+        return Colors.red;
+      default:
+        return Colors.orange;
+    }
   }
 }

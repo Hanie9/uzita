@@ -118,7 +118,7 @@ class SharedAppDrawer extends StatelessWidget {
       width: drawerWidth,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final int tileCount = 8 + (userModir ? 1 : 0);
+          final int tileCount = 8 + (userLevel == 1 ? 1 : 0);
           const double approxTileHeight = 56.0;
           final double estimatedContentHeight =
               headerHeight + (tileCount * approxTileHeight);
@@ -377,7 +377,7 @@ class SharedAppDrawer extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (userModir)
+                        if (userLevel == 1)
                           ListTile(
                             minLeadingWidth: leadingWidth,
                             leading: Icon(

@@ -841,7 +841,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    user['username'] ??
+                                    user['user']?['username'] ??
+                                        user['username'] ??
                                         AppLocalizations.of(context)!.uds_user,
                                     style: TextStyle(
                                       color: Colors.white,

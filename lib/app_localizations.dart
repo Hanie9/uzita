@@ -245,6 +245,7 @@ class AppLocalizations {
       'nav_devices': 'Devices',
       'nav_profile': 'Profile',
       'nav_users': 'Users',
+      'nav_services': 'Services',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'Please wait',
@@ -886,6 +887,45 @@ class AppLocalizations {
       'sls_no_request': 'No service requests yet',
       'sls_no_request_description': 'Click to register a new request',
 
+      // Service Provider Services Screen (sps_)
+      'sps_services': 'Services',
+      'sps_pending_services': 'Pending Services',
+      'sps_completed_services': 'Completed Services',
+      'sps_no_pending_services': 'No pending services',
+      'sps_no_pending_services_description':
+          'You have no services to complete at the moment',
+      'sps_no_completed_services': 'No completed services',
+      'sps_no_completed_services_description':
+          'You have not completed any services yet',
+      'sps_status_open': 'Open',
+      'sps_status_assigned': 'Assigned',
+      'sps_status_confirm': 'Confirmed',
+      'sps_status_done': 'Done',
+      'sps_status_canceled': 'Canceled',
+      'sps_technician': 'Technician',
+      'sps_technician_name': 'Name',
+      'sps_technician_phone': 'Phone',
+      'sps_technician_grade': 'Customer Rating',
+      'sps_no_rating': 'No rating yet',
+      'sps_service_details': 'Service Details',
+      'sps_piece_code': 'Code',
+      'sps_piece_price': 'Price',
+      'sps_cost_info': 'Cost Information',
+      'sps_piece_cost': 'Piece Cost',
+      'sps_other_costs': 'Other Costs',
+      'sps_time_required': 'Time Required',
+      'sps_minutes': 'minutes',
+      'sps_confirm_completion': 'Confirm Completion',
+      'sps_rating_dialog_title': 'Rate and Comment',
+      'sps_select_rating': 'Select Rating',
+      'sps_comment': 'Comment',
+      'sps_comment_hint': 'Enter your comment (optional)',
+      'sps_confirm_button': 'Confirm',
+      'sps_rating_required': 'Please select a rating',
+      'sps_confirming': 'Confirming...',
+      'sps_confirmation_success': 'Service confirmed successfully',
+      'sps_confirmation_error': 'Error confirming service',
+
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
       'splash_version': 'Version 1.0.0',
@@ -1096,6 +1136,7 @@ class AppLocalizations {
       'nav_devices': 'دستگاه ها',
       'nav_profile': 'پروفایل',
       'nav_users': 'کاربران',
+      'nav_services': 'سرویس ها',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'لطفاً صبر کنید',
@@ -1729,6 +1770,45 @@ class AppLocalizations {
       'sls_no_request': 'هنوز درخواست سرویسی ندارید',
       'sls_no_request_description': 'برای ثبت درخواست جدید کلیک کنید',
 
+      // Service Provider Services Screen (sps_)
+      'sps_services': 'سرویس ها',
+      'sps_pending_services': 'سرویس های در انتظار',
+      'sps_completed_services': 'سرویس های انجام شده',
+      'sps_no_pending_services': 'سرویس در انتظاری وجود ندارد',
+      'sps_no_pending_services_description':
+          'در حال حاضر سرویسی برای انجام ندارید',
+      'sps_no_completed_services': 'سرویس انجام شده‌ای وجود ندارد',
+      'sps_no_completed_services_description':
+          'هنوز هیچ سرویسی انجام نداده‌اید',
+      'sps_status_open': 'باز',
+      'sps_status_assigned': 'واگذار شده',
+      'sps_status_confirm': 'تایید شده',
+      'sps_status_done': 'تمام شده',
+      'sps_status_canceled': 'کنسل شده',
+      'sps_technician': 'تکنسین',
+      'sps_technician_name': 'نام',
+      'sps_technician_phone': 'تلفن',
+      'sps_technician_grade': 'امتیاز رضایت مشتری',
+      'sps_no_rating': 'هنوز امتیازی ثبت نشده',
+      'sps_service_details': 'جزئیات سرویس',
+      'sps_piece_code': 'کد',
+      'sps_piece_price': 'قیمت',
+      'sps_cost_info': 'اطلاعات هزینه',
+      'sps_piece_cost': 'هزینه قطعه',
+      'sps_other_costs': 'سایر هزینه‌ها',
+      'sps_time_required': 'زمان مورد نیاز',
+      'sps_minutes': 'دقیقه',
+      'sps_confirm_completion': 'تایید اتمام کار',
+      'sps_rating_dialog_title': 'امتیازدهی و ثبت نظر',
+      'sps_select_rating': 'انتخاب امتیاز',
+      'sps_comment': 'نظر',
+      'sps_comment_hint': 'نظر خود را وارد کنید (اختیاری)',
+      'sps_confirm_button': 'تایید کردن',
+      'sps_rating_required': 'لطفاً یک امتیاز انتخاب کنید',
+      'sps_confirming': 'در حال تایید...',
+      'sps_confirmation_success': 'سرویس با موفقیت تایید شد',
+      'sps_confirmation_error': 'خطا در تایید سرویس',
+
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
       'splash_version': 'نسخه 1.0.0',
@@ -1860,6 +1940,7 @@ class AppLocalizations {
   String get nav_devices => _getLocalizedValue('nav_devices');
   String get nav_profile => _getLocalizedValue('nav_profile');
   String get nav_users => _getLocalizedValue('nav_users');
+  String get nav_services => _getLocalizedValue('nav_services');
 
   // Loading getters (loading_*)
   String get loading_please_wait_short =>
@@ -2356,6 +2437,52 @@ class AppLocalizations {
   String get sls_no_request => _getLocalizedValue('sls_no_request');
   String get sls_no_request_description =>
       _getLocalizedValue('sls_no_request_description');
+
+  // Service Provider Services Screen getters (sps_*)
+  String get sps_services => _getLocalizedValue('sps_services');
+  String get sps_pending_services => _getLocalizedValue('sps_pending_services');
+  String get sps_completed_services =>
+      _getLocalizedValue('sps_completed_services');
+  String get sps_no_pending_services =>
+      _getLocalizedValue('sps_no_pending_services');
+  String get sps_no_pending_services_description =>
+      _getLocalizedValue('sps_no_pending_services_description');
+  String get sps_no_completed_services =>
+      _getLocalizedValue('sps_no_completed_services');
+  String get sps_no_completed_services_description =>
+      _getLocalizedValue('sps_no_completed_services_description');
+  String get sps_status_open => _getLocalizedValue('sps_status_open');
+  String get sps_status_assigned => _getLocalizedValue('sps_status_assigned');
+  String get sps_status_confirm => _getLocalizedValue('sps_status_confirm');
+  String get sps_status_done => _getLocalizedValue('sps_status_done');
+  String get sps_status_canceled => _getLocalizedValue('sps_status_canceled');
+  String get sps_technician => _getLocalizedValue('sps_technician');
+  String get sps_technician_name => _getLocalizedValue('sps_technician_name');
+  String get sps_technician_phone => _getLocalizedValue('sps_technician_phone');
+  String get sps_technician_grade => _getLocalizedValue('sps_technician_grade');
+  String get sps_no_rating => _getLocalizedValue('sps_no_rating');
+  String get sps_service_details => _getLocalizedValue('sps_service_details');
+  String get sps_piece_code => _getLocalizedValue('sps_piece_code');
+  String get sps_piece_price => _getLocalizedValue('sps_piece_price');
+  String get sps_cost_info => _getLocalizedValue('sps_cost_info');
+  String get sps_piece_cost => _getLocalizedValue('sps_piece_cost');
+  String get sps_other_costs => _getLocalizedValue('sps_other_costs');
+  String get sps_time_required => _getLocalizedValue('sps_time_required');
+  String get sps_minutes => _getLocalizedValue('sps_minutes');
+  String get sps_confirm_completion =>
+      _getLocalizedValue('sps_confirm_completion');
+  String get sps_rating_dialog_title =>
+      _getLocalizedValue('sps_rating_dialog_title');
+  String get sps_select_rating => _getLocalizedValue('sps_select_rating');
+  String get sps_comment => _getLocalizedValue('sps_comment');
+  String get sps_comment_hint => _getLocalizedValue('sps_comment_hint');
+  String get sps_confirm_button => _getLocalizedValue('sps_confirm_button');
+  String get sps_rating_required => _getLocalizedValue('sps_rating_required');
+  String get sps_confirming => _getLocalizedValue('sps_confirming');
+  String get sps_confirmation_success =>
+      _getLocalizedValue('sps_confirmation_success');
+  String get sps_confirmation_error =>
+      _getLocalizedValue('sps_confirmation_error');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

@@ -76,8 +76,33 @@ class SharedBottomNavigation extends StatelessWidget {
                   onTap: () => onItemTapped(3),
                 ),
               ]
+            : userLevel == 2
+            ? [
+                // For level 2 users (service providers): Home, Profile, Services
+                _buildNavItem(
+                  icon: Icons.home,
+                  label: localizations.nav_home,
+                  isActive: selectedIndex == 0,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(0),
+                ),
+                _buildNavItem(
+                  icon: Icons.person,
+                  label: localizations.nav_profile,
+                  isActive: selectedIndex == 1,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(1),
+                ),
+                _buildNavItem(
+                  icon: Icons.build_circle,
+                  label: localizations.nav_services,
+                  isActive: selectedIndex == 2,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(2),
+                ),
+              ]
             : [
-                // For other user levels: original layout
+                // For level 1 users: original layout
                 _buildNavItem(
                   icon: Icons.person,
                   label: localizations.nav_profile,
