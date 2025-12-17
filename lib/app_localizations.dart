@@ -246,6 +246,7 @@ class AppLocalizations {
       'nav_profile': 'Profile',
       'nav_users': 'Users',
       'nav_services': 'Services',
+      'nav_missions': 'Missions',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'Please wait',
@@ -529,6 +530,10 @@ class AppLocalizations {
       'pro_no_access': 'Access denied',
       'pro_error_fetching_profile': 'Error fetching profile',
       'pro_error_connecting': 'Error connecting to server',
+      'pro_server_error': 'Server error. Please try again later.',
+      'pro_server_connection_error':
+          'Error connecting to server. Please check your internet connection.',
+      'pro_profile_not_found': 'Profile not found.',
       'pro_update_profile_success': 'Profile updated successfully',
       'pro_update_profile_error': 'Update failed: ',
       'pro_title': 'Profile',
@@ -623,6 +628,7 @@ class AppLocalizations {
       'home_loading': 'Loading...',
       'home_active_devices': 'Active devices',
       'home_active_users': 'Active users',
+      'home_pending_missions': 'Pending missions',
       'home_device_list': 'Device list',
       'home_device_list_description': 'Manage and monitor devices',
       'home_user_list': 'User list',
@@ -926,6 +932,25 @@ class AppLocalizations {
       'sps_confirmation_success': 'Service confirmed successfully',
       'sps_confirmation_error': 'Error confirming service',
 
+      // Technician Screens (tech_)
+      'tech_missions': 'Missions',
+      'tech_no_missions': 'No missions',
+      'tech_no_missions_description':
+          'You have no pending missions at the moment.',
+      'tech_task_details': 'Task Details',
+      'tech_price': 'Price',
+      'tech_location': 'Location',
+      'tech_organ_name': 'Organization',
+      'tech_address': 'Address',
+      'tech_city': 'City',
+      'tech_phone': 'Phone',
+      'tech_confirm_task': 'Confirm Task Completion',
+      'tech_confirmation_success': 'Task confirmed successfully',
+      'tech_confirmation_error': 'Error confirming task',
+      'tech_no_completed_tasks': 'No completed tasks',
+      'tech_no_completed_tasks_description':
+          'You have no completed tasks at the moment.',
+
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
       'splash_version': 'Version 1.0.0',
@@ -1137,6 +1162,7 @@ class AppLocalizations {
       'nav_profile': 'پروفایل',
       'nav_users': 'کاربران',
       'nav_services': 'سرویس ها',
+      'nav_missions': 'ماموریت ها',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'لطفاً صبر کنید',
@@ -1418,6 +1444,10 @@ class AppLocalizations {
       'pro_no_access': 'دسترسی مجاز نیست',
       'pro_error_fetching_profile': 'خطا در دریافت پروفایل',
       'pro_error_connecting': 'خطا در اتصال به سرور',
+      'pro_server_error': 'خطا در سرور. لطفاً بعداً تلاش کنید.',
+      'pro_server_connection_error':
+          'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.',
+      'pro_profile_not_found': 'پروفایل یافت نشد.',
       'pro_update_profile_success': 'پروفایل با موفقیت به‌روزرسانی شد',
       'pro_update_profile_error': 'به‌روزرسانی ناموفق: ',
       'pro_title': 'پروفایل',
@@ -1512,6 +1542,7 @@ class AppLocalizations {
       'home_loading': 'در حال بارگذاری...',
       'home_active_devices': 'دستگاه فعال',
       'home_active_users': 'کاربر فعال',
+      'home_pending_missions': 'ماموریت در انتظار',
       'home_device_list': 'لیست دستگاه ها',
       'home_device_list_description': 'مدیریت و نظارت بر دستگاه ها',
       'home_user_list': 'لیست کاربران',
@@ -1809,6 +1840,24 @@ class AppLocalizations {
       'sps_confirmation_success': 'سرویس با موفقیت تایید شد',
       'sps_confirmation_error': 'خطا در تایید سرویس',
 
+      // Technician Screens (tech_)
+      'tech_missions': 'ماموریت ها',
+      'tech_no_missions': 'ماموریتی وجود ندارد',
+      'tech_no_missions_description': 'در حال حاضر ماموریت در انتظاری ندارید.',
+      'tech_task_details': 'جزئیات ماموریت',
+      'tech_price': 'قیمت',
+      'tech_location': 'موقعیت',
+      'tech_organ_name': 'سازمان',
+      'tech_address': 'آدرس',
+      'tech_city': 'شهر',
+      'tech_phone': 'تلفن',
+      'tech_confirm_task': 'تایید اتمام کار',
+      'tech_confirmation_success': 'ماموریت با موفقیت تایید شد',
+      'tech_confirmation_error': 'خطا در تایید ماموریت',
+      'tech_no_completed_tasks': 'ماموریت انجام شده‌ای وجود ندارد',
+      'tech_no_completed_tasks_description':
+          'در حال حاضر ماموریت انجام شده‌ای ندارید.',
+
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
       'splash_version': 'نسخه 1.0.0',
@@ -1941,6 +1990,7 @@ class AppLocalizations {
   String get nav_profile => _getLocalizedValue('nav_profile');
   String get nav_users => _getLocalizedValue('nav_users');
   String get nav_services => _getLocalizedValue('nav_services');
+  String get nav_missions => _getLocalizedValue('nav_missions');
 
   // Loading getters (loading_*)
   String get loading_please_wait_short =>
@@ -2123,6 +2173,11 @@ class AppLocalizations {
   String get pro_error_fetching_profile =>
       _getLocalizedValue('pro_error_fetching_profile');
   String get pro_error_connecting => _getLocalizedValue('pro_error_connecting');
+  String get pro_server_error => _getLocalizedValue('pro_server_error');
+  String get pro_server_connection_error =>
+      _getLocalizedValue('pro_server_connection_error');
+  String get pro_profile_not_found =>
+      _getLocalizedValue('pro_profile_not_found');
   String get pro_update_profile_success =>
       _getLocalizedValue('pro_update_profile_success');
   String get pro_update_profile_error =>
@@ -2227,6 +2282,8 @@ class AppLocalizations {
   String get home_loading => _getLocalizedValue('home_loading');
   String get home_active_devices => _getLocalizedValue('home_active_devices');
   String get home_active_users => _getLocalizedValue('home_active_users');
+  String get home_pending_missions =>
+      _getLocalizedValue('home_pending_missions');
   String get home_device_list => _getLocalizedValue('home_device_list');
   String get home_device_list_description =>
       _getLocalizedValue('home_device_list_description');
@@ -2483,6 +2540,28 @@ class AppLocalizations {
       _getLocalizedValue('sps_confirmation_success');
   String get sps_confirmation_error =>
       _getLocalizedValue('sps_confirmation_error');
+
+  // Technician Screen getters (tech_*)
+  String get tech_missions => _getLocalizedValue('tech_missions');
+  String get tech_no_missions => _getLocalizedValue('tech_no_missions');
+  String get tech_no_missions_description =>
+      _getLocalizedValue('tech_no_missions_description');
+  String get tech_task_details => _getLocalizedValue('tech_task_details');
+  String get tech_price => _getLocalizedValue('tech_price');
+  String get tech_location => _getLocalizedValue('tech_location');
+  String get tech_organ_name => _getLocalizedValue('tech_organ_name');
+  String get tech_address => _getLocalizedValue('tech_address');
+  String get tech_city => _getLocalizedValue('tech_city');
+  String get tech_phone => _getLocalizedValue('tech_phone');
+  String get tech_confirm_task => _getLocalizedValue('tech_confirm_task');
+  String get tech_confirmation_success =>
+      _getLocalizedValue('tech_confirmation_success');
+  String get tech_confirmation_error =>
+      _getLocalizedValue('tech_confirmation_error');
+  String get tech_no_completed_tasks =>
+      _getLocalizedValue('tech_no_completed_tasks');
+  String get tech_no_completed_tasks_description =>
+      _getLocalizedValue('tech_no_completed_tasks_description');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

@@ -22,6 +22,9 @@ class SharedBottomNavigation extends StatelessWidget {
     final bottomPadding = mq.padding.bottom;
     final localizations = AppLocalizations.of(context)!;
 
+    // Get current language to determine text direction
+    final isRTL = localizations.effectiveLanguageCode == 'fa';
+
     // Adaptive height using UiScale for consistency across phones
     final double navBarHeight = ui.scale(base: 66, min: 56, max: 74);
 
@@ -44,65 +47,187 @@ class SharedBottomNavigation extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: userLevel == 3
-            ? [
-                // For level 3 users: Home on left, Profile on right
-                _buildNavItem(
-                  icon: Icons.home,
-                  label: localizations.nav_home,
-                  isActive: selectedIndex == 0,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(0),
-                ),
-                _buildNavItem(
-                  icon: Icons.list_alt,
-                  label: localizations.nav_reports,
-                  isActive: selectedIndex == 2,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(2),
-                ),
-                _buildNavItem(
-                  icon: Icons.devices,
-                  label: localizations.nav_devices,
-                  isActive: selectedIndex == 1,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(1),
-                ),
-                _buildNavItem(
-                  icon: Icons.person,
-                  label: localizations.nav_profile,
-                  isActive: selectedIndex == 3,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(3),
-                ),
-              ]
+        children: userLevel == 4
+            ? isRTL
+                  ? [
+                      // For level 4 users (technicians) in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.list_alt,
+                        label: localizations.nav_reports,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.assignment,
+                        label: localizations.nav_missions,
+                        isActive: selectedIndex == 3,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(3),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                    ]
+                  : [
+                      // For level 4 users (technicians) in LTR: Home (leftmost), Reports, Missions, Profile (rightmost)
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.list_alt,
+                        label: localizations.nav_reports,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.assignment,
+                        label: localizations.nav_missions,
+                        isActive: selectedIndex == 3,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(3),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                    ]
+            : userLevel == 3
+            ? isRTL
+                  ? [
+                      // For level 3 users in RTL: Profile (leftmost), Devices, Reports, Home
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 3,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(3),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.devices,
+                        label: localizations.nav_devices,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.list_alt,
+                        label: localizations.nav_reports,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                    ]
+                  : [
+                      // For level 3 users in LTR: Home, Reports, Devices, Profile (rightmost)
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.list_alt,
+                        label: localizations.nav_reports,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.devices,
+                        label: localizations.nav_devices,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 3,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(3),
+                      ),
+                    ]
             : userLevel == 2
+            ? isRTL
+                  ? [
+                      // For level 2 users (service providers) in RTL: Profile (leftmost), Services, Home
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.build_circle,
+                        label: localizations.nav_services,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                    ]
+                  : [
+                      // For level 2 users (service providers) in LTR: Home, Services, Profile (rightmost)
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.build_circle,
+                        label: localizations.nav_services,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                    ]
+            : isRTL
             ? [
-                // For level 2 users (service providers): Home, Profile, Services
-                _buildNavItem(
-                  icon: Icons.home,
-                  label: localizations.nav_home,
-                  isActive: selectedIndex == 0,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(0),
-                ),
-                _buildNavItem(
-                  icon: Icons.person,
-                  label: localizations.nav_profile,
-                  isActive: selectedIndex == 1,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(1),
-                ),
-                _buildNavItem(
-                  icon: Icons.build_circle,
-                  label: localizations.nav_services,
-                  isActive: selectedIndex == 2,
-                  color: AppColors.lapisLazuli,
-                  onTap: () => onItemTapped(2),
-                ),
-              ]
-            : [
-                // For level 1 users: original layout
+                // For level 1 users in RTL: Profile (leftmost), Users, Home, Reports, Devices
                 _buildNavItem(
                   icon: Icons.person,
                   label: localizations.nav_profile,
@@ -140,6 +265,47 @@ class SharedBottomNavigation extends StatelessWidget {
                   isActive: selectedIndex == 1,
                   color: AppColors.lapisLazuli,
                   onTap: () => onItemTapped(1),
+                ),
+              ]
+            : [
+                // For level 1 users in LTR: Devices, Reports, Home, Users, Profile (rightmost)
+                _buildNavItem(
+                  icon: Icons.devices,
+                  label: localizations.nav_devices,
+                  isActive: selectedIndex == 1,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(1),
+                ),
+                _buildNavItem(
+                  icon: Icons.list_alt,
+                  label: localizations.nav_reports,
+                  isActive: selectedIndex == 2,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(2),
+                ),
+                // Centered home icon
+                _buildNavItem(
+                  icon: Icons.home,
+                  label: localizations.nav_home,
+                  isActive: selectedIndex == 0,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(0),
+                ),
+                // Hide users navigation for level 3 users
+                if (userLevel < 3)
+                  _buildNavItem(
+                    icon: Icons.people,
+                    label: localizations.nav_users,
+                    isActive: selectedIndex == 4,
+                    color: AppColors.lapisLazuli,
+                    onTap: () => onItemTapped(4),
+                  ),
+                _buildNavItem(
+                  icon: Icons.person,
+                  label: localizations.nav_profile,
+                  isActive: selectedIndex == 3,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(3),
                 ),
               ],
       ),

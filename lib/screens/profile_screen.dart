@@ -73,7 +73,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       userLevel = prefs.getInt('level') ?? 3;
       userActive = prefs.getBool('active') ?? false;
       // Set correct selectedNavIndex based on user level
-      if (userLevel == 2) {
+      if (userLevel == 4) {
+        selectedNavIndex = 1; // Profile is index 1 for level 4 users
+      } else if (userLevel == 2) {
         selectedNavIndex = 1; // Profile is index 1 for level 2 users
       } else {
         selectedNavIndex = 3; // Profile is index 3 for other users
@@ -87,7 +89,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         )!.pro_company_representative;
       } else if (userLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-      } else if (userLevel == 2) {
+      } else if (userLevel == 2 || userLevel == 4) {
+        // Level 2 and 4 are both installers (technicians)
         userRoleTitle = AppLocalizations.of(context)!.pro_installer;
       } else {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;
@@ -117,122 +120,227 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       print('Profile API status: ${response.statusCode}');
+      print('Profile API URL: $baseUrl5/profile/');
 
       if (response.statusCode == 200) {
         final body = utf8.decode(response.bodyBytes);
-        print(
-          'Profile API body (prefix): ${body.length > 200 ? body.substring(0, 200) : body}',
-        );
+        print('Profile API body (full): $body');
         final dynamic dataDyn = json.decode(body);
 
         if (dataDyn is Map && dataDyn['error'] != null) {
-          setState(() => isLoading = false);
-          if (userActive) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(dataDyn['error'].toString())),
-            );
+          if (mounted) {
+            setState(() => isLoading = false);
+            if (userActive) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(dataDyn['error'].toString())),
+              );
+            }
           }
           return;
         }
 
         if (dataDyn is! Map) {
-          setState(() => isLoading = false);
-          if (userActive) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  AppLocalizations.of(context)!.pro_unexpected_response,
+          if (mounted) {
+            setState(() => isLoading = false);
+            if (userActive) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.pro_unexpected_response,
+                  ),
                 ),
-              ),
-            );
+              );
+            }
           }
           return;
         }
 
         final Map<String, dynamic> data = Map<String, dynamic>.from(dataDyn);
         final prefs = await SharedPreferences.getInstance();
-        final Map<String, dynamic> profile = Map<String, dynamic>.from(
-          (data['profile'] ?? {}),
-        );
-        final Map<String, dynamic> user = Map<String, dynamic>.from(
-          (profile['user'] ?? {}),
-        );
 
-        setState(() {
-          username = (user['username'] ?? username)?.toString() ?? '';
-          firstName = user['first_name'];
-          lastName = user['last_name'];
-          phone = profile['phone']?.toString();
-          userCode = profile['code']?.toString();
-          address = profile['address']?.toString();
-          city = profile['city']?.toString();
-          active = profile['active'] == true;
-          organ = profile['organ'];
-          createdAtIso = profile['created_at']?.toString();
-          level = profile['level'] is int
-              ? profile['level']
-              : int.tryParse('${profile['level']}');
-          allowedDevices = (profile['allowed_devices'] as List?) ?? [];
-          organName = data['organ_name']?.toString();
+        print('Profile API data keys: ${data.keys.toList()}');
 
-          // Update role title from fetched level (modir overrides)
-          if (level != null) {
-            userLevel = level!;
-            final bool isModir =
-                (profile['modir'] == true) ||
-                (data['modir'] == true) ||
-                (prefs.getBool('modir') ?? false);
-            if (isModir) {
-              userRoleTitle = AppLocalizations.of(
-                context,
-              )!.pro_company_representative;
-            } else if (userLevel == 1) {
-              userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-            } else if (userLevel == 2) {
-              userRoleTitle = AppLocalizations.of(context)!.pro_installer;
-            } else {
-              userRoleTitle = AppLocalizations.of(context)!.pro_user;
+        // Safely extract profile and user data
+        // Some APIs might return data directly, others might wrap it in 'profile'
+        final dynamic profileData = data['profile'] ?? data;
+        final Map<String, dynamic> profile = profileData is Map
+            ? Map<String, dynamic>.from(profileData)
+            : <String, dynamic>{};
+
+        print('Profile keys: ${profile.keys.toList()}');
+
+        // User data might be in profile['user'] or directly in profile
+        final dynamic userData = profile['user'] ?? profile;
+        final Map<String, dynamic> user = userData is Map
+            ? Map<String, dynamic>.from(userData)
+            : <String, dynamic>{};
+
+        print('User keys: ${user.keys.toList()}');
+
+        if (mounted) {
+          setState(() {
+            // Try to get username from multiple possible locations
+            username =
+                (user['username'] ??
+                        data['username'] ??
+                        profile['username'] ??
+                        username)
+                    ?.toString() ??
+                '';
+
+            firstName =
+                user['first_name']?.toString() ??
+                profile['first_name']?.toString();
+            lastName =
+                user['last_name']?.toString() ??
+                profile['last_name']?.toString();
+            phone = profile['phone']?.toString() ?? data['phone']?.toString();
+            userCode = profile['code']?.toString() ?? data['code']?.toString();
+            address =
+                profile['address']?.toString() ?? data['address']?.toString();
+            city = profile['city']?.toString() ?? data['city']?.toString();
+            active = profile['active'] == true || data['active'] == true;
+            organ = profile['organ'] ?? data['organ'];
+            createdAtIso =
+                profile['created_at']?.toString() ??
+                data['created_at']?.toString();
+
+            // Safely parse level - check multiple locations
+            final dynamic levelData =
+                profile['level'] ?? data['level'] ?? prefs.getInt('level');
+            if (levelData is int) {
+              level = levelData;
+            } else if (levelData != null) {
+              level = int.tryParse(levelData.toString());
             }
-          }
 
-          // Seed controllers
-          _firstNameController.text = (firstName ?? '');
-          _lastNameController.text = (lastName ?? '');
-          _cityController.text = (city ?? '');
-          _addressController.text = (address ?? '');
+            // Safely extract allowed_devices
+            final dynamic allowedDevicesData =
+                profile['allowed_devices'] ?? data['allowed_devices'];
+            allowedDevices = allowedDevicesData is List
+                ? List<dynamic>.from(allowedDevicesData)
+                : <dynamic>[];
 
-          isLoading = false;
-        });
+            organName =
+                data['organ_name']?.toString() ??
+                profile['organ_name']?.toString();
+
+            // Update role title from fetched level (modir overrides)
+            // Use level from API if available, otherwise use stored level
+            final int effectiveLevel = level ?? userLevel;
+            if (effectiveLevel > 0) {
+              userLevel = effectiveLevel;
+              final bool isModir =
+                  (profile['modir'] == true) ||
+                  (data['modir'] == true) ||
+                  (prefs.getBool('modir') ?? false);
+              if (isModir) {
+                userRoleTitle = AppLocalizations.of(
+                  context,
+                )!.pro_company_representative;
+              } else if (userLevel == 1) {
+                userRoleTitle = AppLocalizations.of(context)!.pro_admin;
+              } else if (userLevel == 2 || userLevel == 4) {
+                // Level 2 and 4 are both installers (technicians)
+                userRoleTitle = AppLocalizations.of(context)!.pro_installer;
+              } else {
+                userRoleTitle = AppLocalizations.of(context)!.pro_user;
+              }
+            }
+
+            // Seed controllers
+            _firstNameController.text = (firstName ?? '');
+            _lastNameController.text = (lastName ?? '');
+            _cityController.text = (city ?? '');
+            _addressController.text = (address ?? '');
+
+            isLoading = false;
+          });
+        }
       } else if (response.statusCode == 403) {
-        setState(() => isLoading = false);
-        if (userActive) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.pro_no_access),
-            ),
-          );
+        print('Profile API: Access denied (403)');
+        final body = utf8.decode(response.bodyBytes);
+        print('Profile API 403 response: $body');
+        if (mounted) {
+          setState(() => isLoading = false);
+          if (userActive) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.pro_no_access),
+              ),
+            );
+          }
         }
       } else {
-        setState(() => isLoading = false);
-        if (userActive) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.pro_error_fetching_profile,
+        print('Profile API: Unexpected status code ${response.statusCode}');
+        final body = utf8.decode(response.bodyBytes);
+        print(
+          'Profile API error response (first 500 chars): ${body.length > 500 ? body.substring(0, 500) : body}',
+        );
+
+        if (mounted) {
+          setState(() => isLoading = false);
+          if (userActive) {
+            // Check if response is HTML (server error page) or JSON
+            String errorMessage = AppLocalizations.of(
+              context,
+            )!.pro_error_fetching_profile;
+
+            // If it's an HTML error page (like Django error page), show a generic message
+            if (body.trim().startsWith('<!DOCTYPE html>') ||
+                body.trim().startsWith('<html') ||
+                response.statusCode >= 500) {
+              // Server error - show a user-friendly message
+              errorMessage = response.statusCode == 500
+                  ? AppLocalizations.of(context)!.pro_server_error
+                  : AppLocalizations.of(context)!.pro_server_connection_error;
+            } else {
+              // Try to extract error message from JSON response
+              try {
+                final errorData = json.decode(body);
+                if (errorData is Map) {
+                  final error =
+                      errorData['error']?.toString() ??
+                      errorData['message']?.toString() ??
+                      errorData['detail']?.toString();
+                  if (error != null && error.isNotEmpty) {
+                    errorMessage = error;
+                  }
+                }
+              } catch (_) {
+                // Response is not valid JSON, use default message
+                if (response.statusCode == 500) {
+                  errorMessage = AppLocalizations.of(context)!.pro_server_error;
+                } else if (response.statusCode == 404) {
+                  errorMessage = AppLocalizations.of(
+                    context,
+                  )!.pro_profile_not_found;
+                } else if (response.statusCode >= 500) {
+                  errorMessage = AppLocalizations.of(context)!.pro_server_error;
+                }
+              }
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                duration: Duration(seconds: 4),
               ),
-            ),
-          );
+            );
+          }
         }
       }
     } catch (e) {
-      setState(() => isLoading = false);
       print('Profile API error: $e');
-      if (userActive) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.pro_error_connecting),
-          ),
-        );
+      if (mounted) {
+        setState(() => isLoading = false);
+        if (userActive) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.pro_error_connecting),
+            ),
+          );
+        }
       }
     }
   }
@@ -502,7 +610,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     // Handle navigation based on selected index and user level
-    if (userLevel == 2) {
+    if (userLevel == 4) {
+      // Technician navigation: Home (0), Profile (1), Reports (2), Missions (3)
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+          break;
+        case 1: // Profile - already here
+          break;
+        case 2: // Reports
+          if (ModalRoute.of(context)?.settings.name != '/technician-reports') {
+            Navigator.pushReplacementNamed(context, '/technician-reports');
+          }
+          break;
+        case 3: // Missions
+          if (ModalRoute.of(context)?.settings.name != '/technician-tasks') {
+            Navigator.pushReplacementNamed(context, '/technician-tasks');
+          }
+          break;
+      }
+    } else if (userLevel == 2) {
       // Service provider navigation: Home (0), Profile (1), Services (2)
       switch (index) {
         case 0: // Home
@@ -515,41 +644,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
         case 2: // Services
           if (ModalRoute.of(context)?.settings.name !=
               '/service-provider-services') {
-            Navigator.pushReplacementNamed(context, '/service-provider-services');
+            Navigator.pushReplacementNamed(
+              context,
+              '/service-provider-services',
+            );
           }
           break;
       }
     } else {
       // Original navigation for other user levels
-    switch (index) {
-      case 0: // Home
-        if (ModalRoute.of(context)?.settings.name != '/home') {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-        break;
-      case 1: // Devices
-        if (ModalRoute.of(context)?.settings.name != '/devices') {
-          Navigator.pushReplacementNamed(context, '/devices');
-        }
-        break;
-      case 2: // Reports
-        if (userLevel == 3) {
-          if (ModalRoute.of(context)?.settings.name != '/reports') {
-            Navigator.pushReplacementNamed(context, '/reports');
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
           }
-        } else {
-          if (ModalRoute.of(context)?.settings.name != '/commands') {
-            Navigator.pushReplacementNamed(context, '/commands');
+          break;
+        case 1: // Devices
+          if (ModalRoute.of(context)?.settings.name != '/devices') {
+            Navigator.pushReplacementNamed(context, '/devices');
           }
-        }
-        break;
+          break;
+        case 2: // Reports
+          if (userLevel == 3) {
+            if (ModalRoute.of(context)?.settings.name != '/reports') {
+              Navigator.pushReplacementNamed(context, '/reports');
+            }
+          } else {
+            if (ModalRoute.of(context)?.settings.name != '/commands') {
+              Navigator.pushReplacementNamed(context, '/commands');
+            }
+          }
+          break;
         case 3: // Profile - already here
-        break;
-      case 4: // Users
-        if (ModalRoute.of(context)?.settings.name != '/users') {
-          Navigator.pushReplacementNamed(context, '/users');
-        }
-        break;
+          break;
+        case 4: // Users
+          if (ModalRoute.of(context)?.settings.name != '/users') {
+            Navigator.pushReplacementNamed(context, '/users');
+          }
+          break;
       }
     }
   }
@@ -989,18 +1121,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ? userRoleTitle
                                           : '—',
                                     ),
-                                    _kvRow(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.pro_organ_name,
-                                      (organName ?? '—'),
-                                    ),
-                                    _kvRow(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.pro_allowed_devices_count,
-                                      allowedDevices.length.toString(),
-                                    ),
+                                    // Hide organ_name and allowed_devices for level 4 (technicians)
+                                    if (userLevel != 4) ...[
+                                      _kvRow(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.pro_organ_name,
+                                        (organName ?? '—'),
+                                      ),
+                                      _kvRow(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.pro_allowed_devices_count,
+                                        allowedDevices.length.toString(),
+                                      ),
+                                    ],
                                     _kvRow(
                                       AppLocalizations.of(
                                         context,
