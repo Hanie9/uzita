@@ -49,7 +49,7 @@ class SharedBottomNavigation extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: userLevel == 4
             ? isRTL
-                  ? [
+            ? [
                       // For level 4 users (technicians) in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)
                       _buildNavItem(
                         icon: Icons.person,
@@ -146,35 +146,35 @@ class SharedBottomNavigation extends StatelessWidget {
                     ]
                   : [
                       // For level 3 users in LTR: Home, Reports, Devices, Profile (rightmost)
-                      _buildNavItem(
-                        icon: Icons.home,
-                        label: localizations.nav_home,
-                        isActive: selectedIndex == 0,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(0),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.list_alt,
-                        label: localizations.nav_reports,
-                        isActive: selectedIndex == 2,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(2),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.devices,
-                        label: localizations.nav_devices,
-                        isActive: selectedIndex == 1,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(1),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.person,
-                        label: localizations.nav_profile,
-                        isActive: selectedIndex == 3,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(3),
-                      ),
-                    ]
+                _buildNavItem(
+                  icon: Icons.home,
+                  label: localizations.nav_home,
+                  isActive: selectedIndex == 0,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(0),
+                ),
+                _buildNavItem(
+                  icon: Icons.list_alt,
+                  label: localizations.nav_reports,
+                  isActive: selectedIndex == 2,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(2),
+                ),
+                _buildNavItem(
+                  icon: Icons.devices,
+                  label: localizations.nav_devices,
+                  isActive: selectedIndex == 1,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(1),
+                ),
+                _buildNavItem(
+                  icon: Icons.person,
+                  label: localizations.nav_profile,
+                  isActive: selectedIndex == 3,
+                  color: AppColors.lapisLazuli,
+                  onTap: () => onItemTapped(3),
+                ),
+              ]
             : userLevel == 2
             ? isRTL
                   ? [

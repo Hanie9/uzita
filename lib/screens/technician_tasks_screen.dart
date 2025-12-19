@@ -278,8 +278,8 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                   itemBuilder: (context, index) {
                     final task = tasks[index];
                     final title = task['title'] ?? '---';
-                    final price = task['price']?.toString() ?? '0';
-                    final organName = task['organ_name'] ?? '---';
+                    final hazine = task['hazine']?.toString() ?? '0';
+                    final urgency = task['urgency']?.toString();
 
                     return GestureDetector(
                       onTap: () {
@@ -350,7 +350,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                         SizedBox(width: 4),
                                         Flexible(
                                           child: Text(
-                                            '$price ${localizations.sls_tooman}',
+                                            '$hazine ${localizations.sls_tooman}',
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w600,
@@ -364,32 +364,34 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 4),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      textDirection: Directionality.of(context),
-                                      children: [
-                                        Icon(
-                                          Icons.business,
-                                          size: 14,
-                                          color: AppColors.iranianGray,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            organName,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.iranianGray,
-                                            ),
-                                            textDirection: Directionality.of(
-                                              context,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
+                                    if (urgency != null) ...[
+                                      SizedBox(height: 4),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        textDirection: Directionality.of(context),
+                                        children: [
+                                          Icon(
+                                            Icons.priority_high,
+                                            size: 14,
+                                            color: AppColors.iranianGray,
                                           ),
-                                        ),
-                                      ],
-                                    ),
+                                          SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              _getUrgencyText(urgency, localizations),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppColors.iranianGray,
+                                              ),
+                                              textDirection: Directionality.of(
+                                                context,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -462,6 +464,19 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
         onItemTapped: _onNavItemTapped,
       ),
     );
+  }
+
+  String _getUrgencyText(String? urgency, AppLocalizations localizations) {
+    switch (urgency) {
+      case 'normal':
+        return localizations.tech_urgency_normal;
+      case 'urgent':
+        return localizations.tech_urgency_urgent;
+      case 'very_urgent':
+        return localizations.tech_urgency_very_urgent;
+      default:
+        return urgency ?? '---';
+    }
   }
 
   Widget _buildEmptyState() {

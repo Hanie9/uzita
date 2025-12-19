@@ -385,7 +385,11 @@ class _HomeScreenState extends State<HomeScreen> {
           // Fetch statistics based on user level
           if (userLevel == 4) {
             fetchAndCountMissions();
+          } else if (userLevel == 3) {
+            // Level 3: Only fetch active devices (no users access)
+            fetchAndCountActiveDevices();
           } else {
+            // Level 1 and 2: Fetch both devices and users
             fetchAndCountActiveDevices();
             fetchAndCountActiveUsers();
           }
@@ -453,7 +457,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         if (userLevel == 4) {
           fetchAndCountMissions();
+        } else if (userLevel == 3) {
+          // Level 3: Only fetch active devices (no users access)
+          fetchAndCountActiveDevices();
         } else {
+          // Level 1 and 2: Fetch both devices and users
           fetchAndCountActiveDevices();
           fetchAndCountActiveUsers();
         }
@@ -473,7 +481,11 @@ class _HomeScreenState extends State<HomeScreen> {
     // Refresh statistics based on user level
     if (userLevel == 4) {
       await fetchAndCountMissions();
+    } else if (userLevel == 3) {
+      // Level 3: Only fetch active devices (no users access)
+      await fetchAndCountActiveDevices();
     } else {
+      // Level 1 and 2: Fetch both devices and users
       await fetchAndCountActiveDevices();
       await fetchAndCountActiveUsers();
     }
@@ -1161,10 +1173,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ),
                                               )
                                             else
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Container(
+                                              // For level 3: Show only Active Devices
+                                              // For level 1 and 2: Show both Active Devices and Active Users
+                                              userLevel == 3
+                                                  ? Container(
+                                                      width: double.infinity,
                                                       height: 100,
                                                       decoration: BoxDecoration(
                                                         color: Theme.of(
@@ -1229,79 +1242,148 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           ),
                                                         ],
                                                       ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 20),
-                                                  Expanded(
-                                                    child: Container(
-                                                      height: 100,
-                                                      decoration: BoxDecoration(
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).cardTheme.color,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
-                                                            ),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Colors.grey
-                                                                .withValues(
-                                                                  alpha: 0.1,
+                                                    )
+                                                  : Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: Container(
+                                                            height: 100,
+                                                            decoration: BoxDecoration(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardTheme.color,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  color: Colors.grey
+                                                                      .withValues(
+                                                                        alpha: 0.1,
+                                                                      ),
+                                                                  spreadRadius: 1,
+                                                                  blurRadius: 5,
+                                                                  offset: Offset(
+                                                                    0,
+                                                                    2,
+                                                                  ),
                                                                 ),
-                                                            spreadRadius: 1,
-                                                            blurRadius: 5,
-                                                            offset: Offset(
-                                                              0,
-                                                              2,
+                                                              ],
                                                             ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Text(
-                                                            onlineUserCount
-                                                                .toString(),
-                                                            style: TextStyle(
-                                                              fontSize: 24,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color: AppColors
-                                                                  .lapisLazuli,
-                                                            ),
-                                                          ),
-                                                          SizedBox(
-                                                            height: ui.scale(
-                                                              base: 6,
-                                                              min: 4,
-                                                              max: 10,
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.home_active_users,
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .bodyMedium
-                                                                ?.copyWith(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  fontSize: 17,
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Text(
+                                                                  activeDeviceCount
+                                                                      .toString(),
+                                                                  style: TextStyle(
+                                                                    fontSize: 24,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: AppColors
+                                                                        .lapisLazuli,
+                                                                  ),
                                                                 ),
+                                                                SizedBox(
+                                                                  height: ui.scale(
+                                                                    base: 6,
+                                                                    min: 4,
+                                                                    max: 10,
+                                                                  ),
+                                                                ),
+                                                                Text(
+                                                                  AppLocalizations.of(
+                                                                    context,
+                                                                  )!.home_active_devices,
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyMedium
+                                                                      ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .bold,
+                                                                        fontSize: 17,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
                                                           ),
-                                                        ],
-                                                      ),
+                                                        ),
+                                                        SizedBox(width: 20),
+                                                        Expanded(
+                                                          child: Container(
+                                                            height: 100,
+                                                            decoration: BoxDecoration(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardTheme.color,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  color: Colors.grey
+                                                                      .withValues(
+                                                                        alpha: 0.1,
+                                                                      ),
+                                                                  spreadRadius: 1,
+                                                                  blurRadius: 5,
+                                                                  offset: Offset(
+                                                                    0,
+                                                                    2,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Text(
+                                                                  onlineUserCount
+                                                                      .toString(),
+                                                                  style: TextStyle(
+                                                                    fontSize: 24,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: AppColors
+                                                                        .lapisLazuli,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: ui.scale(
+                                                                    base: 6,
+                                                                    min: 4,
+                                                                    max: 10,
+                                                                  ),
+                                                                ),
+                                                                Text(
+                                                                  AppLocalizations.of(
+                                                                    context,
+                                                                  )!.home_active_users,
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyMedium
+                                                                      ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .bold,
+                                                                        fontSize: 17,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
                                             // const SizedBox(height: 20),
                                           ],
                                         ),

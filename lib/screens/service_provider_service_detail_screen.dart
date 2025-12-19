@@ -24,14 +24,23 @@ class _ServiceProviderServiceDetailScreenState
     extends State<ServiceProviderServiceDetailScreen> {
   bool isLoading = false;
   String? currentStatus;
+  int userLevel = 2; // Default to level 2 (service provider)
 
   @override
   void initState() {
     super.initState();
     currentStatus = widget.service['status']?.toString();
     print('Initial status from widget.service: $currentStatus');
+    _loadUserLevel();
     // Fetch latest service data from API to ensure status is up to date
     _fetchServiceDetails();
+  }
+
+  Future<void> _loadUserLevel() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userLevel = prefs.getInt('level') ?? 2;
+    });
   }
 
   Future<void> _fetchServiceDetails() async {
@@ -49,8 +58,59 @@ class _ServiceProviderServiceDetailScreenState
       // Try to fetch from both pending and completed lists to get latest status
       final ts = DateTime.now().millisecondsSinceEpoch;
 
+      http.Response? pendingResponse;
+      http.Response? completedResponse;
+
+      // For level 1, use /listservice/ endpoint
+      // For level 2, use /serviceprovider/pending/ and /serviceprovider/completed/
+      if (userLevel == 1) {
+        // Level 1 uses /listservice/ endpoint
+        final allServicesResponse = await http.get(
+          Uri.parse('$baseUrl5/listservice/?ts=$ts'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Connection': 'close',
+          },
+        );
+
+        if (allServicesResponse.statusCode == 200) {
+          final body = utf8.decode(allServicesResponse.bodyBytes);
+          final dynamic data = json.decode(body);
+          if (data is List) {
+            // Search for the service in the list
+            for (var service in data) {
+              if (service is Map) {
+                final id = service['id'];
+                if (id != null && id.toString() == serviceId) {
+                  // Found the service, update it
+                  if (mounted) {
+                    setState(() {
+                      final updatedStatus = service['status']?.toString();
+                      if (updatedStatus != null) {
+                        currentStatus = updatedStatus;
+                        widget.service['status'] = updatedStatus;
+                      }
+                      // Update all service fields from API response
+                      widget.service.addAll(Map<String, dynamic>.from(service));
+                      print(
+                        'Updated service for level 1: customer_confirm=${service['customer_confirm']}, technician_confirm=${service['technician_confirm']}, status=$updatedStatus',
+                      );
+                    });
+                  }
+                  return; // Found and updated, exit
+                }
+              }
+            }
+          }
+        }
+        return; // For level 1, we're done
+      }
+
+      // Level 2 uses serviceprovider endpoints
       // Check pending services
-      final pendingResponse = await http.get(
+      pendingResponse = await http.get(
         Uri.parse('$baseUrl5/serviceprovider/pending/?ts=$ts'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -61,7 +121,7 @@ class _ServiceProviderServiceDetailScreenState
       );
 
       // Check completed services
-      final completedResponse = await http.get(
+      completedResponse = await http.get(
         Uri.parse('$baseUrl5/serviceprovider/completed/?ts=$ts'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -71,7 +131,7 @@ class _ServiceProviderServiceDetailScreenState
         },
       );
 
-      // Search for this service in both lists
+      // Search for this service in both lists (only for level 2)
       Map<String, dynamic>? updatedService;
 
       if (pendingResponse.statusCode == 200) {
@@ -84,7 +144,7 @@ class _ServiceProviderServiceDetailScreenState
               if (id != null && id.toString() == serviceId) {
                 updatedService = Map<String, dynamic>.from(service);
                 print(
-                  'Found service in pending list with status: ${updatedService['status']}',
+                  'Found service in pending list with status: ${updatedService['status']}, customer_confirm: ${updatedService['customer_confirm']}, technician_confirm: ${updatedService['technician_confirm']}',
                 );
                 // Don't break, check completed list too for more up-to-date status
               }
@@ -880,8 +940,11 @@ class _ServiceProviderServiceDetailScreenState
                   ),
                 SizedBox(height: 20),
 
-                // Confirm Completion Button (only for assigned status)
-                if (status == 'assigned')
+                // Confirm Completion Button
+                // For level 1 (admin): Show if status is 'assigned'
+                // For level 2 (service provider): Show if status is 'assigned'
+                if ((userLevel == 1 && status == 'assigned') ||
+                    (userLevel == 2 && status == 'assigned'))
                   Container(
                     width: double.infinity,
                     margin: EdgeInsets.only(bottom: 20),
@@ -1104,7 +1167,21 @@ class _ServiceProviderServiceDetailScreenState
         // If status is not in response, default to 'confirm'
         final updatedStatus = responseData['status']?.toString() ?? 'confirm';
 
+        // Update customer_confirm if present in response
+        // Handle both boolean and string values from API
+        final customerConfirmValue =
+            responseData['customer_confirm'] ??
+            widget.service['customer_confirm'] ??
+            false;
+        final updatedCustomerConfirm =
+            customerConfirmValue == true ||
+            customerConfirmValue == 'true' ||
+            customerConfirmValue == 1;
+
         print('Updated status from API response: $updatedStatus');
+        print(
+          'Updated customer_confirm from API response: $updatedCustomerConfirm',
+        );
 
         if (!mounted) return;
 
@@ -1112,7 +1189,9 @@ class _ServiceProviderServiceDetailScreenState
         setState(() {
           currentStatus = updatedStatus;
           widget.service['status'] = updatedStatus;
+          widget.service['customer_confirm'] = updatedCustomerConfirm;
           print('Status updated to: $updatedStatus (stored in widget.service)');
+          print('Customer confirm updated to: $updatedCustomerConfirm');
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

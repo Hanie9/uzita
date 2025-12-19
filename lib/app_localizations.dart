@@ -876,6 +876,18 @@ class AppLocalizations {
       'sss_other_costs_error_number': 'Please enter a valid number',
       'sss_send_service_request_form_submit': 'Send request',
       'sss_loading_sending': 'Sending...',
+      'sss_address': 'Address',
+      'sss_address_hint': 'Enter the service address',
+      'sss_address_error': 'Please enter the address',
+      'sss_phone': 'Phone number',
+      'sss_phone_hint': 'Enter your phone number',
+      'sss_phone_error': 'Please enter the phone number',
+      'sss_urgency': 'Urgency level',
+      'sss_urgency_hint': 'Select urgency level',
+      'sss_urgency_error': 'Please select urgency level',
+      'sss_urgency_normal': 'Normal',
+      'sss_urgency_urgent': 'Urgent',
+      'sss_urgency_very_urgent': 'Very urgent',
 
       // Service List Screen (sls_)
       'sls_error_connecting': 'Error connecting to server',
@@ -886,7 +898,7 @@ class AppLocalizations {
       'sls_new': 'New',
       'sls_loading': 'Loading...',
       'sls_description': 'Description:',
-      'sls_need_piece': 'Required piece:',
+      'sls_need_piece': 'Required piece',
       'sls_all_cost': 'Total cost:',
       'sls_tooman': 'Toman',
       'sls_date_register': 'Registration date:',
@@ -950,6 +962,34 @@ class AppLocalizations {
       'tech_no_completed_tasks': 'No completed tasks',
       'tech_no_completed_tasks_description':
           'You have no completed tasks at the moment.',
+      'tech_first_visit_date': 'First Visit Date',
+      'tech_first_visit_date_hint': 'Select first visit date',
+      'tech_first_visit_date_error': 'Please select first visit date',
+      'tech_set_first_visit': 'Set First Visit Date',
+      'tech_first_visit_success': 'First visit date set successfully',
+      'tech_check_task': 'Check Task',
+      'tech_piece_name': 'Required Piece',
+      'tech_piece_name_hint': 'Select piece',
+      'tech_piece_name_error': 'Please select piece',
+      'tech_time_required': 'Time Required (minutes)',
+      'tech_time_required_hint': 'Enter time in minutes',
+      'tech_time_required_error': 'Please enter time',
+      'tech_other_costs': 'Other Costs',
+      'tech_other_costs_hint': 'Enter other costs',
+      'tech_other_costs_error': 'Please enter other costs',
+      'tech_second_visit_date': 'Second Visit Date (Optional)',
+      'tech_second_visit_date_hint': 'Select second visit date if needed',
+      'tech_submit_check_task': 'Submit Task Check',
+      'tech_check_task_success': 'Task check submitted successfully',
+      'tech_check_task_error': 'Error submitting task check',
+      'tech_report': 'Report',
+      'tech_report_hint': 'Enter your report',
+      'tech_report_error': 'Please enter report',
+      'tech_submit_report': 'Submit Report and Confirm',
+      'tech_urgency': 'Urgency',
+      'tech_urgency_normal': 'Normal',
+      'tech_urgency_urgent': 'Urgent',
+      'tech_urgency_very_urgent': 'Very Urgent',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
@@ -1784,6 +1824,18 @@ class AppLocalizations {
       'sss_other_costs_error_number': 'لطفاً عدد معتبر وارد کنید',
       'sss_send_service_request_form_submit': 'ارسال درخواست',
       'sss_loading_sending': 'در حال ارسال...',
+      'sss_address': 'آدرس',
+      'sss_address_hint': 'آدرس سرویس را وارد کنید',
+      'sss_address_error': 'لطفاً آدرس را وارد کنید',
+      'sss_phone': 'شماره تماس',
+      'sss_phone_hint': 'شماره تماس خود را وارد کنید',
+      'sss_phone_error': 'لطفاً شماره تماس را وارد کنید',
+      'sss_urgency': 'درجه فوریت',
+      'sss_urgency_hint': 'درجه فوریت را انتخاب کنید',
+      'sss_urgency_error': 'لطفاً درجه فوریت را انتخاب کنید',
+      'sss_urgency_normal': 'عادی',
+      'sss_urgency_urgent': 'فوری',
+      'sss_urgency_very_urgent': 'خیلی فوری',
 
       // Service List Screen (sls_)
       'sls_error_connecting': 'خطا در اتصال به سرور',
@@ -1853,6 +1905,35 @@ class AppLocalizations {
       'tech_phone': 'تلفن',
       'tech_confirm_task': 'تایید اتمام کار',
       'tech_confirmation_success': 'ماموریت با موفقیت تایید شد',
+      'tech_first_visit_date': 'زمان مراجعه اولیه',
+      'tech_first_visit_date_hint': 'زمان مراجعه اولیه را انتخاب کنید',
+      'tech_first_visit_date_error': 'لطفاً زمان مراجعه اولیه را انتخاب کنید',
+      'tech_set_first_visit': 'ثبت زمان مراجعه اولیه',
+      'tech_first_visit_success': 'زمان مراجعه اولیه با موفقیت ثبت شد',
+      'tech_check_task': 'بررسی مأموریت',
+      'tech_piece_name': 'قطعه مورد نیاز',
+      'tech_piece_name_hint': 'قطعه را انتخاب کنید',
+      'tech_piece_name_error': 'لطفاً قطعه را انتخاب کنید',
+      'tech_time_required': 'زمان مورد نیاز (دقیقه)',
+      'tech_time_required_hint': 'زمان را به دقیقه وارد کنید',
+      'tech_time_required_error': 'لطفاً زمان را وارد کنید',
+      'tech_other_costs': 'سایر هزینه‌ها',
+      'tech_other_costs_hint': 'سایر هزینه‌ها را وارد کنید',
+      'tech_other_costs_error': 'لطفاً سایر هزینه‌ها را وارد کنید',
+      'tech_second_visit_date': 'زمان مراجعه مجدد (اختیاری)',
+      'tech_second_visit_date_hint':
+          'در صورت نیاز زمان مراجعه مجدد را انتخاب کنید',
+      'tech_submit_check_task': 'ثبت بررسی مأموریت',
+      'tech_check_task_success': 'بررسی مأموریت با موفقیت ثبت شد',
+      'tech_check_task_error': 'خطا در ثبت بررسی مأموریت',
+      'tech_report': 'گزارش',
+      'tech_report_hint': 'گزارش خود را وارد کنید',
+      'tech_report_error': 'لطفاً گزارش را وارد کنید',
+      'tech_submit_report': 'ثبت گزارش و تایید',
+      'tech_urgency': 'درجه فوریت',
+      'tech_urgency_normal': 'عادی',
+      'tech_urgency_urgent': 'فوری',
+      'tech_urgency_very_urgent': 'خیلی فوری',
       'tech_confirmation_error': 'خطا در تایید ماموریت',
       'tech_no_completed_tasks': 'ماموریت انجام شده‌ای وجود ندارد',
       'tech_no_completed_tasks_description':
@@ -2475,6 +2556,19 @@ class AppLocalizations {
   String get sss_send_service_request_form_submit =>
       _getLocalizedValue('sss_send_service_request_form_submit');
   String get sss_loading_sending => _getLocalizedValue('sss_loading_sending');
+  String get sss_address => _getLocalizedValue('sss_address');
+  String get sss_address_hint => _getLocalizedValue('sss_address_hint');
+  String get sss_address_error => _getLocalizedValue('sss_address_error');
+  String get sss_phone => _getLocalizedValue('sss_phone');
+  String get sss_phone_hint => _getLocalizedValue('sss_phone_hint');
+  String get sss_phone_error => _getLocalizedValue('sss_phone_error');
+  String get sss_urgency => _getLocalizedValue('sss_urgency');
+  String get sss_urgency_hint => _getLocalizedValue('sss_urgency_hint');
+  String get sss_urgency_error => _getLocalizedValue('sss_urgency_error');
+  String get sss_urgency_normal => _getLocalizedValue('sss_urgency_normal');
+  String get sss_urgency_urgent => _getLocalizedValue('sss_urgency_urgent');
+  String get sss_urgency_very_urgent =>
+      _getLocalizedValue('sss_urgency_very_urgent');
 
   // Service List Screen getters (sls_*)
   String get sls_error_connecting => _getLocalizedValue('sls_error_connecting');
@@ -2562,6 +2656,49 @@ class AppLocalizations {
       _getLocalizedValue('tech_no_completed_tasks');
   String get tech_no_completed_tasks_description =>
       _getLocalizedValue('tech_no_completed_tasks_description');
+  String get tech_first_visit_date =>
+      _getLocalizedValue('tech_first_visit_date');
+  String get tech_first_visit_date_hint =>
+      _getLocalizedValue('tech_first_visit_date_hint');
+  String get tech_first_visit_date_error =>
+      _getLocalizedValue('tech_first_visit_date_error');
+  String get tech_set_first_visit => _getLocalizedValue('tech_set_first_visit');
+  String get tech_first_visit_success =>
+      _getLocalizedValue('tech_first_visit_success');
+  String get tech_check_task => _getLocalizedValue('tech_check_task');
+  String get tech_piece_name => _getLocalizedValue('tech_piece_name');
+  String get tech_piece_name_hint => _getLocalizedValue('tech_piece_name_hint');
+  String get tech_piece_name_error =>
+      _getLocalizedValue('tech_piece_name_error');
+  String get tech_time_required => _getLocalizedValue('tech_time_required');
+  String get tech_time_required_hint =>
+      _getLocalizedValue('tech_time_required_hint');
+  String get tech_time_required_error =>
+      _getLocalizedValue('tech_time_required_error');
+  String get tech_other_costs => _getLocalizedValue('tech_other_costs');
+  String get tech_other_costs_hint =>
+      _getLocalizedValue('tech_other_costs_hint');
+  String get tech_other_costs_error =>
+      _getLocalizedValue('tech_other_costs_error');
+  String get tech_second_visit_date =>
+      _getLocalizedValue('tech_second_visit_date');
+  String get tech_second_visit_date_hint =>
+      _getLocalizedValue('tech_second_visit_date_hint');
+  String get tech_submit_check_task =>
+      _getLocalizedValue('tech_submit_check_task');
+  String get tech_check_task_success =>
+      _getLocalizedValue('tech_check_task_success');
+  String get tech_check_task_error =>
+      _getLocalizedValue('tech_check_task_error');
+  String get tech_report => _getLocalizedValue('tech_report');
+  String get tech_report_hint => _getLocalizedValue('tech_report_hint');
+  String get tech_report_error => _getLocalizedValue('tech_report_error');
+  String get tech_submit_report => _getLocalizedValue('tech_submit_report');
+  String get tech_urgency => _getLocalizedValue('tech_urgency');
+  String get tech_urgency_normal => _getLocalizedValue('tech_urgency_normal');
+  String get tech_urgency_urgent => _getLocalizedValue('tech_urgency_urgent');
+  String get tech_urgency_very_urgent =>
+      _getLocalizedValue('tech_urgency_very_urgent');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>
