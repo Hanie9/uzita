@@ -889,26 +889,80 @@ class _ServiceProviderServiceDetailScreenState
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
-                        // Technician Average Grade
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                ],
+
+                // Ratings Section (only shown if at least one rating exists)
+                if (technician != null || serviceGrade > 0) ...[
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
+                            Icon(
+                              Icons.star_outline,
+                              color: AppColors.lapisLazuli,
+                              size: 24,
+                            ),
+                            SizedBox(width: 12),
                             Text(
-                              localizations.sps_technician_grade,
+                              localizations.sps_ratings,
                               style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.iranianGray,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
-                            SizedBox(height: 8),
-                            _buildStarRating(technicianGrade, context),
                           ],
                         ),
-                        // Service Grade (Admin's rating for this service)
-                        if (serviceGrade > 0) ...[
+                        SizedBox(height: 16),
+                        // Technician Average Grade (only if technician exists)
+                        if (technician != null) ...[
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                localizations.sps_technician_grade,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.iranianGray,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              _buildStarRating(technicianGrade, context),
+                            ],
+                          ),
                           SizedBox(height: 16),
+                        ],
+                        // Service Grade (Admin's rating for this service) - only if admin has rated
+                        if (serviceGrade > 0) ...[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
