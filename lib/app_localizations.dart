@@ -923,7 +923,8 @@ class AppLocalizations {
       'sps_technician': 'Technician',
       'sps_technician_name': 'Name',
       'sps_technician_phone': 'Phone',
-      'sps_technician_grade': 'Customer Rating',
+      'sps_technician_grade': 'Technician Average Rating',
+      'sps_service_grade': 'Admin Rating for This Service',
       'sps_no_rating': 'No rating yet',
       'sps_service_details': 'Service Details',
       'sps_piece_code': 'Code',
@@ -1871,7 +1872,8 @@ class AppLocalizations {
       'sps_technician': 'تکنسین',
       'sps_technician_name': 'نام',
       'sps_technician_phone': 'تلفن',
-      'sps_technician_grade': 'امتیاز رضایت مشتری',
+      'sps_technician_grade': 'میانگین امتیاز تکنسین',
+      'sps_service_grade': 'نمره مدیر برای این سرویس',
       'sps_no_rating': 'هنوز امتیازی ثبت نشده',
       'sps_service_details': 'جزئیات سرویس',
       'sps_piece_code': 'کد',
@@ -2611,6 +2613,7 @@ class AppLocalizations {
   String get sps_technician_name => _getLocalizedValue('sps_technician_name');
   String get sps_technician_phone => _getLocalizedValue('sps_technician_phone');
   String get sps_technician_grade => _getLocalizedValue('sps_technician_grade');
+  String get sps_service_grade => _getLocalizedValue('sps_service_grade');
   String get sps_no_rating => _getLocalizedValue('sps_no_rating');
   String get sps_service_details => _getLocalizedValue('sps_service_details');
   String get sps_piece_code => _getLocalizedValue('sps_piece_code');

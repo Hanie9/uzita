@@ -343,12 +343,14 @@ class _TechnicianTaskDetailScreenState
           'https://device-control.liara.run/api/technician/$taskId/check-task';
       print('Sending POST request to: $url');
 
-      final requestBody = {
+      final requestBody = <String, dynamic>{
         'time': int.parse(_timeController.text),
         'piece_name': selectedPiece,
         'sayer_hazine': int.parse(_otherCostsController.text),
       };
 
+      // Include second_visit_date only if it's provided
+      // If not provided, don't include it in the request
       if (secondVisitDate != null) {
         requestBody['second_visit_date'] = formatDateForAPI(secondVisitDate!);
       }
@@ -627,7 +629,12 @@ class _TechnicianTaskDetailScreenState
           },
           color: AppColors.lapisLazuli,
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(kSpacing),
+            padding: EdgeInsets.only(
+              left: kSpacing,
+              right: kSpacing,
+              top: kSpacing,
+              bottom: kSpacing + 40, // Extra padding at bottom for date
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -793,10 +800,59 @@ class _TechnicianTaskDetailScreenState
                         ],
                       ),
                       SizedBox(height: 16),
-                      _buildInfoRow(
-                        localizations.tech_address,
-                        address,
-                        Icons.location_city,
+                      // Address field - larger and more visible
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_city,
+                                size: 18,
+                                color: AppColors.iranianGray,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                localizations.tech_address,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.iranianGray,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[800]
+                                  : AppColors.lapisLazuli.withValues(
+                                      alpha: 0.04,
+                                    ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.lapisLazuli.withValues(
+                                  alpha: 0.2,
+                                ),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              address,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 12),
                       _buildInfoRow(

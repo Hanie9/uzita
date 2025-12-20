@@ -305,6 +305,10 @@ class _ServiceProviderServiceDetailScreenState
     final createdAt = widget.service['created_at'] ?? '';
     final status = currentStatus ?? widget.service['status'] ?? 'open';
     final technician = widget.service['technician'];
+    final technicianGrade = technician != null
+        ? ((technician['grade'] ?? 0) as num).toDouble()
+        : 0.0;
+    final serviceGrade = ((widget.service['grade'] ?? 0) as num).toDouble();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -886,6 +890,7 @@ class _ServiceProviderServiceDetailScreenState
                           ],
                         ),
                         SizedBox(height: 16),
+                        // Technician Average Grade
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -898,12 +903,28 @@ class _ServiceProviderServiceDetailScreenState
                               ),
                             ),
                             SizedBox(height: 8),
-                            _buildStarRating(
-                              ((technician['grade'] ?? 0) as num).toDouble(),
-                              context,
-                            ),
+                            _buildStarRating(technicianGrade, context),
                           ],
                         ),
+                        // Service Grade (Admin's rating for this service)
+                        if (serviceGrade > 0) ...[
+                          SizedBox(height: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                localizations.sps_service_grade,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.iranianGray,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              _buildStarRating(serviceGrade, context),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

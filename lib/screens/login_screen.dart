@@ -30,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool loading = false;
   String error = '';
   bool rememberMe = false;
+  bool _obscurePassword = true; // Password visibility toggle
   // Biometric & secure storage
   final LocalAuthentication _localAuth = LocalAuthentication();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -640,7 +641,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextField(
                             controller: passwordController,
                             textAlign: TextAlign.center,
-                            obscureText: true,
+                            obscureText: _obscurePassword,
                             style: TextStyle(fontSize: fieldFontSize),
                             onSubmitted: (_) => loading ? null : login(),
                             decoration: InputDecoration(
@@ -656,6 +657,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontSize: hintFontSize,
                               ),
                               hintTextDirection: Directionality.of(context),
+                              prefixIcon: Padding(
+                                padding: EdgeInsets.all(
+                                  screenWidth * 0.02,
+                                ), // 2% of screen width
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                  child: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? (Colors.grey[400] ?? Colors.grey)
+                                        : const Color.fromARGB(255, 80, 77, 77),
+                                    size: screenHeight * 0.03,
+                                  ),
+                                ),
+                              ),
                               suffixIcon: Padding(
                                 padding: EdgeInsets.all(
                                   screenWidth * 0.02,

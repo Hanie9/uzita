@@ -561,6 +561,27 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                             prefixIcon: Icon(
                               Icons.description,
                               color: AppColors.lapisLazuli,
+                              size: 20,
+                            ),
+                            prefixIconConstraints: BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 20,
+                              maxHeight: 20,
+                            ),
+                            isDense: true,
+                            contentPadding: EdgeInsets.only(
+                              left:
+                                  Directionality.of(context) ==
+                                      TextDirection.rtl
+                                  ? ui.scale(base: 12, min: 8, max: 16)
+                                  : ui.scale(base: 4, min: 2, max: 8),
+                              right:
+                                  Directionality.of(context) ==
+                                      TextDirection.rtl
+                                  ? ui.scale(base: 4, min: 2, max: 8)
+                                  : ui.scale(base: 12, min: 8, max: 16),
+                              top: ui.scale(base: 16, min: 12, max: 20),
+                              bottom: ui.scale(base: 16, min: 12, max: 20),
                             ),
                           ),
                           validator: (value) {
@@ -593,6 +614,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 Directionality.of(context) == TextDirection.rtl
                                 ? TextAlign.right
                                 : TextAlign.left,
+                            maxLines: 4,
                             decoration: InputDecoration(
                               hintText: AppLocalizations.of(
                                 context,
@@ -630,6 +652,27 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                               prefixIcon: Icon(
                                 Icons.location_on,
                                 color: AppColors.lapisLazuli,
+                                size: 20,
+                              ),
+                              prefixIconConstraints: BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 20,
+                                maxHeight: 20,
+                              ),
+                              isDense: true,
+                              contentPadding: EdgeInsets.only(
+                                left:
+                                    Directionality.of(context) ==
+                                        TextDirection.rtl
+                                    ? ui.scale(base: 12, min: 8, max: 16)
+                                    : ui.scale(base: 4, min: 2, max: 8),
+                                right:
+                                    Directionality.of(context) ==
+                                        TextDirection.rtl
+                                    ? ui.scale(base: 4, min: 2, max: 8)
+                                    : ui.scale(base: 12, min: 8, max: 16),
+                                top: ui.scale(base: 16, min: 12, max: 20),
+                                bottom: ui.scale(base: 16, min: 12, max: 20),
                               ),
                             ),
                             validator: (value) {
