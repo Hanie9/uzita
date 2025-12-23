@@ -41,7 +41,7 @@ class SharedBottomNavigation extends StatelessWidget {
             color: (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -111,6 +111,84 @@ class SharedBottomNavigation extends StatelessWidget {
                         onTap: () => onItemTapped(1),
                       ),
                     ]
+            : userLevel == 5
+                ? isRTL
+                    ? [
+                        // Driver (level 5) in RTL: Profile, Public loads, Missions, Reports, Home
+                        _buildNavItem(
+                          icon: Icons.person,
+                          label: localizations.nav_profile,
+                          isActive: selectedIndex == 4,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(4),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.local_shipping_outlined,
+                          label: localizations.nav_public_loads,
+                          isActive: selectedIndex == 3,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(3),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.assignment,
+                          label: localizations.nav_missions,
+                          isActive: selectedIndex == 2,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(2),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.list_alt,
+                          label: localizations.nav_reports,
+                          isActive: selectedIndex == 1,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(1),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.home,
+                          label: localizations.nav_home,
+                          isActive: selectedIndex == 0,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(0),
+                        ),
+                      ]
+                    : [
+                        // Driver (level 5) in LTR: Home, Reports, Missions, Public loads, Profile
+                        _buildNavItem(
+                          icon: Icons.home,
+                          label: localizations.nav_home,
+                          isActive: selectedIndex == 0,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(0),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.list_alt,
+                          label: localizations.nav_reports,
+                          isActive: selectedIndex == 1,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(1),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.assignment,
+                          label: localizations.nav_missions,
+                          isActive: selectedIndex == 2,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(2),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.local_shipping_outlined,
+                          label: localizations.nav_public_loads,
+                          isActive: selectedIndex == 3,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(3),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.person,
+                          label: localizations.nav_profile,
+                          isActive: selectedIndex == 4,
+                          color: AppColors.lapisLazuli,
+                          onTap: () => onItemTapped(4),
+                        ),
+                      ]
             : userLevel == 3
             ? isRTL
                   ? [

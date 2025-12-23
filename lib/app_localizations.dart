@@ -247,6 +247,7 @@ class AppLocalizations {
       'nav_users': 'Users',
       'nav_services': 'Services',
       'nav_missions': 'Missions',
+      'nav_public_loads': 'Public loads',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'Please wait',
@@ -625,6 +626,8 @@ class AppLocalizations {
       'home_installer': 'Installer',
       'home_user': 'User',
       'home_admin': 'Admin',
+      'home_driver': 'Driver',
+      'home_retailer': 'Retailer',
       'home_loading': 'Loading...',
       'home_active_devices': 'Active devices',
       'home_active_users': 'Active users',
@@ -682,6 +685,55 @@ class AppLocalizations {
       'login': 'Login',
       'login_user_register': 'User registration',
       'login_admin_register': 'Admin registration',
+
+      // Transport Requests (trr_, trn_, trd_)
+      'shareddrawer_transport_requests': 'Goods requests',
+      'trr_title': 'Goods requests',
+      'trr_header': 'Goods requests',
+      'trr_count_label': 'requests',
+      'trr_new_request': 'New request',
+      'trr_loading': 'Loading goods requests...',
+      'trr_no_requests': 'No goods requests found',
+      'trr_no_requests_description':
+          'There are currently no goods requests in the system.',
+      'trr_error_fetching_requests': 'Error fetching goods requests',
+      'trr_error_fetching_requests_status_code_403': 'Access denied',
+      'trr_error_connecting_server': 'Error connecting to server',
+
+      'trn_title': 'New goods request',
+      'trn_form_title': 'Goods request form',
+      'trn_pieces': 'Parts',
+      'trn_piece_hint': 'Enter part name',
+      'trn_add_piece': 'Add part',
+      'trn_maghsad': 'Destination address',
+      'trn_maghsad_hint': 'Enter destination address',
+      'trn_maghsad_error': 'Please enter destination address',
+      'trn_phone': 'Phone number',
+      'trn_phone_hint': 'Enter receiver phone number',
+      'trn_phone_error': 'Please enter phone number',
+      'trn_description': 'Description',
+      'trn_description_hint': 'Enter description',
+      'trn_description_error': 'Please enter description',
+      'trn_required_error': 'Please fill in all required fields',
+      'trn_success_title': 'Successfully',
+      'trn_success_message': 'Your goods request has been submitted',
+      'trn_ok': 'OK',
+      'trn_submit': 'Send request',
+      'trn_loading_sending': 'Sending...',
+      'trn_error_send_request': 'Error sending request',
+      'trn_error_connecting': 'Error connecting to server',
+
+      'trd_title': 'Goods request details',
+      'trd_pieces': 'Requested parts',
+      'trd_maghsad': 'Destination',
+      'trd_phone': 'Phone number',
+      'trd_description': 'Description',
+      'trd_status': 'Status',
+      'trd_created_at': 'Created at',
+      'trd_driver': 'Driver',
+      'trd_comment': 'Comment',
+      'trd_grade': 'Grade',
+      'trd_unknown': 'Unknown',
 
       // Registration Forms (reg_)
       'reg_phone_98': '+98',
@@ -1205,6 +1257,7 @@ class AppLocalizations {
       'nav_users': 'کاربران',
       'nav_services': 'سرویس ها',
       'nav_missions': 'ماموریت ها',
+      'nav_public_loads': 'بارهای عمومی',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'لطفاً صبر کنید',
@@ -1637,6 +1690,55 @@ class AppLocalizations {
       'login': 'ورود',
       'login_user_register': 'ثبت‌نام کاربر',
       'login_admin_register': 'ثبت‌نام مدیر',
+
+      // Transport Requests (trr_, trn_, trd_)
+      'shareddrawer_transport_requests': 'درخواست کالا',
+      'trr_title': 'درخواست کالا',
+      'trr_header': 'درخواست کالا',
+      'trr_count_label': 'درخواست',
+      'trr_new_request': 'درخواست جدید',
+      'trr_loading': 'در حال بارگذاری درخواست‌های کالا...',
+      'trr_no_requests': 'درخواستی برای کالا ثبت نشده است',
+      'trr_no_requests_description':
+          'هنوز هیچ درخواستی برای کالا در سیستم ثبت نشده است.',
+      'trr_error_fetching_requests': 'خطا در دریافت درخواست‌های کالا',
+      'trr_error_fetching_requests_status_code_403': 'دسترسی غیرمجاز',
+      'trr_error_connecting_server': 'خطا در اتصال به سرور',
+
+      'trn_title': 'درخواست جدید کالا',
+      'trn_form_title': 'فرم درخواست کالا',
+      'trn_pieces': 'قطعات',
+      'trn_piece_hint': 'نام قطعه را وارد کنید',
+      'trn_add_piece': 'افزودن قطعه',
+      'trn_maghsad': 'آدرس مقصد',
+      'trn_maghsad_hint': 'آدرس مقصد را وارد کنید',
+      'trn_maghsad_error': 'لطفاً آدرس مقصد را وارد کنید',
+      'trn_phone': 'شماره تماس',
+      'trn_phone_hint': 'شماره تماس گیرنده را وارد کنید',
+      'trn_phone_error': 'لطفاً شماره تماس را وارد کنید',
+      'trn_description': 'توضیحات',
+      'trn_description_hint': 'توضیحات را وارد کنید',
+      'trn_description_error': 'لطفاً توضیحات را وارد کنید',
+      'trn_required_error': 'لطفاً همه فیلدهای ضروری را تکمیل کنید',
+      'trn_success_title': 'موفقیت آمیز',
+      'trn_success_message': 'درخواست شما با موفقیت ثبت شد',
+      'trn_ok': 'باشه',
+      'trn_submit': 'ثبت درخواست',
+      'trn_loading_sending': 'در حال ارسال...',
+      'trn_error_send_request': 'خطا در ارسال درخواست',
+      'trn_error_connecting': 'خطا در اتصال به سرور',
+
+      'trd_title': 'جزئیات درخواست کالا',
+      'trd_pieces': 'قطعات درخواستی',
+      'trd_maghsad': 'مقصد',
+      'trd_phone': 'شماره تماس',
+      'trd_description': 'توضیحات',
+      'trd_status': 'وضعیت',
+      'trd_created_at': 'تاریخ ثبت',
+      'trd_driver': 'راننده',
+      'trd_comment': 'نظر',
+      'trd_grade': 'امتیاز',
+      'trd_unknown': 'نامشخص',
 
       // Registration Forms (reg_)
       'reg_user_register': 'ثبت‌نام کاربر',
@@ -2076,6 +2178,65 @@ class AppLocalizations {
   String get nav_users => _getLocalizedValue('nav_users');
   String get nav_services => _getLocalizedValue('nav_services');
   String get nav_missions => _getLocalizedValue('nav_missions');
+  String get nav_public_loads => _getLocalizedValue('nav_public_loads');
+
+  String get shareddrawer_transport_requests =>
+      _getLocalizedValue('shareddrawer_transport_requests');
+  String get trr_title => _getLocalizedValue('trr_title');
+  String get trr_header => _getLocalizedValue('trr_header');
+  String get trr_count_label => _getLocalizedValue('trr_count_label');
+  String get trr_new_request => _getLocalizedValue('trr_new_request');
+  String get trr_loading => _getLocalizedValue('trr_loading');
+  String get trr_no_requests => _getLocalizedValue('trr_no_requests');
+  String get trr_no_requests_description =>
+      _getLocalizedValue('trr_no_requests_description');
+  String get trr_error_fetching_requests =>
+      _getLocalizedValue('trr_error_fetching_requests');
+  String get trr_error_fetching_requests_status_code_403 =>
+      _getLocalizedValue('trr_error_fetching_requests_status_code_403');
+  String get trr_error_connecting_server =>
+      _getLocalizedValue('trr_error_connecting_server');
+
+  String get trn_title => _getLocalizedValue('trn_title');
+  String get trn_form_title => _getLocalizedValue('trn_form_title');
+  String get trn_pieces => _getLocalizedValue('trn_pieces');
+  String get trn_piece_hint => _getLocalizedValue('trn_piece_hint');
+  String get trn_add_piece => _getLocalizedValue('trn_add_piece');
+  String get trn_maghsad => _getLocalizedValue('trn_maghsad');
+  String get trn_maghsad_hint => _getLocalizedValue('trn_maghsad_hint');
+  String get trn_maghsad_error => _getLocalizedValue('trn_maghsad_error');
+  String get trn_phone => _getLocalizedValue('trn_phone');
+  String get trn_phone_hint => _getLocalizedValue('trn_phone_hint');
+  String get trn_phone_error => _getLocalizedValue('trn_phone_error');
+  String get trn_description => _getLocalizedValue('trn_description');
+  String get trn_description_hint =>
+      _getLocalizedValue('trn_description_hint');
+  String get trn_description_error =>
+      _getLocalizedValue('trn_description_error');
+  String get trn_required_error => _getLocalizedValue('trn_required_error');
+  String get trn_success_title => _getLocalizedValue('trn_success_title');
+  String get trn_success_message =>
+      _getLocalizedValue('trn_success_message');
+  String get trn_ok => _getLocalizedValue('trn_ok');
+  String get trn_submit => _getLocalizedValue('trn_submit');
+  String get trn_loading_sending =>
+      _getLocalizedValue('trn_loading_sending');
+  String get trn_error_send_request =>
+      _getLocalizedValue('trn_error_send_request');
+  String get trn_error_connecting =>
+      _getLocalizedValue('trn_error_connecting');
+
+  String get trd_title => _getLocalizedValue('trd_title');
+  String get trd_pieces => _getLocalizedValue('trd_pieces');
+  String get trd_maghsad => _getLocalizedValue('trd_maghsad');
+  String get trd_phone => _getLocalizedValue('trd_phone');
+  String get trd_description => _getLocalizedValue('trd_description');
+  String get trd_status => _getLocalizedValue('trd_status');
+  String get trd_created_at => _getLocalizedValue('trd_created_at');
+  String get trd_driver => _getLocalizedValue('trd_driver');
+  String get trd_comment => _getLocalizedValue('trd_comment');
+  String get trd_grade => _getLocalizedValue('trd_grade');
+  String get trd_unknown => _getLocalizedValue('trd_unknown');
 
   // Loading getters (loading_*)
   String get loading_please_wait_short =>
@@ -2364,6 +2525,8 @@ class AppLocalizations {
   String get home_installer => _getLocalizedValue('home_installer');
   String get home_user => _getLocalizedValue('home_user');
   String get home_admin => _getLocalizedValue('home_admin');
+  String get home_driver => _getLocalizedValue('home_driver');
+  String get home_retailer => _getLocalizedValue('home_retailer');
   String get home_loading => _getLocalizedValue('home_loading');
   String get home_active_devices => _getLocalizedValue('home_active_devices');
   String get home_active_users => _getLocalizedValue('home_active_users');

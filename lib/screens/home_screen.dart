@@ -350,16 +350,16 @@ class _HomeScreenState extends State<HomeScreen> {
             displayBanner.isNotEmpty && displayBanner != bannerUrl;
 
         if (mounted) {
-        setState(() {
-          username = returnedUsername;
-          userLevel = data['level'] ?? 3;
-          userActive = data['active'] ?? false;
-          userModir = data['modir'] ?? false;
-          bannerUrl = displayBanner;
-          if (bannerChanged) {
+          setState(() {
+            username = returnedUsername;
+            userLevel = data['level'] ?? 3;
+            userActive = data['active'] ?? false;
+            userModir = data['modir'] ?? false;
+            bannerUrl = displayBanner;
+            if (bannerChanged) {
               showBanner =
                   true; // ensure it shows again if server banner changed
-          }
+            }
 
             // Set user role title
             final int level = data['level'] ?? 3;
@@ -367,7 +367,8 @@ class _HomeScreenState extends State<HomeScreen> {
             if (isModir) {
               userRoleTitle = AppLocalizations.of(
                 context,
-              )!.home_company_representative;
+              )!
+                  .home_company_representative;
             } else if (level == 1) {
               userRoleTitle = AppLocalizations.of(context)!.home_admin;
             } else if (level == 2 || level == 4) {
@@ -375,10 +376,14 @@ class _HomeScreenState extends State<HomeScreen> {
               userRoleTitle = AppLocalizations.of(context)!.home_installer;
             } else if (level == 3) {
               userRoleTitle = AppLocalizations.of(context)!.home_user;
+            } else if (level == 5) {
+              userRoleTitle = AppLocalizations.of(context)!.home_driver;
+            } else if (level == 6) {
+              userRoleTitle = AppLocalizations.of(context)!.home_retailer;
             }
 
-          isLoading = false;
-        });
+            isLoading = false;
+          });
         }
 
         if (mounted) {
@@ -429,17 +434,18 @@ class _HomeScreenState extends State<HomeScreen> {
       final storedUsername = prefs.getString('username');
 
       if (mounted) {
-      setState(() {
-        username = storedUsername ?? '';
-        userLevel = storedLevel ?? 3;
-        userActive = storedActive ?? false;
-        userModir = storedModir ?? false;
+        setState(() {
+          username = storedUsername ?? '';
+          userLevel = storedLevel ?? 3;
+          userActive = storedActive ?? false;
+          userModir = storedModir ?? false;
 
           // Set user role title
           if (storedModir == true) {
             userRoleTitle = AppLocalizations.of(
               context,
-            )!.home_company_representative;
+            )!
+                .home_company_representative;
           } else if (storedLevel == 1) {
             userRoleTitle = AppLocalizations.of(context)!.home_admin;
           } else if (storedLevel == 2 || storedLevel == 4) {
@@ -447,10 +453,14 @@ class _HomeScreenState extends State<HomeScreen> {
             userRoleTitle = AppLocalizations.of(context)!.home_installer;
           } else if (storedLevel == 3) {
             userRoleTitle = AppLocalizations.of(context)!.home_user;
+          } else if (storedLevel == 5) {
+            userRoleTitle = AppLocalizations.of(context)!.home_driver;
+          } else if (storedLevel == 6) {
+            userRoleTitle = AppLocalizations.of(context)!.home_retailer;
           }
 
-        isLoading = false;
-      });
+          isLoading = false;
+        });
       }
 
       // After user data is loaded, fetch statistics
@@ -717,6 +727,34 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           break;
       }
+    } else if (userLevel == 5) {
+      // Driver navigation: Home (0), Reports (1), Missions (2), Public loads (3), Profile (4)
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+          break;
+        case 1: // Reports (placeholder - reuse commands reports for now)
+          if (ModalRoute.of(context)?.settings.name != '/reports') {
+            Navigator.pushReplacementNamed(context, '/reports');
+          }
+          break;
+        case 2: // Missions (reuse technician tasks for now)
+          if (ModalRoute.of(context)?.settings.name != '/technician-tasks') {
+            Navigator.pushReplacementNamed(context, '/technician-tasks');
+          }
+          break;
+        case 3: // Public loads (same list of transport requests for now)
+          if (ModalRoute.of(context)?.settings.name !=
+              '/transport-public-loads') {
+            Navigator.pushReplacementNamed(context, '/transport-public-loads');
+          }
+          break;
+        case 4: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+      }
     } else {
       // Original navigation for other user levels
     switch (index) {
@@ -774,6 +812,10 @@ class _HomeScreenState extends State<HomeScreen> {
       userRoleTitle = AppLocalizations.of(context)!.home_installer;
     } else if (userLevel == 3) {
       userRoleTitle = AppLocalizations.of(context)!.home_user;
+    } else if (userLevel == 5) {
+      userRoleTitle = AppLocalizations.of(context)!.home_driver;
+    } else if (userLevel == 6) {
+      userRoleTitle = AppLocalizations.of(context)!.home_retailer;
     }
     if (isLoading) {
       return Consumer<SettingsProvider>(
@@ -1396,8 +1438,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Navigation Cards
                                   Column(
                                     children: [
-                                      // Device list - hidden for level 4
-                                      if (userLevel != 4)
+                                      // Device list - hidden for level 4 and 5 (driver)
+                                      if (userLevel != 4 && userLevel != 5)
                                       _buildNavigationCard(
                                         icon: SvgPicture.asset(
                                           'assets/icons/device.svg',
@@ -1420,8 +1462,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       if (userLevel != 4) SizedBox(height: 12),
-                                      // User list - hidden for level 3 and 4
-                                      if (userLevel != 3 && userLevel != 4)
+                                      // User list - only for level 1 and 2
+                                      if (userLevel == 1 || userLevel == 2)
                                         _buildNavigationCard(
                                           icon: SvgPicture.asset(
                                             'assets/icons/users.svg',

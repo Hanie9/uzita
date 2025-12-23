@@ -41,7 +41,7 @@ class _TechnicianTaskDetailScreenState
   final _reportFormKey = GlobalKey<FormState>();
   final _reportController = TextEditingController();
 
-  List<String> pieceOptions = ['part1', 'part2', 'part3', 'part4', 'part5'];
+  List<String> pieceOptions = List<String>.from(kDefaultPieceOptions);
 
   @override
   void initState() {

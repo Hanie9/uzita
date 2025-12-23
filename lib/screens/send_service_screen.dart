@@ -29,7 +29,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
   String? selectedPiece;
   String? selectedUrgency;
   List<String> timeOptions = [];
-  List<String> pieceOptions = ['part1', 'part2', 'part3', 'part4', 'part5'];
+  List<String> pieceOptions = List<String>.from(kDefaultPieceOptions);
   int userLevel = 3;
 
   bool isLoading = false;

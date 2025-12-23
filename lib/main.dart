@@ -17,6 +17,8 @@ import 'package:uzita/screens/service_provider_service_detail_screen.dart';
 import 'package:uzita/screens/technician_tasks_screen.dart';
 import 'package:uzita/screens/technician_task_detail_screen.dart';
 import 'package:uzita/screens/technician_reports_screen.dart';
+import 'package:uzita/screens/transport_requests_screen.dart';
+import 'package:uzita/screens/driver_public_loads_screen.dart';
 import 'dart:async';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/app_localizations.dart';
@@ -179,6 +181,10 @@ class _MyAppState extends State<MyApp> {
               return TechnicianTaskDetailScreen(task: task);
             },
             '/technician-reports': (context) => TechnicianReportsScreen(),
+            '/transport-requests': (context) =>
+                const TransportRequestsScreen(),
+            '/transport-public-loads': (context) =>
+                const DriverPublicLoadsScreen(),
           },
         );
       },

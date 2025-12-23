@@ -6,6 +6,7 @@ import 'package:uzita/screens/help_screen.dart';
 import 'package:uzita/screens/ticket_list_screen.dart';
 import 'package:uzita/screens/editpassword_screen.dart';
 import 'package:uzita/screens/home_screen.dart';
+import 'package:uzita/screens/transport_requests_screen.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/wifi.dart';
 import 'package:uzita/app_localizations.dart';
@@ -118,7 +119,7 @@ class SharedAppDrawer extends StatelessWidget {
       width: drawerWidth,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final int tileCount = 8 + (userLevel == 1 ? 1 : 0);
+          final int tileCount = 9 + (userLevel == 1 ? 1 : 0);
           const double approxTileHeight = 56.0;
           final double estimatedContentHeight =
               headerHeight + (tileCount * approxTileHeight);
@@ -400,6 +401,35 @@ class SharedAppDrawer extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ServiceListScreen(),
+                              ),
+                            ),
+                          ),
+                        if (userLevel == 1 ||
+                            userLevel == 2 ||
+                            userLevel == 4 ||
+                            userLevel == 6)
+                          ListTile(
+                            minLeadingWidth: leadingWidth,
+                            leading: Icon(
+                              Icons.local_shipping_outlined,
+                              size: iconSize,
+                            ),
+                            title: Text(
+                              localizations.shareddrawer_transport_requests,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            contentPadding: tilePadding,
+                            minVerticalPadding: tileMinVerticalPad,
+                            horizontalTitleGap: horizontalTitleGap,
+                            dense: useDense,
+                            visualDensity: VisualDensity(
+                              vertical: verticalDensity,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const TransportRequestsScreen(),
                               ),
                             ),
                           ),
