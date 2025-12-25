@@ -19,6 +19,9 @@ import 'package:uzita/screens/technician_task_detail_screen.dart';
 import 'package:uzita/screens/technician_reports_screen.dart';
 import 'package:uzita/screens/transport_requests_screen.dart';
 import 'package:uzita/screens/driver_public_loads_screen.dart';
+import 'package:uzita/screens/driver_missions_screen.dart';
+import 'package:uzita/screens/driver_reports_screen.dart';
+import 'package:uzita/screens/driver_task_detail_screen.dart';
 import 'dart:async';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/app_localizations.dart';
@@ -185,6 +188,16 @@ class _MyAppState extends State<MyApp> {
                 const TransportRequestsScreen(),
             '/transport-public-loads': (context) =>
                 const DriverPublicLoadsScreen(),
+            '/driver-missions': (context) => const DriverMissionsScreen(),
+            '/driver-reports': (context) => const DriverReportsScreen(),
+            '/driver-task-detail': (context) {
+              final args =
+                  ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+              // Check if arguments contain 'task' key (new format) or is the task itself (old format)
+              final task = args['task'] as Map<String, dynamic>? ?? args;
+              final isReport = args['isReport'] as bool? ?? false;
+              return DriverTaskDetailScreen(task: task, isReport: isReport);
+            },
           },
         );
       },

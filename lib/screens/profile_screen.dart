@@ -77,6 +77,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         selectedNavIndex = 1; // Profile is index 1 for level 4 users
       } else if (userLevel == 2) {
         selectedNavIndex = 1; // Profile is index 1 for level 2 users
+      } else if (userLevel == 5) {
+        selectedNavIndex = 4; // Profile is index 4 for level 5 users (drivers)
       } else {
         selectedNavIndex = 3; // Profile is index 3 for other users
       }
@@ -92,6 +94,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else if (userLevel == 2 || userLevel == 4) {
         // Level 2 and 4 are both installers (technicians)
         userRoleTitle = AppLocalizations.of(context)!.pro_installer;
+      } else if (userLevel == 3) {
+        userRoleTitle = AppLocalizations.of(context)!.pro_user;
+      } else if (userLevel == 5) {
+        userRoleTitle = AppLocalizations.of(context)!.home_driver;
+      } else if (userLevel == 6) {
+        userRoleTitle = AppLocalizations.of(context)!.home_retailer;
       } else {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;
       }
@@ -243,6 +251,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               } else if (userLevel == 2 || userLevel == 4) {
                 // Level 2 and 4 are both installers (technicians)
                 userRoleTitle = AppLocalizations.of(context)!.pro_installer;
+              } else if (userLevel == 3) {
+                userRoleTitle = AppLocalizations.of(context)!.pro_user;
+              } else if (userLevel == 5) {
+                userRoleTitle = AppLocalizations.of(context)!.home_driver;
+              } else if (userLevel == 6) {
+                userRoleTitle = AppLocalizations.of(context)!.home_retailer;
               } else {
                 userRoleTitle = AppLocalizations.of(context)!.pro_user;
               }
@@ -649,6 +663,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
               '/service-provider-services',
             );
           }
+          break;
+      }
+    } else if (userLevel == 5) {
+      // Driver navigation: Home (0), Reports (1), Missions (2), Public loads (3), Profile (4)
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
+          break;
+        case 1: // Reports
+          if (ModalRoute.of(context)?.settings.name != '/driver-reports') {
+            Navigator.pushReplacementNamed(context, '/driver-reports');
+          }
+          break;
+        case 2: // Missions
+          if (ModalRoute.of(context)?.settings.name != '/driver-missions') {
+            Navigator.pushReplacementNamed(context, '/driver-missions');
+          }
+          break;
+        case 3: // Public loads
+          if (ModalRoute.of(context)?.settings.name !=
+              '/transport-public-loads') {
+            Navigator.pushReplacementNamed(context, '/transport-public-loads');
+          }
+          break;
+        case 4: // Profile - already here
           break;
       }
     } else {

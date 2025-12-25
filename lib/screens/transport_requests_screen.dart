@@ -45,8 +45,9 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppLocalizations.of(context)!
-                  .trr_error_fetching_requests_status_code_403,
+              AppLocalizations.of(
+                context,
+              )!.trr_error_fetching_requests_status_code_403,
             ),
             backgroundColor: Colors.red,
           ),
@@ -85,9 +86,9 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
         final dynamic data = json.decode(body);
 
         if (data is Map && data['error'] != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['error'].toString())),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(data['error'].toString())));
           setState(() => isLoading = false);
           return;
         }
@@ -105,8 +106,9 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(context)!
-                    .trr_error_fetching_requests_status_code_403,
+                AppLocalizations.of(
+                  context,
+                )!.trr_error_fetching_requests_status_code_403,
               ),
             ),
           );
@@ -126,8 +128,9 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(AppLocalizations.of(context)!.trr_error_connecting_server),
+          content: Text(
+            AppLocalizations.of(context)!.trr_error_connecting_server,
+          ),
         ),
       );
     }
@@ -214,11 +217,11 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                       ),
                       Text(
                         localizations.trr_title,
-                        style:
-                            Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        style: Theme.of(context).appBarTheme.titleTextStyle
+                            ?.copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                     ],
                   ),
@@ -247,11 +250,13 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
       ),
       body: Directionality(
         textDirection:
-            Provider.of<SettingsProvider>(context, listen: false)
-                        .selectedLanguage ==
-                    'en'
-                ? TextDirection.ltr
-                : TextDirection.rtl,
+            Provider.of<SettingsProvider>(
+                  context,
+                  listen: false,
+                ).selectedLanguage ==
+                'en'
+            ? TextDirection.ltr
+            : TextDirection.rtl,
         child: Column(
           children: [
             Container(
@@ -405,228 +410,221 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                       ),
                     )
                   : requests.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
-                          onRefresh: fetchRequests,
-                          color: AppColors.lapisLazuli,
-                          child: ListView.builder(
-                            padding: EdgeInsets.only(
-                              left: kSpacing,
-                              right: kSpacing,
-                              top: kSpacing,
-                              bottom: kSpacing +
-                                  MediaQuery.of(context).padding.bottom +
-                                  20,
-                            ),
-                            itemCount: requests.length,
-                            itemBuilder: (context, index) {
-                              final request = requests[index] as Map;
-                              final List<dynamic> pieces =
-                                  (request['pieces'] as List?) ?? [];
-                              final createdAt =
-                                  (request['created_at'] ?? '').toString();
-                              final status =
-                                  (request['status'] ?? 'open').toString();
+                  ? _buildEmptyState()
+                  : RefreshIndicator(
+                      onRefresh: fetchRequests,
+                      color: AppColors.lapisLazuli,
+                      child: ListView.builder(
+                        padding: EdgeInsets.only(
+                          left: kSpacing,
+                          right: kSpacing,
+                          top: kSpacing,
+                          bottom:
+                              kSpacing +
+                              MediaQuery.of(context).padding.bottom +
+                              20,
+                        ),
+                        itemCount: requests.length,
+                        itemBuilder: (context, index) {
+                          final request = requests[index] as Map;
+                          final List<dynamic> pieces =
+                              (request['pieces'] as List?) ?? [];
+                          final createdAt = (request['created_at'] ?? '')
+                              .toString();
+                          final status = (request['status'] ?? 'open')
+                              .toString();
 
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TransportRequestDetailScreen(
-                                        request: Map<String, dynamic>.from(
-                                          request,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).cardTheme.color,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.black.withValues(alpha: 0.2)
-                                            : AppColors.lapisLazuli.withValues(
-                                                alpha: 0.06,
-                                              ),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                    border: Border.all(
-                                      color: Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[700]!
-                                          : AppColors.lapisLazuli.withValues(
-                                              alpha: 0.08,
-                                            ),
-                                      width: 1,
-                                    ),
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TransportRequestDetailScreen(
+                                    request: Map<String, dynamic>.from(request),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      textDirection: Directionality.of(context),
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 6,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.black.withValues(alpha: 0.2)
+                                        : AppColors.lapisLazuli.withValues(
+                                            alpha: 0.06,
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: _getStatusColor(status)
-                                                .withValues(alpha: 0.15),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: _getStatusColor(status)
-                                                  .withValues(alpha: 0.3),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            _getStatusText(
-                                              status,
-                                              localizations,
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: _getStatusColor(status),
-                                            ),
-                                            textDirection:
-                                                Directionality.of(context),
-                                          ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[700]!
+                                      : AppColors.lapisLazuli.withValues(
+                                          alpha: 0.08,
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  textDirection: Directionality.of(context),
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(
+                                          status,
+                                        ).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: _getStatusColor(
+                                            status,
+                                          ).withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        _getStatusText(status, localizations),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: _getStatusColor(status),
+                                        ),
+                                        textDirection: Directionality.of(
+                                          context,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _buildPiecesSummary(pieces),
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.color,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 12,
+                                            runSpacing: 4,
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
                                             children: [
-                                              Text(
-                                                _buildPiecesSummary(pieces),
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium
-                                                      ?.color,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                textDirection:
-                                                    Directionality.of(context),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Wrap(
-                                                spacing: 12,
-                                                runSpacing: 4,
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
                                                 textDirection:
                                                     Directionality.of(context),
                                                 children: [
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    textDirection:
-                                                        Directionality.of(
-                                                      context,
-                                                    ),
-                                                    children: [
-                                                      const Icon(
-                                                        Icons.location_on,
-                                                        size: 14,
-                                                        color: AppColors
-                                                            .iranianGray,
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Flexible(
-                                                        child: Text(
-                                                          (request['maghsad'] ??
-                                                                  '---')
-                                                              .toString(),
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 12,
-                                                            color: AppColors
-                                                                .iranianGray,
-                                                          ),
-                                                          textDirection:
-                                                              Directionality.of(
-                                                            context,
-                                                          ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
+                                                  const Icon(
+                                                    Icons.location_on,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.iranianGray,
                                                   ),
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    textDirection:
-                                                        Directionality.of(
-                                                      context,
-                                                    ),
-                                                    children: [
-                                                      const Icon(
-                                                        Icons.calendar_today,
-                                                        size: 14,
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      (request['maghsad'] ??
+                                                              '---')
+                                                          .toString(),
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
                                                         color: AppColors
                                                             .iranianGray,
                                                       ),
-                                                      const SizedBox(width: 4),
-                                                      Flexible(
-                                                        child: Text(
-                                                          _formatDate(createdAt),
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 12,
-                                                            color: AppColors
-                                                                .iranianGray,
-                                                          ),
-                                                          textDirection:
-                                                              Directionality.of(
+                                                      textDirection:
+                                                          Directionality.of(
                                                             context,
                                                           ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                textDirection:
+                                                    Directionality.of(context),
+                                                children: [
+                                                  const Icon(
+                                                    Icons.calendar_today,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      _formatDate(createdAt),
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: AppColors
+                                                            .iranianGray,
                                                       ),
-                                                    ],
+                                                      textDirection:
+                                                          Directionality.of(
+                                                            context,
+                                                          ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        Icon(
-                                          Icons.chevron_left,
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.color
-                                              ?.withValues(alpha: 0.5),
-                                          textDirection:
-                                              Directionality.of(context) ==
-                                                      TextDirection.rtl
-                                                  ? TextDirection.ltr
-                                                  : TextDirection.rtl,
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
+                                    Icon(
+                                      Icons.chevron_left,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withValues(alpha: 0.5),
+                                      textDirection:
+                                          Directionality.of(context) ==
+                                              TextDirection.rtl
+                                          ? TextDirection.ltr
+                                          : TextDirection.rtl,
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                        ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -690,6 +688,3 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
     );
   }
 }
-
-
-

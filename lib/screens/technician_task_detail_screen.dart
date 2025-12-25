@@ -1171,13 +1171,33 @@ class _TechnicianTaskDetailScreenState
                           ),
                           SizedBox(height: 20),
                           // Second Visit Date (Optional)
-                          Text(
-                            localizations.tech_second_visit_date,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.lapisLazuli,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                localizations.tech_second_visit_date,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                Provider.of<SettingsProvider>(
+                                          context,
+                                          listen: false,
+                                        ).selectedLanguage ==
+                                        'en'
+                                    ? '(Optional)'
+                                    : '(اختیاری)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                  color: AppColors.iranianGray,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 8),
                           GestureDetector(
@@ -1266,8 +1286,95 @@ class _TechnicianTaskDetailScreenState
                     ),
                   ),
 
+                // Display submitted check task information
+                if (firstVisitDateSet && checkTaskSubmitted && !isConfirmed)
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    margin: EdgeInsets.only(top: 20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 24,
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              localizations.tech_check_task,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        // Piece Name
+                        if (widget.task['name_piece'] != null)
+                          _buildInfoRow(
+                            localizations.tech_piece_name,
+                            widget.task['name_piece'].toString(),
+                            Icons.build,
+                          ),
+                        if (widget.task['name_piece'] != null)
+                          SizedBox(height: 12),
+                        // Time Required
+                        if (widget.task['time'] != null)
+                          _buildInfoRow(
+                            localizations.tech_time_required,
+                            '${widget.task['time']} دقیقه',
+                            Icons.access_time,
+                          ),
+                        if (widget.task['time'] != null) SizedBox(height: 12),
+                        // Other Costs
+                        if (widget.task['sayer_hazine'] != null)
+                          _buildInfoRow(
+                            localizations.tech_other_costs,
+                            '${widget.task['sayer_hazine']} ${localizations.sls_tooman}',
+                            Icons.attach_money,
+                          ),
+                        if (widget.task['sayer_hazine'] != null)
+                          SizedBox(height: 12),
+                        // Second Visit Date
+                        if (widget.task['second_visit_date'] != null)
+                          _buildInfoRow(
+                            localizations.tech_second_visit_date,
+                            formatDate(
+                              widget.task['second_visit_date'].toString(),
+                              context,
+                            ),
+                            Icons.calendar_today,
+                          ),
+                      ],
+                    ),
+                  ),
+
                 // Step 3: Report and Final Confirmation
-                if (checkTaskSubmitted && !isConfirmed)
+                // Only show when first visit date is set AND check task is submitted AND not yet confirmed
+                if (firstVisitDateSet && checkTaskSubmitted && !isConfirmed)
                   Container(
                     padding: EdgeInsets.all(20),
                     margin: EdgeInsets.only(top: 20),

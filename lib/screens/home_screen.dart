@@ -15,6 +15,7 @@ import 'package:uzita/main.dart';
 import 'package:uzita/screens/settings_screen.dart';
 import 'package:uzita/screens/user_list_screen.dart';
 import 'package:uzita/screens/technician_reports_screen.dart';
+import 'package:uzita/screens/driver_reports_screen.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/services.dart';
@@ -44,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Statistics data
   int activeDeviceCount = 0;
   int onlineUserCount = 0;
-  int missionCount = 0; // For level 4 (technicians)
+  int missionCount = 0; // For level 4 (technicians) and level 5 (drivers)
 
   // Add: Fetch and count active users
   Future<void> fetchAndCountActiveUsers() async {
@@ -79,15 +80,15 @@ class _HomeScreenState extends State<HomeScreen> {
           // For level 3, fallback to showing self as active
           if (userLevel >= 3) {
             if (mounted) {
-            setState(() => onlineUserCount = 1);
+              setState(() => onlineUserCount = 1);
             }
           } else {
             // For admins/representatives, keep previous count and optionally notify
             // Avoid overriding to 0; just leave current value
             if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(err)));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(err)));
             }
           }
           return;
@@ -120,9 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }).length;
         print('Active users count: $count');
         if (mounted) {
-        setState(() {
-          onlineUserCount = count;
-        });
+          setState(() {
+            onlineUserCount = count;
+          });
         }
       } else if (response.statusCode == 403) {
         // Permission denied
@@ -178,9 +179,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }).length;
         print('Active devices count: $count');
         if (mounted) {
-        setState(() {
-          activeDeviceCount = count;
-        });
+          setState(() {
+            activeDeviceCount = count;
+          });
         }
       } else {
         print('Failed to fetch devices: ${response.statusCode}');
@@ -190,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Fetch and count missions for level 4 (technicians)
+  // Fetch and count missions for level 4 (technicians) and level 5 (drivers)
   Future<void> fetchAndCountMissions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -200,10 +201,20 @@ class _HomeScreenState extends State<HomeScreen> {
       await SessionManager().onNetworkRequest();
 
       final ts = DateTime.now().millisecondsSinceEpoch;
+      String apiUrl;
+
+      if (userLevel == 4) {
+        // Technician missions
+        apiUrl = 'https://device-control.liara.run/api/technician/tasks?ts=$ts';
+      } else if (userLevel == 5) {
+        // Driver missions
+        apiUrl = 'https://device-control.liara.run/api/transport/task?ts=$ts';
+      } else {
+        return;
+      }
+
       final response = await http.get(
-        Uri.parse(
-          'https://device-control.liara.run/api/technician/tasks?ts=$ts',
-        ),
+        Uri.parse(apiUrl),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',
@@ -218,27 +229,45 @@ class _HomeScreenState extends State<HomeScreen> {
         final body = utf8.decode(response.bodyBytes);
         final dynamic data = json.decode(body);
 
-        if (data is List) {
-          // Count only pending missions (technician_confirm == false)
-          final count = data
-              .where(
-                (task) => task is Map && task['technician_confirm'] != true,
-              )
-              .length;
+        int count = 0;
 
-          print('Pending missions count: $count');
-          if (mounted) {
-            setState(() {
-              missionCount = count;
-            });
+        if (userLevel == 4) {
+          // For technicians: count only pending missions (technician_confirm == false)
+          if (data is List) {
+            count = data
+                .where(
+                  (task) => task is Map && task['technician_confirm'] != true,
+                )
+                .length;
+          } else if (data is Map && data['error'] != null) {
+            print('Missions API error: ${data['error']}');
+            if (mounted) {
+              setState(() {
+                missionCount = 0;
+              });
+            }
+            return;
           }
-        } else if (data is Map && data['error'] != null) {
-          print('Missions API error: ${data['error']}');
-          if (mounted) {
-            setState(() {
-              missionCount = 0;
-            });
+        } else if (userLevel == 5) {
+          // For drivers: count all missions (all tasks are pending for driver)
+          if (data is List) {
+            count = data.length;
+          } else if (data is Map && data['error'] != null) {
+            print('Missions API error: ${data['error']}');
+            if (mounted) {
+              setState(() {
+                missionCount = 0;
+              });
+            }
+            return;
           }
+        }
+
+        print('Pending missions count: $count');
+        if (mounted) {
+          setState(() {
+            missionCount = count;
+          });
         }
       } else {
         print('Failed to fetch missions: ${response.statusCode}');
@@ -278,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> loadUserDataFromServer() async {
     try {
       if (mounted) {
-      setState(() => isLoading = true);
+        setState(() => isLoading = true);
       }
 
       final prefs = await SharedPreferences.getInstance();
@@ -325,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'Home: Username mismatch (stored=$storedUsername, returned=$returnedUsername). Ignoring server response.',
           );
           if (mounted) {
-          setState(() => isLoading = false);
+            setState(() => isLoading = false);
           }
           return;
         }
@@ -367,8 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (isModir) {
               userRoleTitle = AppLocalizations.of(
                 context,
-              )!
-                  .home_company_representative;
+              )!.home_company_representative;
             } else if (level == 1) {
               userRoleTitle = AppLocalizations.of(context)!.home_admin;
             } else if (level == 2 || level == 4) {
@@ -388,15 +416,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (mounted) {
           // Fetch statistics based on user level
-          if (userLevel == 4) {
+          if (userLevel == 4 || userLevel == 5) {
+            // Level 4 (technicians) and Level 5 (drivers): Fetch missions
             fetchAndCountMissions();
           } else if (userLevel == 3) {
             // Level 3: Only fetch active devices (no users access)
             fetchAndCountActiveDevices();
           } else {
             // Level 1 and 2: Fetch both devices and users
-        fetchAndCountActiveDevices();
-        fetchAndCountActiveUsers();
+            fetchAndCountActiveDevices();
+            fetchAndCountActiveUsers();
           }
         }
       } else if (response.statusCode == 401) {
@@ -412,12 +441,12 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       } else {
         if (mounted) {
-        setState(() => isLoading = false);
+          setState(() => isLoading = false);
         }
       }
     } catch (e) {
       if (mounted) {
-      setState(() => isLoading = false);
+        setState(() => isLoading = false);
       }
     }
   }
@@ -444,8 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (storedModir == true) {
             userRoleTitle = AppLocalizations.of(
               context,
-            )!
-                .home_company_representative;
+            )!.home_company_representative;
           } else if (storedLevel == 1) {
             userRoleTitle = AppLocalizations.of(context)!.home_admin;
           } else if (storedLevel == 2 || storedLevel == 4) {
@@ -465,22 +493,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // After user data is loaded, fetch statistics
       if (mounted) {
-        if (userLevel == 4) {
+        if (userLevel == 4 || userLevel == 5) {
+          // Level 4 (technicians) and Level 5 (drivers): Fetch missions
           fetchAndCountMissions();
         } else if (userLevel == 3) {
           // Level 3: Only fetch active devices (no users access)
           fetchAndCountActiveDevices();
         } else {
           // Level 1 and 2: Fetch both devices and users
-      fetchAndCountActiveDevices();
-      fetchAndCountActiveUsers();
+          fetchAndCountActiveDevices();
+          fetchAndCountActiveUsers();
         }
       }
     } catch (e) {
       if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
+        setState(() {
+          isLoading = false;
+        });
       }
     }
   }
@@ -489,7 +518,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> refreshUserData() async {
     await loadUserDataFromServer();
     // Refresh statistics based on user level
-    if (userLevel == 4) {
+    if (userLevel == 4 || userLevel == 5) {
+      // Level 4 (technicians) and Level 5 (drivers): Fetch missions
       await fetchAndCountMissions();
     } else if (userLevel == 3) {
       // Level 3: Only fetch active devices (no users access)
@@ -678,9 +708,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onNavItemTapped(int index) {
     if (mounted) {
-    setState(() {
-      selectedNavIndex = index;
-    });
+      setState(() {
+        selectedNavIndex = index;
+      });
     }
 
     // Handle navigation based on selected index and user level
@@ -735,17 +765,17 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.pushReplacementNamed(context, '/home');
           }
           break;
-        case 1: // Reports (placeholder - reuse commands reports for now)
-          if (ModalRoute.of(context)?.settings.name != '/reports') {
-            Navigator.pushReplacementNamed(context, '/reports');
+        case 1: // Reports
+          if (ModalRoute.of(context)?.settings.name != '/driver-reports') {
+            Navigator.pushReplacementNamed(context, '/driver-reports');
           }
           break;
-        case 2: // Missions (reuse technician tasks for now)
-          if (ModalRoute.of(context)?.settings.name != '/technician-tasks') {
-            Navigator.pushReplacementNamed(context, '/technician-tasks');
+        case 2: // Missions
+          if (ModalRoute.of(context)?.settings.name != '/driver-missions') {
+            Navigator.pushReplacementNamed(context, '/driver-missions');
           }
           break;
-        case 3: // Public loads (same list of transport requests for now)
+        case 3: // Public loads
           if (ModalRoute.of(context)?.settings.name !=
               '/transport-public-loads') {
             Navigator.pushReplacementNamed(context, '/transport-public-loads');
@@ -757,38 +787,57 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } else {
       // Original navigation for other user levels
-    switch (index) {
-      case 0: // Home
-        if (ModalRoute.of(context)?.settings.name != '/home') {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-        break;
-      case 1: // Devices
-        if (ModalRoute.of(context)?.settings.name != '/devices') {
-          Navigator.pushReplacementNamed(context, '/devices');
-        }
-        break;
-      case 2: // Reports
-        if (userLevel == 3) {
-          if (ModalRoute.of(context)?.settings.name != '/reports') {
-            Navigator.pushReplacementNamed(context, '/reports');
+      switch (index) {
+        case 0: // Home
+          if (ModalRoute.of(context)?.settings.name != '/home') {
+            Navigator.pushReplacementNamed(context, '/home');
           }
-        } else {
-          if (ModalRoute.of(context)?.settings.name != '/commands') {
-            Navigator.pushReplacementNamed(context, '/commands');
+          break;
+        case 1: // Devices
+          if (ModalRoute.of(context)?.settings.name != '/devices') {
+            Navigator.pushReplacementNamed(context, '/devices');
           }
-        }
-        break;
-      case 3: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-      case 4: // Users
-        if (ModalRoute.of(context)?.settings.name != '/users') {
-          Navigator.pushReplacementNamed(context, '/users');
-        }
-        break;
+          break;
+        case 2: // Reports
+          if (userLevel == 3) {
+            if (ModalRoute.of(context)?.settings.name != '/reports') {
+              Navigator.pushReplacementNamed(context, '/reports');
+            }
+          } else {
+            if (ModalRoute.of(context)?.settings.name != '/commands') {
+              Navigator.pushReplacementNamed(context, '/commands');
+            }
+          }
+          break;
+        case 3: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 4: // Users
+          if (ModalRoute.of(context)?.settings.name != '/users') {
+            Navigator.pushReplacementNamed(context, '/users');
+          }
+          break;
       }
     }
+  }
+
+  String _getUserRoleTitle(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    if (userModir) {
+      return localizations.home_company_representative;
+    } else if (userLevel == 1) {
+      return localizations.home_admin;
+    } else if (userLevel == 2 || userLevel == 4) {
+      // Level 2 and 4 are both installers (technicians)
+      return localizations.home_installer;
+    } else if (userLevel == 3) {
+      return localizations.home_user;
+    } else if (userLevel == 5) {
+      return localizations.home_driver;
+    } else if (userLevel == 6) {
+      return localizations.home_retailer;
+    }
+    return '';
   }
 
   @override
@@ -803,20 +852,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final svgWidth = (screenWidth * 0.9).clamp(260.0, 420.0);
     final double horizontalPadding = (screenWidth * 0.05).clamp(12.0, 24.0);
 
-    if (userModir) {
-      userRoleTitle = AppLocalizations.of(context)!.home_company_representative;
-    } else if (userLevel == 1) {
-      userRoleTitle = AppLocalizations.of(context)!.home_admin;
-    } else if (userLevel == 2 || userLevel == 4) {
-      // Level 2 and 4 are both installers (technicians)
-      userRoleTitle = AppLocalizations.of(context)!.home_installer;
-    } else if (userLevel == 3) {
-      userRoleTitle = AppLocalizations.of(context)!.home_user;
-    } else if (userLevel == 5) {
-      userRoleTitle = AppLocalizations.of(context)!.home_driver;
-    } else if (userLevel == 6) {
-      userRoleTitle = AppLocalizations.of(context)!.home_retailer;
-    }
+    // Get user role title based on current language
+    final currentUserRoleTitle = _getUserRoleTitle(context);
     if (isLoading) {
       return Consumer<SettingsProvider>(
         builder: (context, value, child) => PopScope(
@@ -1040,7 +1077,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             Text(
-                              userRoleTitle,
+                              currentUserRoleTitle,
                               style: theme.textTheme.bodySmall,
                             ),
                           ],
@@ -1062,7 +1099,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         drawer: SharedAppDrawer(
           username: username,
-          userRoleTitle: userRoleTitle,
+          userRoleTitle: currentUserRoleTitle,
           userModir: userModir,
           userLevel: userLevel,
           refreshUserData: refreshUserData,
@@ -1153,12 +1190,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         right: 0,
                                         child: Column(
                                           children: [
-                                            // For level 4: Show missions count (single card)
+                                            // For level 4 (technicians) and level 5 (drivers): Show missions count (single card)
                                             // For other levels: Show devices and users count (two cards)
-                                            if (userLevel == 4)
+                                            // Both technician and driver cards use the same size and styling
+                                            if (userLevel == 4 ||
+                                                userLevel == 5)
                                               Container(
                                                 width: double.infinity,
                                                 height: 100,
+                                                margin: EdgeInsets.zero,
+                                                padding: EdgeInsets.zero,
                                                 decoration: BoxDecoration(
                                                   color: Theme.of(
                                                     context,
@@ -1286,146 +1327,158 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ),
                                                     )
                                                   : Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Container(
-                                                    height: 100,
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).cardTheme.color,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.grey
-                                                              .withValues(
-                                                                alpha: 0.1,
-                                                              ),
-                                                          spreadRadius: 1,
-                                                          blurRadius: 5,
-                                                                  offset: Offset(
-                                                                    0,
-                                                                    2,
-                                                                  ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
                                                       children: [
-                                                        Text(
-                                                          activeDeviceCount
-                                                              .toString(),
-                                                          style: TextStyle(
-                                                            fontSize: 24,
-                                                            fontWeight:
+                                                        Expanded(
+                                                          child: Container(
+                                                            height: 100,
+                                                            decoration: BoxDecoration(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardTheme.color,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.1,
+                                                                      ),
+                                                                  spreadRadius:
+                                                                      1,
+                                                                  blurRadius: 5,
+                                                                  offset:
+                                                                      Offset(
+                                                                        0,
+                                                                        2,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Text(
+                                                                  activeDeviceCount
+                                                                      .toString(),
+                                                                  style: TextStyle(
+                                                                    fontSize:
+                                                                        24,
+                                                                    fontWeight:
                                                                         FontWeight
                                                                             .bold,
-                                                            color: AppColors
-                                                                .lapisLazuli,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                          height: ui.scale(
-                                                            base: 6,
-                                                            min: 4,
-                                                            max: 10,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                            context,
-                                                          )!.home_active_devices,
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyMedium
-                                                              ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 17,
-                                                              ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(width: 20),
-                                                Expanded(
-                                                  child: Container(
-                                                    height: 100,
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).cardTheme.color,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.grey
-                                                              .withValues(
-                                                                alpha: 0.1,
-                                                              ),
-                                                          spreadRadius: 1,
-                                                          blurRadius: 5,
-                                                                  offset: Offset(
-                                                                    0,
-                                                                    2,
+                                                                    color: AppColors
+                                                                        .lapisLazuli,
                                                                   ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: ui
+                                                                      .scale(
+                                                                        base: 6,
+                                                                        min: 4,
+                                                                        max: 10,
+                                                                      ),
+                                                                ),
+                                                                Text(
+                                                                  AppLocalizations.of(
+                                                                    context,
+                                                                  )!.home_active_devices,
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyMedium
+                                                                      ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            17,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ],
-                                                    ),
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Text(
-                                                          onlineUserCount
-                                                              .toString(),
-                                                          style: TextStyle(
-                                                            fontSize: 24,
-                                                            fontWeight:
+                                                        SizedBox(width: 20),
+                                                        Expanded(
+                                                          child: Container(
+                                                            height: 100,
+                                                            decoration: BoxDecoration(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).cardTheme.color,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                              boxShadow: [
+                                                                BoxShadow(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.1,
+                                                                      ),
+                                                                  spreadRadius:
+                                                                      1,
+                                                                  blurRadius: 5,
+                                                                  offset:
+                                                                      Offset(
+                                                                        0,
+                                                                        2,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Text(
+                                                                  onlineUserCount
+                                                                      .toString(),
+                                                                  style: TextStyle(
+                                                                    fontSize:
+                                                                        24,
+                                                                    fontWeight:
                                                                         FontWeight
                                                                             .bold,
-                                                            color: AppColors
-                                                                .lapisLazuli,
+                                                                    color: AppColors
+                                                                        .lapisLazuli,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: ui
+                                                                      .scale(
+                                                                        base: 6,
+                                                                        min: 4,
+                                                                        max: 10,
+                                                                      ),
+                                                                ),
+                                                                Text(
+                                                                  AppLocalizations.of(
+                                                                    context,
+                                                                  )!.home_active_users,
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyMedium
+                                                                      ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            17,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
                                                           ),
-                                                        ),
-                                                        SizedBox(
-                                                          height: ui.scale(
-                                                            base: 6,
-                                                            min: 4,
-                                                            max: 10,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          AppLocalizations.of(
-                                                            context,
-                                                          )!.home_active_users,
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyMedium
-                                                              ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 17,
-                                                              ),
                                                         ),
                                                       ],
                                                     ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
                                             // const SizedBox(height: 20),
                                           ],
                                         ),
@@ -1433,34 +1486,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
 
-                                  // SizedBox(height: 20),
-
                                   // Navigation Cards
                                   Column(
                                     children: [
                                       // Device list - hidden for level 4 and 5 (driver)
                                       if (userLevel != 4 && userLevel != 5)
-                                      _buildNavigationCard(
-                                        icon: SvgPicture.asset(
-                                          'assets/icons/device.svg',
-                                          width: 24,
-                                          height: 24,
-                                        ),
-                                        iconColor: Colors.transparent,
-                                        title: AppLocalizations.of(
-                                          context,
-                                        )!.home_device_list,
-                                        subtitle: AppLocalizations.of(
-                                          context,
-                                        )!.home_device_list_description,
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
+                                        _buildNavigationCard(
+                                          icon: SvgPicture.asset(
+                                            'assets/icons/device.svg',
+                                            width: 24,
+                                            height: 24,
+                                          ),
+                                          iconColor: Colors.transparent,
+                                          title: AppLocalizations.of(
+                                            context,
+                                          )!.home_device_list,
+                                          subtitle: AppLocalizations.of(
+                                            context,
+                                          )!.home_device_list_description,
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
                                               builder: (_) =>
                                                   DeviceListScreen(),
+                                            ),
                                           ),
                                         ),
-                                      ),
                                       if (userLevel != 4) SizedBox(height: 12),
                                       // User list - only for level 1 and 2
                                       if (userLevel == 1 || userLevel == 2)
@@ -1485,7 +1536,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                       if (userLevel != 3 && userLevel != 4)
-                                      SizedBox(height: 12),
+                                        SizedBox(height: 12),
                                       // Reports - for level 4, show technician reports
                                       _buildNavigationCard(
                                         icon: SvgPicture.asset(
@@ -1497,16 +1548,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                         title: AppLocalizations.of(
                                           context,
                                         )!.home_reports,
-                                        subtitle: AppLocalizations.of(
-                                          context,
-                                        )!.home_reports_description,
+                                        subtitle: userLevel == 4
+                                            ? AppLocalizations.of(
+                                                context,
+                                              )!.home_reports_description_technician
+                                            : userLevel == 5
+                                            ? AppLocalizations.of(
+                                                context,
+                                              )!.home_reports_description_driver
+                                            : AppLocalizations.of(
+                                                context,
+                                              )!.home_reports_description,
                                         onTap: () {
                                           if (userLevel == 4) {
                                             Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
+                                              context,
+                                              MaterialPageRoute(
                                                 builder: (_) =>
                                                     TechnicianReportsScreen(),
+                                              ),
+                                            );
+                                          } else if (userLevel == 5) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const DriverReportsScreen(),
                                               ),
                                             );
                                           } else {
@@ -1515,7 +1582,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               MaterialPageRoute(
                                                 builder: (_) =>
                                                     CommandListScreen(),
-                                          ),
+                                              ),
                                             );
                                           }
                                         },
@@ -1583,9 +1650,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                               child: GestureDetector(
                                                 onTap: () {
                                                   if (mounted) {
-                                                  setState(() {
-                                                    showBanner = false;
-                                                  });
+                                                    setState(() {
+                                                      showBanner = false;
+                                                    });
                                                   }
                                                 },
                                                 child: Container(

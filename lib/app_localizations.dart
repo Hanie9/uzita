@@ -248,6 +248,8 @@ class AppLocalizations {
       'nav_services': 'Services',
       'nav_missions': 'Missions',
       'nav_public_loads': 'Public loads',
+      'public_loads_no_loads': 'No public loads',
+      'public_loads_no_loads_description': 'There are currently no public loads available',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'Please wait',
@@ -638,6 +640,8 @@ class AppLocalizations {
       'home_user_list_description': 'Manage system users',
       'home_reports': 'View reports',
       'home_reports_description': 'System reports and analyses',
+      'home_reports_description_technician': 'View completed missions and reports',
+      'home_reports_description_driver': 'View completed loads and reports',
       'home_settings': 'Settings',
       'home_settings_description': 'System general settings',
       'home_account_pending': 'Account waiting for activation',
@@ -731,9 +735,32 @@ class AppLocalizations {
       'trd_status': 'Status',
       'trd_created_at': 'Created at',
       'trd_driver': 'Driver',
+      'trd_driver_info': 'Driver Information',
+      'trd_driver_name': 'Name',
+      'trd_driver_code': 'Code',
+      'trd_driver_phone': 'Phone',
+      'trd_driver_city': 'City',
+      'trd_driver_address': 'Address',
       'trd_comment': 'Comment',
       'trd_grade': 'Grade',
       'trd_unknown': 'Unknown',
+      'trd_rate_driver': 'Rate driver',
+      'trd_grade_required': 'Please select a grade',
+      'trd_rating_submitted_success': 'Rating submitted successfully',
+      'trd_rating_submit_error': 'Error submitting rating',
+      'trd_select_grade': 'Select grade (1-5)',
+      'trd_selected_grade': 'Selected grade',
+      'trd_comment_label': 'Comment (optional)',
+      'trd_comment_hint': 'Enter your comment here',
+      'trd_cancel': 'Cancel',
+      'trd_submit': 'Submit',
+      'trd_no_comment': 'No comment',
+      'trd_ratings': 'Ratings',
+      'trd_average_rating': 'Average Rating',
+      'trd_your_rating': 'Your Rating',
+      'trd_no_ratings_yet': 'No ratings yet',
+      'trd_rate_and_comment': 'Rate and Comment',
+      'trd_edit_rating': 'Edit Rating',
 
       // Registration Forms (reg_)
       'reg_phone_98': '+98',
@@ -1045,6 +1072,31 @@ class AppLocalizations {
       'tech_urgency_urgent': 'Urgent',
       'tech_urgency_very_urgent': 'Very Urgent',
 
+      // Driver Screens (driver_)
+      'driver_missions': 'Missions',
+      'driver_no_missions': 'No missions',
+      'driver_no_missions_description':
+          'You have no pending missions at the moment.',
+      'driver_no_completed_loads': 'No completed loads',
+      'driver_no_completed_loads_description':
+          'You have no completed loads at the moment.',
+      'driver_task_details': 'Task Details',
+      'driver_report_details': 'Report Details',
+      'driver_maghsad': 'Destination',
+      'driver_mabda': 'Origin',
+      'driver_phone': 'Phone',
+      'driver_price_transport': 'Transport Price',
+      'driver_driver_confirm': 'Driver Confirmation',
+      'driver_customer_confirm': 'Customer Confirmation',
+      'driver_yes': 'Yes',
+      'driver_no': 'No',
+      'driver_description': 'Description',
+      'driver_created_at': 'Created at:',
+      'driver_complete_task': 'Complete Task',
+      'driver_complete_task_success': 'Task completed successfully',
+      'driver_complete_task_error': 'Error completing task',
+      'driver_complete_task_confirm': 'Are you sure you want to complete this task?',
+
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
       'splash_version': 'Version 1.0.0',
@@ -1258,6 +1310,8 @@ class AppLocalizations {
       'nav_services': 'سرویس ها',
       'nav_missions': 'ماموریت ها',
       'nav_public_loads': 'بارهای عمومی',
+      'public_loads_no_loads': 'بار عمومی وجود ندارد',
+      'public_loads_no_loads_description': 'در حال حاضر هیچ بار عمومی در دسترس نیست',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'لطفاً صبر کنید',
@@ -1634,6 +1688,8 @@ class AppLocalizations {
       'home_installer': 'نصاب',
       'home_user': 'کاربر',
       'home_admin': 'ادمین',
+      'home_driver': 'راننده',
+      'home_retailer': 'خرده فروش',
       'home_loading': 'در حال بارگذاری...',
       'home_active_devices': 'دستگاه فعال',
       'home_active_users': 'کاربر فعال',
@@ -1644,6 +1700,8 @@ class AppLocalizations {
       'home_user_list_description': 'مدیریت کاربران سیستم',
       'home_reports': 'مشاهده گزارشات',
       'home_reports_description': 'گزارشات و تحلیل های سیستم',
+      'home_reports_description_technician': 'مشاهده ماموریت‌ها و گزارشات تکمیل شده',
+      'home_reports_description_driver': 'مشاهده بارهای تکمیل شده و گزارشات',
       'home_settings': 'تنظیمات',
       'home_settings_description': 'تنظیمات عمومی سیستم',
       'home_account_pending': 'حساب کاربری در انتظار فعال‌سازی',
@@ -1736,9 +1794,32 @@ class AppLocalizations {
       'trd_status': 'وضعیت',
       'trd_created_at': 'تاریخ ثبت',
       'trd_driver': 'راننده',
+      'trd_driver_info': 'اطلاعات راننده',
+      'trd_driver_name': 'نام',
+      'trd_driver_code': 'کد',
+      'trd_driver_phone': 'تلفن',
+      'trd_driver_city': 'شهر',
+      'trd_driver_address': 'آدرس',
       'trd_comment': 'نظر',
       'trd_grade': 'امتیاز',
       'trd_unknown': 'نامشخص',
+      'trd_rate_driver': 'امتیازدهی به راننده',
+      'trd_grade_required': 'لطفاً امتیاز را انتخاب کنید',
+      'trd_rating_submitted_success': 'امتیاز با موفقیت ثبت شد',
+      'trd_rating_submit_error': 'خطا در ثبت امتیاز',
+      'trd_select_grade': 'انتخاب امتیاز (1 تا 5)',
+      'trd_selected_grade': 'امتیاز انتخاب شده',
+      'trd_comment_label': 'نظر (اختیاری)',
+      'trd_comment_hint': 'نظر خود را اینجا وارد کنید',
+      'trd_cancel': 'لغو',
+      'trd_submit': 'ثبت',
+      'trd_no_comment': 'بدون نظر',
+      'trd_ratings': 'امتیازها',
+      'trd_average_rating': 'میانگین امتیاز',
+      'trd_your_rating': 'امتیاز شما',
+      'trd_no_ratings_yet': 'هنوز امتیازی ثبت نشده',
+      'trd_rate_and_comment': 'امتیاز و نظر',
+      'trd_edit_rating': 'ویرایش امتیاز',
 
       // Registration Forms (reg_)
       'reg_user_register': 'ثبت‌نام کاربر',
@@ -2045,6 +2126,31 @@ class AppLocalizations {
       'tech_no_completed_tasks_description':
           'در حال حاضر ماموریت انجام شده‌ای ندارید.',
 
+      // Driver Screens (driver_)
+      'driver_missions': 'ماموریت ها',
+      'driver_no_missions': 'ماموریتی وجود ندارد',
+      'driver_no_missions_description':
+          'در حال حاضر ماموریت در انتظاری ندارید.',
+      'driver_no_completed_loads': 'بار انجام شده‌ای وجود ندارد',
+      'driver_no_completed_loads_description':
+          'در حال حاضر بار انجام شده‌ای ندارید.',
+      'driver_task_details': 'جزئیات ماموریت',
+      'driver_report_details': 'جزئیات گزارش',
+      'driver_maghsad': 'مقصد',
+      'driver_mabda': 'مبدا',
+      'driver_phone': 'تلفن',
+      'driver_price_transport': 'هزینه حمل',
+      'driver_driver_confirm': 'تایید راننده',
+      'driver_customer_confirm': 'تایید مشتری',
+      'driver_yes': 'بله',
+      'driver_no': 'خیر',
+      'driver_description': 'توضیحات',
+      'driver_created_at': 'تاریخ ثبت:',
+      'driver_complete_task': 'اتمام کار',
+      'driver_complete_task_success': 'ماموریت با موفقیت تکمیل شد',
+      'driver_complete_task_error': 'خطا در تکمیل ماموریت',
+      'driver_complete_task_confirm': 'آیا مطمئن هستید که می‌خواهید این ماموریت را تکمیل کنید؟',
+
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
       'splash_version': 'نسخه 1.0.0',
@@ -2179,6 +2285,8 @@ class AppLocalizations {
   String get nav_services => _getLocalizedValue('nav_services');
   String get nav_missions => _getLocalizedValue('nav_missions');
   String get nav_public_loads => _getLocalizedValue('nav_public_loads');
+  String get public_loads_no_loads => _getLocalizedValue('public_loads_no_loads');
+  String get public_loads_no_loads_description => _getLocalizedValue('public_loads_no_loads_description');
 
   String get shareddrawer_transport_requests =>
       _getLocalizedValue('shareddrawer_transport_requests');
@@ -2209,22 +2317,18 @@ class AppLocalizations {
   String get trn_phone_hint => _getLocalizedValue('trn_phone_hint');
   String get trn_phone_error => _getLocalizedValue('trn_phone_error');
   String get trn_description => _getLocalizedValue('trn_description');
-  String get trn_description_hint =>
-      _getLocalizedValue('trn_description_hint');
+  String get trn_description_hint => _getLocalizedValue('trn_description_hint');
   String get trn_description_error =>
       _getLocalizedValue('trn_description_error');
   String get trn_required_error => _getLocalizedValue('trn_required_error');
   String get trn_success_title => _getLocalizedValue('trn_success_title');
-  String get trn_success_message =>
-      _getLocalizedValue('trn_success_message');
+  String get trn_success_message => _getLocalizedValue('trn_success_message');
   String get trn_ok => _getLocalizedValue('trn_ok');
   String get trn_submit => _getLocalizedValue('trn_submit');
-  String get trn_loading_sending =>
-      _getLocalizedValue('trn_loading_sending');
+  String get trn_loading_sending => _getLocalizedValue('trn_loading_sending');
   String get trn_error_send_request =>
       _getLocalizedValue('trn_error_send_request');
-  String get trn_error_connecting =>
-      _getLocalizedValue('trn_error_connecting');
+  String get trn_error_connecting => _getLocalizedValue('trn_error_connecting');
 
   String get trd_title => _getLocalizedValue('trd_title');
   String get trd_pieces => _getLocalizedValue('trd_pieces');
@@ -2237,6 +2341,31 @@ class AppLocalizations {
   String get trd_comment => _getLocalizedValue('trd_comment');
   String get trd_grade => _getLocalizedValue('trd_grade');
   String get trd_unknown => _getLocalizedValue('trd_unknown');
+  String get trd_driver_info => _getLocalizedValue('trd_driver_info');
+  String get trd_driver_name => _getLocalizedValue('trd_driver_name');
+  String get trd_driver_code => _getLocalizedValue('trd_driver_code');
+  String get trd_driver_phone => _getLocalizedValue('trd_driver_phone');
+  String get trd_driver_city => _getLocalizedValue('trd_driver_city');
+  String get trd_driver_address => _getLocalizedValue('trd_driver_address');
+  String get trd_rate_driver => _getLocalizedValue('trd_rate_driver');
+  String get trd_grade_required => _getLocalizedValue('trd_grade_required');
+  String get trd_rating_submitted_success =>
+      _getLocalizedValue('trd_rating_submitted_success');
+  String get trd_rating_submit_error =>
+      _getLocalizedValue('trd_rating_submit_error');
+  String get trd_select_grade => _getLocalizedValue('trd_select_grade');
+  String get trd_selected_grade => _getLocalizedValue('trd_selected_grade');
+  String get trd_comment_label => _getLocalizedValue('trd_comment_label');
+  String get trd_comment_hint => _getLocalizedValue('trd_comment_hint');
+  String get trd_cancel => _getLocalizedValue('trd_cancel');
+  String get trd_submit => _getLocalizedValue('trd_submit');
+  String get trd_no_comment => _getLocalizedValue('trd_no_comment');
+  String get trd_ratings => _getLocalizedValue('trd_ratings');
+  String get trd_average_rating => _getLocalizedValue('trd_average_rating');
+  String get trd_your_rating => _getLocalizedValue('trd_your_rating');
+  String get trd_no_ratings_yet => _getLocalizedValue('trd_no_ratings_yet');
+  String get trd_rate_and_comment => _getLocalizedValue('trd_rate_and_comment');
+  String get trd_edit_rating => _getLocalizedValue('trd_edit_rating');
 
   // Loading getters (loading_*)
   String get loading_please_wait_short =>
@@ -2541,6 +2670,10 @@ class AppLocalizations {
   String get home_reports => _getLocalizedValue('home_reports');
   String get home_reports_description =>
       _getLocalizedValue('home_reports_description');
+  String get home_reports_description_technician =>
+      _getLocalizedValue('home_reports_description_technician');
+  String get home_reports_description_driver =>
+      _getLocalizedValue('home_reports_description_driver');
   String get home_settings => _getLocalizedValue('home_settings');
   String get home_settings_description =>
       _getLocalizedValue('home_settings_description');
@@ -2868,6 +3001,36 @@ class AppLocalizations {
   String get tech_urgency_urgent => _getLocalizedValue('tech_urgency_urgent');
   String get tech_urgency_very_urgent =>
       _getLocalizedValue('tech_urgency_very_urgent');
+
+  // Driver Screen getters (driver_*)
+  String get driver_missions => _getLocalizedValue('driver_missions');
+  String get driver_no_missions => _getLocalizedValue('driver_no_missions');
+  String get driver_no_missions_description =>
+      _getLocalizedValue('driver_no_missions_description');
+  String get driver_no_completed_loads =>
+      _getLocalizedValue('driver_no_completed_loads');
+  String get driver_no_completed_loads_description =>
+      _getLocalizedValue('driver_no_completed_loads_description');
+  String get driver_task_details => _getLocalizedValue('driver_task_details');
+  String get driver_report_details =>
+      _getLocalizedValue('driver_report_details');
+  String get driver_maghsad => _getLocalizedValue('driver_maghsad');
+  String get driver_mabda => _getLocalizedValue('driver_mabda');
+  String get driver_phone => _getLocalizedValue('driver_phone');
+  String get driver_price_transport =>
+      _getLocalizedValue('driver_price_transport');
+  String get driver_driver_confirm =>
+      _getLocalizedValue('driver_driver_confirm');
+  String get driver_customer_confirm =>
+      _getLocalizedValue('driver_customer_confirm');
+  String get driver_yes => _getLocalizedValue('driver_yes');
+  String get driver_no => _getLocalizedValue('driver_no');
+  String get driver_description => _getLocalizedValue('driver_description');
+  String get driver_created_at => _getLocalizedValue('driver_created_at');
+  String get driver_complete_task => _getLocalizedValue('driver_complete_task');
+  String get driver_complete_task_success => _getLocalizedValue('driver_complete_task_success');
+  String get driver_complete_task_error => _getLocalizedValue('driver_complete_task_error');
+  String get driver_complete_task_confirm => _getLocalizedValue('driver_complete_task_confirm');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

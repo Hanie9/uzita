@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
@@ -11,6 +12,7 @@ import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 class TechnicianReportsScreen extends StatefulWidget {
   const TechnicianReportsScreen({super.key});
@@ -28,6 +30,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
+  DateTime? _lastBackPressedAt;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -156,7 +160,32 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        // If drawer is open, close it instead of exiting
+        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _scaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBackPressedAt == null ||
+            now.difference(_lastBackPressedAt!) > const Duration(seconds: 2)) {
+          _lastBackPressedAt = now;
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.click_again_to_exit),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
@@ -292,13 +321,15 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
-                    final title = task['title'] ?? '---';
-                    // Try both 'price' and 'hazine' fields
-                    final price =
-                        task['price']?.toString() ??
-                        task['hazine']?.toString() ??
-                        '0';
-                    final urgency = task['urgency']?.toString();
+                    final title = task['title']?.toString() ?? '---';
+                    final address = task['address']?.toString() ?? '---';
+                    final status = task['status']?.toString() ?? 'open';
+                    final createdAt = task['created_at']?.toString() ?? '';
+                    // Get price - could be 'hazine', 'sayer_hazine', or 'price'
+                    final dynamic priceValue = task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
+                    final String price = priceValue == null
+                        ? '---'
+                        : priceValue.toString();
 
                     return GestureDetector(
                       onTap: () {
@@ -339,41 +370,57 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                           child: Row(
                             textDirection: Directionality.of(context),
                             children: [
+                              // Status badge (like service list)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(status)
+                                      .withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _getStatusColor(status)
+                                        .withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  _getStatusText(status, localizations),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getStatusColor(status),
+                                  ),
+                                  textDirection: Directionality.of(context),
+                                ),
+                              ),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      title,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.color,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textDirection: Directionality.of(context),
-                                    ),
-                                    SizedBox(height: 8),
+                                    // Title
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       textDirection: Directionality.of(context),
                                       children: [
                                         Icon(
-                                          Icons.attach_money,
+                                          Icons.title,
                                           size: 14,
-                                          color: AppColors.maroon,
+                                          color: AppColors.lapisLazuli,
                                         ),
                                         SizedBox(width: 4),
                                         Flexible(
                                           child: Text(
-                                            '$price ${localizations.sls_tooman}',
+                                            title,
                                             style: TextStyle(
-                                              fontSize: 13,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: AppColors.maroon,
+                                              color: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.color,
                                             ),
                                             textDirection: Directionality.of(
                                               context,
@@ -383,26 +430,79 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                         ),
                                       ],
                                     ),
-                                    if (urgency != null) ...[
-                                      SizedBox(height: 4),
+                                    SizedBox(height: 4),
+                                    // Price
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      textDirection: Directionality.of(context),
+                                      children: [
+                                        Icon(
+                                          Icons.attach_money,
+                                          size: 14,
+                                          color: AppColors.iranianGray,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            price == '---'
+                                                ? '---'
+                                                : '$price ${localizations.sls_tooman}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.iranianGray,
+                                            ),
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    // Address
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      textDirection: Directionality.of(context),
+                                      children: [
+                                        Icon(
+                                          Icons.location_on,
+                                          size: 14,
+                                          color: AppColors.iranianGray,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            address,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.iranianGray,
+                                            ),
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    // Date
+                                    if (createdAt.isNotEmpty)
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
-                                        textDirection: Directionality.of(
-                                          context,
-                                        ),
+                                        textDirection: Directionality.of(context),
                                         children: [
                                           Icon(
-                                            Icons.priority_high,
+                                            Icons.calendar_today,
                                             size: 14,
                                             color: AppColors.iranianGray,
                                           ),
                                           SizedBox(width: 4),
                                           Flexible(
                                             child: Text(
-                                              _getUrgencyText(
-                                                urgency,
-                                                localizations,
-                                              ),
+                                              _formatDate(createdAt),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: AppColors.iranianGray,
@@ -415,7 +515,6 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                           ),
                                         ],
                                       ),
-                                    ],
                                   ],
                                 ),
                               ),
@@ -487,19 +586,51 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         userLevel: userLevel,
         onItemTapped: _onNavItemTapped,
       ),
+      ),
     );
   }
 
-  String _getUrgencyText(String? urgency, AppLocalizations localizations) {
-    switch (urgency) {
-      case 'normal':
-        return localizations.tech_urgency_normal;
-      case 'urgent':
-        return localizations.tech_urgency_urgent;
-      case 'very_urgent':
-        return localizations.tech_urgency_very_urgent;
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      if (Localizations.localeOf(context).languageCode == 'en') {
+        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+      } else {
+        final j = Jalali.fromDateTime(date);
+        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {
+      return dateString;
+    }
+  }
+
+  String _getStatusText(String status, AppLocalizations localizations) {
+    switch (status) {
+      case 'open':
+        return localizations.sps_status_open;
+      case 'assigned':
+        return localizations.sps_status_assigned;
+      case 'confirm':
+        return localizations.sps_status_confirm;
+      case 'done':
+        return localizations.sps_status_done;
+      case 'canceled':
+        return localizations.sps_status_canceled;
       default:
-        return urgency ?? '---';
+        return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'done':
+        return Colors.green;
+      case 'canceled':
+        return Colors.red;
+      case 'confirm':
+        return Colors.blue;
+      default:
+        return Colors.orange;
     }
   }
 

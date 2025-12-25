@@ -671,7 +671,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     _obscurePassword
                                         ? Icons.visibility_off
                                         : Icons.visibility,
-                                    color: Theme.of(context).brightness ==
+                                    color:
+                                        Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? (Colors.grey[400] ?? Colors.grey)
                                         : const Color.fromARGB(255, 80, 77, 77),

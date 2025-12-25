@@ -14,18 +14,18 @@ import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 
-class TechnicianTasksScreen extends StatefulWidget {
-  const TechnicianTasksScreen({super.key});
+class DriverReportsScreen extends StatefulWidget {
+  const DriverReportsScreen({super.key});
 
   @override
-  State<TechnicianTasksScreen> createState() => _TechnicianTasksScreenState();
+  State<DriverReportsScreen> createState() => _DriverReportsScreenState();
 }
 
-class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
+class _DriverReportsScreenState extends State<DriverReportsScreen> {
   List tasks = [];
   bool isLoading = true;
-  int selectedNavIndex = 3; // Missions tab index for level 4 users
-  int userLevel = 4;
+  int selectedNavIndex = 1; // Reports tab index for level 5 users
+  int userLevel = 5;
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
@@ -40,19 +40,14 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    final bool isModir = prefs.getBool('modir') ?? false;
     setState(() {
-      userLevel = prefs.getInt('level') ?? 4;
+      userLevel = prefs.getInt('level') ?? 5;
       username = prefs.getString('username') ?? '';
       userActive = prefs.getBool('active') ?? true;
-      if (isModir) {
-        userRoleTitle = AppLocalizations.of(
-          context,
-        )!.pro_company_representative;
-      } else if (userLevel == 1) {
+      if (userLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-      } else if (userLevel == 2 || userLevel == 4) {
-        userRoleTitle = AppLocalizations.of(context)!.pro_installer;
+      } else if (userLevel == 5) {
+        userRoleTitle = AppLocalizations.of(context)!.home_driver;
       } else {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;
       }
@@ -81,7 +76,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
         Uri.parse(
-          'https://device-control.liara.run/api/technician/tasks?ts=$ts',
+          'https://device-control.liara.run/api/transport/report?ts=$ts',
         ),
         headers: {
           'Authorization': 'Bearer $token',
@@ -99,28 +94,23 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
             tasks = [];
             isLoading = false;
           });
+        } else if (data is Map && data['results'] != null) {
+          // Handle paginated response
+          final results = data['results'];
+          if (results is List) {
+            setState(() {
+              tasks = results;
+              isLoading = false;
+            });
+          } else {
+            setState(() {
+              tasks = [];
+              isLoading = false;
+            });
+          }
         } else {
-          // Handle both List and Map with results
-          List<dynamic> taskList = [];
-          if (data is List) {
-            taskList = data;
-          } else if (data is Map && data['results'] != null) {
-            taskList = data['results'] is List ? data['results'] : [];
-          }
-          
-          // Remove duplicates based on task ID
-          final Map<int, dynamic> uniqueTasks = {};
-          for (var task in taskList) {
-            if (task is Map && task['id'] != null) {
-              final id = task['id'] is int ? task['id'] : int.tryParse(task['id'].toString());
-              if (id != null) {
-                uniqueTasks[id] = task;
-              }
-            }
-          }
-          
           setState(() {
-            tasks = uniqueTasks.values.toList();
+            tasks = [];
             isLoading = false;
           });
         }
@@ -147,14 +137,61 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       case 0: // Home
         Navigator.pushReplacementNamed(context, '/home');
         break;
-      case 1: // Profile
+      case 1: // Reports - already here
+        break;
+      case 2: // Missions
+        Navigator.pushReplacementNamed(context, '/driver-missions');
+        break;
+      case 3: // Public loads
+        Navigator.pushReplacementNamed(context, '/transport-public-loads');
+        break;
+      case 4: // Profile
         Navigator.pushReplacementNamed(context, '/profile');
         break;
-      case 2: // Reports
-        Navigator.pushReplacementNamed(context, '/technician-reports');
-        break;
-      case 3: // Missions - already here
-        break;
+    }
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      if (Localizations.localeOf(context).languageCode == 'en') {
+        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+      } else {
+        final j = Jalali.fromDateTime(date);
+        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {
+      return dateString;
+    }
+  }
+
+  String _getStatusText(String status, AppLocalizations localizations) {
+    switch (status) {
+      case 'open':
+        return localizations.sps_status_open;
+      case 'assigned':
+        return localizations.sps_status_assigned;
+      case 'confirm':
+        return localizations.sps_status_confirm;
+      case 'done':
+        return localizations.sps_status_done;
+      case 'canceled':
+        return localizations.sps_status_canceled;
+      default:
+        return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'done':
+        return Colors.green;
+      case 'canceled':
+        return Colors.red;
+      case 'confirm':
+        return Colors.blue;
+      default:
+        return Colors.orange;
     }
   }
 
@@ -239,7 +276,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                   Expanded(
                     child: Center(
                       child: Text(
-                        localizations.tech_missions,
+                        localizations.nav_reports,
                         style: Theme.of(context).appBarTheme.titleTextStyle,
                       ),
                     ),
@@ -325,24 +362,21 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
-                    final taskId = task['id']?.toString() ?? index.toString();
-                    final title = task['title']?.toString() ?? '---';
-                    final urgency = task['urgency']?.toString();
+                    final maghsad = task['maghsad']?.toString() ?? '---';
+                    final mabda = task['mabda']?.toString() ?? '---';
                     final status = task['status']?.toString() ?? 'open';
                     final createdAt = task['created_at']?.toString() ?? '';
-                    // Get price - could be 'hazine', 'sayer_hazine', or 'price'
-                    final dynamic priceValue = task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
-                    final String price = priceValue == null
+                    final dynamic priceTransportValue = task['price_transport'];
+                    final String priceTransport = priceTransportValue == null
                         ? '---'
-                        : priceValue.toString();
+                        : priceTransportValue.toString();
 
                     return GestureDetector(
-                      key: ValueKey('task_$taskId'),
                       onTap: () {
                         Navigator.pushNamed(
                           context,
-                          '/technician-task-detail',
-                          arguments: task,
+                          '/driver-task-detail',
+                          arguments: {'task': task, 'isReport': true},
                         );
                       },
                       child: Container(
@@ -409,20 +443,47 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Title
+                                    // Origin --> Destination
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       textDirection: Directionality.of(context),
                                       children: [
                                         Icon(
-                                          Icons.title,
+                                          Icons.location_city,
+                                          size: 14,
+                                          color: AppColors.iranianGray,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            mabda,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.iranianGray,
+                                            ),
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        SizedBox(width: 6),
+                                        Icon(
+                                          Icons.arrow_forward,
+                                          size: 16,
+                                          color: AppColors.iranianGray,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Icon(
+                                          Icons.location_on,
                                           size: 14,
                                           color: AppColors.lapisLazuli,
                                         ),
                                         SizedBox(width: 4),
                                         Flexible(
                                           child: Text(
-                                            title,
+                                            maghsad,
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -438,42 +499,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 4),
-                                    // Urgency
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      textDirection: Directionality.of(
-                                        context,
-                                      ),
-                                      children: [
-                                        Icon(
-                                          Icons.priority_high,
-                                          size: 14,
-                                          color: AppColors.iranianGray,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            urgency != null
-                                                ? _getUrgencyText(
-                                                    urgency,
-                                                    localizations,
-                                                  )
-                                                : '---',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColors.iranianGray,
-                                            ),
-                                            textDirection: Directionality.of(
-                                              context,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
+                                    SizedBox(height: 6),
                                     // Price
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -487,9 +513,9 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                         SizedBox(width: 4),
                                         Flexible(
                                           child: Text(
-                                            price == '---'
+                                            priceTransport == '---'
                                                 ? '---'
-                                                : '$price ${localizations.sls_tooman}',
+                                                : '$priceTransport ${localizations.sls_tooman}',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: AppColors.iranianGray,
@@ -603,65 +629,8 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
         userLevel: userLevel,
         onItemTapped: _onNavItemTapped,
       ),
-      ),
+    ),
     );
-  }
-
-  String _getUrgencyText(String? urgency, AppLocalizations localizations) {
-    switch (urgency) {
-      case 'normal':
-        return localizations.tech_urgency_normal;
-      case 'urgent':
-        return localizations.tech_urgency_urgent;
-      case 'very_urgent':
-        return localizations.tech_urgency_very_urgent;
-      default:
-        return urgency ?? '---';
-    }
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      if (Localizations.localeOf(context).languageCode == 'en') {
-        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-      } else {
-        final j = Jalali.fromDateTime(date);
-        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
-      }
-    } catch (_) {
-      return dateString;
-    }
-  }
-
-  String _getStatusText(String status, AppLocalizations localizations) {
-    switch (status) {
-      case 'open':
-        return localizations.sps_status_open;
-      case 'assigned':
-        return localizations.sps_status_assigned;
-      case 'confirm':
-        return localizations.sps_status_confirm;
-      case 'done':
-        return localizations.sps_status_done;
-      case 'canceled':
-        return localizations.sps_status_canceled;
-      default:
-        return status;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'done':
-        return Colors.green;
-      case 'canceled':
-        return Colors.red;
-      case 'confirm':
-        return Colors.blue;
-      default:
-        return Colors.orange;
-    }
   }
 
   Widget _buildEmptyState() {
@@ -692,14 +661,14 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                 ),
               ),
               child: Icon(
-                Icons.assignment_outlined,
+                Icons.check_circle_outline,
                 size: kIconSize * 2,
                 color: AppColors.lapisLazuli,
               ),
             ),
             SizedBox(height: kSpacing),
             Text(
-              localizations.tech_no_missions,
+              localizations.driver_no_completed_loads,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -708,7 +677,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              localizations.tech_no_missions_description,
+              localizations.driver_no_completed_loads_description,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodyMedium?.color,
