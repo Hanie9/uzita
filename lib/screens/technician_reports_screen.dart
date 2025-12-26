@@ -270,54 +270,170 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                 'en'
             ? TextDirection.ltr
             : TextDirection.rtl,
-        child: isLoading
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        top: 20,
-                        bottom: MediaQuery.of(context).padding.bottom,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.lapisLazuli,
-                        ),
-                        strokeWidth: 3,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      localizations.sls_loading,
-                      style: TextStyle(
-                        color: AppColors.lapisLazuli,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+        child: Column(
+          children: [
+            // Blue header box
+            Container(
+              width: double.infinity,
+              margin: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+                vertical: ui.scale(base: 8, min: 6, max: 12),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: ui.scale(base: 16, min: 12, max: 20),
+                vertical: ui.scale(base: 12, min: 8, max: 16),
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.lapisLazuli,
+                    AppColors.lapisLazuli.withValues(alpha: 0.85),
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              )
-            : tasks.isEmpty
-            ? _buildEmptyState()
-            : RefreshIndicator(
-                onRefresh: fetchTasks,
-                color: AppColors.lapisLazuli,
-                child: ListView.builder(
-                  padding: EdgeInsets.only(
-                    left: kSpacing,
-                    right: kSpacing,
-                    top: kSpacing,
-                    bottom:
-                        kSpacing + MediaQuery.of(context).padding.bottom + 20,
+                borderRadius: BorderRadius.circular(
+                  ui.scale(base: 12, min: 10, max: 14),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
                   ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: ui.scale(base: 40, min: 32, max: 48),
+                    height: ui.scale(base: 40, min: 32, max: 48),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.description,
+                      color: Colors.white,
+                      size: ui.scale(base: 20, min: 16, max: 24),
+                    ),
+                  ),
+                  SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              localizations.nav_reports,
+                              style: TextStyle(
+                                fontSize: ui.scale(
+                                  base: 14,
+                                  min: 12,
+                                  max: 16,
+                                ),
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            isLoading
+                                ? Row(
+                                    children: [
+                                      SizedBox(
+                                        width: ui.scale(
+                                          base: 14,
+                                          min: 12,
+                                          max: 16,
+                                        ),
+                                        height: ui.scale(
+                                          base: 14,
+                                          min: 12,
+                                          max: 16,
+                                        ),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    '${tasks.length} ${localizations.nav_reports}',
+                                    style: TextStyle(
+                                      fontSize: ui.scale(
+                                        base: 18,
+                                        min: 16,
+                                        max: 20,
+                                      ),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: isLoading
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.only(
+                              left: 20,
+                              right: 20,
+                              top: 20,
+                              bottom: MediaQuery.of(context).padding.bottom,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.lapisLazuli,
+                              ),
+                              strokeWidth: 3,
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          Text(
+                            localizations.sls_loading,
+                            style: TextStyle(
+                              color: AppColors.lapisLazuli,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : tasks.isEmpty
+                      ? _buildEmptyState()
+                      : RefreshIndicator(
+                          onRefresh: fetchTasks,
+                          color: AppColors.lapisLazuli,
+                          child: ListView.builder(
+                            padding: EdgeInsets.only(
+                              left: kSpacing,
+                              right: kSpacing,
+                              top: kSpacing,
+                              bottom: kSpacing +
+                                  MediaQuery.of(context).padding.bottom +
+                                  20,
+                            ),
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
@@ -539,6 +655,9 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                   },
                 ),
               ),
+            ),
+          ],
+        ),
       ),
       drawer: SharedAppDrawer(
         username: username,

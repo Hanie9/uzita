@@ -187,250 +187,383 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
       },
       child: Scaffold(
         key: _scaffoldKey,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          color: Theme.of(context).appBarTheme.backgroundColor,
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ui.scale(base: 16, min: 12, max: 20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Builder(
-                        builder: (context) => IconButton(
-                          icon: Icon(
-                            Icons.menu,
-                            color: Theme.of(context).appBarTheme.iconTheme?.color,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Container(
+            color: Theme.of(context).appBarTheme.backgroundColor,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Builder(
+                          builder: (context) => IconButton(
+                            icon: Icon(
+                              Icons.menu,
+                              color: Theme.of(
+                                context,
+                              ).appBarTheme.iconTheme?.color,
+                            ),
+                            onPressed: () => Scaffold.of(context).openDrawer(),
                           ),
-                          onPressed: () => Scaffold.of(context).openDrawer(),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications,
-                          color: Theme.of(context).appBarTheme.iconTheme?.color,
+                        IconButton(
+                          icon: Icon(
+                            Icons.notifications,
+                            color: Theme.of(
+                              context,
+                            ).appBarTheme.iconTheme?.color,
+                          ),
+                          onPressed: () {},
                         ),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        localizations.nav_public_loads,
-                        style:
-                            Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      ],
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          localizations.nav_public_loads,
+                          style: Theme.of(context).appBarTheme.titleTextStyle
+                              ?.copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
                       ),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      Image.asset(
-                        'assets/logouzita.png',
-                        height: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
+                    Row(
+                      children: [
+                        Image.asset(
+                          'assets/logouzita.png',
+                          height: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
+                          width: ui.scale(
+                            base: screenHeight * 0.08,
+                            min: 28,
+                            max: 56,
+                          ),
                         ),
-                        width: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      body: Directionality(
-        textDirection:
-            Provider.of<SettingsProvider>(context, listen: false)
-                        .selectedLanguage ==
-                    'en'
-                ? TextDirection.ltr
-                : TextDirection.rtl,
-        child: isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.lapisLazuli,
-                  ),
-                  strokeWidth: 3,
+        body: Directionality(
+          textDirection:
+              Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).selectedLanguage ==
+                  'en'
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          child: Column(
+            children: [
+              // Blue header box
+              Container(
+                width: double.infinity,
+                margin: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 8, min: 6, max: 12),
                 ),
-              )
-            : loads.isEmpty
-                ? _buildEmptyState()
-                : RefreshIndicator(
-                    onRefresh: _fetchLoads,
-                    color: AppColors.lapisLazuli,
-                    child: ListView.builder(
-                      padding: EdgeInsets.only(
-                        left: kSpacing,
-                        right: kSpacing,
-                        top: kSpacing,
-                        bottom: kSpacing +
-                            MediaQuery.of(context).padding.bottom +
-                            20,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 12, min: 8, max: 16),
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.lapisLazuli,
+                      AppColors.lapisLazuli.withValues(alpha: 0.85),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 12, min: 10, max: 14),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: ui.scale(base: 40, min: 32, max: 48),
+                      height: ui.scale(base: 40, min: 32, max: 48),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      itemCount: loads.length,
-                      itemBuilder: (context, index) {
-                        final load = loads[index] as Map;
-                        final List<dynamic> pieces =
-                            (load['pieces'] as List?) ?? [];
-                        final createdAt =
-                            (load['created_at'] ?? '').toString();
+                      child: Icon(
+                        Icons.inventory_2,
+                        color: Colors.white,
+                        size: ui.scale(base: 20, min: 16, max: 24),
+                      ),
+                    ),
+                    SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                localizations.nav_public_loads,
+                                style: TextStyle(
+                                  fontSize: ui.scale(
+                                    base: 14,
+                                    min: 12,
+                                    max: 16,
+                                  ),
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              isLoading
+                                  ? Row(
+                                      children: [
+                                        SizedBox(
+                                          width: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
+                                          ),
+                                          height: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
+                                          ),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      '${loads.length} ${localizations.nav_public_loads}',
+                                      style: TextStyle(
+                                        fontSize: ui.scale(
+                                          base: 18,
+                                          min: 16,
+                                          max: 20,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.lapisLazuli,
+                          ),
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : loads.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: _fetchLoads,
+                        color: AppColors.lapisLazuli,
+                        child: ListView.builder(
+                          padding: EdgeInsets.only(
+                            left: kSpacing,
+                            right: kSpacing,
+                            top: kSpacing,
+                            bottom:
+                                kSpacing +
+                                MediaQuery.of(context).padding.bottom +
+                                20,
+                          ),
+                          itemCount: loads.length,
+                          itemBuilder: (context, index) {
+                            final load = loads[index] as Map;
+                            final List<dynamic> pieces =
+                                (load['pieces'] as List?) ?? [];
+                            final createdAt = (load['created_at'] ?? '')
+                                .toString();
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    Theme.of(context).brightness ==
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.black.withValues(alpha: 0.2)
                                         : AppColors.lapisLazuli.withValues(
                                             alpha: 0.06,
                                           ),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[700]!
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.08,
-                                    ),
-                              width: 1,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.local_shipping_outlined,
-                                  color: AppColors.lapisLazuli,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _buildPiecesSummary(pieces),
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.color,
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[700]!
+                                      : AppColors.lapisLazuli.withValues(
+                                          alpha: 0.08,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
+                                  width: 1,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.local_shipping_outlined,
+                                      color: AppColors.lapisLazuli,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          const Icon(
-                                            Icons.calendar_today,
-                                            size: 14,
-                                            color: AppColors.iranianGray,
+                                          Text(
+                                            _buildPiecesSummary(pieces),
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.color,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              createdAt.isNotEmpty
-                                                  ? _formatDate(
-                                                      context,
-                                                      createdAt,
-                                                    )
-                                                  : '---',
-                                              style: const TextStyle(
-                                                fontSize: 12,
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.calendar_today,
+                                                size: 14,
                                                 color: AppColors.iranianGray,
                                               ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  createdAt.isNotEmpty
+                                                      ? _formatDate(
+                                                          context,
+                                                          createdAt,
+                                                        )
+                                                      : '---',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-      ),
-      drawer: SharedAppDrawer(
-        username: username,
-        userRoleTitle: userRoleTitle,
-        userModir: false,
-        userLevel: userLevel,
-        refreshUserData: _loadUserData,
-        userActive: userActive,
-        logout: () async {
-          final prefs = await SharedPreferences.getInstance();
-          // Preserve user preferences
-          final saved = prefs.getString('saved_username');
-          final preservedLanguage = prefs.getString('selectedLanguage');
-          final preservedDarkMode = prefs.getBool('darkModeEnabled');
-          final preservedTextSize = prefs.getDouble('textSize');
-          final preservedNotifications = prefs.getBool('notificationsEnabled');
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+        drawer: SharedAppDrawer(
+          username: username,
+          userRoleTitle: userRoleTitle,
+          userModir: false,
+          userLevel: userLevel,
+          refreshUserData: _loadUserData,
+          userActive: userActive,
+          logout: () async {
+            final prefs = await SharedPreferences.getInstance();
+            // Preserve user preferences
+            final saved = prefs.getString('saved_username');
+            final preservedLanguage = prefs.getString('selectedLanguage');
+            final preservedDarkMode = prefs.getBool('darkModeEnabled');
+            final preservedTextSize = prefs.getDouble('textSize');
+            final preservedNotifications = prefs.getBool(
+              'notificationsEnabled',
+            );
 
-          await prefs.clear();
+            await prefs.clear();
 
-          // Restore preserved settings
-          if (saved != null && saved.isNotEmpty) {
-            await prefs.setString('saved_username', saved);
-          }
-          if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
-            await prefs.setString('selectedLanguage', preservedLanguage);
-          }
-          if (preservedDarkMode != null) {
-            await prefs.setBool('darkModeEnabled', preservedDarkMode);
-          }
-          if (preservedTextSize != null) {
-            await prefs.setDouble('textSize', preservedTextSize);
-          }
-          if (preservedNotifications != null) {
-            await prefs.setBool('notificationsEnabled', preservedNotifications);
-          }
+            // Restore preserved settings
+            if (saved != null && saved.isNotEmpty) {
+              await prefs.setString('saved_username', saved);
+            }
+            if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
+              await prefs.setString('selectedLanguage', preservedLanguage);
+            }
+            if (preservedDarkMode != null) {
+              await prefs.setBool('darkModeEnabled', preservedDarkMode);
+            }
+            if (preservedTextSize != null) {
+              await prefs.setDouble('textSize', preservedTextSize);
+            }
+            if (preservedNotifications != null) {
+              await prefs.setBool(
+                'notificationsEnabled',
+                preservedNotifications,
+              );
+            }
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
-        },
-      ),
-      bottomNavigationBar: SharedBottomNavigation(
-        selectedIndex: selectedNavIndex,
-        userLevel: userLevel,
-        onItemTapped: _onNavItemTapped,
-      ),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+            );
+          },
+        ),
+        bottomNavigationBar: SharedBottomNavigation(
+          selectedIndex: selectedNavIndex,
+          userLevel: userLevel,
+          onItemTapped: _onNavItemTapped,
+        ),
       ),
     );
   }
@@ -491,6 +624,3 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
     );
   }
 }
-
-
-

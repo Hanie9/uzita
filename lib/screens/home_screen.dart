@@ -1165,8 +1165,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Stack(
                                     children: [
                                       // Logo section with extra space to accommodate overlay cards
+                                      // Less height for drivers (level 5) to reduce spacing
                                       SizedBox(
-                                        height: logoHeight + 28,
+                                        height: (userLevel == 5)
+                                            ? logoHeight + 18
+                                            : logoHeight + 28,
                                         child: Stack(
                                           alignment: Alignment.center,
                                           children: [

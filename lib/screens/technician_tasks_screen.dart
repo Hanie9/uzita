@@ -107,18 +107,20 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
           } else if (data is Map && data['results'] != null) {
             taskList = data['results'] is List ? data['results'] : [];
           }
-          
+
           // Remove duplicates based on task ID
           final Map<int, dynamic> uniqueTasks = {};
           for (var task in taskList) {
             if (task is Map && task['id'] != null) {
-              final id = task['id'] is int ? task['id'] : int.tryParse(task['id'].toString());
+              final id = task['id'] is int
+                  ? task['id']
+                  : int.tryParse(task['id'].toString());
               if (id != null) {
                 uniqueTasks[id] = task;
               }
             }
           }
-          
+
           setState(() {
             tasks = uniqueTasks.values.toList();
             isLoading = false;
@@ -190,419 +192,579 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       },
       child: Scaffold(
         key: _scaffoldKey,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).appBarTheme.backgroundColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ui.scale(base: 16, min: 12, max: 20),
-              ),
-              child: Row(
-                children: [
-                  // Left side - Icons
-                  Row(
-                    children: [
-                      Builder(
-                        builder: (context) => IconButton(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).appBarTheme.backgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
+                child: Row(
+                  children: [
+                    // Left side - Icons
+                    Row(
+                      children: [
+                        Builder(
+                          builder: (context) => IconButton(
+                            icon: Icon(
+                              Icons.menu,
+                              color: Theme.of(
+                                context,
+                              ).appBarTheme.iconTheme?.color,
+                            ),
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                          ),
+                        ),
+                        IconButton(
                           icon: Icon(
-                            Icons.menu,
+                            Icons.notifications,
                             color: Theme.of(
                               context,
                             ).appBarTheme.iconTheme?.color,
                           ),
-                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          onPressed: () {},
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications,
-                          color: Theme.of(context).appBarTheme.iconTheme?.color,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  // Center - Text
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        localizations.tech_missions,
-                        style: Theme.of(context).appBarTheme.titleTextStyle,
-                      ),
-                    ),
-                  ),
-
-                  // Right side - Logo
-                  Image.asset(
-                    'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: Directionality(
-        textDirection:
-            Provider.of<SettingsProvider>(
-                  context,
-                  listen: false,
-                ).selectedLanguage ==
-                'en'
-            ? TextDirection.ltr
-            : TextDirection.rtl,
-        child: isLoading
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        top: 20,
-                        bottom: MediaQuery.of(context).padding.bottom,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.lapisLazuli,
+                    // Center - Text
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          localizations.tech_missions,
+                          style: Theme.of(context).appBarTheme.titleTextStyle,
                         ),
-                        strokeWidth: 3,
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Text(
-                      localizations.sls_loading,
-                      style: TextStyle(
-                        color: AppColors.lapisLazuli,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+
+                    // Right side - Logo
+                    Image.asset(
+                      'assets/logouzita.png',
+                      height: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
+                      width: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
                       ),
                     ),
                   ],
                 ),
-              )
-            : tasks.isEmpty
-            ? _buildEmptyState()
-            : RefreshIndicator(
-                onRefresh: fetchTasks,
-                color: AppColors.lapisLazuli,
-                child: ListView.builder(
-                  padding: EdgeInsets.only(
-                    left: kSpacing,
-                    right: kSpacing,
-                    top: kSpacing,
-                    bottom:
-                        kSpacing + MediaQuery.of(context).padding.bottom + 20,
+              ),
+            ),
+          ),
+        ),
+        body: Directionality(
+          textDirection:
+              Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).selectedLanguage ==
+                  'en'
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          child: Column(
+            children: [
+              // Blue header box
+              Container(
+                width: double.infinity,
+                margin: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 8, min: 6, max: 12),
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  vertical: ui.scale(base: 12, min: 8, max: 16),
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.lapisLazuli,
+                      AppColors.lapisLazuli.withValues(alpha: 0.85),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    final taskId = task['id']?.toString() ?? index.toString();
-                    final title = task['title']?.toString() ?? '---';
-                    final urgency = task['urgency']?.toString();
-                    final status = task['status']?.toString() ?? 'open';
-                    final createdAt = task['created_at']?.toString() ?? '';
-                    // Get price - could be 'hazine', 'sayer_hazine', or 'price'
-                    final dynamic priceValue = task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
-                    final String price = priceValue == null
-                        ? '---'
-                        : priceValue.toString();
-
-                    return GestureDetector(
-                      key: ValueKey('task_$taskId'),
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/technician-task-detail',
-                          arguments: task,
-                        );
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.black.withValues(alpha: 0.2)
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.06,
+                  borderRadius: BorderRadius.circular(
+                    ui.scale(base: 12, min: 10, max: 14),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: ui.scale(base: 40, min: 32, max: 48),
+                      height: ui.scale(base: 40, min: 32, max: 48),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.assignment,
+                        color: Colors.white,
+                        size: ui.scale(base: 20, min: 16, max: 24),
+                      ),
+                    ),
+                    SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                localizations.tech_missions,
+                                style: TextStyle(
+                                  fontSize: ui.scale(
+                                    base: 14,
+                                    min: 12,
+                                    max: 16,
+                                  ),
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              isLoading
+                                  ? Row(
+                                      children: [
+                                        SizedBox(
+                                          width: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
+                                          ),
+                                          height: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
+                                          ),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      '${tasks.length} ${localizations.tech_missions}',
+                                      style: TextStyle(
+                                        fontSize: ui.scale(
+                                          base: 18,
+                                          min: 16,
+                                          max: 20,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                top: 20,
+                                bottom: MediaQuery.of(context).padding.bottom,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.lapisLazuli.withValues(
+                                  alpha: 0.1,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.lapisLazuli,
+                                ),
+                                strokeWidth: 3,
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            Text(
+                              localizations.sls_loading,
+                              style: TextStyle(
+                                color: AppColors.lapisLazuli,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
-                          border: Border.all(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.grey[700]!
-                                : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                            width: 1,
-                          ),
                         ),
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Row(
-                            textDirection: Directionality.of(context),
-                            children: [
-                              // Status badge (like service list)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
+                      )
+                    : tasks.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: fetchTasks,
+                        color: AppColors.lapisLazuli,
+                        child: ListView.builder(
+                          padding: EdgeInsets.only(
+                            left: kSpacing,
+                            right: kSpacing,
+                            top: kSpacing,
+                            bottom:
+                                kSpacing +
+                                MediaQuery.of(context).padding.bottom +
+                                20,
+                          ),
+                          itemCount: tasks.length,
+                          itemBuilder: (context, index) {
+                            final task = tasks[index];
+                            final taskId =
+                                task['id']?.toString() ?? index.toString();
+                            final title = task['title']?.toString() ?? '---';
+                            final urgency = task['urgency']?.toString();
+                            final status = task['status']?.toString() ?? 'open';
+                            final createdAt =
+                                task['created_at']?.toString() ?? '';
+                            // Get price - could be 'hazine', 'sayer_hazine', or 'price'
+                            final dynamic priceValue =
+                                task['hazine'] ??
+                                task['sayer_hazine'] ??
+                                task['price'];
+                            final String price = priceValue == null
+                                ? '---'
+                                : priceValue.toString();
+
+                            return GestureDetector(
+                              key: ValueKey('task_$taskId'),
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/technician-task-detail',
+                                  arguments: task,
+                                );
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    status,
-                                  ).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: Theme.of(context).cardTheme.color,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.black.withValues(alpha: 0.2)
+                                          : AppColors.lapisLazuli.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
                                   border: Border.all(
-                                    color: _getStatusColor(
-                                      status,
-                                    ).withValues(alpha: 0.3),
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[700]!
+                                        : AppColors.lapisLazuli.withValues(
+                                            alpha: 0.08,
+                                          ),
                                     width: 1,
                                   ),
                                 ),
-                                child: Text(
-                                  _getStatusText(status, localizations),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getStatusColor(status),
-                                  ),
-                                  textDirection: Directionality.of(context),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Title
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      textDirection: Directionality.of(context),
-                                      children: [
-                                        Icon(
-                                          Icons.title,
-                                          size: 14,
-                                          color: AppColors.lapisLazuli,
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Row(
+                                    textDirection: Directionality.of(context),
+                                    children: [
+                                      // Status badge (like service list)
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
                                         ),
-                                        SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            title,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.color,
-                                            ),
-                                            textDirection: Directionality.of(
-                                              context,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
+                                        decoration: BoxDecoration(
+                                          color: _getStatusColor(
+                                            status,
+                                          ).withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: _getStatusColor(
+                                              status,
+                                            ).withValues(alpha: 0.3),
+                                            width: 1,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
-                                    // Urgency
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      textDirection: Directionality.of(
-                                        context,
+                                        child: Text(
+                                          _getStatusText(status, localizations),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: _getStatusColor(status),
+                                          ),
+                                          textDirection: Directionality.of(
+                                            context,
+                                          ),
+                                        ),
                                       ),
-                                      children: [
-                                        Icon(
-                                          Icons.priority_high,
-                                          size: 14,
-                                          color: AppColors.iranianGray,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            urgency != null
-                                                ? _getUrgencyText(
-                                                    urgency,
-                                                    localizations,
-                                                  )
-                                                : '---',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color: AppColors.iranianGray,
-                                            ),
-                                            textDirection: Directionality.of(
-                                              context,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
-                                    // Price
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      textDirection: Directionality.of(context),
-                                      children: [
-                                        Icon(
-                                          Icons.attach_money,
-                                          size: 14,
-                                          color: AppColors.iranianGray,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Flexible(
-                                          child: Text(
-                                            price == '---'
-                                                ? '---'
-                                                : '$price ${localizations.sls_tooman}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.iranianGray,
-                                            ),
-                                            textDirection: Directionality.of(
-                                              context,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
-                                    // Date
-                                    if (createdAt.isNotEmpty)
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        textDirection: Directionality.of(
-                                          context,
-                                        ),
-                                        children: [
-                                          Icon(
-                                            Icons.calendar_today,
-                                            size: 14,
-                                            color: AppColors.iranianGray,
-                                          ),
-                                          SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              _formatDate(createdAt),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.iranianGray,
-                                              ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Title
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
                                               textDirection: Directionality.of(
                                                 context,
                                               ),
-                                              overflow: TextOverflow.ellipsis,
+                                              children: [
+                                                Icon(
+                                                  Icons.title,
+                                                  size: 14,
+                                                  color: AppColors.lapisLazuli,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Flexible(
+                                                  child: Text(
+                                                    title,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium
+                                                          ?.color,
+                                                    ),
+                                                    textDirection:
+                                                        Directionality.of(
+                                                          context,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ],
+                                            SizedBox(height: 4),
+                                            // Urgency
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              textDirection: Directionality.of(
+                                                context,
+                                              ),
+                                              children: [
+                                                Icon(
+                                                  Icons.priority_high,
+                                                  size: 14,
+                                                  color: AppColors.iranianGray,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Flexible(
+                                                  child: Text(
+                                                    urgency != null
+                                                        ? _getUrgencyText(
+                                                            urgency,
+                                                            localizations,
+                                                          )
+                                                        : '---',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          AppColors.iranianGray,
+                                                    ),
+                                                    textDirection:
+                                                        Directionality.of(
+                                                          context,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 4),
+                                            // Price
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              textDirection: Directionality.of(
+                                                context,
+                                              ),
+                                              children: [
+                                                Icon(
+                                                  Icons.attach_money,
+                                                  size: 14,
+                                                  color: AppColors.iranianGray,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Flexible(
+                                                  child: Text(
+                                                    price == '---'
+                                                        ? '---'
+                                                        : '$price ${localizations.sls_tooman}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          AppColors.iranianGray,
+                                                    ),
+                                                    textDirection:
+                                                        Directionality.of(
+                                                          context,
+                                                        ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 4),
+                                            // Date
+                                            if (createdAt.isNotEmpty)
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                textDirection:
+                                                    Directionality.of(context),
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_today,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      _formatDate(createdAt),
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      textDirection:
+                                                          Directionality.of(
+                                                            context,
+                                                          ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                  ],
+                                      Icon(
+                                        Icons.chevron_left,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                            ?.withValues(alpha: 0.5),
+                                        textDirection:
+                                            Directionality.of(context) ==
+                                                TextDirection.rtl
+                                            ? TextDirection.ltr
+                                            : TextDirection.rtl,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              Icon(
-                                Icons.chevron_left,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.5),
-                                textDirection:
-                                    Directionality.of(context) ==
-                                        TextDirection.rtl
-                                    ? TextDirection.ltr
-                                    : TextDirection.rtl,
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                       ),
-                    );
-                  },
-                ),
               ),
-      ),
-      drawer: SharedAppDrawer(
-        username: username,
-        userRoleTitle: userRoleTitle,
-        userModir: false,
-        userLevel: userLevel,
-        refreshUserData: _loadUserData,
-        userActive: userActive,
-        logout: () async {
-          final prefs = await SharedPreferences.getInstance();
-          // Preserve user preferences
-          final saved = prefs.getString('saved_username');
-          final preservedLanguage = prefs.getString('selectedLanguage');
-          final preservedDarkMode = prefs.getBool('darkModeEnabled');
-          final preservedTextSize = prefs.getDouble('textSize');
-          final preservedNotifications = prefs.getBool('notificationsEnabled');
+            ],
+          ),
+        ),
+        drawer: SharedAppDrawer(
+          username: username,
+          userRoleTitle: userRoleTitle,
+          userModir: false,
+          userLevel: userLevel,
+          refreshUserData: _loadUserData,
+          userActive: userActive,
+          logout: () async {
+            final prefs = await SharedPreferences.getInstance();
+            // Preserve user preferences
+            final saved = prefs.getString('saved_username');
+            final preservedLanguage = prefs.getString('selectedLanguage');
+            final preservedDarkMode = prefs.getBool('darkModeEnabled');
+            final preservedTextSize = prefs.getDouble('textSize');
+            final preservedNotifications = prefs.getBool(
+              'notificationsEnabled',
+            );
 
-          await prefs.clear();
+            await prefs.clear();
 
-          // Restore preserved settings
-          if (saved != null && saved.isNotEmpty) {
-            await prefs.setString('saved_username', saved);
-          }
-          if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
-            await prefs.setString('selectedLanguage', preservedLanguage);
-          }
-          if (preservedDarkMode != null) {
-            await prefs.setBool('darkModeEnabled', preservedDarkMode);
-          }
-          if (preservedTextSize != null) {
-            await prefs.setDouble('textSize', preservedTextSize);
-          }
-          if (preservedNotifications != null) {
-            await prefs.setBool('notificationsEnabled', preservedNotifications);
-          }
+            // Restore preserved settings
+            if (saved != null && saved.isNotEmpty) {
+              await prefs.setString('saved_username', saved);
+            }
+            if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
+              await prefs.setString('selectedLanguage', preservedLanguage);
+            }
+            if (preservedDarkMode != null) {
+              await prefs.setBool('darkModeEnabled', preservedDarkMode);
+            }
+            if (preservedTextSize != null) {
+              await prefs.setDouble('textSize', preservedTextSize);
+            }
+            if (preservedNotifications != null) {
+              await prefs.setBool(
+                'notificationsEnabled',
+                preservedNotifications,
+              );
+            }
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
-        },
-      ),
-      bottomNavigationBar: SharedBottomNavigation(
-        selectedIndex: selectedNavIndex,
-        userLevel: userLevel,
-        onItemTapped: _onNavItemTapped,
-      ),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+            );
+          },
+        ),
+        bottomNavigationBar: SharedBottomNavigation(
+          selectedIndex: selectedNavIndex,
+          userLevel: userLevel,
+          onItemTapped: _onNavItemTapped,
+        ),
       ),
     );
   }
