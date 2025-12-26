@@ -372,7 +372,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                       ],
                                     )
                                   : Text(
-                                      '${tasks.length} ${localizations.tech_missions}',
+                                      '${tasks.length} ${localizations.tech_mission}',
                                       style: TextStyle(
                                         fontSize: ui.scale(
                                           base: 18,

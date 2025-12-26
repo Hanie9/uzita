@@ -241,12 +241,12 @@ class _TechnicianTaskDetailScreenState
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token is missing. Please login again.');
+        throw Exception(AppLocalizations.of(context)!.error_token_missing);
       }
 
       final taskId = widget.task['id']?.toString() ?? '';
       if (taskId.isEmpty) {
-        throw Exception('Task ID is missing');
+        throw Exception(AppLocalizations.of(context)!.error_task_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -298,7 +298,11 @@ class _TechnicianTaskDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              e.toString().replaceAll('Exception: ', '').isEmpty
+                  ? AppLocalizations.of(context)!.error_unknown
+                  : e.toString().replaceAll('Exception: ', ''),
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -329,12 +333,12 @@ class _TechnicianTaskDetailScreenState
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token is missing. Please login again.');
+        throw Exception(AppLocalizations.of(context)!.error_token_missing);
       }
 
       final taskId = widget.task['id']?.toString() ?? '';
       if (taskId.isEmpty) {
-        throw Exception('Task ID is missing');
+        throw Exception(AppLocalizations.of(context)!.error_task_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -395,7 +399,11 @@ class _TechnicianTaskDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              e.toString().replaceAll('Exception: ', '').isEmpty
+                  ? AppLocalizations.of(context)!.error_unknown
+                  : e.toString().replaceAll('Exception: ', ''),
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -424,13 +432,13 @@ class _TechnicianTaskDetailScreenState
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token is missing. Please login again.');
+        throw Exception(AppLocalizations.of(context)!.error_token_missing);
       }
 
       final taskId = widget.task['id']?.toString() ?? '';
 
       if (taskId.isEmpty) {
-        throw Exception('Task ID is missing');
+        throw Exception(AppLocalizations.of(context)!.error_task_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -492,7 +500,11 @@ class _TechnicianTaskDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              e.toString().replaceAll('Exception: ', '').isEmpty
+                  ? AppLocalizations.of(context)!.error_unknown
+                  : e.toString().replaceAll('Exception: ', ''),
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),

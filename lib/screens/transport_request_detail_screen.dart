@@ -112,16 +112,39 @@ class _TransportRequestDetailScreenState
           );
 
           if (updatedRequest != null) {
-            // Update requestData
+            // Update requestData, driver info, and rating in one setState
             setState(() {
               requestData = Map<String, dynamic>.from(updatedRequest);
+
+              // Update driver info
+              final driver = requestData['driver'];
+              if (driver != null) {
+                if (driver is Map) {
+                  driverInfo = Map<String, dynamic>.from(driver);
+                } else if (driver is String) {
+                  driverInfo = {'username': driver};
+                }
+              }
+
+              // Update existing rating
+              final comment = requestData['comment'];
+              final grade = requestData['grade'];
+
+              if (comment != null &&
+                  comment.toString().isNotEmpty &&
+                  comment.toString() != '---') {
+                _commentController.text = comment.toString();
+              }
+
+              if (grade != null &&
+                  grade.toString().isNotEmpty &&
+                  grade.toString() != '---') {
+                final gradeInt = int.tryParse(grade.toString());
+                if (gradeInt != null && gradeInt >= 1 && gradeInt <= 5) {
+                  selectedGrade = gradeInt;
+                }
+              }
             });
-
-            // Update driver info
-            _extractDriverInfo();
-
-            // Update existing rating
-            _loadExistingRating();
           }
         }
       }
@@ -239,8 +262,7 @@ class _TransportRequestDetailScreenState
 
   double? _getDriverAverageRating() {
     if (driverInfo == null) return null;
-    final avgRating =
-        driverInfo!['average_rating'] ?? driverInfo!['avg_rating'];
+    final avgRating = driverInfo!['grade'] ?? driverInfo!['grade'];
     if (avgRating == null) return null;
     if (avgRating is num) {
       return avgRating.toDouble();
@@ -250,10 +272,24 @@ class _TransportRequestDetailScreenState
   }
 
   Future<void> _submitRating() async {
+    final localizations = AppLocalizations.of(context)!;
+
+    // Check if grade is selected
     if (selectedGrade == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.trd_grade_required),
+          content: Text(localizations.trd_grade_required),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check if comment is provided
+    if (_commentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.trd_comment_required),
           backgroundColor: Colors.red,
         ),
       );
@@ -269,12 +305,12 @@ class _TransportRequestDetailScreenState
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token is missing. Please login again.');
+        throw Exception(AppLocalizations.of(context)!.error_token_missing);
       }
 
       final requestId = requestData['id']?.toString() ?? '';
       if (requestId.isEmpty) {
-        throw Exception('Request ID is missing');
+        throw Exception(AppLocalizations.of(context)!.error_request_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -288,14 +324,8 @@ class _TransportRequestDetailScreenState
       // Try /rate endpoint first for status 'done' (rating after completion)
       // If it fails, try /confirm endpoint
       final status = requestData['status']?.toString() ?? 'open';
-      String url;
-      if (status == 'done') {
-        url =
-            'https://device-control.liara.run/api/transport/request/$requestId/rate';
-      } else {
-        url =
-            'https://device-control.liara.run/api/transport/request/$requestId/confirm';
-      }
+      String url =
+          'https://device-control.liara.run/api/transport/request/$requestId/confirm';
 
       print('Sending POST request to: $url');
       print('Request body: ${json.encode(requestBody)}');
@@ -349,11 +379,7 @@ class _TransportRequestDetailScreenState
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Update local data immediately
-        requestData['grade'] = selectedGrade.toString();
-        requestData['comment'] = _commentController.text.trim();
-
-        // Refresh request data from API to get updated driver average rating
+        // Refresh request data from API to get updated driver average rating and grade
         await _refreshRequestData();
 
         if (!mounted) return;
@@ -366,11 +392,6 @@ class _TransportRequestDetailScreenState
             backgroundColor: Colors.green,
           ),
         );
-
-        // Don't navigate back, stay on page to show updated ratings
-        setState(() {
-          // Trigger rebuild to show updated ratings
-        });
       } else {
         final body = utf8.decode(response.bodyBytes);
         final errorData = json.decode(body);
@@ -469,15 +490,6 @@ class _TransportRequestDetailScreenState
               ),
               TextButton(
                 onPressed: () {
-                  if (taskGrade == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(localizations.trd_grade_required),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
                   Navigator.pop(context, {
                     'grade': taskGrade,
                     'comment': commentController.text.trim(),
@@ -502,12 +514,12 @@ class _TransportRequestDetailScreenState
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token is missing. Please login again.');
+        throw Exception(AppLocalizations.of(context)!.error_token_missing);
       }
 
       final requestId = requestData['id']?.toString() ?? '';
       if (requestId.isEmpty) {
-        throw Exception('Request ID is missing');
+        throw Exception(AppLocalizations.of(context)!.error_request_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -515,10 +527,14 @@ class _TransportRequestDetailScreenState
       final url =
           'https://device-control.liara.run/api/transport/request/$requestId/confirm';
 
-      final requestBody = <String, dynamic>{
-        'grade': result['grade'],
-        'comment': result['comment'],
-      };
+      final requestBody = <String, dynamic>{};
+      if (result['grade'] != null) {
+        requestBody['grade'] = result['grade'];
+      }
+      if (result['comment'] != null &&
+          result['comment'].toString().trim().isNotEmpty) {
+        requestBody['comment'] = result['comment'];
+      }
 
       final response = await http.post(
         Uri.parse(url),
@@ -565,7 +581,11 @@ class _TransportRequestDetailScreenState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              e.toString().replaceAll('Exception: ', '').isEmpty
+                  ? AppLocalizations.of(context)!.error_unknown
+                  : e.toString().replaceAll('Exception: ', ''),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -757,246 +777,250 @@ class _TransportRequestDetailScreenState
         textDirection: localizations.effectiveLanguageCode == 'en'
             ? TextDirection.ltr
             : TextDirection.rtl,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            ui.scale(base: 20, min: 16, max: 24),
-            ui.scale(base: 20, min: 16, max: 24),
-            ui.scale(base: 20, min: 16, max: 24),
-            ui.scale(base: 20, min: 16, max: 24) +
-                MediaQuery.of(context).padding.bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusBackgroundColor(status),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      _getStatusText(status, localizations),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              Text(
-                localizations.trd_pieces,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: pieces.isEmpty
-                    ? [
-                        Chip(
-                          label: Text(localizations.trd_unknown),
-                          backgroundColor: AppColors.lapisLazuli.withValues(
-                            alpha: 0.06,
-                          ),
-                        ),
-                      ]
-                    : pieces
-                          .map(
-                            (p) => Chip(
-                              label: Text(p.toString()),
-                              backgroundColor: AppColors.lapisLazuli.withValues(
-                                alpha: 0.06,
-                              ),
-                            ),
-                          )
-                          .toList(),
-              ),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              _buildInfoItem(
-                context,
-                icon: Icons.location_on,
-                title: localizations.trd_maghsad,
-                value: maghsad,
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              _buildInfoItem(
-                context,
-                icon: Icons.phone,
-                title: localizations.trd_phone,
-                value: phone,
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              // Driver information section with all details
-              _buildDriverInfoSection(context),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              // Rating section: Average rating and customer's rating for this request
-              _buildRatingSection(context, grade),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              Text(
-                localizations.trd_description,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color:
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87,
-                  ),
-                ),
-              ),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              Text(
-                localizations.trd_comment,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  comment != '---' ? comment : localizations.trd_no_comment,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color:
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87,
-                  ),
-                ),
-              ),
-              // Rating button for customers
-              if (canRate) ...[
-                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: isSubmittingRating ? null : _showRatingDialog,
-                    icon: Icon(Icons.star),
-                    label: Text(localizations.trd_rate_driver),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lapisLazuli,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              if (createdAt.isNotEmpty)
+        child: RefreshIndicator(
+          onRefresh: _refreshRequestData,
+          color: AppColors.lapisLazuli,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(
+              ui.scale(base: 20, min: 16, max: 24),
+              ui.scale(base: 20, min: 16, max: 24),
+              ui.scale(base: 20, min: 16, max: 24),
+              ui.scale(base: 20, min: 16, max: 24) +
+                  MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status banner
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.iranianGray.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: _getStatusBackgroundColor(status),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: AppColors.iranianGray,
+                        Icons.info_outline,
+                        color: Colors.white,
+                        size: 24,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       Text(
-                        '${localizations.trd_created_at} ${_formatDate(context, createdAt)}',
+                        _getStatusText(status, localizations),
                         style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.iranianGray,
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
-              // Complete Task button for customers when status is 'assigned'
-              if (canCompleteTask) ...[
-                SizedBox(height: ui.scale(base: 24, min: 20, max: 28)),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading ? null : _completeTask,
-                    icon: isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                Text(
+                  localizations.trd_pieces,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: pieces.isEmpty
+                      ? [
+                          Chip(
+                            label: Text(localizations.trd_unknown),
+                            backgroundColor: AppColors.lapisLazuli.withValues(
+                              alpha: 0.06,
                             ),
-                          )
-                        : const Icon(Icons.check_circle),
-                    label: Text(localizations.trd_complete_task),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lapisLazuli,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
+                          ),
+                        ]
+                      : pieces
+                            .map(
+                              (p) => Chip(
+                                label: Text(p.toString()),
+                                backgroundColor: AppColors.lapisLazuli
+                                    .withValues(alpha: 0.06),
+                              ),
+                            )
+                            .toList(),
+                ),
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.location_on,
+                  title: localizations.trd_maghsad,
+                  value: maghsad,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.phone,
+                  title: localizations.trd_phone,
+                  value: phone,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                // Driver information section with all details
+                _buildDriverInfoSection(context),
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                // Rating section: Average rating and customer's rating for this request
+                _buildRatingSection(context),
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                Text(
+                  localizations.trd_description,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
                     ),
                   ),
                 ),
                 SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                Text(
+                  localizations.trd_comment,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    comment != '---' ? comment : localizations.trd_no_comment,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
+                    ),
+                  ),
+                ),
+                // Rating button for customers
+                if (canRate) ...[
+                  SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isSubmittingRating ? null : _showRatingDialog,
+                      icon: Icon(Icons.star),
+                      label: Text(localizations.trd_rate_driver),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lapisLazuli,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                if (createdAt.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.iranianGray.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 20,
+                          color: AppColors.iranianGray,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${localizations.trd_created_at} ${_formatDate(context, createdAt)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.iranianGray,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Complete Task button for customers when status is 'assigned'
+                if (canCompleteTask) ...[
+                  SizedBox(height: ui.scale(base: 24, min: 20, max: 28)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isLoading ? null : _completeTask,
+                      icon: isLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.check_circle),
+                      label: Text(localizations.trd_complete_task),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lapisLazuli,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -1137,12 +1161,32 @@ class _TransportRequestDetailScreenState
     );
   }
 
-  Widget _buildRatingSection(BuildContext context, String grade) {
+  Widget _buildRatingSection(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final avgRating = _getDriverAverageRating();
-    final customerRating = (grade != '---' && grade.isNotEmpty)
-        ? int.tryParse(grade)
-        : null;
+
+    // Get grade from requestData - can be int, string, or null
+    final gradeValue = requestData['grade'];
+    int? customerRating;
+
+    if (gradeValue != null) {
+      if (gradeValue is int) {
+        customerRating = gradeValue >= 1 && gradeValue <= 5 ? gradeValue : null;
+      } else if (gradeValue is String) {
+        if (gradeValue.isNotEmpty &&
+            gradeValue != '---' &&
+            gradeValue != 'null') {
+          customerRating = int.tryParse(gradeValue);
+          if (customerRating != null &&
+              (customerRating < 1 || customerRating > 5)) {
+            customerRating = null;
+          }
+        }
+      } else if (gradeValue is num) {
+        final gradeInt = gradeValue.toInt();
+        customerRating = gradeInt >= 1 && gradeInt <= 5 ? gradeInt : null;
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1201,19 +1245,6 @@ class _TransportRequestDetailScreenState
                               size: 20,
                             );
                           }),
-                          const SizedBox(width: 8),
-                          Text(
-                            avgRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.color ??
-                                  Colors.black87,
-                            ),
-                          ),
                         ],
                       ),
                     ],
@@ -1243,26 +1274,13 @@ class _TransportRequestDetailScreenState
                         children: [
                           ...List.generate(5, (index) {
                             return Icon(
-                              index < customerRating
+                              index < customerRating!
                                   ? Icons.star
                                   : Icons.star_border,
                               color: Colors.amber,
                               size: 20,
                             );
                           }),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$customerRating / 5',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.color ??
-                                  Colors.black87,
-                            ),
-                          ),
                         ],
                       ),
                     ],

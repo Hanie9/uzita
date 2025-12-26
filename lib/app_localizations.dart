@@ -242,6 +242,7 @@ class AppLocalizations {
       // Shared Bottom Navigation (nav_)
       'nav_home': 'Home',
       'nav_reports': 'Reports',
+      'nav_report': 'Report',
       'nav_devices': 'Devices',
       'nav_profile': 'Profile',
       'nav_users': 'Users',
@@ -674,6 +675,16 @@ class AppLocalizations {
       'login_error_fingerprint': 'Fingerprint authentication error',
       'login_biometric': 'Login with fingerprint / PIN / pattern',
       'login_login_first': 'First, log in',
+      // Common error messages
+      'error_token_missing': 'Token is missing. Please login again.',
+      'error_task_id_missing': 'Task ID is missing',
+      'error_request_id_missing': 'Request ID is missing',
+      'error_service_id_missing': 'Service ID is missing',
+      'error_unknown': 'An unknown error occurred',
+      'error_network': 'Network error. Please check your connection.',
+      'error_server': 'Server error. Please try again later.',
+      'error_permission_denied': 'Permission denied',
+      'error_invalid_data': 'Invalid data provided',
       'login_fingerprint_not_available':
           'The fingerprint sensor is not available on this device or is not supported.',
       'login_fingerprint_not_enrolled':
@@ -752,7 +763,7 @@ class AppLocalizations {
       'trd_rating_submit_error': 'Error submitting rating',
       'trd_select_grade': 'Select grade (1-5)',
       'trd_selected_grade': 'Selected grade',
-      'trd_comment_label': 'Comment (optional)',
+      'trd_comment_label': 'Comment',
       'trd_comment_hint': 'Enter your comment here',
       'trd_cancel': 'Cancel',
       'trd_submit': 'Submit',
@@ -763,6 +774,7 @@ class AppLocalizations {
       'trd_no_ratings_yet': 'No ratings yet',
       'trd_rate_and_comment': 'Rate and Comment',
       'trd_edit_rating': 'Edit Rating',
+      'trd_comment_required': 'Comment is required',
       'trd_complete_task': 'Complete Task',
       'trd_complete_task_success': 'Task completed successfully',
       'trd_complete_task_error': 'Error completing task',
@@ -1033,6 +1045,7 @@ class AppLocalizations {
 
       // Technician Screens (tech_)
       'tech_missions': 'Missions',
+      'tech_mission': 'Mission',
       'tech_no_missions': 'No missions',
       'tech_no_missions_description':
           'You have no pending missions at the moment.',
@@ -1080,6 +1093,7 @@ class AppLocalizations {
 
       // Driver Screens (driver_)
       'driver_missions': 'Missions',
+      'driver_mission': 'Mission',
       'driver_no_missions': 'No missions',
       'driver_no_missions_description':
           'You have no pending missions at the moment.',
@@ -1314,6 +1328,7 @@ class AppLocalizations {
       // Shared Bottom Navigation (nav_)
       'nav_home': 'خانه',
       'nav_reports': 'گزارشات',
+      'nav_report': 'گزارش',
       'nav_devices': 'دستگاه ها',
       'nav_profile': 'پروفایل',
       'nav_users': 'کاربران',
@@ -1743,6 +1758,16 @@ class AppLocalizations {
       'login_error_fingerprint': 'خطا در احراز هویت اثر انگشت',
       'login_biometric': 'ورود با اثر انگشت / پین / الگو',
       'login_login_first': 'ابتدا یک بار وارد شوید',
+      // Common error messages
+      'error_token_missing': 'توکن یافت نشد. لطفاً دوباره وارد شوید.',
+      'error_task_id_missing': 'شناسه ماموریت یافت نشد',
+      'error_request_id_missing': 'شناسه درخواست یافت نشد',
+      'error_service_id_missing': 'شناسه سرویس یافت نشد',
+      'error_unknown': 'خطای ناشناخته رخ داد',
+      'error_network': 'خطا در اتصال شبکه. لطفاً اتصال خود را بررسی کنید.',
+      'error_server': 'خطای سرور. لطفاً بعداً دوباره تلاش کنید.',
+      'error_permission_denied': 'دسترسی رد شد',
+      'error_invalid_data': 'داده نامعتبر ارائه شده است',
       'login_fingerprint_not_available':
           'حسگر اثر انگشت در این دستگاه موجود نیست یا پشتیبانی نمی‌شود.',
       'login_fingerprint_not_enrolled':
@@ -1821,7 +1846,7 @@ class AppLocalizations {
       'trd_rating_submit_error': 'خطا در ثبت امتیاز',
       'trd_select_grade': 'انتخاب امتیاز (1 تا 5)',
       'trd_selected_grade': 'امتیاز انتخاب شده',
-      'trd_comment_label': 'نظر (اختیاری)',
+      'trd_comment_label': 'نظر',
       'trd_comment_hint': 'نظر خود را اینجا وارد کنید',
       'trd_cancel': 'لغو',
       'trd_submit': 'ثبت',
@@ -1832,6 +1857,7 @@ class AppLocalizations {
       'trd_no_ratings_yet': 'هنوز امتیازی ثبت نشده',
       'trd_rate_and_comment': 'امتیاز و نظر',
       'trd_edit_rating': 'ویرایش امتیاز',
+      'trd_comment_required': 'نظر الزامی است',
       'trd_complete_task': 'اتمام کار',
       'trd_complete_task_success': 'درخواست با موفقیت تکمیل شد',
       'trd_complete_task_error': 'خطا در تکمیل درخواست',
@@ -2097,6 +2123,7 @@ class AppLocalizations {
 
       // Technician Screens (tech_)
       'tech_missions': 'ماموریت ها',
+      'tech_mission': 'ماموریت',
       'tech_no_missions': 'ماموریتی وجود ندارد',
       'tech_no_missions_description': 'در حال حاضر ماموریت در انتظاری ندارید.',
       'tech_task_details': 'جزئیات ماموریت',
@@ -2144,6 +2171,7 @@ class AppLocalizations {
 
       // Driver Screens (driver_)
       'driver_missions': 'ماموریت ها',
+      'driver_mission': 'ماموریت',
       'driver_no_missions': 'ماموریتی وجود ندارد',
       'driver_no_missions_description':
           'در حال حاضر ماموریت در انتظاری ندارید.',
@@ -2299,6 +2327,7 @@ class AppLocalizations {
   // Navigation getters (nav_*)
   String get nav_home => _getLocalizedValue('nav_home');
   String get nav_reports => _getLocalizedValue('nav_reports');
+  String get nav_report => _getLocalizedValue('nav_report');
   String get nav_devices => _getLocalizedValue('nav_devices');
   String get nav_profile => _getLocalizedValue('nav_profile');
   String get nav_users => _getLocalizedValue('nav_users');
@@ -2388,6 +2417,7 @@ class AppLocalizations {
   String get trd_no_ratings_yet => _getLocalizedValue('trd_no_ratings_yet');
   String get trd_rate_and_comment => _getLocalizedValue('trd_rate_and_comment');
   String get trd_edit_rating => _getLocalizedValue('trd_edit_rating');
+  String get trd_comment_required => _getLocalizedValue('trd_comment_required');
   String get trd_complete_task => _getLocalizedValue('trd_complete_task');
   String get trd_complete_task_success =>
       _getLocalizedValue('trd_complete_task_success');
@@ -2737,6 +2767,20 @@ class AppLocalizations {
       _getLocalizedValue('login_error_fingerprint');
   String get login_biometric => _getLocalizedValue('login_biometric');
   String get login_login_first => _getLocalizedValue('login_login_first');
+  // Common error messages
+  String get error_token_missing => _getLocalizedValue('error_token_missing');
+  String get error_task_id_missing =>
+      _getLocalizedValue('error_task_id_missing');
+  String get error_request_id_missing =>
+      _getLocalizedValue('error_request_id_missing');
+  String get error_service_id_missing =>
+      _getLocalizedValue('error_service_id_missing');
+  String get error_unknown => _getLocalizedValue('error_unknown');
+  String get error_network => _getLocalizedValue('error_network');
+  String get error_server => _getLocalizedValue('error_server');
+  String get error_permission_denied =>
+      _getLocalizedValue('error_permission_denied');
+  String get error_invalid_data => _getLocalizedValue('error_invalid_data');
   String get login_fingerprint_not_available =>
       _getLocalizedValue('login_fingerprint_not_available');
   String get login_fingerprint_not_enrolled =>
@@ -2968,6 +3012,7 @@ class AppLocalizations {
 
   // Technician Screen getters (tech_*)
   String get tech_missions => _getLocalizedValue('tech_missions');
+  String get tech_mission => _getLocalizedValue('tech_mission');
   String get tech_no_missions => _getLocalizedValue('tech_no_missions');
   String get tech_no_missions_description =>
       _getLocalizedValue('tech_no_missions_description');
@@ -3033,6 +3078,7 @@ class AppLocalizations {
 
   // Driver Screen getters (driver_*)
   String get driver_missions => _getLocalizedValue('driver_missions');
+  String get driver_mission => _getLocalizedValue('driver_mission');
   String get driver_no_missions => _getLocalizedValue('driver_no_missions');
   String get driver_no_missions_description =>
       _getLocalizedValue('driver_no_missions_description');

@@ -1193,13 +1193,13 @@ class _ServiceProviderServiceDetailScreenState
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception('Token is missing. Please login again.');
+        throw Exception(AppLocalizations.of(context)!.error_token_missing);
       }
 
       final serviceId = widget.service['id']?.toString() ?? '';
 
       if (serviceId.isEmpty) {
-        throw Exception('Service ID is missing');
+        throw Exception(AppLocalizations.of(context)!.error_service_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -1309,7 +1309,11 @@ class _ServiceProviderServiceDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              e.toString().replaceAll('Exception: ', '').isEmpty
+                  ? AppLocalizations.of(context)!.error_unknown
+                  : e.toString().replaceAll('Exception: ', ''),
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),

@@ -364,7 +364,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                     ],
                                   )
                                 : Text(
-                                    '${tasks.length} ${localizations.nav_reports}',
+                                    '${tasks.length} ${localizations.nav_report}',
                                     style: TextStyle(
                                       fontSize: ui.scale(
                                         base: 18,

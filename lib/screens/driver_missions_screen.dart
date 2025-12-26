@@ -391,7 +391,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
                                       ],
                                     )
                                   : Text(
-                                      '${tasks.length} ${localizations.driver_missions}',
+                                      '${tasks.length} ${localizations.driver_mission}',
                                       style: TextStyle(
                                         fontSize: ui.scale(
                                           base: 18,
