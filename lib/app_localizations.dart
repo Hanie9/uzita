@@ -249,7 +249,8 @@ class AppLocalizations {
       'nav_missions': 'Missions',
       'nav_public_loads': 'Public loads',
       'public_loads_no_loads': 'No public loads',
-      'public_loads_no_loads_description': 'There are currently no public loads available',
+      'public_loads_no_loads_description':
+          'There are currently no public loads available',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'Please wait',
@@ -640,7 +641,8 @@ class AppLocalizations {
       'home_user_list_description': 'Manage system users',
       'home_reports': 'View reports',
       'home_reports_description': 'System reports and analyses',
-      'home_reports_description_technician': 'View completed missions and reports',
+      'home_reports_description_technician':
+          'View completed missions and reports',
       'home_reports_description_driver': 'View completed loads and reports',
       'home_settings': 'Settings',
       'home_settings_description': 'System general settings',
@@ -772,7 +774,7 @@ class AppLocalizations {
       'reg_verify_code': 'Verify code',
       'reg_name': 'Username',
       'reg_password': 'Password',
-      'reg_phone': '    Phone number',
+      'reg_phone': 'Phone number',
       'reg_phone_completely': 'Complete phone number:',
       'reg_attention_admin':
           'Note: Get the management code from the system administrator',
@@ -1095,7 +1097,8 @@ class AppLocalizations {
       'driver_complete_task': 'Complete Task',
       'driver_complete_task_success': 'Task completed successfully',
       'driver_complete_task_error': 'Error completing task',
-      'driver_complete_task_confirm': 'Are you sure you want to complete this task?',
+      'driver_complete_task_confirm':
+          'Are you sure you want to complete this task?',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
@@ -1311,7 +1314,8 @@ class AppLocalizations {
       'nav_missions': 'ماموریت ها',
       'nav_public_loads': 'بارهای عمومی',
       'public_loads_no_loads': 'بار عمومی وجود ندارد',
-      'public_loads_no_loads_description': 'در حال حاضر هیچ بار عمومی در دسترس نیست',
+      'public_loads_no_loads_description':
+          'در حال حاضر هیچ بار عمومی در دسترس نیست',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'لطفاً صبر کنید',
@@ -1700,7 +1704,8 @@ class AppLocalizations {
       'home_user_list_description': 'مدیریت کاربران سیستم',
       'home_reports': 'مشاهده گزارشات',
       'home_reports_description': 'گزارشات و تحلیل های سیستم',
-      'home_reports_description_technician': 'مشاهده ماموریت‌ها و گزارشات تکمیل شده',
+      'home_reports_description_technician':
+          'مشاهده ماموریت‌ها و گزارشات تکمیل شده',
       'home_reports_description_driver': 'مشاهده بارهای تکمیل شده و گزارشات',
       'home_settings': 'تنظیمات',
       'home_settings_description': 'تنظیمات عمومی سیستم',
@@ -1830,7 +1835,7 @@ class AppLocalizations {
       'reg_verify_code': 'تأیید کد',
       'reg_name': 'نام کاربری',
       'reg_password': 'رمز عبور',
-      'reg_phone': '     شماره تلفن',
+      'reg_phone': 'شماره تلفن',
       'reg_phone_completely': 'شماره کامل:',
       'reg_phone_98': '+98',
       'reg_attention_admin': 'توجه: کد مدیریت را از مسئول سیستم دریافت کنید',
@@ -2149,7 +2154,8 @@ class AppLocalizations {
       'driver_complete_task': 'اتمام کار',
       'driver_complete_task_success': 'ماموریت با موفقیت تکمیل شد',
       'driver_complete_task_error': 'خطا در تکمیل ماموریت',
-      'driver_complete_task_confirm': 'آیا مطمئن هستید که می‌خواهید این ماموریت را تکمیل کنید؟',
+      'driver_complete_task_confirm':
+          'آیا مطمئن هستید که می‌خواهید این ماموریت را تکمیل کنید؟',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
@@ -2285,8 +2291,10 @@ class AppLocalizations {
   String get nav_services => _getLocalizedValue('nav_services');
   String get nav_missions => _getLocalizedValue('nav_missions');
   String get nav_public_loads => _getLocalizedValue('nav_public_loads');
-  String get public_loads_no_loads => _getLocalizedValue('public_loads_no_loads');
-  String get public_loads_no_loads_description => _getLocalizedValue('public_loads_no_loads_description');
+  String get public_loads_no_loads =>
+      _getLocalizedValue('public_loads_no_loads');
+  String get public_loads_no_loads_description =>
+      _getLocalizedValue('public_loads_no_loads_description');
 
   String get shareddrawer_transport_requests =>
       _getLocalizedValue('shareddrawer_transport_requests');
@@ -3028,9 +3036,12 @@ class AppLocalizations {
   String get driver_description => _getLocalizedValue('driver_description');
   String get driver_created_at => _getLocalizedValue('driver_created_at');
   String get driver_complete_task => _getLocalizedValue('driver_complete_task');
-  String get driver_complete_task_success => _getLocalizedValue('driver_complete_task_success');
-  String get driver_complete_task_error => _getLocalizedValue('driver_complete_task_error');
-  String get driver_complete_task_confirm => _getLocalizedValue('driver_complete_task_confirm');
+  String get driver_complete_task_success =>
+      _getLocalizedValue('driver_complete_task_success');
+  String get driver_complete_task_error =>
+      _getLocalizedValue('driver_complete_task_error');
+  String get driver_complete_task_confirm =>
+      _getLocalizedValue('driver_complete_task_confirm');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

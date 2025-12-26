@@ -490,12 +490,24 @@ Widget buildRegisterForm({
                                       ),
                                     ),
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: (screenWidth * 0.035).clamp(
+                                    // Add left padding to match phone field's prefixText space
+                                    contentPadding: EdgeInsets.only(
+                                      left:
+                                          (screenWidth * 0.035).clamp(
+                                            12.0,
+                                            16.0,
+                                          ) +
+                                          (screenWidth *
+                                              0.08), // Approximate space for "98+ " prefixText
+                                      right: (screenWidth * 0.035).clamp(
                                         12.0,
                                         16.0,
                                       ),
-                                      vertical: (screenHeight * 0.018).clamp(
+                                      top: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
+                                      ),
+                                      bottom: (screenHeight * 0.018).clamp(
                                         10.0,
                                         14.0,
                                       ),
@@ -561,12 +573,24 @@ Widget buildRegisterForm({
                                       ),
                                     ),
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: (screenWidth * 0.035).clamp(
+                                    // Add left padding to match phone field's prefixText space
+                                    contentPadding: EdgeInsets.only(
+                                      left:
+                                          (screenWidth * 0.035).clamp(
+                                            12.0,
+                                            16.0,
+                                          ) +
+                                          (screenWidth *
+                                              0.08), // Approximate space for "98+ " prefixText
+                                      right: (screenWidth * 0.035).clamp(
                                         12.0,
                                         16.0,
                                       ),
-                                      vertical: (screenHeight * 0.018).clamp(
+                                      top: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
+                                      ),
+                                      bottom: (screenHeight * 0.018).clamp(
                                         10.0,
                                         14.0,
                                       ),
@@ -637,12 +661,24 @@ Widget buildRegisterForm({
                                       ),
                                     ),
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: (screenWidth * 0.035).clamp(
+                                    // Add left padding to match phone field's prefixText space
+                                    contentPadding: EdgeInsets.only(
+                                      left:
+                                          (screenWidth * 0.035).clamp(
+                                            12.0,
+                                            16.0,
+                                          ) +
+                                          (screenWidth *
+                                              0.08), // Approximate space for "98+ " prefixText
+                                      right: (screenWidth * 0.035).clamp(
                                         12.0,
                                         16.0,
                                       ),
-                                      vertical: (screenHeight * 0.018).clamp(
+                                      top: (screenHeight * 0.018).clamp(
+                                        10.0,
+                                        14.0,
+                                      ),
+                                      bottom: (screenHeight * 0.018).clamp(
                                         10.0,
                                         14.0,
                                       ),

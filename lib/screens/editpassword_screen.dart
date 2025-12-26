@@ -224,6 +224,7 @@ Widget buildPasswordChangeForm({
                                   ),
                                 ),
                                 border: InputBorder.none,
+                                // Same padding for both fields to align hint texts
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: screenWidth * 0.035,
                                   vertical: screenHeight * 0.018,
@@ -264,6 +265,7 @@ Widget buildPasswordChangeForm({
                                   ),
                                 ),
                                 border: InputBorder.none,
+                                // Same padding for both fields to align hint texts
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: screenWidth * 0.035,
                                   vertical: screenHeight * 0.018,

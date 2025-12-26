@@ -385,55 +385,55 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
             ),
             // Content
             Expanded(
-              child: isLoading
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.only(
-                              left: 20,
-                              right: 20,
-                              top: 20,
-                              bottom: MediaQuery.of(context).padding.bottom,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.lapisLazuli,
-                              ),
-                              strokeWidth: 3,
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            localizations.sls_loading,
-                            style: TextStyle(
-                              color: AppColors.lapisLazuli,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+        child: isLoading
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: MediaQuery.of(context).padding.bottom,
                       ),
-                    )
-                  : tasks.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
-                          onRefresh: fetchTasks,
-                          color: AppColors.lapisLazuli,
-                          child: ListView.builder(
-                            padding: EdgeInsets.only(
-                              left: kSpacing,
-                              right: kSpacing,
-                              top: kSpacing,
+                      decoration: BoxDecoration(
+                        color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.lapisLazuli,
+                        ),
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      localizations.sls_loading,
+                      style: TextStyle(
+                        color: AppColors.lapisLazuli,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : tasks.isEmpty
+            ? _buildEmptyState()
+            : RefreshIndicator(
+                onRefresh: fetchTasks,
+                color: AppColors.lapisLazuli,
+                child: ListView.builder(
+                  padding: EdgeInsets.only(
+                    left: kSpacing,
+                    right: kSpacing,
+                    top: kSpacing,
                               bottom: kSpacing +
                                   MediaQuery.of(context).padding.bottom +
                                   20,
-                            ),
+                  ),
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
@@ -657,7 +657,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
               ),
             ),
           ],
-        ),
+              ),
       ),
       drawer: SharedAppDrawer(
         username: username,

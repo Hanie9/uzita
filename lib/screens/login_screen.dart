@@ -625,11 +625,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: (screenWidth * 0.035)
+                              // Add left padding to match password field's prefixIcon space
+                              contentPadding: EdgeInsets.only(
+                                left:
+                                    (screenWidth * 0.035)
+                                        .clamp(12.0, 16.0)
+                                        .toDouble() +
+                                    (screenWidth * 0.02 * 2) +
+                                    (screenHeight *
+                                        0.03), // Space for prefixIcon
+                                right: (screenWidth * 0.035)
                                     .clamp(12.0, 16.0)
                                     .toDouble(),
-                                vertical: (screenHeight * 0.018)
+                                top: (screenHeight * 0.018)
+                                    .clamp(10.0, 14.0)
+                                    .toDouble(),
+                                bottom: (screenHeight * 0.018)
                                     .clamp(10.0, 14.0)
                                     .toDouble(),
                               ),
