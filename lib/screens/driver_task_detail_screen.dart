@@ -75,27 +75,52 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
   Future<void> _completeTask() async {
     final localizations = AppLocalizations.of(context)!;
-    
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
+
+    // Show dialog to enter report
+    final report = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.driver_complete_task),
-        content: Text(localizations.driver_complete_task_confirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(localizations.home_no),
+      builder: (context) {
+        final reportController = TextEditingController();
+        return AlertDialog(
+          title: Text(localizations.driver_enter_report),
+          content: TextField(
+            controller: reportController,
+            decoration: InputDecoration(
+              labelText: localizations.driver_report,
+              hintText: localizations.driver_report,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            maxLines: 5,
+            autofocus: true,
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(localizations.home_yes),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text(localizations.home_no),
+            ),
+            TextButton(
+              onPressed: () {
+                if (reportController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(localizations.driver_report_required),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                Navigator.pop(context, reportController.text.trim());
+              },
+              child: Text(localizations.home_yes),
+            ),
+          ],
+        );
+      },
     );
 
-    if (confirmed != true) return;
+    if (report == null || report.isEmpty) return;
 
     setState(() => isLoading = true);
 
@@ -114,13 +139,11 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
       await SessionManager().onNetworkRequest();
 
-      // Create report from task
-      final url = 'https://device-control.liara.run/api/transport/report';
-      
-      final requestBody = <String, dynamic>{
-        'task_id': int.parse(taskId),
-        'driver_confirm': true,
-      };
+      // Confirm task with report
+      final url =
+          'https://device-control.liara.run/api/transport/task/$taskId/confirm';
+
+      final requestBody = <String, dynamic>{'report': report};
 
       final response = await http.post(
         Uri.parse(url),
@@ -137,19 +160,23 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       setState(() => isLoading = false);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = utf8.decode(response.bodyBytes);
+        final responseData = json.decode(body);
+        final message =
+            responseData['message']?.toString() ??
+            localizations.driver_complete_task_success;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.driver_complete_task_success),
-            backgroundColor: Colors.green,
-          ),
+          SnackBar(content: Text(message), backgroundColor: Colors.green),
         );
-        
+
         // Navigate back to missions screen
         Navigator.pop(context, true);
       } else {
         final body = utf8.decode(response.bodyBytes);
         final errorData = json.decode(body);
-        final errorMessage = errorData['error']?.toString() ??
+        final errorMessage =
+            errorData['error']?.toString() ??
             errorData['message']?.toString() ??
             localizations.driver_complete_task_error;
         throw Exception(errorMessage);
@@ -397,8 +424,8 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                     ],
                   ),
                 ),
-              // Complete Task Button (only for missions, not reports)
-              if (!widget.isReport)
+              // Complete Task Button (only for missions with status "assigned", not reports)
+              if (!widget.isReport && status == 'assigned')
                 Padding(
                   padding: EdgeInsets.only(
                     top: ui.scale(base: 24, min: 20, max: 28),

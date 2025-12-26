@@ -26,10 +26,12 @@ class _TransportRequestDetailScreenState
   final TextEditingController _commentController = TextEditingController();
   Map<String, dynamic>? driverInfo;
   int userLevel = 3;
+  late Map<String, dynamic> requestData;
 
   @override
   void initState() {
     super.initState();
+    requestData = Map<String, dynamic>.from(widget.request);
     _loadUserData();
     _extractDriverInfo();
     _loadExistingRating();
@@ -49,7 +51,7 @@ class _TransportRequestDetailScreenState
   }
 
   void _extractDriverInfo() {
-    final driver = widget.request['driver'];
+    final driver = requestData['driver'];
     if (driver != null) {
       if (driver is Map) {
         setState(() {
@@ -64,9 +66,73 @@ class _TransportRequestDetailScreenState
     }
   }
 
+  Future<void> _refreshRequestData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        return;
+      }
+
+      final requestId = requestData['id']?.toString() ?? '';
+      if (requestId.isEmpty) {
+        return;
+      }
+
+      await SessionManager().onNetworkRequest();
+
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final response = await http.get(
+        Uri.parse(
+          'https://device-control.liara.run/api/transport/listrequest?ts=$ts',
+        ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Connection': 'close',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final body = utf8.decode(response.bodyBytes);
+        final dynamic data = json.decode(body);
+
+        if (data is Map && data['error'] != null) {
+          return;
+        }
+
+        if (data is List) {
+          final updatedRequest = data.firstWhere(
+            (r) => r['id']?.toString() == requestId,
+            orElse: () => null,
+          );
+
+          if (updatedRequest != null) {
+            // Update requestData
+            setState(() {
+              requestData = Map<String, dynamic>.from(updatedRequest);
+            });
+
+            // Update driver info
+            _extractDriverInfo();
+
+            // Update existing rating
+            _loadExistingRating();
+          }
+        }
+      }
+    } catch (e) {
+      print('Error refreshing request data: $e');
+    }
+  }
+
   void _loadExistingRating() {
-    final comment = widget.request['comment'];
-    final grade = widget.request['grade'];
+    final comment = requestData['comment'];
+    final grade = requestData['grade'];
 
     if (comment != null &&
         comment.toString().isNotEmpty &&
@@ -206,7 +272,7 @@ class _TransportRequestDetailScreenState
         throw Exception('Token is missing. Please login again.');
       }
 
-      final requestId = widget.request['id']?.toString() ?? '';
+      final requestId = requestData['id']?.toString() ?? '';
       if (requestId.isEmpty) {
         throw Exception('Request ID is missing');
       }
@@ -219,12 +285,23 @@ class _TransportRequestDetailScreenState
         requestBody['comment'] = _commentController.text.trim();
       }
 
-      final url =
-          'https://device-control.liara.run/api/transport/request/$requestId/rate';
+      // Try /rate endpoint first for status 'done' (rating after completion)
+      // If it fails, try /confirm endpoint
+      final status = requestData['status']?.toString() ?? 'open';
+      String url;
+      if (status == 'done') {
+        url =
+            'https://device-control.liara.run/api/transport/request/$requestId/rate';
+      } else {
+        url =
+            'https://device-control.liara.run/api/transport/request/$requestId/confirm';
+      }
+
       print('Sending POST request to: $url');
       print('Request body: ${json.encode(requestBody)}');
+      print('Status: $status');
 
-      final response = await http.post(
+      http.Response response = await http.post(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
@@ -240,6 +317,31 @@ class _TransportRequestDetailScreenState
       print('Response status code: ${response.statusCode}');
       print('Response body: ${response.body}');
 
+      // If 403 or other error, try alternative endpoint
+      if (response.statusCode == 403 ||
+          (response.statusCode != 200 && response.statusCode != 201)) {
+        final altUrl = status == 'done'
+            ? 'https://device-control.liara.run/api/transport/request/$requestId/confirm'
+            : 'https://device-control.liara.run/api/transport/request/$requestId/rate';
+        print('Trying alternative endpoint: $altUrl');
+
+        response = await http.post(
+          Uri.parse(altUrl),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Connection': 'close',
+          },
+          body: json.encode(requestBody),
+        );
+
+        print('Alternative response status code: ${response.statusCode}');
+        print('Alternative response body: ${response.body}');
+      }
+
       if (!mounted) return;
 
       setState(() {
@@ -247,6 +349,15 @@ class _TransportRequestDetailScreenState
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Update local data immediately
+        requestData['grade'] = selectedGrade.toString();
+        requestData['comment'] = _commentController.text.trim();
+
+        // Refresh request data from API to get updated driver average rating
+        await _refreshRequestData();
+
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -256,12 +367,10 @@ class _TransportRequestDetailScreenState
           ),
         );
 
-        // Update local data
-        widget.request['grade'] = selectedGrade.toString();
-        widget.request['comment'] = _commentController.text.trim();
-
-        // Navigate back with success
-        Navigator.pop(context, true);
+        // Don't navigate back, stay on page to show updated ratings
+        setState(() {
+          // Trigger rebuild to show updated ratings
+        });
       } else {
         final body = utf8.decode(response.bodyBytes);
         final errorData = json.decode(body);
@@ -275,6 +384,184 @@ class _TransportRequestDetailScreenState
       if (mounted) {
         setState(() {
           isSubmittingRating = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _completeTask() async {
+    final localizations = AppLocalizations.of(context)!;
+    int? taskGrade;
+    final TextEditingController commentController = TextEditingController();
+
+    // Show dialog to enter grade and comment
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: localizations.effectiveLanguageCode == 'en'
+            ? TextDirection.ltr
+            : TextDirection.rtl,
+        child: StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text(localizations.trd_complete_task),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    localizations.trd_select_grade,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (index) {
+                      final grade = index + 1;
+                      return GestureDetector(
+                        onTap: () {
+                          setDialogState(() {
+                            taskGrade = grade;
+                          });
+                        },
+                        child: Icon(
+                          taskGrade != null && grade <= taskGrade!
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: taskGrade != null && grade <= taskGrade!
+                              ? Colors.amber
+                              : Colors.grey,
+                          size: 40,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    localizations.trd_comment,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: commentController,
+                    decoration: InputDecoration(
+                      hintText: localizations.trd_comment_hint,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, null),
+                child: Text(localizations.trd_cancel),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (taskGrade == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(localizations.trd_grade_required),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(context, {
+                    'grade': taskGrade,
+                    'comment': commentController.text.trim(),
+                  });
+                },
+                child: Text(localizations.trd_submit),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Token is missing. Please login again.');
+      }
+
+      final requestId = requestData['id']?.toString() ?? '';
+      if (requestId.isEmpty) {
+        throw Exception('Request ID is missing');
+      }
+
+      await SessionManager().onNetworkRequest();
+
+      final url =
+          'https://device-control.liara.run/api/transport/request/$requestId/confirm';
+
+      final requestBody = <String, dynamic>{
+        'grade': result['grade'],
+        'comment': result['comment'],
+      };
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(requestBody),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = utf8.decode(response.bodyBytes);
+        final responseData = json.decode(body);
+        final message =
+            responseData['message']?.toString() ??
+            localizations.trd_complete_task_success;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.green),
+        );
+
+        // Navigate back with success
+        Navigator.pop(context, true);
+      } else {
+        final body = utf8.decode(response.bodyBytes);
+        final errorData = json.decode(body);
+        final errorMessage =
+            errorData['error']?.toString() ??
+            errorData['message']?.toString() ??
+            localizations.trd_complete_task_error;
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -388,15 +675,14 @@ class _TransportRequestDetailScreenState
     final localizations = AppLocalizations.of(context)!;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    final List<dynamic> pieces = (widget.request['pieces'] as List?) ?? [];
-    final String maghsad = (widget.request['maghsad'] ?? '---').toString();
-    final String phone = (widget.request['phone'] ?? '---').toString();
-    final String description = (widget.request['description'] ?? '---')
-        .toString();
-    final String status = (widget.request['status'] ?? 'open').toString();
-    final String createdAt = (widget.request['created_at'] ?? '').toString();
-    final String comment = (widget.request['comment'] ?? '---').toString();
-    final String grade = (widget.request['grade'] ?? '---').toString();
+    final List<dynamic> pieces = (requestData['pieces'] as List?) ?? [];
+    final String maghsad = (requestData['maghsad'] ?? '---').toString();
+    final String phone = (requestData['phone'] ?? '---').toString();
+    final String description = (requestData['description'] ?? '---').toString();
+    final String status = (requestData['status'] ?? 'open').toString();
+    final String createdAt = (requestData['created_at'] ?? '').toString();
+    final String comment = (requestData['comment'] ?? '---').toString();
+    final String grade = (requestData['grade'] ?? '---').toString();
 
     // Check if user can rate (customers: level 1, 2, 4, 6 and status is 'done')
     final bool canRate =
@@ -407,13 +693,13 @@ class _TransportRequestDetailScreenState
         status == 'done' &&
         (grade == '---' || grade.isEmpty);
 
-    // Check if user can comment/rate (customers: level 1, 2, 4, 6 and status is 'done')
-    final bool canCommentOrRate =
+    // Check if user can complete task (customers: level 1, 2, 4, 6 and status is 'assigned')
+    final bool canCompleteTask =
         (userLevel == 1 ||
             userLevel == 2 ||
             userLevel == 4 ||
             userLevel == 6) &&
-        status == 'done';
+        status == 'assigned';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -677,23 +963,26 @@ class _TransportRequestDetailScreenState
                     ],
                   ),
                 ),
-              // Comment and Rating button at the bottom for customers
-              if (canCommentOrRate) ...[
+              // Complete Task button for customers when status is 'assigned'
+              if (canCompleteTask) ...[
                 SizedBox(height: ui.scale(base: 24, min: 20, max: 28)),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: isSubmittingRating ? null : _showRatingDialog,
-                    icon: Icon(
-                      grade != '---' && grade.isNotEmpty
-                          ? Icons.edit
-                          : Icons.star,
-                    ),
-                    label: Text(
-                      grade != '---' && grade.isNotEmpty
-                          ? localizations.trd_edit_rating
-                          : localizations.trd_rate_and_comment,
-                    ),
+                    onPressed: isLoading ? null : _completeTask,
+                    icon: isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.check_circle),
+                    label: Text(localizations.trd_complete_task),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.lapisLazuli,
                       foregroundColor: Colors.white,

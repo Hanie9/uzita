@@ -763,6 +763,10 @@ class AppLocalizations {
       'trd_no_ratings_yet': 'No ratings yet',
       'trd_rate_and_comment': 'Rate and Comment',
       'trd_edit_rating': 'Edit Rating',
+      'trd_complete_task': 'Complete Task',
+      'trd_complete_task_success': 'Task completed successfully',
+      'trd_complete_task_error': 'Error completing task',
+      'trd_complete_task_confirm': 'Complete this task?',
 
       // Registration Forms (reg_)
       'reg_phone_98': '+98',
@@ -1099,6 +1103,9 @@ class AppLocalizations {
       'driver_complete_task_error': 'Error completing task',
       'driver_complete_task_confirm':
           'Are you sure you want to complete this task?',
+      'driver_enter_report': 'Enter Report',
+      'driver_report': 'Report',
+      'driver_report_required': 'Report is required',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
@@ -1825,6 +1832,10 @@ class AppLocalizations {
       'trd_no_ratings_yet': 'هنوز امتیازی ثبت نشده',
       'trd_rate_and_comment': 'امتیاز و نظر',
       'trd_edit_rating': 'ویرایش امتیاز',
+      'trd_complete_task': 'اتمام کار',
+      'trd_complete_task_success': 'درخواست با موفقیت تکمیل شد',
+      'trd_complete_task_error': 'خطا در تکمیل درخواست',
+      'trd_complete_task_confirm': 'آیا می‌خواهید این درخواست را تکمیل کنید؟',
 
       // Registration Forms (reg_)
       'reg_user_register': 'ثبت‌نام کاربر',
@@ -2156,6 +2167,9 @@ class AppLocalizations {
       'driver_complete_task_error': 'خطا در تکمیل ماموریت',
       'driver_complete_task_confirm':
           'آیا مطمئن هستید که می‌خواهید این ماموریت را تکمیل کنید؟',
+      'driver_enter_report': 'وارد کردن گزارش',
+      'driver_report': 'گزارش',
+      'driver_report_required': 'گزارش الزامی است',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
@@ -2374,6 +2388,13 @@ class AppLocalizations {
   String get trd_no_ratings_yet => _getLocalizedValue('trd_no_ratings_yet');
   String get trd_rate_and_comment => _getLocalizedValue('trd_rate_and_comment');
   String get trd_edit_rating => _getLocalizedValue('trd_edit_rating');
+  String get trd_complete_task => _getLocalizedValue('trd_complete_task');
+  String get trd_complete_task_success =>
+      _getLocalizedValue('trd_complete_task_success');
+  String get trd_complete_task_error =>
+      _getLocalizedValue('trd_complete_task_error');
+  String get trd_complete_task_confirm =>
+      _getLocalizedValue('trd_complete_task_confirm');
 
   // Loading getters (loading_*)
   String get loading_please_wait_short =>
@@ -3042,6 +3063,10 @@ class AppLocalizations {
       _getLocalizedValue('driver_complete_task_error');
   String get driver_complete_task_confirm =>
       _getLocalizedValue('driver_complete_task_confirm');
+  String get driver_enter_report => _getLocalizedValue('driver_enter_report');
+  String get driver_report => _getLocalizedValue('driver_report');
+  String get driver_report_required =>
+      _getLocalizedValue('driver_report_required');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>
