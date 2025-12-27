@@ -657,6 +657,8 @@ class AppLocalizations {
       // Login Screen (login_)
       'login_error_username':
           'The account does not match the username entered. Please try again.',
+      'login_error_invalid_credentials':
+          'Invalid username or password. Please try again.',
       'login_error': 'Login error',
       'login_error_connecting': 'Error connecting to server',
       'login_no_authentication':
@@ -1120,6 +1122,11 @@ class AppLocalizations {
       'driver_enter_report': 'Enter Report',
       'driver_report': 'Report',
       'driver_report_required': 'Report is required',
+      'driver_weight': 'Weight',
+      'driver_insurance': 'Insurance',
+      'driver_select_load': 'Select Load',
+      'driver_select_load_success': 'Load selected successfully',
+      'driver_select_load_error': 'Error selecting load',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
@@ -1740,12 +1747,14 @@ class AppLocalizations {
 
       // Login Screen (login_)
       'login_error_username':
-          'حساب کاربری برگشتی با نام کاربری وارد شده تطابق ندارد. لطفاً دوباره تلاش کنید.',
+          'حساب کاربری برگشتی با نام کاربری وارد شده تطابق ندارد. لطفاً دوباره تلاش کنید',
+      'login_error_invalid_credentials':
+          'نام کاربری یا رمز عبور اشتباه است. دوباره تلاش کنید',
       'login_error': 'خطا در ورود',
       'login_error_connecting': 'خطا در اتصال به سرور',
-      'login_no_authentication': 'احراز هویت در این دستگاه در دسترس نیست.',
+      'login_no_authentication': 'احراز هویت در این دستگاه در دسترس نیست',
       'login_with_username_and_Password':
-          'ابتدا یک بار با نام کاربری و رمز عبور وارد شوید.',
+          'ابتدا یک بار با نام کاربری و رمز عبور وارد شوید',
       'login_authentication': 'برای ورود با اثر انگشت/الگو/پین احراز هویت کنید',
       'login_account': 'ورود به حساب',
       'login_cancle': 'انصراف',
@@ -1759,25 +1768,25 @@ class AppLocalizations {
       'login_biometric': 'ورود با اثر انگشت / پین / الگو',
       'login_login_first': 'ابتدا یک بار وارد شوید',
       // Common error messages
-      'error_token_missing': 'توکن یافت نشد. لطفاً دوباره وارد شوید.',
+      'error_token_missing': 'توکن یافت نشد. لطفاً دوباره وارد شوید',
       'error_task_id_missing': 'شناسه ماموریت یافت نشد',
       'error_request_id_missing': 'شناسه درخواست یافت نشد',
       'error_service_id_missing': 'شناسه سرویس یافت نشد',
       'error_unknown': 'خطای ناشناخته رخ داد',
-      'error_network': 'خطا در اتصال شبکه. لطفاً اتصال خود را بررسی کنید.',
-      'error_server': 'خطای سرور. لطفاً بعداً دوباره تلاش کنید.',
+      'error_network': 'خطا در اتصال شبکه. لطفاً اتصال خود را بررسی کنید',
+      'error_server': 'خطای سرور. لطفاً بعداً دوباره تلاش کنید',
       'error_permission_denied': 'دسترسی رد شد',
       'error_invalid_data': 'داده نامعتبر ارائه شده است',
       'login_fingerprint_not_available':
-          'حسگر اثر انگشت در این دستگاه موجود نیست یا پشتیبانی نمی‌شود.',
+          'حسگر اثر انگشت در این دستگاه موجود نیست یا پشتیبانی نمی‌شود',
       'login_fingerprint_not_enrolled':
-          'هیچ اثرانگشتی ثبت نشده است. ابتدا در تنظیمات دستگاه اثرانگشت خود را ثبت کنید.',
+          'هیچ اثرانگشتی ثبت نشده است. ابتدا در تنظیمات دستگاه اثرانگشت خود را ثبت کنید',
       'login_fingerprint_not_set':
-          'قفل صفحه روی دستگاه تنظیم نشده است. ابتدا یک قفل صفحه تنظیم کنید.',
+          'قفل صفحه روی دستگاه تنظیم نشده است. ابتدا یک قفل صفحه تنظیم کنید',
       'login_fingerprint_locked_out':
           'حسگر به طور موقت قفل شده است. بعداً دوباره تلاش کنید.',
       'login_fingerprint_permanently_locked_out':
-          'حسگر به طور دائم قفل شده است. با PIN/الگو وارد شوید و مجدد تلاش کنید.',
+          'حسگر به طور دائم قفل شده است. با PIN/الگو وارد شوید و مجدد تلاش کنید',
       'login_fingerprint_error': 'خطا در احراز هویت اثر انگشت',
       'login_username': 'نام کاربری',
       'login_password': 'رمز عبور',
@@ -2198,6 +2207,11 @@ class AppLocalizations {
       'driver_enter_report': 'وارد کردن گزارش',
       'driver_report': 'گزارش',
       'driver_report_required': 'گزارش الزامی است',
+      'driver_weight': 'وزن',
+      'driver_insurance': 'بیمه',
+      'driver_select_load': 'انتخاب بار',
+      'driver_select_load_success': 'بار با موفقیت انتخاب شد',
+      'driver_select_load_error': 'خطا در انتخاب بار',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
@@ -2745,6 +2759,8 @@ class AppLocalizations {
 
   // Login Screen getters (login_*)
   String get login_error_username => _getLocalizedValue('login_error_username');
+  String get login_error_invalid_credentials =>
+      _getLocalizedValue('login_error_invalid_credentials');
   String get login_error => _getLocalizedValue('login_error');
   String get login_error_connecting =>
       _getLocalizedValue('login_error_connecting');
@@ -3113,6 +3129,13 @@ class AppLocalizations {
   String get driver_report => _getLocalizedValue('driver_report');
   String get driver_report_required =>
       _getLocalizedValue('driver_report_required');
+  String get driver_weight => _getLocalizedValue('driver_weight');
+  String get driver_insurance => _getLocalizedValue('driver_insurance');
+  String get driver_select_load => _getLocalizedValue('driver_select_load');
+  String get driver_select_load_success =>
+      _getLocalizedValue('driver_select_load_success');
+  String get driver_select_load_error =>
+      _getLocalizedValue('driver_select_load_error');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

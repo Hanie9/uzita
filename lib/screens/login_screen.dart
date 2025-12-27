@@ -161,7 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }),
       );
 
-      final data = json.decode(response.body);
+      final body = utf8.decode(response.bodyBytes);
+      final data = json.decode(body);
 
       if (response.statusCode == 200) {
         await prefs.setString('token', data['token']);
@@ -266,10 +267,52 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => HomeScreen()),
         );
       } else {
-        setState(
-          () => error =
-              data['detail'] ?? AppLocalizations.of(context)!.login_error,
-        );
+        // Check for authentication errors (401, 403, or 400 with invalid credentials)
+        final localizations = AppLocalizations.of(context)!;
+        String errorMessage = localizations.login_error;
+        
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          // Unauthorized or Forbidden - invalid credentials
+          errorMessage = localizations.login_error_invalid_credentials;
+        } else if (response.statusCode == 400) {
+          // Bad Request - check if it's an authentication error
+          final detail = (data['detail'] ?? '').toString().toLowerCase();
+          final message = (data['message'] ?? '').toString().toLowerCase();
+          final nonFieldErrors = data['non_field_errors'];
+          
+          // Check if error message indicates invalid credentials
+          if (detail.contains('invalid') ||
+              detail.contains('incorrect') ||
+              detail.contains('wrong') ||
+              detail.contains('username') ||
+              detail.contains('password') ||
+              detail.contains('credential') ||
+              message.contains('invalid') ||
+              message.contains('incorrect') ||
+              message.contains('wrong') ||
+              message.contains('username') ||
+              message.contains('password') ||
+              message.contains('credential') ||
+              (nonFieldErrors is List && nonFieldErrors.isNotEmpty)) {
+            errorMessage = localizations.login_error_invalid_credentials;
+          } else if (detail.isNotEmpty) {
+            errorMessage = detail;
+          } else if (message.isNotEmpty) {
+            errorMessage = message;
+          }
+        } else {
+          // Other errors - try to get message from response
+          final detail = (data['detail'] ?? '').toString();
+          final message = (data['message'] ?? '').toString();
+          
+          if (detail.isNotEmpty) {
+            errorMessage = detail;
+          } else if (message.isNotEmpty) {
+            errorMessage = message;
+          }
+        }
+        
+        setState(() => error = errorMessage);
       }
     } catch (e) {
       setState(

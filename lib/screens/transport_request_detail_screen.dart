@@ -780,164 +780,164 @@ class _TransportRequestDetailScreenState
         child: RefreshIndicator(
           onRefresh: _refreshRequestData,
           color: AppColors.lapisLazuli,
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(
-              ui.scale(base: 20, min: 16, max: 24),
-              ui.scale(base: 20, min: 16, max: 24),
-              ui.scale(base: 20, min: 16, max: 24),
-              ui.scale(base: 20, min: 16, max: 24) +
-                  MediaQuery.of(context).padding.bottom,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          padding: EdgeInsets.fromLTRB(
+            ui.scale(base: 20, min: 16, max: 24),
+            ui.scale(base: 20, min: 16, max: 24),
+            ui.scale(base: 20, min: 16, max: 24),
+            ui.scale(base: 20, min: 16, max: 24) +
+                MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                 // Status banner
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getStatusBackgroundColor(status),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        _getStatusText(status, localizations),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
                 ),
-                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                Text(
-                  localizations.trd_pieces,
+                decoration: BoxDecoration(
+                  color: _getStatusBackgroundColor(status),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _getStatusText(status, localizations),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+              Text(
+                localizations.trd_pieces,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: pieces.isEmpty
-                      ? [
-                          Chip(
-                            label: Text(localizations.trd_unknown),
-                            backgroundColor: AppColors.lapisLazuli.withValues(
-                              alpha: 0.06,
-                            ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: pieces.isEmpty
+                    ? [
+                        Chip(
+                          label: Text(localizations.trd_unknown),
+                          backgroundColor: AppColors.lapisLazuli.withValues(
+                            alpha: 0.06,
                           ),
-                        ]
-                      : pieces
-                            .map(
-                              (p) => Chip(
-                                label: Text(p.toString()),
+                        ),
+                      ]
+                    : pieces
+                          .map(
+                            (p) => Chip(
+                              label: Text(p.toString()),
                                 backgroundColor: AppColors.lapisLazuli
                                     .withValues(alpha: 0.06),
-                              ),
-                            )
-                            .toList(),
-                ),
-                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                _buildInfoItem(
-                  context,
-                  icon: Icons.location_on,
-                  title: localizations.trd_maghsad,
-                  value: maghsad,
-                ),
-                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-                _buildInfoItem(
-                  context,
-                  icon: Icons.phone,
-                  title: localizations.trd_phone,
-                  value: phone,
-                ),
-                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                            ),
+                          )
+                          .toList(),
+              ),
+              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+              _buildInfoItem(
+                context,
+                icon: Icons.location_on,
+                title: localizations.trd_maghsad,
+                value: maghsad,
+              ),
+              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+              _buildInfoItem(
+                context,
+                icon: Icons.phone,
+                title: localizations.trd_phone,
+                value: phone,
+              ),
+              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 // Driver information section with all details
                 _buildDriverInfoSection(context),
                 SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
                 // Rating section: Average rating and customer's rating for this request
                 _buildRatingSection(context),
                 SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                Text(
-                  localizations.trd_description,
+              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+              Text(
+                localizations.trd_description,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color:
-                          Theme.of(context).textTheme.bodyMedium?.color ??
-                          Colors.black87,
-                    ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                    width: 1,
                   ),
                 ),
-                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                Text(
-                  localizations.trd_comment,
+                child: Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.black87,
+                  ),
+                ),
+              ),
+              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+              Text(
+                localizations.trd_comment,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                      width: 1,
-                    ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[700]!
+                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                    width: 1,
                   ),
-                  child: Text(
+                ),
+                child: Text(
                     comment != '---' ? comment : localizations.trd_no_comment,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color:
-                          Theme.of(context).textTheme.bodyMedium?.color ??
-                          Colors.black87,
-                    ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.black87,
                   ),
                 ),
+              ),
                 // Rating button for customers
                 if (canRate) ...[
                   SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
@@ -958,34 +958,34 @@ class _TransportRequestDetailScreenState
                     ),
                   ),
                 ],
-                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-                if (createdAt.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.iranianGray.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.calendar_today,
-                          size: 20,
-                          color: AppColors.iranianGray,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${localizations.trd_created_at} ${_formatDate(context, createdAt)}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.iranianGray,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+              if (createdAt.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.iranianGray.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 20,
+                        color: AppColors.iranianGray,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${localizations.trd_created_at} ${_formatDate(context, createdAt)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.iranianGray,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // Complete Task button for customers when status is 'assigned'
                 if (canCompleteTask) ...[
                   SizedBox(height: ui.scale(base: 24, min: 20, max: 28)),

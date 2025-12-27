@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shamsi_date/shamsi_date.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/session_manager.dart';
@@ -85,14 +84,19 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
-      final ts = DateTime.now().millisecondsSinceEpoch;
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        setState(() => isLoading = false);
+        return;
+      }
+
       await SessionManager().onNetworkRequest();
       final response = await http.get(
-        Uri.parse(
-          'https://device-control.liara.run/api/transport/listrequest?ts=$ts',
-        ),
+        Uri.parse('https://device-control.liara.run/api/transport/public'),
         headers: {
           'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Connection': 'close',
@@ -112,47 +116,130 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
           all = data['results'] as List<dynamic>;
         }
 
-        // Public loads: status = open and driver == null
-        final filtered = all.where((item) {
-          if (item is! Map) return false;
-          final status = (item['status'] ?? '').toString();
-          final driver = item['driver'];
-          return status == 'open' && driver == null;
-        }).toList();
-
         setState(() {
-          loads = filtered;
+          loads = all;
           isLoading = false;
         });
       } else {
+        if (!mounted) return;
         setState(() => isLoading = false);
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
     }
   }
 
-  String _formatDate(BuildContext context, String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      if (Localizations.localeOf(context).languageCode == 'en') {
-        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-      } else {
-        final j = Jalali.fromDateTime(date);
-        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
-      }
-    } catch (_) {
-      return dateString;
-    }
-  }
+  Future<void> _selectLoad(int loadId) async {
+    final localizations = AppLocalizations.of(context)!;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-  String _buildPiecesSummary(List<dynamic> pieces) {
-    if (pieces.isEmpty) return '---';
-    final safePieces = pieces.map((e) => e.toString()).toList();
-    if (safePieces.length == 1) return safePieces.first;
-    if (safePieces.length == 2) return '${safePieces[0]} و ${safePieces[1]}';
-    return '${safePieces[0]} و ${safePieces[1]} و ...';
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.error_token_missing),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show loading dialog
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (dialogContext) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await SessionManager().onNetworkRequest();
+      final response = await http.post(
+        Uri.parse(
+          'https://device-control.liara.run/api/transport/public/$loadId/select',
+        ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Connection': 'close',
+        },
+      );
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: false).pop(); // Close loading dialog
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = utf8.decode(response.bodyBytes);
+        final dynamic data = json.decode(body);
+        final message =
+            (data['message'] ?? localizations.driver_select_load_success)
+                .toString();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.green),
+        );
+
+        // Refresh the list
+        await _fetchLoads();
+      } else {
+        final body = utf8.decode(response.bodyBytes);
+        final dynamic data = json.decode(body);
+        final errorMessage =
+            (data['message'] ??
+                    data['error'] ??
+                    localizations.driver_select_load_error)
+                .toString();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMessage.isNotEmpty
+                  ? errorMessage
+                  : localizations.driver_select_load_error,
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      if (Navigator.of(context, rootNavigator: false).canPop()) {
+        Navigator.of(
+          context,
+          rootNavigator: false,
+        ).pop(); // Close loading dialog
+      }
+
+      final localizations = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.error_network),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -410,10 +497,24 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                           itemCount: loads.length,
                           itemBuilder: (context, index) {
                             final load = loads[index] as Map;
-                            final List<dynamic> pieces =
-                                (load['pieces'] as List?) ?? [];
-                            final createdAt = (load['created_at'] ?? '')
+                            final loadId = load['id'];
+                            final String maghsad = (load['maghsad'] ?? '---')
                                 .toString();
+                            final String mabda = (load['mabda'] ?? '---')
+                                .toString();
+                            final String phone = (load['phone'] ?? '---')
+                                .toString();
+                            final dynamic priceTransportValue =
+                                load['price_transport'];
+                            final String priceTransport =
+                                priceTransportValue == null
+                                ? '---'
+                                : priceTransportValue.toString();
+                            final dynamic vaznValue = load['vazn'];
+                            final String vazn = vaznValue == null
+                                ? '---'
+                                : vaznValue.toString();
+                            final bool bime = load['bime'] ?? false;
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -446,62 +547,222 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(
-                                      Icons.local_shipping_outlined,
-                                      color: AppColors.lapisLazuli,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _buildPiecesSummary(pieces),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.color,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.local_shipping_outlined,
+                                          color: AppColors.lapisLazuli,
+                                          size: 24,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              const Icon(
-                                                Icons.calendar_today,
-                                                size: 14,
-                                                color: AppColors.iranianGray,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
-                                                  createdAt.isNotEmpty
-                                                      ? _formatDate(
-                                                          context,
-                                                          createdAt,
-                                                        )
-                                                      : '---',
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
+                                              // Origin -> Destination
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.location_city,
+                                                    size: 14,
                                                     color:
                                                         AppColors.iranianGray,
                                                   ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      mabda,
+                                                      style: const TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  const Icon(
+                                                    Icons.arrow_forward,
+                                                    size: 16,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  const Icon(
+                                                    Icons.location_on,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.lapisLazuli,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      maghsad,
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.color,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              // Phone
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.phone,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      phone,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              // Price
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.attach_money,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      priceTransport == '---'
+                                                          ? '---'
+                                                          : '$priceTransport ${localizations.sls_tooman}',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              // Weight and Insurance
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.scale,
+                                                    size: 14,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${localizations.driver_weight}: $vazn',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          AppColors.iranianGray,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 16),
+                                                  Icon(
+                                                    bime
+                                                        ? Icons.check_circle
+                                                        : Icons.cancel,
+                                                    size: 14,
+                                                    color: bime
+                                                        ? Colors.green
+                                                        : AppColors.iranianGray,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    localizations
+                                                        .driver_insurance,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: bime
+                                                          ? Colors.green
+                                                          : AppColors
+                                                                .iranianGray,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    // Select Load Button
+                                    if (loadId != null) ...[
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () =>
+                                              _selectLoad(loadId as int),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppColors.lapisLazuli,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            elevation: 2,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.check_circle,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                localizations
+                                                    .driver_select_load,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               ),
