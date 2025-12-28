@@ -213,10 +213,14 @@ class _LoginScreenState extends State<LoginScreen> {
             final returnedUsername = (userData['user']?['username'] ?? '')
                 .toString();
 
-            // Store user level, active status, and modir flag
+            // Store user level, active status, modir flag, and is_warehouse
             await prefs.setInt('level', userData['level'] ?? 3);
             await prefs.setBool('active', userData['active'] ?? false);
             await prefs.setBool('modir', userData['modir'] ?? false);
+            await prefs.setBool(
+              'is_warehouse',
+              userData['is_warehouse'] ?? false,
+            );
             await prefs.setString('username', returnedUsername);
 
             // Safety check: ensure the account we logged into matches the entered username
@@ -270,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Check for authentication errors (401, 403, or 400 with invalid credentials)
         final localizations = AppLocalizations.of(context)!;
         String errorMessage = localizations.login_error;
-        
+
         if (response.statusCode == 401 || response.statusCode == 403) {
           // Unauthorized or Forbidden - invalid credentials
           errorMessage = localizations.login_error_invalid_credentials;
@@ -279,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
           final detail = (data['detail'] ?? '').toString().toLowerCase();
           final message = (data['message'] ?? '').toString().toLowerCase();
           final nonFieldErrors = data['non_field_errors'];
-          
+
           // Check if error message indicates invalid credentials
           if (detail.contains('invalid') ||
               detail.contains('incorrect') ||
@@ -304,14 +308,14 @@ class _LoginScreenState extends State<LoginScreen> {
           // Other errors - try to get message from response
           final detail = (data['detail'] ?? '').toString();
           final message = (data['message'] ?? '').toString();
-          
+
           if (detail.isNotEmpty) {
             errorMessage = detail;
           } else if (message.isNotEmpty) {
             errorMessage = message;
           }
         }
-        
+
         setState(() => error = errorMessage);
       }
     } catch (e) {

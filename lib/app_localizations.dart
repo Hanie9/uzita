@@ -485,6 +485,22 @@ class AppLocalizations {
       'dds_sending': 'Sending...',
       'dds_details_device': 'Device details',
       'dds_delete_device_success': 'Device successfully removed.',
+      'dds_transfer_ownership': 'Transfer ownership',
+      'dds_transfer_ownership_organ_code': 'New owner organization code',
+      'dds_transfer_ownership_organ_code_hint': 'Enter organization code',
+      'dds_transfer_ownership_organ_code_required': 'Organization code is required',
+      'dds_transfer_ownership_success': 'Ownership transfer request registered successfully',
+      'dds_transfer_ownership_error': 'Error transferring ownership',
+      'dls_transfer_list': 'Transfer requests',
+      'dls_transfer_device_name': 'Device name',
+      'dls_transfer_old_organ': 'From organization',
+      'dls_transfer_new_organ': 'To organization',
+      'dls_transfer_confirm': 'Confirm transfer',
+      'dls_transfer_reject': 'Reject transfer',
+      'dls_transfer_confirm_success': 'Device successfully added to your organization',
+      'dls_transfer_reject_success': 'Transfer request rejected',
+      'dls_transfer_error': 'Error processing transfer request',
+      'dls_no_transfers': 'No transfer requests',
 
       // Command List Screen (cls_)
       'cls_user': 'User',
@@ -1584,6 +1600,22 @@ class AppLocalizations {
       'dds_sending': 'در حال ارسال...',
       'dds_details_device': 'جزئیات دستگاه',
       'dds_delete_device_success': 'دستگاه با موفقیت حذف شد.',
+      'dds_transfer_ownership': 'انتقال مالکیت',
+      'dds_transfer_ownership_organ_code': 'شماره سازمان مالک جدید',
+      'dds_transfer_ownership_organ_code_hint': 'شماره سازمان را وارد کنید',
+      'dds_transfer_ownership_organ_code_required': 'شماره سازمان الزامی است',
+      'dds_transfer_ownership_success': 'درخواست انتقال مالکیت دستگاه شما با موفقیت ثبت شد.',
+      'dds_transfer_ownership_error': 'خطا در انتقال مالکیت',
+      'dls_transfer_list': 'درخواست‌های انتقال',
+      'dls_transfer_device_name': 'نام دستگاه',
+      'dls_transfer_old_organ': 'از سازمان',
+      'dls_transfer_new_organ': 'به سازمان',
+      'dls_transfer_confirm': 'تایید انتقال',
+      'dls_transfer_reject': 'رد انتقال',
+      'dls_transfer_confirm_success': 'دستگاه با موفقیت به سازمان شما افزوده شد.',
+      'dls_transfer_reject_success': 'درخواست انتقال رد شد',
+      'dls_transfer_error': 'خطا در پردازش درخواست انتقال',
+      'dls_no_transfers': 'هیچ درخواست انتقالی وجود ندارد',
 
       // Command List Screen (cls_)
       'cls_user': 'کاربر',
@@ -3519,6 +3551,33 @@ class AppLocalizations {
   String get dds_details_device => _getLocalizedValue('dds_details_device');
   String get dds_delete_device_success =>
       _getLocalizedValue('dds_delete_device_success');
+  String get dds_transfer_ownership =>
+      _getLocalizedValue('dds_transfer_ownership');
+  String get dds_transfer_ownership_organ_code =>
+      _getLocalizedValue('dds_transfer_ownership_organ_code');
+  String get dds_transfer_ownership_organ_code_hint =>
+      _getLocalizedValue('dds_transfer_ownership_organ_code_hint');
+  String get dds_transfer_ownership_organ_code_required =>
+      _getLocalizedValue('dds_transfer_ownership_organ_code_required');
+  String get dds_transfer_ownership_success =>
+      _getLocalizedValue('dds_transfer_ownership_success');
+  String get dds_transfer_ownership_error =>
+      _getLocalizedValue('dds_transfer_ownership_error');
+  String get dls_transfer_list => _getLocalizedValue('dls_transfer_list');
+  String get dls_transfer_device_name =>
+      _getLocalizedValue('dls_transfer_device_name');
+  String get dls_transfer_old_organ =>
+      _getLocalizedValue('dls_transfer_old_organ');
+  String get dls_transfer_new_organ =>
+      _getLocalizedValue('dls_transfer_new_organ');
+  String get dls_transfer_confirm => _getLocalizedValue('dls_transfer_confirm');
+  String get dls_transfer_reject => _getLocalizedValue('dls_transfer_reject');
+  String get dls_transfer_confirm_success =>
+      _getLocalizedValue('dls_transfer_confirm_success');
+  String get dls_transfer_reject_success =>
+      _getLocalizedValue('dls_transfer_reject_success');
+  String get dls_transfer_error => _getLocalizedValue('dls_transfer_error');
+  String get dls_no_transfers => _getLocalizedValue('dls_no_transfers');
 
   // Edit Password Screen getters (editpassword_*)
   String get editpassword_title => _getLocalizedValue('editpassword_title');

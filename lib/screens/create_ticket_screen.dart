@@ -32,9 +32,21 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   // لیست موضوعات
   final List<Map<String, String>> subjectTypes = [
-    {'value': 'product_update', 'label_en': 'Product update', 'label_fa': 'به روزرسانی محصول'},
-    {'value': 'part_update', 'label_en': 'Part update', 'label_fa': 'به روزرسانی قطعه'},
-    {'value': 'feedback', 'label_en': 'Feedback and suggestions', 'label_fa': 'انتقاد و پیشنهاد'},
+    {
+      'value': 'product_update',
+      'label_en': 'Product update',
+      'label_fa': 'به روزرسانی محصول',
+    },
+    {
+      'value': 'part_update',
+      'label_en': 'Part update',
+      'label_fa': 'به روزرسانی قطعه',
+    },
+    {
+      'value': 'feedback',
+      'label_en': 'Feedback and suggestions',
+      'label_fa': 'انتقاد و پیشنهاد',
+    },
     {'value': 'other', 'label_en': 'Other', 'label_fa': 'سایر'},
   ];
 
@@ -65,7 +77,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   String _getSubjectLabel(String value) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     switch (value) {
       case 'product_update':
         return localizations.ct_subject_product_update;
@@ -126,7 +138,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         body: utf8.encode(
           json.encode({
             'description': descriptionController.text.trim(),
-            'subject_type': selectedSubjectType,
+            'subject': selectedSubjectType,
           }),
         ),
       );
@@ -543,7 +555,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                       DropdownButtonFormField<String>(
                         value: selectedSubjectType,
                         decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.ct_subject_required,
+                          hintText: AppLocalizations.of(
+                            context,
+                          )!.ct_subject_required,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
                               UiScale(context).scale(base: 12, min: 8, max: 16),
@@ -572,7 +586,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             borderSide: BorderSide(color: Colors.red, width: 2),
                           ),
                           filled: true,
-                          fillColor: Theme.of(context).brightness == Brightness.dark
+                          fillColor:
+                              Theme.of(context).brightness == Brightness.dark
                               ? Colors.grey[800]
                               : Colors.grey[50],
                           contentPadding: EdgeInsets.symmetric(
@@ -589,9 +604,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             value: subject['value'],
                             child: Text(
                               _getSubjectLabel(subject['value']!),
-                              style: TextStyle(
-                                fontFamily: 'Vazir',
-                              ),
+                              style: TextStyle(fontFamily: 'Vazir'),
                             ),
                           );
                         }).toList(),

@@ -333,6 +333,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             Row(
               children: [
                 Expanded(child: _buildSubjectRow()),
+                SizedBox(width: 12),
                 _buildStatusBadge(),
               ],
             ),

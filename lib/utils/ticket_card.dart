@@ -27,7 +27,7 @@ class TicketCard extends StatelessWidget {
   String _getSubjectLabel(BuildContext context, String? subjectType) {
     if (subjectType == null || subjectType.isEmpty) return '';
     final localizations = AppLocalizations.of(context)!;
-    
+
     switch (subjectType) {
       case 'product_update':
         return localizations.ct_subject_product_update;
@@ -67,26 +67,35 @@ class TicketCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: ticket.subjectType != null &&
+                    child:
+                        ticket.subjectType != null &&
                             ticket.subjectType!.isNotEmpty
                         ? Row(
                             children: [
                               Icon(
                                 Icons.category,
                                 size: ui.scale(base: 16, min: 14, max: 18),
-                                color: Theme.of(context).brightness ==
+                                color:
+                                    Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? Colors.blue[300]
                                     : Colors.blue[700],
                               ),
-                              SizedBox(width: ui.scale(base: 6, min: 4, max: 8)),
+                              SizedBox(
+                                width: ui.scale(base: 6, min: 4, max: 8),
+                              ),
                               Expanded(
                                 child: Text(
                                   _getSubjectLabel(context, ticket.subjectType),
                                   style: TextStyle(
-                                    fontSize: ui.scale(base: 16, min: 14, max: 18),
+                                    fontSize: ui.scale(
+                                      base: 16,
+                                      min: 14,
+                                      max: 18,
+                                    ),
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).brightness ==
+                                    color:
+                                        Theme.of(context).brightness ==
                                             Brightness.dark
                                         ? Colors.white
                                         : Colors.grey[800],
@@ -103,7 +112,8 @@ class TicketCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: ui.scale(base: 16, min: 14, max: 18),
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).brightness ==
+                              color:
+                                  Theme.of(context).brightness ==
                                       Brightness.dark
                                   ? Colors.white
                                   : Colors.grey[800],

@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int userLevel = 3;
   bool userActive = false; // تغییر پیش‌فرض به false
   bool userModir = false;
+  bool isWarehouse = false;
   bool isLoading = true; // اضافه کردن وضعیت loading
   bool showBanner = true; // اضافه کردن وضعیت نمایش بنر
   String userRoleTitle = '';
@@ -362,6 +363,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await prefs.setInt('level', data['level'] ?? 3);
         await prefs.setBool('active', data['active'] ?? false);
         await prefs.setBool('modir', data['modir'] ?? false);
+        await prefs.setBool('is_warehouse', data['is_warehouse'] ?? false);
         await prefs.setString('username', returnedUsername);
 
         // Prefer HTTP(S) banner; otherwise fall back to bundled asset
@@ -384,6 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
             userLevel = data['level'] ?? 3;
             userActive = data['active'] ?? false;
             userModir = data['modir'] ?? false;
+            isWarehouse = data['is_warehouse'] ?? false;
             bannerUrl = displayBanner;
             if (bannerChanged) {
               showBanner =
@@ -460,6 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final storedLevel = prefs.getInt('level');
       final storedActive = prefs.getBool('active');
       final storedModir = prefs.getBool('modir');
+      final storedIsWarehouse = prefs.getBool('is_warehouse');
       final storedUsername = prefs.getString('username');
 
       if (mounted) {
@@ -468,6 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
           userLevel = storedLevel ?? 3;
           userActive = storedActive ?? false;
           userModir = storedModir ?? false;
+          isWarehouse = storedIsWarehouse ?? false;
 
           // Set user role title
           if (storedModir == true) {

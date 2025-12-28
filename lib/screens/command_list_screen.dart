@@ -1451,7 +1451,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                         ),
                                         SizedBox(height: 4),
                                         Row(
-                                          children: [
+                                                children: [
                                             Icon(
                                               Icons.list_alt,
                                               color: Colors.white.withValues(
@@ -1471,18 +1471,18 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                                             Color
                                                           >(Colors.white),
                                                     ),
-                                                  )
-                                                : Text(
-                                                    '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
-                                                    style: TextStyle(
+                                              )
+                                            : Text(
+                                                '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
+                                                style: TextStyle(
                                                       color: Colors.white.withValues(
                                                         alpha: 0.9,
                                                       ),
                                                       fontSize: 12,
                                                     ),
-                                                  ),
+                                                ),
                                           ],
-                                        ),
+                                              ),
                                       ],
                                     ),
                                     Container(

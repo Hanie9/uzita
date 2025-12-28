@@ -1264,7 +1264,7 @@ class _UserListScreenState extends State<UserListScreen> {
                               ),
                               SizedBox(height: 4),
                               Row(
-                                children: [
+                                      children: [
                                   Icon(
                                     Icons.list_alt,
                                     color: Colors.white.withValues(
@@ -1284,18 +1284,18 @@ class _UserListScreenState extends State<UserListScreen> {
                                                   Colors.white,
                                                 ),
                                           ),
-                                        )
-                                      : Text(
-                                          '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
-                                          style: TextStyle(
+                                    )
+                                  : Text(
+                                      '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
+                                      style: TextStyle(
                                             color: Colors.white.withValues(
                                               alpha: 0.9,
                                             ),
                                             fontSize: 12,
                                           ),
-                                        ),
+                                      ),
                                 ],
-                              ),
+                                    ),
                             ],
                           ),
                           Container(

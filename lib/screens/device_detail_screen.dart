@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:convert' show utf8;
 import 'package:flutter/material.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -169,6 +170,173 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         ),
       );
     }
+  }
+
+  Future<void> transferOwnership() async {
+    final organCodeController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool submitting = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: !submitting,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => Directionality(
+          textDirection: Localizations.localeOf(context).languageCode == 'en'
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: Theme.of(context).cardTheme.color,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.swap_horiz, color: AppColors.lapisLazuli),
+                SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.dds_transfer_ownership,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: organCodeController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!
+                          .dds_transfer_ownership_organ_code,
+                      hintText: AppLocalizations.of(context)!
+                          .dds_transfer_ownership_organ_code_hint,
+                      prefixIcon: Icon(Icons.business),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return AppLocalizations.of(context)!
+                            .dds_transfer_ownership_organ_code_required;
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: submitting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
+                child: Text(AppLocalizations.of(context)!.dds_no),
+              ),
+              ElevatedButton(
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        if (formKey.currentState!.validate()) {
+                          setDialogState(() => submitting = true);
+
+                          try {
+                            final prefs =
+                                await SharedPreferences.getInstance();
+                            final token = prefs.getString('token');
+                            final deviceId = widget.device['id'];
+
+                            await SessionManager().onNetworkRequest();
+                            final response = await http.post(
+                              Uri.parse(
+                                  '$baseUrl/device/$deviceId/transfer'),
+                              headers: {
+                                'Authorization': 'Bearer $token',
+                                'Content-Type': 'application/json',
+                              },
+                              body: json.encode({
+                                'organ_code': organCodeController.text.trim(),
+                              }),
+                            );
+
+                            final data = json.decode(
+                                utf8.decode(response.bodyBytes));
+
+                            if (response.statusCode == 200) {
+                              Navigator.pop(dialogContext);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    data['message'] ??
+                                        AppLocalizations.of(context)!
+                                            .dds_transfer_ownership_success,
+                                  ),
+                                  backgroundColor: Colors.teal,
+                                ),
+                              );
+                            } else if (response.statusCode == 400) {
+                              setDialogState(() => submitting = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    data['message'] ??
+                                        AppLocalizations.of(context)!
+                                            .dds_transfer_ownership_error,
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } else {
+                              setDialogState(() => submitting = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppLocalizations.of(context)!
+                                        .dds_transfer_ownership_error,
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => submitting = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  AppLocalizations.of(context)!
+                                      .dds_transfer_ownership_error,
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.lapisLazuli,
+                  foregroundColor: Colors.white,
+                ),
+                child: submitting
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(AppLocalizations.of(context)!.dds_yes),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildDeviceInfoCard() {
@@ -596,9 +764,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             ),
 
             // Delete button
-            SizedBox(
+            Container(
               width: double.infinity,
               height: ui.scale(base: 56, min: 44, max: 64),
+              margin: EdgeInsets.only(
+                bottom: ui.scale(base: 12, min: 8, max: 14),
+              ),
               child: ElevatedButton.icon(
                 onPressed: deleteDevice,
                 icon: Icon(Icons.delete_forever),
@@ -620,6 +791,31 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
               ),
             ),
           ],
+          // Transfer ownership button (only for level 1)
+          if (userLevel == 1)
+            SizedBox(
+              width: double.infinity,
+              height: ui.scale(base: 56, min: 44, max: 64),
+              child: ElevatedButton.icon(
+                onPressed: transferOwnership,
+                icon: Icon(Icons.swap_horiz),
+                label: Text(
+                  AppLocalizations.of(context)!.dds_transfer_ownership,
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      ui.scale(base: 16, min: 12, max: 20),
+                    ),
+                  ),
+                  elevation: 4,
+                  shadowColor: Colors.purple.withValues(alpha: 0.3),
+                ),
+              ),
+            ),
         ],
       ),
     );

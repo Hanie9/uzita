@@ -29,13 +29,16 @@ class DeviceListScreen extends StatefulWidget {
 
 class _DeviceListScreenState extends State<DeviceListScreen> {
   List devices = [];
+  List transferRequests = [];
   int selectedNavIndex = 1; // Devices tab is active
   bool isLoading = true;
+  bool isLoadingTransfers = false;
   String username = '';
   int userLevel = 3;
   String userRoleTitle = '';
   bool userModir = false;
   bool userActive = false;
+  bool isWarehouse = false;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -511,6 +514,262 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         ),
       );
     }
+
+    // Also fetch transfer requests if user is level 1
+    if (userLevel == 1) {
+      await fetchTransferRequests();
+    }
+  }
+
+  Future<void> fetchTransferRequests() async {
+    if (userLevel != 1) return;
+
+    setState(() {
+      isLoadingTransfers = true;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      await SessionManager().onNetworkRequest();
+      final response = await http.get(
+        Uri.parse('$baseUrl/listdevice/transfer?ts=$ts'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Connection': 'close',
+        },
+      );
+      if (response.statusCode == 200) {
+        final body = utf8.decode(response.bodyBytes);
+        final dynamic data = json.decode(body);
+        if (data is List) {
+          setState(() {
+            transferRequests = data;
+            isLoadingTransfers = false;
+          });
+        } else {
+          setState(() {
+            transferRequests = [];
+            isLoadingTransfers = false;
+          });
+        }
+      } else {
+        setState(() {
+          transferRequests = [];
+          isLoadingTransfers = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        transferRequests = [];
+        isLoadingTransfers = false;
+      });
+    }
+  }
+
+  Future<void> confirmTransfer(int transferId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      await SessionManager().onNetworkRequest();
+      final response = await http.post(
+        Uri.parse('$baseUrl/listdevice/transfer/$transferId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'confirm': true}),
+      );
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              data['message'] ??
+                  AppLocalizations.of(context)!.dls_transfer_confirm_success,
+            ),
+            backgroundColor: Colors.teal,
+          ),
+        );
+        await fetchTransferRequests();
+        await fetchDevices();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              data['message'] ??
+                  AppLocalizations.of(context)!.dls_transfer_error,
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.dls_transfer_error),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> rejectTransfer(int transferId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      await SessionManager().onNetworkRequest();
+      final response = await http.post(
+        Uri.parse('$baseUrl/listdevice/transfer/$transferId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'confirm': false}),
+      );
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              data['message'] ??
+                  AppLocalizations.of(context)!.dls_transfer_reject_success,
+            ),
+            backgroundColor: Colors.teal,
+          ),
+        );
+        await fetchTransferRequests();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              data['message'] ??
+                  AppLocalizations.of(context)!.dls_transfer_error,
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.dls_transfer_error),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildTransferCard(Map<String, dynamic> transfer) {
+    final deviceName = transfer['device_name'] ?? '---';
+    final oldOrganName = transfer['old_organ_name'] ?? '---';
+    final oldOrganCode = transfer['old_organ_code'] ?? '---';
+    final newOrganName = transfer['new_organ_name'] ?? '---';
+    final newOrganCode = transfer['new_organ_code'] ?? '---';
+    final transferId = transfer['id'];
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.purple.withValues(alpha: 0.1)
+            : Colors.purple.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.purple.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.devices, color: Colors.purple, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${AppLocalizations.of(context)!.dls_transfer_device_name}: $deviceName',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.business, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 4),
+              Text(
+                '${AppLocalizations.of(context)!.dls_transfer_old_organ}: $oldOrganName ($oldOrganCode)',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.arrow_forward, size: 16, color: Colors.purple),
+              SizedBox(width: 4),
+              Text(
+                '${AppLocalizations.of(context)!.dls_transfer_new_organ}: $newOrganName ($newOrganCode)',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => confirmTransfer(transferId),
+                  icon: Icon(Icons.check, size: 18),
+                  label: Text(
+                    AppLocalizations.of(context)!.dls_transfer_confirm,
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => rejectTransfer(transferId),
+                  icon: Icon(Icons.close, size: 18),
+                  label: Text(
+                    AppLocalizations.of(context)!.dls_transfer_reject,
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDeviceCard(Map<String, dynamic> device) {
@@ -715,94 +974,100 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   Widget _buildEmptyState() {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [Colors.grey[850]!, Colors.grey[800]!]
-                    : [Colors.grey[100]!, Colors.grey[200]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(60),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.4)
-                      : Colors.grey.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [Colors.grey[850]!, Colors.grey[800]!]
+                        : [Colors.grey[100]!, Colors.grey[200]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(60),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : Colors.grey.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(
-              Icons.devices_other,
-              size: 60,
-              color: isDark ? Colors.grey[500] : Colors.grey[400],
-            ),
-          ),
-          SizedBox(height: 24),
-          Text(
-            AppLocalizations.of(context)!.dls_no_devices,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: theme.textTheme.titleLarge?.color,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context)!.dls_no_devices_description,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.textTheme.bodyMedium?.color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.lapisLazuli, AppColors.lapisLazuli],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.lapisLazuli.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+                child: Icon(
+                  Icons.devices_other,
+                  size: 60,
+                  color: isDark ? Colors.grey[500] : Colors.grey[400],
                 ),
-              ],
-            ),
-            child: ElevatedButton.icon(
-              onPressed: fetchDevices,
-              icon: Icon(Icons.refresh, color: Colors.white),
-              label: Text(
-                AppLocalizations.of(context)!.dls_retry,
+              ),
+              SizedBox(height: 24),
+              Text(
+                AppLocalizations.of(context)!.dls_no_devices,
                 style: TextStyle(
-                  color: Colors.white,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
+              SizedBox(height: 8),
+              Text(
+                AppLocalizations.of(context)!.dls_no_devices_description,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.textTheme.bodyMedium?.color,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.lapisLazuli, AppColors.lapisLazuli],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.lapisLazuli.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: fetchDevices,
+                  icon: Icon(Icons.refresh, color: Colors.white),
+                  label: Text(
+                    AppLocalizations.of(context)!.dls_retry,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -814,6 +1079,9 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       // Only fetch devices if user is active
       if (userActive) {
         fetchDevices();
+        if (userLevel == 1) {
+          fetchTransferRequests();
+        }
       }
     });
   }
@@ -825,6 +1093,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       userLevel = prefs.getInt('level') ?? 3;
       userModir = prefs.getBool('modir') ?? false;
       userActive = prefs.getBool('active') ?? false;
+      isWarehouse = prefs.getBool('is_warehouse') ?? false;
       userRoleTitle = _getUserRoleTitle(userLevel, userModir);
 
       // If user is not active, stop loading immediately
@@ -1064,9 +1333,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.dls_title,
+                                      AppLocalizations.of(context)!.dls_title,
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -1099,9 +1366,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                             : Text(
                                                 '${devices.length} ${AppLocalizations.of(context)!.dls_count_suffix}',
                                                 style: TextStyle(
-                                                  color: Colors.white.withValues(
-                                                    alpha: 0.9,
-                                                  ),
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.9),
                                                   fontSize: 12,
                                                 ),
                                               ),
@@ -1110,8 +1376,8 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                   ],
                                 ),
                               ),
-                              // Add Device Button (only for modir)
-                              if (userModir)
+                              // Add Device Button (only for level 1 with is_warehouse true)
+                              if (userLevel == 1 && isWarehouse)
                                 GestureDetector(
                                   onTap: _openAddDeviceDialog,
                                   child: Container(
@@ -1154,88 +1420,175 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                       ],
                     ),
                   ),
-                  // Device list (takes all available space)
-                  Flexible(
-                    child: Directionality(
-                      textDirection:
-                          Provider.of<SettingsProvider>(
-                                context,
-                                listen: false,
-                              ).selectedLanguage ==
-                              'en'
-                          ? TextDirection.ltr
-                          : TextDirection.rtl,
-                      child: isLoading
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? AppColors.lapisLazuli.withValues(
-                                              alpha: 0.1,
-                                            )
-                                          : AppColors.lapisLazuli.withValues(
-                                              alpha: 0.05,
+                  // Scrollable content (Transfer requests + Device list)
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: fetchDevices,
+                      color: Color(0xFF00A86B),
+                      child: SingleChildScrollView(
+                        child: Directionality(
+                          textDirection:
+                              Provider.of<SettingsProvider>(
+                                    context,
+                                    listen: false,
+                                  ).selectedLanguage ==
+                                  'en'
+                              ? TextDirection.ltr
+                              : TextDirection.rtl,
+                          child: Column(
+                            children: [
+                              // Transfer requests section (only for level 1)
+                              if (userLevel == 1) ...[
+                                Container(
+                                  margin: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardTheme.color,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.purple.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.swap_horiz,
+                                            color: Colors.purple,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.dls_transfer_list,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
                                             ),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.lapisLazuli.withValues(
-                                          alpha: 0.2,
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 12),
+                                      if (isLoadingTransfers)
+                                        Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        )
+                                      else if (transferRequests.isEmpty)
+                                        Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                            child: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.dls_no_transfers,
+                                              style: TextStyle(
+                                                color: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall?.color,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        Column(
+                                          children: transferRequests
+                                              .map(
+                                                (transfer) =>
+                                                    _buildTransferCard(
+                                                      transfer,
+                                                    ),
+                                              )
+                                              .toList(),
                                         ),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.lapisLazuli,
-                                      ),
-                                      strokeWidth: 3,
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              // Device list
+                              if (isLoading)
+                                Container(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.5,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? AppColors.lapisLazuli
+                                                      .withValues(alpha: 0.1)
+                                                : AppColors.lapisLazuli
+                                                      .withValues(alpha: 0.05),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: AppColors.lapisLazuli
+                                                  .withValues(alpha: 0.2),
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: CircularProgressIndicator(
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  AppColors.lapisLazuli,
+                                                ),
+                                            strokeWidth: 3,
+                                          ),
+                                        ),
+                                        SizedBox(height: 24),
+                                        Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.dls_loading_devices,
+                                          style: TextStyle(
+                                            color: AppColors.lapisLazuli,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.dls_please_wait,
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall?.color,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  SizedBox(height: 24),
-                                  Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.dls_loading_devices,
-                                    style: TextStyle(
-                                      color: AppColors.lapisLazuli,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.dls_please_wait,
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.color,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : devices.isEmpty
-                          ? _buildEmptyState()
-                          : RefreshIndicator(
-                              onRefresh: fetchDevices,
-                              color: Color(0xFF00A86B),
-                              child: ListView.builder(
-                                padding: EdgeInsets.symmetric(horizontal: 0),
-                                itemCount: devices.length,
-                                itemBuilder: (context, index) {
-                                  return _buildDeviceCard(devices[index]);
-                                },
-                              ),
-                            ),
+                                )
+                              else if (devices.isEmpty)
+                                _buildEmptyState()
+                              else
+                                ...devices.map(
+                                  (device) => _buildDeviceCard(device),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   // Moved bottom navigation to Scaffold.bottomNavigationBar
@@ -1369,21 +1722,21 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       }
     } else {
       // Original navigation for other user levels
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1: // Devices - already here
-        break;
-      case 2: // Reports
-        Navigator.pushReplacementNamed(context, '/commands');
-        break;
-      case 3: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-      case 4: // Users
-        Navigator.pushReplacementNamed(context, '/users');
-        break;
+      switch (index) {
+        case 0: // Home
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 1: // Devices - already here
+          break;
+        case 2: // Reports
+          Navigator.pushReplacementNamed(context, '/commands');
+          break;
+        case 3: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 4: // Users
+          Navigator.pushReplacementNamed(context, '/users');
+          break;
       }
     }
   }
