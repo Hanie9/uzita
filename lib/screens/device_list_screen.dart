@@ -882,32 +882,6 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: theme.scaffoldBackgroundColor,
-        floatingActionButton: userModir
-            ? FloatingActionButton.extended(
-                onPressed: _openAddDeviceDialog,
-                backgroundColor: AppColors.lapisLazuli,
-                icon: Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: UiScale(context).scale(base: 22, min: 20, max: 26),
-                ),
-                label: Text(
-                  AppLocalizations.of(context)!.dls_add_device,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: UiScale(
-                      context,
-                    ).scale(base: 14, min: 12, max: 16),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                extendedPadding: EdgeInsets.symmetric(
-                  horizontal: UiScale(
-                    context,
-                  ).scale(base: 16, min: 12, max: 20),
-                ),
-              )
-            : null,
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(kToolbarHeight),
           child: Container(
@@ -1085,101 +1059,95 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                               ),
                               SizedBox(width: 12),
                               Expanded(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
+                                    Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.dls_title,
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Row(
                                       children: [
-                                        Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.dls_title,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.9,
-                                            ),
-                                            fontWeight: FontWeight.w500,
+                                        Icon(
+                                          Icons.list_alt,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
                                           ),
+                                          size: 14,
                                         ),
+                                        SizedBox(width: 4),
                                         isLoading
-                                            ? Row(
-                                                children: [
-                                                  SizedBox(
-                                                    width: 14,
-                                                    height: 14,
-                                                    child: CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      valueColor:
-                                                          AlwaysStoppedAnimation<
-                                                            Color
-                                                          >(Colors.white),
-                                                    ),
-                                                  ),
-                                                ],
+                                            ? SizedBox(
+                                                width: 14,
+                                                height: 14,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white),
+                                                ),
                                               )
                                             : Text(
                                                 '${devices.length} ${AppLocalizations.of(context)!.dls_count_suffix}',
                                                 style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                                  color: Colors.white.withValues(
+                                                    alpha: 0.9,
+                                                  ),
+                                                  fontSize: 12,
                                                 ),
                                               ),
                                       ],
                                     ),
-
-                                    Flexible(
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.15,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.settings,
-                                                    color: Colors.white,
-                                                    size: 16,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.dls_manage,
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
+                              // Add Device Button (only for modir)
+                              if (userModir)
+                                GestureDetector(
+                                  onTap: _openAddDeviceDialog,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.add,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.dls_add_device,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),

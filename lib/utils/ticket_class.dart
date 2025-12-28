@@ -5,6 +5,7 @@ class Ticket {
   final bool reply;
   final String createdAt;
   final List<TicketReply> replies;
+  final String? subjectType;
 
   Ticket({
     required this.id,
@@ -13,6 +14,7 @@ class Ticket {
     required this.reply,
     required this.createdAt,
     required this.replies,
+    this.subjectType,
   });
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,8 @@ class Ticket {
               ?.map((reply) => TicketReply.fromJson(reply))
               .toList() ??
           [],
+      subjectType: json['subject_type'] as String? ?? 
+                   json['subjectType'] as String?,
     );
   }
 }

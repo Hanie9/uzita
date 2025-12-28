@@ -24,6 +24,24 @@ class TicketCard extends StatelessWidget {
     }
   }
 
+  String _getSubjectLabel(BuildContext context, String? subjectType) {
+    if (subjectType == null || subjectType.isEmpty) return '';
+    final localizations = AppLocalizations.of(context)!;
+    
+    switch (subjectType) {
+      case 'product_update':
+        return localizations.ct_subject_product_update;
+      case 'part_update':
+        return localizations.ct_subject_part_update;
+      case 'feedback':
+        return localizations.ct_subject_feedback;
+      case 'other':
+        return localizations.ct_subject_other;
+      default:
+        return subjectType;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ui = UiScale(context);
@@ -45,23 +63,55 @@ class TicketCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ردیف اول: تیتر و وضعیت
+              // ردیف اول: موضوع و وضعیت
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      ticket.title,
-                      style: TextStyle(
-                        fontSize: ui.scale(base: 16, min: 14, max: 18),
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.grey[800],
-                        fontFamily: 'Vazir',
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: ticket.subjectType != null &&
+                            ticket.subjectType!.isNotEmpty
+                        ? Row(
+                            children: [
+                              Icon(
+                                Icons.category,
+                                size: ui.scale(base: 16, min: 14, max: 18),
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.blue[300]
+                                    : Colors.blue[700],
+                              ),
+                              SizedBox(width: ui.scale(base: 6, min: 4, max: 8)),
+                              Expanded(
+                                child: Text(
+                                  _getSubjectLabel(context, ticket.subjectType),
+                                  style: TextStyle(
+                                    fontSize: ui.scale(base: 16, min: 14, max: 18),
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.white
+                                        : Colors.grey[800],
+                                    fontFamily: 'Vazir',
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            AppLocalizations.of(context)!.ct_subject_other,
+                            style: TextStyle(
+                              fontSize: ui.scale(base: 16, min: 14, max: 18),
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.grey[800],
+                              fontFamily: 'Vazir',
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                   ),
                   SizedBox(width: ui.scale(base: 8, min: 6, max: 10)),
                   Container(

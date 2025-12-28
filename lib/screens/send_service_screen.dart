@@ -4,11 +4,18 @@ import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
 
 import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class SendServiceScreen extends StatefulWidget {
   const SendServiceScreen({super.key});
@@ -24,6 +31,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
   final _otherCostController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _serialNumberController = TextEditingController();
 
   String? selectedTime;
   String? selectedPiece;
@@ -104,15 +112,15 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
       }
     } else {
       // For other levels: validate title, description, time, piece
-    if (!_formKey.currentState!.validate() ||
-        selectedTime == null ||
-        selectedPiece == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!_formKey.currentState!.validate() ||
+          selectedTime == null ||
+          selectedPiece == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.sss_add_required),
           ),
-      );
-      return;
+        );
+        return;
       }
     }
 
@@ -133,10 +141,14 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
           'phone': _phoneController.text,
           'urgency': selectedUrgency,
         };
+        // Add serial_number if provided (optional)
+        if (_serialNumberController.text.trim().isNotEmpty) {
+          requestBody['serial_number'] = _serialNumberController.text.trim();
+        }
       } else {
         // For other levels: send title, description, time, sayer_hazine, name_piece
-      final timeInMinutes = getTimeInMinutes(selectedTime!);
-      final otherCost = int.tryParse(_otherCostController.text) ?? 0;
+        final timeInMinutes = getTimeInMinutes(selectedTime!);
+        final otherCost = int.tryParse(_otherCostController.text) ?? 0;
         requestBody = {
           'title': _titleController.text,
           'description': _descriptionController.text,
@@ -144,6 +156,10 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
           'sayer_hazine': otherCost,
           'name_piece': selectedPiece,
         };
+        // Add serial_number if provided (optional)
+        if (_serialNumberController.text.trim().isNotEmpty) {
+          requestBody['serial_number'] = _serialNumberController.text.trim();
+        }
       }
 
       final response = await http.post(
@@ -198,34 +214,34 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                   textAlign: TextAlign.center,
                 ),
                 if (hazine != null && (userLevel != 1 && userLevel != 3)) ...[
-                SizedBox(height: 16),
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.bronzeGold.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.sss_total_cost,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.iranianGray,
+                  SizedBox(height: 16),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.bronzeGold.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.sss_total_cost,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.iranianGray,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '$hazine ${AppLocalizations.of(context)!.sss_tooman}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.maroon,
+                        SizedBox(height: 4),
+                        Text(
+                          '$hazine ${AppLocalizations.of(context)!.sss_tooman}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.maroon,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 ],
               ],
             ),
@@ -261,6 +277,77 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
           content: Text(AppLocalizations.of(context)!.sss_error_connecting),
         ),
       );
+    }
+  }
+
+  Future<void> _scanSerialNumber() async {
+    try {
+      var permissionStatus = await Permission.camera.status;
+      if (!permissionStatus.isGranted) {
+        permissionStatus = await Permission.camera.request();
+      }
+      if (!permissionStatus.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.dls_camera_permission_denied,
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        if (permissionStatus.isPermanentlyDenied && mounted) {
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(
+                AppLocalizations.of(context)!.dls_camera_permission_denied,
+              ),
+              content: Text(
+                AppLocalizations.of(
+                  context,
+                )!.dls_camera_permission_denied_description,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(AppLocalizations.of(context)!.login_cancle),
+                ),
+                TextButton(
+                  onPressed: () {
+                    openAppSettings();
+                    Navigator.of(ctx).pop();
+                  },
+                  child: Text(AppLocalizations.of(context)!.login_settings),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => _SerialScannerPage()),
+        );
+        if (result != null && result is String) {
+          setState(() {
+            _serialNumberController.text = result;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.dls_error_scanning),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -340,74 +427,74 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
             ? TextDirection.ltr
             : TextDirection.rtl,
         child: SingleChildScrollView(
-        child: Column(
-          children: [
+          child: Column(
+            children: [
               // Header (now scrollable)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(
                   bottom: ui.scale(base: 16, min: 12, max: 20),
-                top: ui.scale(base: 8, min: 6, max: 12),
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.lapisLazuli,
-                    AppColors.lapisLazuli.withValues(alpha: 0.85),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  top: ui.scale(base: 8, min: 6, max: 12),
                 ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(
-                      ui.scale(base: 20, min: 16, max: 24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.lapisLazuli,
+                      AppColors.lapisLazuli.withValues(alpha: 0.85),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
-                  bottomRight: Radius.circular(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(
                       ui.scale(base: 20, min: 16, max: 24),
+                    ),
+                    bottomRight: Radius.circular(
+                      ui.scale(base: 20, min: 16, max: 24),
+                    ),
                   ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.lapisLazuli.withValues(alpha: 0.10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.lapisLazuli.withValues(alpha: 0.10),
                       blurRadius: ui.scale(base: 12, min: 8, max: 16),
                       offset: Offset(0, ui.scale(base: 4, min: 3, max: 6)),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
                     SizedBox(height: ui.scale(base: 12, min: 8, max: 16)),
-                  Container(
-                    padding: EdgeInsets.all(
+                    Container(
+                      padding: EdgeInsets.all(
                         ui.scale(base: 12, min: 10, max: 16),
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.build_circle,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.build_circle,
                         size: ui.scale(base: 32, min: 24, max: 40),
-                      color: Colors.white,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
                     SizedBox(height: ui.scale(base: 6, min: 4, max: 8)),
-                  Text(
+                    Text(
                       AppLocalizations.of(
                         context,
                       )!.sss_send_service_request_form,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                         fontSize: ui.scale(base: 16, min: 14, max: 18),
+                      ),
+                      textDirection: Directionality.of(context),
                     ),
-                    textDirection: Directionality.of(context),
-                  ),
                     SizedBox(height: ui.scale(base: 6, min: 4, max: 8)),
-                ],
+                  ],
+                ),
               ),
-            ),
-            // Form
+              // Form
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   ui.scale(base: 24, min: 16, max: 28),
@@ -594,6 +681,68 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           },
                         ),
                         SizedBox(height: 20),
+                        // Serial Number Field (optional for all levels)
+                        Text(
+                          AppLocalizations.of(context)!.dls_serial_number,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
+                          ),
+                          textDirection: Directionality.of(context),
+                        ),
+                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
+                        TextFormField(
+                          controller: _serialNumberController,
+                          textDirection: Directionality.of(context),
+                          textAlign:
+                              Directionality.of(context) == TextDirection.rtl
+                              ? TextAlign.right
+                              : TextAlign.left,
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.dls_serial_number,
+                            hintStyle: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : AppColors.lapisLazuli.withValues(alpha: 0.04),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.qr_code,
+                              color: AppColors.lapisLazuli,
+                            ),
+                            suffixIcon: IconButton(
+                              tooltip: AppLocalizations.of(context)!.dls_scan,
+                              icon: Icon(Icons.qr_code_scanner),
+                              color: AppColors.lapisLazuli,
+                              onPressed: _scanSerialNumber,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
                         // Conditional fields based on user level
                         if (userLevel == 1 || userLevel == 3) ...[
                           // Address Field (for level 1 and 3)
@@ -854,231 +1003,231 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           ),
                         ] else ...[
                           // Piece Selection (for other levels)
-                        Text(
-                          AppLocalizations.of(
-                            context,
-                          )!.sss_add_service_request_piece,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.lapisLazuli,
-                          ),
-                          textDirection: Directionality.of(context),
-                        ),
-                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
-                        DropdownButtonFormField<String>(
-                          value: selectedPiece,
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(
+                          Text(
+                            AppLocalizations.of(
                               context,
-                            )!.sss_choose_service_request_piece_hint,
-                            hintStyle: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                            )!.sss_add_service_request_piece,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.lapisLazuli,
                             ),
-                            filled: true,
-                            fillColor:
+                            textDirection: Directionality.of(context),
+                          ),
+                          SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
+                          DropdownButtonFormField<String>(
+                            value: selectedPiece,
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(
+                                context,
+                              )!.sss_choose_service_request_piece_hint,
+                              hintStyle: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                              filled: true,
+                              fillColor:
                                   Theme.of(context).brightness ==
                                       Brightness.dark
-                                ? Colors.grey[800]
+                                  ? Colors.grey[800]
                                   : AppColors.lapisLazuli.withValues(
                                       alpha: 0.04,
                                     ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                ui.scale(base: 14, min: 12, max: 18),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ui.scale(base: 14, min: 12, max: 18),
+                                ),
+                                borderSide: BorderSide.none,
                               ),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                ui.scale(base: 14, min: 12, max: 18),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ui.scale(base: 14, min: 12, max: 18),
+                                ),
+                                borderSide: BorderSide(
+                                  color: AppColors.lapisLazuli,
+                                  width: 2,
+                                ),
                               ),
-                              borderSide: BorderSide(
+                              prefixIcon: Icon(
+                                Icons.settings,
                                 color: AppColors.lapisLazuli,
-                                width: 2,
                               ),
                             ),
-                            prefixIcon: Icon(
-                              Icons.settings,
-                              color: AppColors.lapisLazuli,
-                            ),
+                            items: pieceOptions.map((String part) {
+                              return DropdownMenuItem<String>(
+                                value: part,
+                                child: Text(
+                                  part,
+                                  textDirection: Directionality.of(context),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                selectedPiece = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return AppLocalizations.of(
+                                  context,
+                                )!.sss_add_service_request_piece_error;
+                              }
+                              return null;
+                            },
                           ),
-                          items: pieceOptions.map((String part) {
-                            return DropdownMenuItem<String>(
-                              value: part,
-                              child: Text(
-                                part,
-                                textDirection: Directionality.of(context),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedPiece = newValue;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return AppLocalizations.of(
-                                context,
-                              )!.sss_add_service_request_piece_error;
-                            }
-                            return null;
-                          },
-                        ),
                           SizedBox(
                             height: ui.scale(base: 20, min: 14, max: 24),
                           ),
                           // Time Selection (for other levels)
-                        Text(
-                          AppLocalizations.of(
-                            context,
-                          )!.sss_add_service_request_time,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.lapisLazuli,
-                          ),
-                          textDirection: Directionality.of(context),
-                        ),
-                        SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
-                        DropdownButtonFormField<String>(
-                          value: selectedTime,
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(
+                          Text(
+                            AppLocalizations.of(
                               context,
-                            )!.sss_add_service_request_time_hint,
-                            hintStyle: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                            )!.sss_add_service_request_time,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.lapisLazuli,
                             ),
-                            filled: true,
-                            fillColor:
+                            textDirection: Directionality.of(context),
+                          ),
+                          SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
+                          DropdownButtonFormField<String>(
+                            value: selectedTime,
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(
+                                context,
+                              )!.sss_add_service_request_time_hint,
+                              hintStyle: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                              filled: true,
+                              fillColor:
                                   Theme.of(context).brightness ==
                                       Brightness.dark
-                                ? Colors.grey[800]
+                                  ? Colors.grey[800]
                                   : AppColors.lapisLazuli.withValues(
                                       alpha: 0.04,
                                     ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                ui.scale(base: 14, min: 12, max: 18),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ui.scale(base: 14, min: 12, max: 18),
+                                ),
+                                borderSide: BorderSide.none,
                               ),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                ui.scale(base: 14, min: 12, max: 18),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ui.scale(base: 14, min: 12, max: 18),
+                                ),
+                                borderSide: BorderSide(
+                                  color: AppColors.lapisLazuli,
+                                  width: 2,
+                                ),
                               ),
-                              borderSide: BorderSide(
+                              prefixIcon: Icon(
+                                Icons.access_time,
                                 color: AppColors.lapisLazuli,
-                                width: 2,
                               ),
                             ),
-                            prefixIcon: Icon(
-                              Icons.access_time,
-                              color: AppColors.lapisLazuli,
-                            ),
+                            items: timeOptions.map((String time) {
+                              return DropdownMenuItem<String>(
+                                value: time,
+                                child: Text(
+                                  time,
+                                  textDirection: Directionality.of(context),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                selectedTime = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return AppLocalizations.of(
+                                  context,
+                                )!.sss_add_service_request_time_error;
+                              }
+                              return null;
+                            },
                           ),
-                          items: timeOptions.map((String time) {
-                            return DropdownMenuItem<String>(
-                              value: time,
-                              child: Text(
-                                time,
-                                textDirection: Directionality.of(context),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              selectedTime = newValue;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return AppLocalizations.of(
-                                context,
-                              )!.sss_add_service_request_time_error;
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
+                          SizedBox(height: 20),
                           // Other Costs Field (for other levels)
-                        Text(
-                          AppLocalizations.of(context)!.sss_other_costs,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.lapisLazuli,
-                          ),
-                          textDirection: Directionality.of(context),
-                        ),
-                        SizedBox(height: 8),
-                        TextFormField(
-                          controller: _otherCostController,
-                          textDirection: Directionality.of(context),
-                          textAlign:
-                              Directionality.of(context) == TextDirection.rtl
-                              ? TextAlign.right
-                              : TextAlign.left,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(
-                              context,
-                            )!.sss_other_costs_hint,
-                            hintStyle: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
+                          Text(
+                            AppLocalizations.of(context)!.sss_other_costs,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.lapisLazuli,
                             ),
-                            filled: true,
-                            fillColor:
+                            textDirection: Directionality.of(context),
+                          ),
+                          SizedBox(height: 8),
+                          TextFormField(
+                            controller: _otherCostController,
+                            textDirection: Directionality.of(context),
+                            textAlign:
+                                Directionality.of(context) == TextDirection.rtl
+                                ? TextAlign.right
+                                : TextAlign.left,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(
+                                context,
+                              )!.sss_other_costs_hint,
+                              hintStyle: TextStyle(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
+                              filled: true,
+                              fillColor:
                                   Theme.of(context).brightness ==
                                       Brightness.dark
-                                ? Colors.grey[800]
+                                  ? Colors.grey[800]
                                   : AppColors.lapisLazuli.withValues(
                                       alpha: 0.04,
                                     ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(
+                                  color: AppColors.lapisLazuli,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.monetization_on,
                                 color: AppColors.lapisLazuli,
-                                width: 2,
                               ),
                             ),
-                            prefixIcon: Icon(
-                              Icons.monetization_on,
-                              color: AppColors.lapisLazuli,
-                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return AppLocalizations.of(
+                                  context,
+                                )!.sss_other_costs_error;
+                              }
+                              if (int.tryParse(value) == null) {
+                                return AppLocalizations.of(
+                                  context,
+                                )!.sss_other_costs_error_number;
+                              }
+                              return null;
+                            },
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return AppLocalizations.of(
-                                context,
-                              )!.sss_other_costs_error;
-                            }
-                            if (int.tryParse(value) == null) {
-                              return AppLocalizations.of(
-                                context,
-                              )!.sss_other_costs_error_number;
-                            }
-                            return null;
-                          },
-                        ),
                         ],
                         SizedBox(height: ui.scale(base: 32, min: 20, max: 36)),
                         // Submit Button
@@ -1140,11 +1289,11 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           ),
                         ),
                       ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       ),
@@ -1158,6 +1307,371 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
     _otherCostController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
+    _serialNumberController.dispose();
     super.dispose();
   }
 }
+
+class _SerialScannerPage extends StatefulWidget {
+  @override
+  State<_SerialScannerPage> createState() => _SerialScannerPageState();
+}
+
+class _SerialScannerPageState extends State<_SerialScannerPage> {
+  final MobileScannerController _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    autoStart: true,
+    facing: CameraFacing.back,
+    formats: [
+      BarcodeFormat.qrCode,
+      BarcodeFormat.code128,
+      BarcodeFormat.code39,
+      BarcodeFormat.code93,
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+    ],
+  );
+  bool _handled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.start().catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.dls_scan_barcode),
+        actions: [
+          IconButton(
+            tooltip: AppLocalizations.of(context)!.dls_on_and_off_flash,
+            onPressed: () => _controller.toggleTorch(),
+            icon: const Icon(Icons.flashlight_on),
+          ),
+          IconButton(
+            tooltip: AppLocalizations.of(context)!.dls_switch_camera,
+            onPressed: () => _controller.switchCamera(),
+            icon: const Icon(Icons.cameraswitch),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: MobileScanner(
+              controller: _controller,
+              onDetect: (capture) {
+                if (_handled) return;
+                final barcodes = capture.barcodes;
+                if (barcodes.isNotEmpty) {
+                  final raw = (barcodes.first.rawValue ?? '').trim();
+                  if (raw.isNotEmpty) {
+                    _handled = true;
+                    Navigator.of(context).pop(raw);
+                  }
+                }
+              },
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: true,
+              child: CustomPaint(
+                painter: _ScannerOverlayPainter(
+                  borderColor: AppColors.lapisLazuli,
+                  overlayColor: theme.colorScheme.surface.withValues(
+                    alpha: 0.6,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.cardColor.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.dls_scan_hint,
+                        style: TextStyle(
+                          color: theme.textTheme.bodyMedium?.color,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: AppLocalizations.of(
+                        context,
+                      )!.dls_scan_from_gallery,
+                      icon: const Icon(Icons.photo_library_outlined),
+                      onPressed: _pickFromGallery,
+                    ),
+                    IconButton(
+                      tooltip: AppLocalizations.of(context)!.dls_scan_from_file,
+                      icon: const Icon(Icons.attach_file),
+                      onPressed: _pickFromFiles,
+                    ),
+                    IconButton(
+                      tooltip: AppLocalizations.of(context)!.dls_close_scan,
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+      final result = await _controller.analyzeImage(picked.path);
+      final bytes = await picked.readAsBytes();
+      String? raw;
+      if (result != null && result.barcodes.isNotEmpty) {
+        raw = (result.barcodes.first.rawValue ?? '').trim();
+      }
+      await _showImageResult(bytes, raw?.isNotEmpty == true ? raw : null);
+    } catch (_) {}
+  }
+
+  Future<void> _pickFromFiles() async {
+    try {
+      final res = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      final path = res?.files.single.path;
+      if (path == null) return;
+      final result = await _controller.analyzeImage(path);
+      Uint8List? bytes = res!.files.single.bytes;
+      bytes ??= await File(res.files.single.path!).readAsBytes();
+      String? raw;
+      if (result != null && result.barcodes.isNotEmpty) {
+        raw = (result.barcodes.first.rawValue ?? '').trim();
+      }
+      await _showImageResult(bytes, raw?.isNotEmpty == true ? raw : null);
+    } catch (_) {}
+  }
+
+  Future<void> _showImageResult(Uint8List imageBytes, String? code) async {
+    if (!mounted) return;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    imageBytes,
+                    fit: BoxFit.contain,
+                    height: MediaQuery.of(ctx).size.height * 0.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  code == null
+                      ? AppLocalizations.of(context)!.dls_no_barcode_found
+                      : '${AppLocalizations.of(context)!.dls_barcode_found}: $code',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: code == null ? Colors.red : AppColors.lapisLazuli,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: Text(
+                          AppLocalizations.of(context)!.dls_close_scan,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: code == null
+                            ? null
+                            : () {
+                                Navigator.of(ctx).pop();
+                                _handled = true;
+                                Navigator.of(context).pop(code);
+                              },
+                        child: Text(AppLocalizations.of(context)!.dls_use_code),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ScannerOverlayPainter extends CustomPainter {
+  final Color overlayColor;
+  final Color borderColor;
+  _ScannerOverlayPainter({
+    required this.overlayColor,
+    required this.borderColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = overlayColor;
+    final rect = Offset.zero & size;
+    final double width = size.width * 0.75;
+    final double height = width;
+    final Rect hole = Rect.fromCenter(
+      center: size.center(Offset.zero),
+      width: width,
+      height: height,
+    );
+
+    final overlayPath = Path()..addRect(rect);
+    final holePath = Path()
+      ..addRRect(RRect.fromRectAndRadius(hole, const Radius.circular(16)));
+    canvas.drawPath(
+      Path.combine(PathOperation.difference, overlayPath, holePath),
+      paint,
+    );
+
+    final cornerPaint = Paint()
+      ..color = borderColor
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke;
+
+    const double cornerLen = 28;
+    const double radius = 16;
+
+    _drawCorner(
+      canvas,
+      hole.topLeft,
+      cornerLen,
+      CornerPosition.topLeft,
+      cornerPaint,
+      radius,
+    );
+    _drawCorner(
+      canvas,
+      hole.topRight,
+      cornerLen,
+      CornerPosition.topRight,
+      cornerPaint,
+      radius,
+    );
+    _drawCorner(
+      canvas,
+      hole.bottomLeft,
+      cornerLen,
+      CornerPosition.bottomLeft,
+      cornerPaint,
+      radius,
+    );
+    _drawCorner(
+      canvas,
+      hole.bottomRight,
+      cornerLen,
+      CornerPosition.bottomRight,
+      cornerPaint,
+      radius,
+    );
+  }
+
+  void _drawCorner(
+    Canvas canvas,
+    Offset corner,
+    double len,
+    CornerPosition pos,
+    Paint paint,
+    double radius,
+  ) {
+    final path = Path();
+    switch (pos) {
+      case CornerPosition.topLeft:
+        path.moveTo(corner.dx, corner.dy + radius);
+        path.lineTo(corner.dx, corner.dy + len);
+        path.moveTo(corner.dx + radius, corner.dy);
+        path.lineTo(corner.dx + len, corner.dy);
+        break;
+      case CornerPosition.topRight:
+        path.moveTo(corner.dx, corner.dy + radius);
+        path.lineTo(corner.dx, corner.dy + len);
+        path.moveTo(corner.dx - radius, corner.dy);
+        path.lineTo(corner.dx - len, corner.dy);
+        break;
+      case CornerPosition.bottomLeft:
+        path.moveTo(corner.dx, corner.dy - radius);
+        path.lineTo(corner.dx, corner.dy - len);
+        path.moveTo(corner.dx + radius, corner.dy);
+        path.lineTo(corner.dx + len, corner.dy);
+        break;
+      case CornerPosition.bottomRight:
+        path.moveTo(corner.dx, corner.dy - radius);
+        path.lineTo(corner.dx, corner.dy - len);
+        path.moveTo(corner.dx - radius, corner.dy);
+        path.lineTo(corner.dx - len, corner.dy);
+        break;
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScannerOverlayPainter oldDelegate) {
+    return oldDelegate.overlayColor != overlayColor ||
+        oldDelegate.borderColor != borderColor;
+  }
+}
+
+enum CornerPosition { topLeft, topRight, bottomLeft, bottomRight }

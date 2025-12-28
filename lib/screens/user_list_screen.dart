@@ -1257,55 +1257,45 @@ class _UserListScreenState extends State<UserListScreen> {
                               Text(
                                 AppLocalizations.of(context)!.uls_users_header,
                                 style: TextStyle(
-                                  fontSize: ui.scale(
-                                    base: 14,
-                                    min: 12,
-                                    max: 16,
-                                  ),
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              isLoading
-                                  ? Row(
-                                      children: [
-                                        SizedBox(
-                                          width: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          height: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.list_alt,
+                                    color: Colors.white.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 4),
+                                  isLoading
+                                      ? SizedBox(
+                                          width: 14,
+                                          height: 14,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: ui.scale(
-                                              base: 2,
-                                              min: 1.5,
-                                              max: 2.5,
-                                            ),
+                                            strokeWidth: 2,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
                                                   Colors.white,
                                                 ),
                                           ),
+                                        )
+                                      : Text(
+                                          '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.9,
+                                            ),
+                                            fontSize: 12,
+                                          ),
                                         ),
-                                      ],
-                                    )
-                                  : Text(
-                                      '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
-                                      style: TextStyle(
-                                        fontSize: ui.scale(
-                                          base: 18,
-                                          min: 16,
-                                          max: 20,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                                ],
+                              ),
                             ],
                           ),
                           Container(

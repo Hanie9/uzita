@@ -453,6 +453,7 @@ class AppLocalizations {
       'dls_no_barcode_found': 'No barcode found',
       'dls_barcode_found': 'Barcode identified: ',
       'dls_use_code': 'Use code',
+      'dls_error_scanning': 'Error scanning barcode',
       'dls_scan_error_description':
           'Access to the camera was denied. To scan the barcode, enable camera access.',
       'dls_scan_settings': 'Settings',
@@ -588,6 +589,7 @@ class AppLocalizations {
       'tls_unknown': 'Unknown',
       'tls_title': 'Support',
       'tls_new_ticket': 'New ticket',
+      'tls_ticket_count': 'tickets',
       'tls_loading': 'Loading tickets...',
       'tls_error_loading': 'Error loading',
       'tls_try_again': 'Try again',
@@ -865,6 +867,12 @@ class AppLocalizations {
       'ct_information': 'Information',
       'ct_information_description':
           'Please fill in the ticket subject and description completely and accurately so that the support can provide the best response.',
+      'ct_subject': 'Subject',
+      'ct_subject_required': 'Please select a subject',
+      'ct_subject_product_update': 'Product update',
+      'ct_subject_part_update': 'Part update',
+      'ct_subject_feedback': 'Feedback and suggestions',
+      'ct_subject_other': 'Other',
       'ct_title': 'Ticket title',
       'ct_title_example': 'Example: Problem logging in to the account',
       'ct_title_required': 'Ticket title is required',
@@ -1545,6 +1553,7 @@ class AppLocalizations {
       'dls_no_barcode_found': 'بارکدی در تصویر یافت نشد',
       'dls_barcode_found': 'کد شناسایی شد: ',
       'dls_use_code': 'استفاده از کد',
+      'dls_error_scanning': 'خطا در اسکن بارکد',
       'dls_scan_error_description':
           'دسترسی به دوربین رد شد. برای اسکن بارکد، اجازه دوربین را فعال کنید.',
       'dls_scan_settings': 'تنظیمات',
@@ -1679,6 +1688,7 @@ class AppLocalizations {
       'tls_unknown': 'نامشخص',
       'tls_title': 'پشتیبانی',
       'tls_new_ticket': 'تیکت جدید',
+      'tls_ticket_count': 'تیکت',
       'tls_loading': 'در حال بارگذاری تیکت‌ها...',
       'tls_error_loading': 'خطا در بارگذاری',
       'tls_try_again': 'تلاش مجدد',
@@ -1952,6 +1962,12 @@ class AppLocalizations {
       'ct_information': 'راهنمایی',
       'ct_information_description':
           'لطفاً موضوع و توضیحات تیکت خود را به‌طور کامل و دقیق وارد کنید تا پشتیبانی بتواند بهترین پاسخ را ارائه دهد.',
+      'ct_subject': 'موضوع',
+      'ct_subject_required': 'لطفاً یک موضوع انتخاب کنید',
+      'ct_subject_product_update': 'به روزرسانی محصول',
+      'ct_subject_part_update': 'به روزرسانی قطعه',
+      'ct_subject_feedback': 'انتقاد و پیشنهاد',
+      'ct_subject_other': 'سایر',
       'ct_title': 'عنوان تیکت',
       'ct_title_example': 'مثال: مشکل در ورود به حساب کاربری',
       'ct_title_required': 'عنوان تیکت اجباری است',
@@ -2682,6 +2698,7 @@ class AppLocalizations {
   String get tls_unknown => _getLocalizedValue('tls_unknown');
   String get tls_title => _getLocalizedValue('tls_title');
   String get tls_new_ticket => _getLocalizedValue('tls_new_ticket');
+  String get tls_ticket_count => _getLocalizedValue('tls_ticket_count');
   String get tls_loading => _getLocalizedValue('tls_loading');
   String get tls_error_loading => _getLocalizedValue('tls_error_loading');
   String get tls_try_again => _getLocalizedValue('tls_try_again');
@@ -3287,6 +3304,16 @@ class AppLocalizations {
   String get ct_information => _getLocalizedValue('ct_information');
   String get ct_information_description =>
       _getLocalizedValue('ct_information_description');
+  String get ct_subject => _getLocalizedValue('ct_subject');
+  String get ct_subject_required =>
+      _getLocalizedValue('ct_subject_required');
+  String get ct_subject_product_update =>
+      _getLocalizedValue('ct_subject_product_update');
+  String get ct_subject_part_update =>
+      _getLocalizedValue('ct_subject_part_update');
+  String get ct_subject_feedback =>
+      _getLocalizedValue('ct_subject_feedback');
+  String get ct_subject_other => _getLocalizedValue('ct_subject_other');
   String get ct_title => _getLocalizedValue('ct_title');
   String get ct_title_example => _getLocalizedValue('ct_title_example');
   String get ct_title_required => _getLocalizedValue('ct_title_required');
@@ -3456,6 +3483,7 @@ class AppLocalizations {
   String get dls_no_barcode_found => _getLocalizedValue('dls_no_barcode_found');
   String get dls_barcode_found => _getLocalizedValue('dls_barcode_found');
   String get dls_use_code => _getLocalizedValue('dls_use_code');
+  String get dls_error_scanning => _getLocalizedValue('dls_error_scanning');
   String get dls_scan_error_description =>
       _getLocalizedValue('dls_scan_error_description');
   String get dls_scan_settings => _getLocalizedValue('dls_scan_settings');

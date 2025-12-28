@@ -18,40 +18,37 @@ class CreateTicketScreen extends StatefulWidget {
 
 class _CreateTicketScreenState extends State<CreateTicketScreen> {
   final _formKey = GlobalKey<FormState>();
-  final titleController = TextEditingController();
   final descriptionController = TextEditingController();
 
   bool loading = false;
   String error = '';
+  String? selectedSubjectType; // برای ذخیره موضوع انتخاب شده
 
   // برای شمارش کاراکترها
-  int titleCharCount = 0;
   int descriptionCharCount = 0;
 
   // محدودیت‌های کاراکتر
-  final int maxTitleLength = 100;
   final int maxDescriptionLength = 300;
+
+  // لیست موضوعات
+  final List<Map<String, String>> subjectTypes = [
+    {'value': 'product_update', 'label_en': 'Product update', 'label_fa': 'به روزرسانی محصول'},
+    {'value': 'part_update', 'label_en': 'Part update', 'label_fa': 'به روزرسانی قطعه'},
+    {'value': 'feedback', 'label_en': 'Feedback and suggestions', 'label_fa': 'انتقاد و پیشنهاد'},
+    {'value': 'other', 'label_en': 'Other', 'label_fa': 'سایر'},
+  ];
 
   @override
   void initState() {
     super.initState();
-    titleController.addListener(_updateTitleCount);
     descriptionController.addListener(_updateDescriptionCount);
   }
 
   @override
   void dispose() {
-    titleController.removeListener(_updateTitleCount);
     descriptionController.removeListener(_updateDescriptionCount);
-    titleController.dispose();
     descriptionController.dispose();
     super.dispose();
-  }
-
-  void _updateTitleCount() {
-    setState(() {
-      titleCharCount = titleController.text.length;
-    });
   }
 
   void _updateDescriptionCount() {
@@ -61,10 +58,26 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
   }
 
   bool _isFormValid() {
-    return titleController.text.trim().isNotEmpty &&
+    return selectedSubjectType != null &&
         descriptionController.text.trim().isNotEmpty &&
-        titleController.text.length <= maxTitleLength &&
         descriptionController.text.length <= maxDescriptionLength;
+  }
+
+  String _getSubjectLabel(String value) {
+    final localizations = AppLocalizations.of(context)!;
+    
+    switch (value) {
+      case 'product_update':
+        return localizations.ct_subject_product_update;
+      case 'part_update':
+        return localizations.ct_subject_part_update;
+      case 'feedback':
+        return localizations.ct_subject_feedback;
+      case 'other':
+        return localizations.ct_subject_other;
+      default:
+        return '';
+    }
   }
 
   String _translateError(String error) {
@@ -112,8 +125,8 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
         },
         body: utf8.encode(
           json.encode({
-            'title': titleController.text.trim(),
             'description': descriptionController.text.trim(),
+            'subject_type': selectedSubjectType,
           }),
         ),
       );
@@ -457,7 +470,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                   height: UiScale(context).scale(base: 32, min: 24, max: 40),
                 ),
 
-                // فیلد عنوان تیکت
+                // فیلد انتخاب موضوع
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(
@@ -497,7 +510,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                               ),
                             ),
                             child: Icon(
-                              Icons.title,
+                              Icons.category,
                               color: Colors.white,
                               size: UiScale(
                                 context,
@@ -510,7 +523,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             ).scale(base: 12, min: 8, max: 16),
                           ),
                           Text(
-                            AppLocalizations.of(context)!.ct_title,
+                            AppLocalizations.of(context)!.ct_subject,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
                                   fontSize: UiScale(
@@ -520,45 +533,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                   fontFamily: 'Vazir',
                                 ),
                           ),
-                          Spacer(),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: UiScale(
-                                context,
-                              ).scale(base: 8, min: 6, max: 12),
-                              vertical: UiScale(
-                                context,
-                              ).scale(base: 4, min: 2, max: 6),
-                            ),
-                            decoration: BoxDecoration(
-                              color: titleCharCount > maxTitleLength
-                                  ? Colors.red[100]
-                                  : (Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[100]),
-                              borderRadius: BorderRadius.circular(
-                                UiScale(
-                                  context,
-                                ).scale(base: 12, min: 8, max: 16),
-                              ),
-                            ),
-                            child: Text(
-                              '$titleCharCount/$maxTitleLength',
-                              style: TextStyle(
-                                fontSize: UiScale(
-                                  context,
-                                ).scale(base: 12, min: 10, max: 14),
-                                color: titleCharCount > maxTitleLength
-                                    ? Colors.red[700]
-                                    : Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.color,
-                                fontFamily: 'Vazir',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                       SizedBox(
@@ -566,13 +540,10 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           context,
                         ).scale(base: 16, min: 12, max: 20),
                       ),
-                      TextFormField(
-                        controller: titleController,
-                        maxLength: maxTitleLength,
+                      DropdownButtonFormField<String>(
+                        value: selectedSubjectType,
                         decoration: InputDecoration(
-                          hintText: AppLocalizations.of(
-                            context,
-                          )!.ct_title_example,
+                          hintText: AppLocalizations.of(context)!.ct_subject_required,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(
                               UiScale(context).scale(base: 12, min: 8, max: 16),
@@ -601,12 +572,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             borderSide: BorderSide(color: Colors.red, width: 2),
                           ),
                           filled: true,
-                          fillColor: titleCharCount > maxTitleLength
-                              ? Colors.red[50]
-                              : (Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.grey[800]
-                                    : Colors.grey[50]),
-                          counterText: '',
+                          fillColor: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[800]
+                              : Colors.grey[50],
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: UiScale(
                               context,
@@ -616,14 +584,27 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                             ).scale(base: 12, min: 8, max: 16),
                           ),
                         ),
+                        items: subjectTypes.map((subject) {
+                          return DropdownMenuItem<String>(
+                            value: subject['value'],
+                            child: Text(
+                              _getSubjectLabel(subject['value']!),
+                              style: TextStyle(
+                                fontFamily: 'Vazir',
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedSubjectType = value;
+                          });
+                        },
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
+                          if (value == null || value.isEmpty) {
                             return AppLocalizations.of(
                               context,
-                            )!.ct_add_required;
-                          }
-                          if (value.length > maxTitleLength) {
-                            return "${AppLocalizations.of(context)!.ct_max_part_1} $maxTitleLength ${AppLocalizations.of(context)!.ct_max_part_2}";
+                            )!.ct_subject_required;
                           }
                           return null;
                         },

@@ -1444,61 +1444,45 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                             context,
                                           )!.cls_commands,
                                           style: TextStyle(
-                                            fontSize: UiScale(
-                                              context,
-                                            ).scale(base: 14, min: 12, max: 16),
-                                            color: Colors.white.withValues(
-                                              alpha: 0.9,
-                                            ),
-                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        isLoading
-                                            ? Row(
-                                                children: [
-                                                  SizedBox(
-                                                    width: UiScale(context)
-                                                        .scale(
-                                                          base: 14,
-                                                          min: 12,
-                                                          max: 16,
-                                                        ),
-                                                    height: UiScale(context)
-                                                        .scale(
-                                                          base: 14,
-                                                          min: 12,
-                                                          max: 16,
-                                                        ),
+                                        SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.list_alt,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.8,
+                                              ),
+                                              size: 14,
+                                            ),
+                                            SizedBox(width: 4),
+                                            isLoading
+                                                ? SizedBox(
+                                                    width: 14,
+                                                    height: 14,
                                                     child: CircularProgressIndicator(
-                                                      strokeWidth:
-                                                          UiScale(
-                                                            context,
-                                                          ).scale(
-                                                            base: 2,
-                                                            min: 1.6,
-                                                            max: 2.4,
-                                                          ),
+                                                      strokeWidth: 2,
                                                       valueColor:
                                                           AlwaysStoppedAnimation<
                                                             Color
                                                           >(Colors.white),
                                                     ),
-                                                  ),
-                                                ],
-                                              )
-                                            : Text(
-                                                '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
-                                                style: TextStyle(
-                                                  fontSize: UiScale(context)
-                                                      .scale(
-                                                        base: 18,
-                                                        min: 16,
-                                                        max: 20,
+                                                  )
+                                                : Text(
+                                                    '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
+                                                    style: TextStyle(
+                                                      color: Colors.white.withValues(
+                                                        alpha: 0.9,
                                                       ),
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                     Container(

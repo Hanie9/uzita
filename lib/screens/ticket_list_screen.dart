@@ -235,51 +235,6 @@ class _TicketListScreenState extends State<TicketListScreen> {
           ),
         ),
       ),
-      floatingActionButton: userActive
-          ? Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  ui.scale(base: 16, min: 12, max: 20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.lapisLazuli.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: FloatingActionButton.extended(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => CreateTicketScreen()),
-                  ).then((_) => fetchTickets());
-                },
-                icon: Icon(
-                  Icons.add,
-                  size: ui.scale(base: 22, min: 18, max: 26),
-                ),
-                label: Text(
-                  AppLocalizations.of(context)!.tls_new_ticket,
-                  style: TextStyle(
-                    fontFamily: 'Vazir',
-                    fontWeight: FontWeight.bold,
-                    fontSize: ui.scale(base: 15, min: 13, max: 17),
-                  ),
-                ),
-                backgroundColor: AppColors.lapisLazuli,
-                foregroundColor: Colors.white,
-                elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    ui.scale(base: 16, min: 12, max: 20),
-                  ),
-                ),
-              ),
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: userActive
           ? SafeArea(
               child: Directionality(
@@ -291,18 +246,144 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         'en'
                     ? TextDirection.ltr
                     : TextDirection.rtl,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    ui.scale(base: 12, min: 10, max: 16),
-                    ui.scale(base: 8, min: 6, max: 12),
-                    ui.scale(base: 12, min: 10, max: 16),
-                    ui.scale(base: 8, min: 6, max: 12) +
-                        MediaQuery.of(context).padding.bottom,
-                  ),
-                  child: Column(
-                    children: [
-                      SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
-                      Expanded(
+                child: Column(
+                  children: [
+                    // Enhanced Header Box (Blue Box)
+                    Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.lapisLazuli,
+                            AppColors.lapisLazuli.withValues(alpha: 0.85),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // Ticket Icon
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.support_agent,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          // Ticket Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppLocalizations.of(context)!.tls_title,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.list_alt,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '${tickets.length} ${AppLocalizations.of(context)!.tls_ticket_count}',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Add Button
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CreateTicketScreen(),
+                                ),
+                              ).then((_) => fetchTickets());
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.tls_new_ticket,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // List Content
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          ui.scale(base: 12, min: 10, max: 16),
+                          ui.scale(base: 8, min: 6, max: 12),
+                          ui.scale(base: 12, min: 10, max: 16),
+                          ui.scale(base: 8, min: 6, max: 12) +
+                              MediaQuery.of(context).padding.bottom,
+                        ),
                         child: loading
                             ? Center(
                                 child: SharedLoading(
@@ -678,8 +759,8 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                 ),
                               ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             )

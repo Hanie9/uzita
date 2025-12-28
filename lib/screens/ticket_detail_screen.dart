@@ -332,15 +332,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    ticket!.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                Expanded(child: _buildSubjectRow()),
                 _buildStatusBadge(),
               ],
             ),
@@ -401,6 +393,57 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  String _getSubjectLabel(String? subjectType) {
+    if (subjectType == null || subjectType.isEmpty) return '';
+    final localizations = AppLocalizations.of(context)!;
+
+    switch (subjectType) {
+      case 'product_update':
+        return localizations.ct_subject_product_update;
+      case 'part_update':
+        return localizations.ct_subject_part_update;
+      case 'feedback':
+        return localizations.ct_subject_feedback;
+      case 'other':
+        return localizations.ct_subject_other;
+      default:
+        return subjectType;
+    }
+  }
+
+  Widget _buildSubjectRow() {
+    final subjectLabel = _getSubjectLabel(ticket!.subjectType);
+    // If subject is empty, show "سایر" (Other) as default
+    final displayLabel = subjectLabel.isEmpty
+        ? AppLocalizations.of(context)!.ct_subject_other
+        : subjectLabel;
+
+    return Row(
+      children: [
+        Icon(
+          Icons.category,
+          size: 20,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.blue[300]
+              : Colors.blue[700],
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            displayLabel,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.blue[300]
+                  : Colors.blue[700],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
