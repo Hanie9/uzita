@@ -1440,8 +1440,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                             children: [
                               // Transfer requests section (only for level 1 and if there are requests)
                               if (userLevel == 1 &&
-                                  (isLoadingTransfers ||
-                                      transferRequests.isNotEmpty)) ...[
+                                  transferRequests.isNotEmpty) ...[
                                 Container(
                                   margin: EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -1482,40 +1481,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                         ],
                                       ),
                                       SizedBox(height: 12),
-                                      if (isLoadingTransfers)
-                                        Center(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(16),
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        )
-                                      else if (transferRequests.isEmpty)
-                                        Center(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(16),
-                                            child: Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.dls_no_transfers,
-                                              style: TextStyle(
-                                                color: Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall?.color,
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      else
-                                        Column(
-                                          children: transferRequests
-                                              .map(
-                                                (transfer) =>
-                                                    _buildTransferCard(
-                                                      transfer,
-                                                    ),
-                                              )
-                                              .toList(),
-                                        ),
+                                      Column(
+                                        children: transferRequests
+                                            .map(
+                                              (transfer) =>
+                                                  _buildTransferCard(transfer),
+                                            )
+                                            .toList(),
+                                      ),
                                     ],
                                   ),
                                 ),
