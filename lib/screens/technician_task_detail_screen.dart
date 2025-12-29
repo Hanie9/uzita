@@ -9,6 +9,7 @@ import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'dart:convert';
+import 'dart:convert' show utf8;
 
 class TechnicianTaskDetailScreen extends StatefulWidget {
   final Map<String, dynamic> task;
@@ -60,6 +61,46 @@ class _TechnicianTaskDetailScreenState
         widget.task['time'] != null &&
         widget.task['time'] != '0' &&
         widget.task['time'] != 0;
+    _fetchPieces();
+  }
+
+  Future<void> _fetchPieces() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) return;
+
+      await SessionManager().onNetworkRequest();
+      final response = await http.get(
+        Uri.parse('$baseUrl5/listpieces/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        if (data is List) {
+          setState(() {
+            pieceOptions = data
+                .map((item) => item['name']?.toString() ?? '')
+                .where((name) => name.isNotEmpty)
+                .toList();
+          });
+        }
+      }
+    } catch (e) {
+      // If API fails, keep default pieces
+      if (mounted) {
+        setState(() {
+          pieceOptions = List<String>.from(kDefaultPieceOptions);
+        });
+      }
+    }
   }
 
   @override
