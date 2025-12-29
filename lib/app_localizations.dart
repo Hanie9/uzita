@@ -485,6 +485,8 @@ class AppLocalizations {
       'dds_sending': 'Sending...',
       'dds_details_device': 'Device details',
       'dds_delete_device_success': 'Device successfully removed.',
+      'dds_activate_device_success': 'Device activated successfully.',
+      'dds_deactivate_device_success': 'Device deactivated successfully.',
       'dds_transfer_ownership': 'Transfer ownership',
       'dds_transfer_ownership_organ_code': 'New owner organization code',
       'dds_transfer_ownership_organ_code_hint': 'Enter organization code',
@@ -1600,6 +1602,8 @@ class AppLocalizations {
       'dds_sending': 'در حال ارسال...',
       'dds_details_device': 'جزئیات دستگاه',
       'dds_delete_device_success': 'دستگاه با موفقیت حذف شد.',
+      'dds_activate_device_success': 'دستگاه با موفقیت فعال شد.',
+      'dds_deactivate_device_success': 'دستگاه با موفقیت غیرفعال شد.',
       'dds_transfer_ownership': 'انتقال مالکیت',
       'dds_transfer_ownership_organ_code': 'شماره سازمان مالک جدید',
       'dds_transfer_ownership_organ_code_hint': 'شماره سازمان را وارد کنید',
@@ -3551,6 +3555,10 @@ class AppLocalizations {
   String get dds_details_device => _getLocalizedValue('dds_details_device');
   String get dds_delete_device_success =>
       _getLocalizedValue('dds_delete_device_success');
+  String get dds_activate_device_success =>
+      _getLocalizedValue('dds_activate_device_success');
+  String get dds_deactivate_device_success =>
+      _getLocalizedValue('dds_deactivate_device_success');
   String get dds_transfer_ownership =>
       _getLocalizedValue('dds_transfer_ownership');
   String get dds_transfer_ownership_organ_code =>

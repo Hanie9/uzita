@@ -1426,6 +1426,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                       onRefresh: fetchDevices,
                       color: Color(0xFF00A86B),
                       child: SingleChildScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
                         child: Directionality(
                           textDirection:
                               Provider.of<SettingsProvider>(
@@ -1437,8 +1438,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                               : TextDirection.rtl,
                           child: Column(
                             children: [
-                              // Transfer requests section (only for level 1)
-                              if (userLevel == 1) ...[
+                              // Transfer requests section (only for level 1 and if there are requests)
+                              if (userLevel == 1 &&
+                                  (isLoadingTransfers ||
+                                      transferRequests.isNotEmpty)) ...[
                                 Container(
                                   margin: EdgeInsets.symmetric(
                                     horizontal: 16,

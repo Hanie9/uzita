@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:convert' show utf8;
 import 'package:flutter/material.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -107,11 +106,19 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     final data = json.decode(utf8.decode(response.bodyBytes));
 
     if (response.statusCode == 200) {
+      final wasActive = isActive;
       setState(() {
         isActive = !isActive;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['massage']), backgroundColor: Colors.teal),
+        SnackBar(
+          content: Text(
+            wasActive
+                ? AppLocalizations.of(context)!.dds_deactivate_device_success
+                : AppLocalizations.of(context)!.dds_activate_device_success,
+          ),
+          backgroundColor: Colors.teal,
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -209,10 +216,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                   TextFormField(
                     controller: organCodeController,
                     decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!
-                          .dds_transfer_ownership_organ_code,
-                      hintText: AppLocalizations.of(context)!
-                          .dds_transfer_ownership_organ_code_hint,
+                      labelText: AppLocalizations.of(
+                        context,
+                      )!.dds_transfer_ownership_organ_code,
+                      hintText: AppLocalizations.of(
+                        context,
+                      )!.dds_transfer_ownership_organ_code_hint,
                       prefixIcon: Icon(Icons.business),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -221,8 +230,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return AppLocalizations.of(context)!
-                            .dds_transfer_ownership_organ_code_required;
+                        return AppLocalizations.of(
+                          context,
+                        )!.dds_transfer_ownership_organ_code_required;
                       }
                       return null;
                     },
@@ -245,15 +255,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                           setDialogState(() => submitting = true);
 
                           try {
-                            final prefs =
-                                await SharedPreferences.getInstance();
+                            final prefs = await SharedPreferences.getInstance();
                             final token = prefs.getString('token');
                             final deviceId = widget.device['id'];
 
                             await SessionManager().onNetworkRequest();
                             final response = await http.post(
-                              Uri.parse(
-                                  '$baseUrl/device/$deviceId/transfer'),
+                              Uri.parse('$baseUrl/device/$deviceId/transfer'),
                               headers: {
                                 'Authorization': 'Bearer $token',
                                 'Content-Type': 'application/json',
@@ -264,7 +272,8 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                             );
 
                             final data = json.decode(
-                                utf8.decode(response.bodyBytes));
+                              utf8.decode(response.bodyBytes),
+                            );
 
                             if (response.statusCode == 200) {
                               Navigator.pop(dialogContext);
@@ -272,8 +281,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                 SnackBar(
                                   content: Text(
                                     data['message'] ??
-                                        AppLocalizations.of(context)!
-                                            .dds_transfer_ownership_success,
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.dds_transfer_ownership_success,
                                   ),
                                   backgroundColor: Colors.teal,
                                 ),
@@ -284,8 +294,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                 SnackBar(
                                   content: Text(
                                     data['message'] ??
-                                        AppLocalizations.of(context)!
-                                            .dds_transfer_ownership_error,
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.dds_transfer_ownership_error,
                                   ),
                                   backgroundColor: Colors.red,
                                 ),
@@ -295,8 +306,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    AppLocalizations.of(context)!
-                                        .dds_transfer_ownership_error,
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.dds_transfer_ownership_error,
                                   ),
                                   backgroundColor: Colors.red,
                                 ),
@@ -307,8 +319,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  AppLocalizations.of(context)!
-                                      .dds_transfer_ownership_error,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.dds_transfer_ownership_error,
                                 ),
                                 backgroundColor: Colors.red,
                               ),
@@ -326,8 +339,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(AppLocalizations.of(context)!.dds_yes),
