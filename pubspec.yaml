@@ -101,9 +101,12 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/biokaveh.png"
+  image_path: "assets/app_icon_android.png"
+  android_adaptive_icon_background: "#ffffff"
+  android_adaptive_icon_foreground: "assets/app_icon_android.png"
+  min_sdk_android: 21
   web:
     generate: true
-    image_path: "assets/biokaveh.png"
+    image_path: "web/icons/Icon-maskable-384.png"
     background_color: "#ffffff"
     theme_color: "#0175C2"
