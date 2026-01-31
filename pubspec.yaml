@@ -103,8 +103,6 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/app_icon_android.png"
   android_adaptive_icon_background: "#ffffff"
-  android_adaptive_icon_foreground: "assets/app_icon_android.png"
-  min_sdk_android: 21
   web:
     generate: true
     image_path: "web/icons/Icon-maskable-384.png"

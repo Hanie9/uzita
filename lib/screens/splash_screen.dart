@@ -95,7 +95,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final shortest = size.shortestSide;
     // Scale assets and text for different phone sizes
@@ -107,9 +106,9 @@ class _SplashScreenState extends State<SplashScreen>
     final double spacing1 = (size.height * 0.035).clamp(16.0, 36.0);
     final double spacing2 = (size.height * 0.02).clamp(10.0, 24.0);
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.white,
       body: Container(
-        decoration: BoxDecoration(color: theme.scaffoldBackgroundColor),
+        decoration: const BoxDecoration(color: Colors.white),
         child: SafeArea(
           child: Column(
             children: [
