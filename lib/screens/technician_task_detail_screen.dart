@@ -293,7 +293,7 @@ class _TechnicianTaskDetailScreenState
       await SessionManager().onNetworkRequest();
 
       final url =
-          'https://device-control.liara.run/api/technician/$taskId/time-select';
+          '$baseUrl5/technician/$taskId/time-select';
       print('Sending POST request to: $url');
 
       final response = await http.post(
@@ -385,7 +385,7 @@ class _TechnicianTaskDetailScreenState
       await SessionManager().onNetworkRequest();
 
       final url =
-          'https://device-control.liara.run/api/technician/$taskId/check-task';
+          '$baseUrl5/technician/$taskId/check-task';
       print('Sending POST request to: $url');
 
       final requestBody = <String, dynamic>{
@@ -485,7 +485,7 @@ class _TechnicianTaskDetailScreenState
       await SessionManager().onNetworkRequest();
 
       final url =
-          'https://device-control.liara.run/api/technician/tasks/$taskId/confirm';
+          '$baseUrl5/technician/tasks/$taskId/confirm';
       print('Sending POST request to: $url');
 
       final response = await http.post(

@@ -92,7 +92,7 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
 
       await SessionManager().onNetworkRequest();
       final response = await http.get(
-        Uri.parse('https://device-control.liara.run/api/transport/public'),
+        Uri.parse('$baseUrl5/transport/public'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -174,9 +174,7 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
     try {
       await SessionManager().onNetworkRequest();
       final response = await http.post(
-        Uri.parse(
-          'https://device-control.liara.run/api/transport/public/$loadId/select',
-        ),
+        Uri.parse('$baseUrl5/transport/public/$loadId/select'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

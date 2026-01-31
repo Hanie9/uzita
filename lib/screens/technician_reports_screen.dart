@@ -82,7 +82,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
         Uri.parse(
-          'https://device-control.liara.run/api/technician/reports?ts=$ts',
+          '$baseUrl5/technician/reports?ts=$ts',
         ),
         headers: {
           'Authorization': 'Bearer $token',

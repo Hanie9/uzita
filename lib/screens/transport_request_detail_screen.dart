@@ -85,7 +85,7 @@ class _TransportRequestDetailScreenState
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
         Uri.parse(
-          'https://device-control.liara.run/api/transport/listrequest?ts=$ts',
+          '$baseUrl5/transport/listrequest?ts=$ts',
         ),
         headers: {
           'Authorization': 'Bearer $token',
@@ -325,7 +325,7 @@ class _TransportRequestDetailScreenState
       // If it fails, try /confirm endpoint
       final status = requestData['status']?.toString() ?? 'open';
       String url =
-          'https://device-control.liara.run/api/transport/request/$requestId/confirm';
+          '$baseUrl5/transport/request/$requestId/confirm';
 
       print('Sending POST request to: $url');
       print('Request body: ${json.encode(requestBody)}');
@@ -351,8 +351,8 @@ class _TransportRequestDetailScreenState
       if (response.statusCode == 403 ||
           (response.statusCode != 200 && response.statusCode != 201)) {
         final altUrl = status == 'done'
-            ? 'https://device-control.liara.run/api/transport/request/$requestId/confirm'
-            : 'https://device-control.liara.run/api/transport/request/$requestId/rate';
+            ? '$baseUrl5/transport/request/$requestId/confirm'
+            : '$baseUrl5/transport/request/$requestId/rate';
         print('Trying alternative endpoint: $altUrl');
 
         response = await http.post(
@@ -525,7 +525,7 @@ class _TransportRequestDetailScreenState
       await SessionManager().onNetworkRequest();
 
       final url =
-          'https://device-control.liara.run/api/transport/request/$requestId/confirm';
+          '$baseUrl5/transport/request/$requestId/confirm';
 
       final requestBody = <String, dynamic>{};
       if (result['grade'] != null) {

@@ -75,7 +75,7 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        Uri.parse('https://device-control.liara.run/api/transport/task?ts=$ts'),
+        Uri.parse('$baseUrl5/transport/task?ts=$ts'),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',

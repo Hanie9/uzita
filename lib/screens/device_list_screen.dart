@@ -974,99 +974,97 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   Widget _buildEmptyState() {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    return SingleChildScrollView(
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark
-                        ? [Colors.grey[850]!, Colors.grey[800]!]
-                        : [Colors.grey[100]!, Colors.grey[200]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [Colors.grey[850]!, Colors.grey[800]!]
+                      : [Colors.grey[100]!, Colors.grey[200]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(60),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.4)
+                        : Colors.grey.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
                   ),
-                  borderRadius: BorderRadius.circular(60),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withValues(alpha: 0.4)
-                          : Colors.grey.withValues(alpha: 0.2),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.devices_other,
-                  size: 60,
-                  color: isDark ? Colors.grey[500] : Colors.grey[400],
-                ),
+                ],
               ),
-              SizedBox(height: 24),
-              Text(
-                AppLocalizations.of(context)!.dls_no_devices,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.textTheme.titleLarge?.color,
-                ),
+              child: Icon(
+                Icons.devices_other,
+                size: 60,
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
               ),
-              SizedBox(height: 8),
-              Text(
-                AppLocalizations.of(context)!.dls_no_devices_description,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: theme.textTheme.bodyMedium?.color,
-                ),
-                textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24),
+            Text(
+              AppLocalizations.of(context)!.dls_no_devices,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.titleLarge?.color,
               ),
-              SizedBox(height: 24),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.lapisLazuli, AppColors.lapisLazuli],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+            ),
+            SizedBox(height: 8),
+            Text(
+              AppLocalizations.of(context)!.dls_no_devices_description,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.textTheme.bodyMedium?.color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.lapisLazuli, AppColors.lapisLazuli],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.lapisLazuli.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.lapisLazuli.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: fetchDevices,
-                  icon: Icon(Icons.refresh, color: Colors.white),
-                  label: Text(
-                    AppLocalizations.of(context)!.dls_retry,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: fetchDevices,
+                icon: Icon(Icons.refresh, color: Colors.white),
+                label: Text(
+                  AppLocalizations.of(context)!.dls_retry,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1556,7 +1554,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                   ),
                                 )
                               else if (devices.isEmpty)
-                                _buildEmptyState()
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.6,
+                                  child: _buildEmptyState(),
+                                )
                               else
                                 ...devices.map(
                                   (device) => _buildDeviceCard(device),

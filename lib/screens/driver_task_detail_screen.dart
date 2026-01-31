@@ -50,8 +50,8 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final url = widget.isReport
-          ? 'https://device-control.liara.run/api/transport/report?ts=$ts'
-          : 'https://device-control.liara.run/api/transport/task?ts=$ts';
+          ? '$baseUrl5/transport/report?ts=$ts'
+          : '$baseUrl5/transport/task?ts=$ts';
 
       final response = await http.get(
         Uri.parse(url),
@@ -212,7 +212,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
       // Confirm task with report
       final url =
-          'https://device-control.liara.run/api/transport/task/$taskId/confirm';
+          '$baseUrl5/transport/task/$taskId/confirm';
       
       final requestBody = <String, dynamic>{'report': report};
 

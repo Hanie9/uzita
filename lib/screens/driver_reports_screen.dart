@@ -76,7 +76,7 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
         Uri.parse(
-          'https://device-control.liara.run/api/transport/report?ts=$ts',
+          '$baseUrl5/transport/report?ts=$ts',
         ),
         headers: {
           'Authorization': 'Bearer $token',

@@ -206,10 +206,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (userLevel == 4) {
         // Technician missions
-        apiUrl = 'https://device-control.liara.run/api/technician/tasks?ts=$ts';
+        apiUrl = '$baseUrl5/technician/tasks?ts=$ts';
       } else if (userLevel == 5) {
         // Driver missions
-        apiUrl = 'https://device-control.liara.run/api/transport/task?ts=$ts';
+        apiUrl = '$baseUrl5/transport/task?ts=$ts';
       } else {
         return;
       }

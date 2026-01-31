@@ -81,7 +81,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
         Uri.parse(
-          'https://device-control.liara.run/api/technician/tasks?ts=$ts',
+          '$baseUrl5/technician/tasks?ts=$ts',
         ),
         headers: {
           'Authorization': 'Bearer $token',
