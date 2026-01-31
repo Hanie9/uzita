@@ -101,9 +101,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logouzita.png"
+  image_path: "assets/biokaveh.png"
   web:
     generate: true
-    image_path: "assets/logouzita.png"
+    image_path: "assets/biokaveh.png"
     background_color: "#ffffff"
     theme_color: "#0175C2"
