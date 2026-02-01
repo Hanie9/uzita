@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider with ChangeNotifier {
@@ -22,10 +21,54 @@ class SettingsProvider with ChangeNotifier {
     final ThemeData baseTheme = _darkModeEnabled ? darkTheme : lightTheme;
     final bool isFarsi = _selectedLanguage != 'en';
 
-    // Choose high-quality, web-friendly fonts for each language
-    final TextTheme themedText = isFarsi
-        ? GoogleFonts.vazirmatnTextTheme(baseTheme.textTheme)
-        : GoogleFonts.interTextTheme(baseTheme.textTheme);
+    // Use local fonts for each language
+    final TextTheme themedText = baseTheme.textTheme.copyWith(
+      displayLarge: baseTheme.textTheme.displayLarge?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      displayMedium: baseTheme.textTheme.displayMedium?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      displaySmall: baseTheme.textTheme.displaySmall?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      headlineLarge: baseTheme.textTheme.headlineLarge?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      headlineMedium: baseTheme.textTheme.headlineMedium?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      headlineSmall: baseTheme.textTheme.headlineSmall?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      titleLarge: baseTheme.textTheme.titleLarge?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      titleMedium: baseTheme.textTheme.titleMedium?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      titleSmall: baseTheme.textTheme.titleSmall?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      bodyLarge: baseTheme.textTheme.bodyLarge?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      bodyMedium: baseTheme.textTheme.bodyMedium?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      bodySmall: baseTheme.textTheme.bodySmall?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      labelLarge: baseTheme.textTheme.labelLarge?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      labelMedium: baseTheme.textTheme.labelMedium?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+      labelSmall: baseTheme.textTheme.labelSmall?.copyWith(
+        fontFamily: isFarsi ? 'Vazir' : 'Inter',
+      ),
+    );
 
     final RoundedRectangleBorder buttonShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
@@ -257,27 +300,10 @@ class SettingsProvider with ChangeNotifier {
     print('  - Text Size: $_textSize');
     print('  - Language: $_selectedLanguage');
 
-    // Preload web fonts so PWA renders with correct typography from first frame.
-    await _preloadFontsForSelectedLanguage();
+    // Local fonts are already loaded, no need to preload
     _isLoading = false;
     notifyListeners();
     print('DEBUG: [SettingsProvider] Settings loaded and listeners notified');
-  }
-
-  Future<void> _preloadFontsForSelectedLanguage() async {
-    try {
-      // Trigger font requests for the selected language and await readiness.
-      final bool isFarsi = _selectedLanguage != 'en';
-      if (isFarsi) {
-        // Request creation triggers the font load via google_fonts on web.
-        GoogleFonts.vazirmatn();
-      } else {
-        GoogleFonts.inter();
-      }
-      await GoogleFonts.pendingFonts();
-    } catch (e) {
-      debugPrint('DEBUG: [SettingsProvider] Font preload skipped: $e');
-    }
   }
 
   Future<void> setDarkMode(bool value) async {
@@ -307,10 +333,7 @@ class SettingsProvider with ChangeNotifier {
       // Update the language without triggering a full rebuild
       _selectedLanguage = language;
 
-      // Preload fonts for the newly selected language to avoid visual swaps
-      // during the next frame. We do not block UI; fire-and-forget.
-      // Ignore result; any failure falls back to default fonts.
-      _preloadFontsForSelectedLanguage();
+      // Local fonts are already loaded, no need to preload
 
       // Only notify listeners after the SharedPreferences update is complete
       notifyListeners();

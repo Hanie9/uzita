@@ -50,7 +50,6 @@ dependencies:
   permission_handler: ^11.3.1
   image_picker: ^1.1.2
   file_picker: ^8.0.6
-  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -95,6 +94,32 @@ flutter:
     - family: Nasalization
       fonts:
         - asset: assets/fonts/Nasalization.otf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/InterFont/Inter Regular.otf
+        - asset: assets/fonts/InterFont/Inter Bold.otf
+          weight: 700
+        - asset: assets/fonts/InterFont/Inter Light.otf
+          weight: 300
+        - asset: assets/fonts/InterFont/Inter Medium.otf
+          weight: 500
+        - asset: assets/fonts/InterFont/Inter SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/InterFont/Inter ExtraBold.otf
+          weight: 800
+        - asset: assets/fonts/InterFont/Inter Black.otf
+          weight: 900
+    - family: Vazir
+      fonts:
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir.ttf
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Light.ttf
+          weight: 300
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/vazir-font-v16.1.0/Vazir-Thin.ttf
+          weight: 100
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
