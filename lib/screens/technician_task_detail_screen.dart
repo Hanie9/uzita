@@ -42,7 +42,7 @@ class _TechnicianTaskDetailScreenState
   final _reportFormKey = GlobalKey<FormState>();
   final _reportController = TextEditingController();
 
-  List<String> pieceOptions = List<String>.from(kDefaultPieceOptions);
+  List<String> pieceOptions = [];
 
   @override
   void initState() {
@@ -73,7 +73,7 @@ class _TechnicianTaskDetailScreenState
 
       await SessionManager().onNetworkRequest();
       final response = await http.get(
-        Uri.parse('$baseUrl5/listpieces/'),
+        Uri.parse('$baseUrl5/listpieces'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -94,10 +94,10 @@ class _TechnicianTaskDetailScreenState
         }
       }
     } catch (e) {
-      // If API fails, keep default pieces
+      // If API fails, keep empty list - pieces will be loaded from API only
       if (mounted) {
         setState(() {
-          pieceOptions = List<String>.from(kDefaultPieceOptions);
+          pieceOptions = [];
         });
       }
     }
@@ -292,8 +292,7 @@ class _TechnicianTaskDetailScreenState
 
       await SessionManager().onNetworkRequest();
 
-      final url =
-          '$baseUrl5/technician/$taskId/time-select';
+      final url = '$baseUrl5/technician/$taskId/time-select';
       print('Sending POST request to: $url');
 
       final response = await http.post(
@@ -384,8 +383,7 @@ class _TechnicianTaskDetailScreenState
 
       await SessionManager().onNetworkRequest();
 
-      final url =
-          '$baseUrl5/technician/$taskId/check-task';
+      final url = '$baseUrl5/technician/$taskId/check-task';
       print('Sending POST request to: $url');
 
       final requestBody = <String, dynamic>{
@@ -484,8 +482,7 @@ class _TechnicianTaskDetailScreenState
 
       await SessionManager().onNetworkRequest();
 
-      final url =
-          '$baseUrl5/technician/tasks/$taskId/confirm';
+      final url = '$baseUrl5/technician/tasks/$taskId/confirm';
       print('Sending POST request to: $url');
 
       final response = await http.post(
@@ -1112,10 +1109,19 @@ class _TechnicianTaskDetailScreenState
                                 ),
                               ),
                             ),
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
+                            ),
                             items: pieceOptions.map((String part) {
                               return DropdownMenuItem<String>(
                                 value: part,
-                                child: Text(part),
+                                child: Text(
+                                  part,
+                                  style: TextStyle(fontSize: 18),
+                                ),
                               );
                             }).toList(),
                             onChanged: (String? newValue) {

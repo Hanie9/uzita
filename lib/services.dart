@@ -24,12 +24,3 @@ final String baseUrl5 = apiBaseUrl;
 const double kSpacing = 20.0;
 const double kRadius = 16.0;
 const double kIconSize = 28.0;
-
-/// Shared default list of available pieces for technician and transport requests.
-const List<String> kDefaultPieceOptions = <String>[
-  'part1',
-  'part2',
-  'part3',
-  'part4',
-  'part5',
-];

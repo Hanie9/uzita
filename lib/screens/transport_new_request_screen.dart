@@ -25,8 +25,8 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   final _phoneController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  // Shared list of available parts (same as technician/service)
-  List<String> _availablePieces = List<String>.from(kDefaultPieceOptions);
+  // Shared list of available parts (loaded from API)
+  List<String> _availablePieces = [];
 
   final List<String> _selectedPieces = <String>[];
 
@@ -47,7 +47,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
 
       await SessionManager().onNetworkRequest();
       final response = await http.get(
-        Uri.parse('$baseUrl5/listpieces/'),
+        Uri.parse('$baseUrl5/listpieces'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -68,10 +68,10 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
         }
       }
     } catch (e) {
-      // If API fails, keep default pieces
+      // If API fails, keep empty list - pieces will be loaded from API only
       if (mounted) {
         setState(() {
-          _availablePieces = List<String>.from(kDefaultPieceOptions);
+          _availablePieces = [];
         });
       }
     }
@@ -265,7 +265,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                           final bool isChecked = tempSelected.contains(piece);
                           return CheckboxListTile(
                             value: isChecked,
-                            title: Text(piece),
+                            title: Text(piece, style: TextStyle(fontSize: 18)),
                             onChanged: (checked) {
                               modalSetState(() {
                                 if (checked == true) {
@@ -488,7 +488,14 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               : _selectedPieces
                                     .map(
                                       (p) => Chip(
-                                        label: Text(p),
+                                        label: Text(
+                                          p,
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                        labelPadding: EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
                                         onDeleted: () {
                                           setState(() {
                                             _selectedPieces.remove(p);
