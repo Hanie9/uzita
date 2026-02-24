@@ -184,8 +184,8 @@ class _UserListScreenState extends State<UserListScreen> {
     });
 
     // Handle navigation based on user level
-    if (userLevel == 2) {
-      // Service provider navigation: Home (0), Profile (1), Services (2)
+    if (userLevel == 1) {
+      // Service team lead navigation: Home (0), Profile (1), Missions (2), Users (4)
       switch (index) {
         case 0: // Home
           Navigator.pushReplacementNamed(context, '/home');
@@ -193,8 +193,19 @@ class _UserListScreenState extends State<UserListScreen> {
         case 1: // Profile
           Navigator.pushReplacementNamed(context, '/profile');
           break;
-        case 2: // Services
-          Navigator.pushReplacementNamed(context, '/service-provider-services');
+        case 2: // Missions (organization tasks)
+          Navigator.pushReplacementNamed(
+            context,
+            '/technician-reports',
+          );
+          break;
+        case 3: // Reports
+          Navigator.pushReplacementNamed(
+            context,
+            '/technician-organ-tasks',
+          );
+          break;
+        case 4: // Users - already here
           break;
       }
     } else {

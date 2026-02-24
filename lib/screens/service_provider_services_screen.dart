@@ -27,6 +27,7 @@ class _ServiceProviderServicesScreenState
   bool isLoading = true;
   int selectedNavIndex = 2; // Services tab index for level 2 users
   int userLevel = 2;
+  String organType = '';
   late TabController _tabController;
 
   @override
@@ -40,6 +41,7 @@ class _ServiceProviderServicesScreenState
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       userLevel = prefs.getInt('level') ?? 2;
+      organType = (prefs.getString('organ_type') ?? '').toLowerCase();
     });
     fetchServices();
   }
@@ -159,6 +161,9 @@ class _ServiceProviderServicesScreenState
         break;
       case 2: // Services - already here
         break;
+      case 4: // Users
+        Navigator.pushReplacementNamed(context, '/users');
+        break;
     }
   }
 
@@ -177,7 +182,7 @@ class _ServiceProviderServicesScreenState
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight + 48),
+        preferredSize: Size.fromHeight(kToolbarHeight + 96),
         child: Container(
           color: Theme.of(context).appBarTheme.backgroundColor,
           child: SafeArea(

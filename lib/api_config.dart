@@ -11,7 +11,7 @@ String _computeApiBaseUrl() {
   // Default to public API domain (requires CORS if different origin)
   return const String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://91.92.214.193:4033/api',
+    defaultValue: 'https://device-control.liara.run/api',
   );
 }
 

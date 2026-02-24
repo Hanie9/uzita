@@ -21,6 +21,7 @@ import 'package:uzita/screens/driver_public_loads_screen.dart';
 import 'package:uzita/screens/driver_missions_screen.dart';
 import 'package:uzita/screens/driver_reports_screen.dart';
 import 'package:uzita/screens/driver_task_detail_screen.dart';
+import 'package:uzita/screens/technician_organ_tasks_screen.dart';
 import 'dart:async';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/app_localizations.dart';
@@ -167,6 +168,8 @@ class _MyAppState extends State<MyApp> {
             '/profile': (context) => ProfileScreen(),
             '/service-provider-services': (context) =>
                 ServiceProviderServicesScreen(),
+            '/technician-organ-tasks': (context) =>
+                const TechnicianOrganTasksScreen(),
             '/service-provider-service-detail': (context) {
               final service =
                   ModalRoute.of(context)!.settings.arguments

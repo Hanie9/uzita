@@ -10,12 +10,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/screens/home_screen.dart';
-import 'package:uzita/main.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/screens/user_register_screen.dart';
 import 'package:uzita/screens/admin_register_screen.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/api_config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final enteredPassword = passwordController.text; // do not trim passwords
 
       final response = await http.post(
-        Uri.parse('$baseUrl/login/'),
+        Uri.parse('$apiBaseUrl/login/'),
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
         try {
           final ts = DateTime.now().millisecondsSinceEpoch;
           final userDataResponse = await http.get(
-            Uri.parse('$baseUrl/load_data_user/?ts=$ts'),
+            Uri.parse('$apiBaseUrl/load_data_user/?ts=$ts'),
             headers: {
               'Authorization': 'Bearer ${data['token']}',
               'Cache-Control': 'no-cache',
@@ -213,13 +213,17 @@ class _LoginScreenState extends State<LoginScreen> {
             final returnedUsername = (userData['user']?['username'] ?? '')
                 .toString();
 
-            // Store user level, active status, modir flag, and is_warehouse
+            // Store user level, active status, modir flag, is_warehouse and organ_type
             await prefs.setInt('level', userData['level'] ?? 3);
             await prefs.setBool('active', userData['active'] ?? false);
             await prefs.setBool('modir', userData['modir'] ?? false);
             await prefs.setBool(
               'is_warehouse',
               userData['is_warehouse'] ?? false,
+            );
+            await prefs.setString(
+              'organ_type',
+              (userData['organ_type'] ?? '').toString(),
             );
             await prefs.setString('username', returnedUsername);
 
@@ -249,12 +253,14 @@ class _LoginScreenState extends State<LoginScreen> {
             await prefs.setInt('level', 3);
             await prefs.setBool('active', false);
             await prefs.setBool('modir', false);
+            await prefs.setString('organ_type', '');
           }
         } catch (e) {
           // Set defaults if user data fetch fails
           await prefs.setInt('level', 3);
           await prefs.setBool('active', false);
           await prefs.setBool('modir', false);
+          await prefs.setString('organ_type', '');
         }
 
         // Mark login time for session TTL

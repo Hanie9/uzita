@@ -11,6 +11,7 @@ import 'package:uzita/services.dart';
 import 'package:uzita/wifi.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedAppDrawer extends StatelessWidget {
   final String username;
@@ -31,6 +32,68 @@ class SharedAppDrawer extends StatelessWidget {
     required this.logout,
     required this.userActive,
   });
+
+  // Builds the "Services" tile conditionally based on user role and organ_type.
+  // For any user whose organ_type is 'technician', this tile must be hidden.
+  Widget _buildServicesTile({
+    required BuildContext context,
+    required double leadingWidth,
+    required double iconSize,
+    required EdgeInsetsGeometry tilePadding,
+    required double tileMinVerticalPad,
+    required double horizontalTitleGap,
+    required bool useDense,
+    required double verticalDensity,
+    required int userLevel,
+    required bool userModir,
+  }) {
+    final localizations = AppLocalizations.of(context)!;
+
+    // Only level 1 + modir users are candidates to see "Services"
+    if (userLevel != 1 || !userModir) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder<SharedPreferences>(
+      future: SharedPreferences.getInstance(),
+      builder: (BuildContext ctx, AsyncSnapshot<SharedPreferences> snap) {
+        final String organType =
+            (snap.data?.getString('organ_type') ?? '').toLowerCase();
+        final bool isTechnicianOrgan = organType == 'technician';
+
+        if (isTechnicianOrgan) {
+          // For technician organizations, hide Services in drawer
+          return const SizedBox.shrink();
+        }
+
+        return ListTile(
+          minLeadingWidth: leadingWidth,
+          leading: Icon(
+            Icons.settings_outlined,
+            size: iconSize,
+          ),
+          title: Text(
+            localizations.shareddrawer_services,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          contentPadding: tilePadding,
+          minVerticalPadding: tileMinVerticalPad,
+          horizontalTitleGap: horizontalTitleGap,
+          dense: useDense,
+          visualDensity: VisualDensity(
+            vertical: verticalDensity,
+          ),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ServiceListScreen(),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _confirmLogout(BuildContext context) async {
     final theme = Theme.of(context);
@@ -378,32 +441,19 @@ class SharedAppDrawer extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (userLevel == 1)
-                          ListTile(
-                            minLeadingWidth: leadingWidth,
-                            leading: Icon(
-                              Icons.settings_outlined,
-                              size: iconSize,
-                            ),
-                            title: Text(
-                              localizations.shareddrawer_services,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            contentPadding: tilePadding,
-                            minVerticalPadding: tileMinVerticalPad,
-                            horizontalTitleGap: horizontalTitleGap,
-                            dense: useDense,
-                            visualDensity: VisualDensity(
-                              vertical: verticalDensity,
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ServiceListScreen(),
-                              ),
-                            ),
-                          ),
+                        // Services – only for real service owners (userLevel 1, modir true, organ_type != technician)
+                        _buildServicesTile(
+                          context: context,
+                          leadingWidth: leadingWidth,
+                          iconSize: iconSize,
+                          tilePadding: tilePadding,
+                          tileMinVerticalPad: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          useDense: useDense,
+                          verticalDensity: verticalDensity,
+                          userLevel: userLevel,
+                          userModir: userModir,
+                        ),
                         if (userLevel == 1 ||
                             userLevel == 2 ||
                             userLevel == 4 ||

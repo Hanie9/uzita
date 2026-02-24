@@ -9,7 +9,6 @@ import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'dart:convert';
-import 'dart:convert' show utf8;
 
 class TechnicianTaskDetailScreen extends StatefulWidget {
   final Map<String, dynamic> task;
@@ -604,6 +603,12 @@ class _TechnicianTaskDetailScreenState
     final ui = UiScale(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
+    // If the task comes from the organization assignment list (سرگروه تکنسین),
+    // only the basic task information should be shown – without visit date
+    // selection, check-task form, or report submission steps.
+    final bool isFromOrganAssignList =
+        widget.task['from_organ_assign_list'] == true;
+
     final title = widget.task['title'] ?? '---';
     final description = widget.task['description'] ?? '---';
     final createdAt = widget.task['created_at'] ?? '';
@@ -924,7 +929,9 @@ class _TechnicianTaskDetailScreenState
                 SizedBox(height: 20),
 
                 // Step 1: First Visit Date
-                if (!firstVisitDateSet && !isConfirmed)
+                if (!isFromOrganAssignList &&
+                    !firstVisitDateSet &&
+                    !isConfirmed)
                   Container(
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -1039,7 +1046,10 @@ class _TechnicianTaskDetailScreenState
                   ),
 
                 // Step 2: Check Task Form
-                if (firstVisitDateSet && !checkTaskSubmitted && !isConfirmed)
+                if (!isFromOrganAssignList &&
+                    firstVisitDateSet &&
+                    !checkTaskSubmitted &&
+                    !isConfirmed)
                   Container(
                     padding: EdgeInsets.all(20),
                     margin: EdgeInsets.only(top: 20),
@@ -1346,7 +1356,10 @@ class _TechnicianTaskDetailScreenState
                   ),
 
                 // Display submitted check task information
-                if (firstVisitDateSet && checkTaskSubmitted && !isConfirmed)
+                if (!isFromOrganAssignList &&
+                    firstVisitDateSet &&
+                    checkTaskSubmitted &&
+                    !isConfirmed)
                   Container(
                     padding: EdgeInsets.all(20),
                     margin: EdgeInsets.only(top: 20),
@@ -1433,7 +1446,10 @@ class _TechnicianTaskDetailScreenState
 
                 // Step 3: Report and Final Confirmation
                 // Only show when first visit date is set AND check task is submitted AND not yet confirmed
-                if (firstVisitDateSet && checkTaskSubmitted && !isConfirmed)
+                if (!isFromOrganAssignList &&
+                    firstVisitDateSet &&
+                    checkTaskSubmitted &&
+                    !isConfirmed)
                   Container(
                     padding: EdgeInsets.all(20),
                     margin: EdgeInsets.only(top: 20),

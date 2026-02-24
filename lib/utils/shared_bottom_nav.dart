@@ -47,7 +47,7 @@ class SharedBottomNavigation extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: userLevel == 4
+        children: (userLevel == 4 || userLevel == 2)
             ? isRTL
                   ? [
                       // For level 4 users (technicians) in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)
@@ -255,59 +255,89 @@ class SharedBottomNavigation extends StatelessWidget {
                         onTap: () => onItemTapped(3),
                       ),
                     ]
-            : userLevel == 2
+            : userLevel == 1
             ? isRTL
-                  ? [
-                      // For level 2 users (service providers) in RTL: Profile (leftmost), Services, Home
-                      _buildNavItem(
-                        icon: Icons.person,
-                        label: localizations.nav_profile,
-                        isActive: selectedIndex == 1,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(1),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.build_circle,
-                        label: localizations.nav_services,
-                        isActive: selectedIndex == 2,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(2),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.home,
-                        label: localizations.nav_home,
-                        isActive: selectedIndex == 0,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(0),
-                      ),
-                    ]
-                  : [
-                      // For level 2 users (service providers) in LTR: Home, Services, Profile (rightmost)
-                      _buildNavItem(
-                        icon: Icons.home,
-                        label: localizations.nav_home,
-                        isActive: selectedIndex == 0,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(0),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.build_circle,
-                        label: localizations.nav_services,
-                        isActive: selectedIndex == 2,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(2),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.person,
-                        label: localizations.nav_profile,
-                        isActive: selectedIndex == 1,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(1),
-                      ),
-                    ]
+                ? [
+                    // For level 1 users (service team lead) in RTL:
+                    // Profile, Users, Home, Reports, Missions
+                    _buildNavItem(
+                      icon: Icons.person,
+                      label: localizations.nav_profile,
+                      isActive: selectedIndex == 1,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(1),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.people,
+                      label: localizations.nav_users,
+                      isActive: selectedIndex == 4,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(4),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.home,
+                      label: localizations.nav_home,
+                      isActive: selectedIndex == 0,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(0),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.list_alt,
+                      label: localizations.nav_reports,
+                      isActive: selectedIndex == 2,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(2),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.assignment,
+                      label: localizations.nav_missions,
+                      isActive: selectedIndex == 3,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(3),
+                    ),
+                  ]
+                : [
+                    // For level 1 users (service team lead) in LTR:
+                    // Missions, Reports, Home, Users, Profile
+                    _buildNavItem(
+                      icon: Icons.assignment,
+                      label: localizations.nav_missions,
+                      isActive: selectedIndex == 3,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(3),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.list_alt,
+                      label: localizations.nav_reports,
+                      isActive: selectedIndex == 2,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(2),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.home,
+                      label: localizations.nav_home,
+                      isActive: selectedIndex == 0,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(0),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.people,
+                      label: localizations.nav_users,
+                      isActive: selectedIndex == 4,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(4),
+                    ),
+                    _buildNavItem(
+                      icon: Icons.person,
+                      label: localizations.nav_profile,
+                      isActive: selectedIndex == 1,
+                      color: AppColors.lapisLazuli,
+                      onTap: () => onItemTapped(1),
+                    ),
+                  ]
             : isRTL
             ? [
-                // For level 1 users in RTL: Profile (leftmost), Users, Home, Reports, Devices
+                // For other privileged users in RTL: Profile (leftmost), Users (if level < 3), Home, Reports, Devices
                 _buildNavItem(
                   icon: Icons.person,
                   label: localizations.nav_profile,
@@ -348,7 +378,7 @@ class SharedBottomNavigation extends StatelessWidget {
                 ),
               ]
             : [
-                // For level 1 users in LTR: Devices, Reports, Home, Users, Profile (rightmost)
+                // For other privileged users in LTR: Devices, Reports, Home, Users (if level < 3), Profile (rightmost)
                 _buildNavItem(
                   icon: Icons.devices,
                   label: localizations.nav_devices,

@@ -371,8 +371,8 @@ class _CommandListScreenState extends State<CommandListScreen> {
     });
 
     // Handle navigation based on user level
-    if (userLevel == 2) {
-      // Service provider navigation: Home (0), Profile (1), Services (2)
+    if (userLevel == 1) {
+      // Service team lead navigation: Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
           Navigator.pushReplacementNamed(context, '/home');
@@ -380,27 +380,39 @@ class _CommandListScreenState extends State<CommandListScreen> {
         case 1: // Profile
           Navigator.pushReplacementNamed(context, '/profile');
           break;
-        case 2: // Services
-          Navigator.pushReplacementNamed(context, '/service-provider-services');
+        case 2: // Reports
+          Navigator.pushReplacementNamed(
+            context,
+            '/technician-reports',
+          );
+          break;
+        case 3: // Missions (organization tasks)
+          Navigator.pushReplacementNamed(
+            context,
+            '/technician-organ-tasks',
+          );
+          break;
+        case 4: // Users
+          Navigator.pushReplacementNamed(context, '/users');
           break;
       }
     } else {
       // Original navigation for other user levels
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1: // Devices
-        Navigator.pushReplacementNamed(context, '/devices');
-        break;
-      case 2: // Reports - already here
-        break;
-      case 3: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-      case 4: // Users
-        Navigator.pushReplacementNamed(context, '/users');
-        break;
+      switch (index) {
+        case 0: // Home
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 1: // Devices
+          Navigator.pushReplacementNamed(context, '/devices');
+          break;
+        case 2: // Reports - already here
+          break;
+        case 3: // Profile
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 4: // Users
+          Navigator.pushReplacementNamed(context, '/users');
+          break;
       }
     }
   }

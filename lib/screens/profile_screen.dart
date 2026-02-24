@@ -31,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int userLevel = 3;
   bool isLoading = true;
   bool userActive = false;
+  String organType = '';
   int selectedNavIndex = 3;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -72,11 +73,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       username = prefs.getString('username') ?? '';
       userLevel = prefs.getInt('level') ?? 3;
       userActive = prefs.getBool('active') ?? false;
+      organType = (prefs.getString('organ_type') ?? '').toLowerCase();
       // Set correct selectedNavIndex based on user level
-      if (userLevel == 4) {
-        selectedNavIndex = 1; // Profile is index 1 for level 4 users
-      } else if (userLevel == 2) {
-        selectedNavIndex = 1; // Profile is index 1 for level 2 users
+      if (userLevel == 4 || userLevel == 2 || userLevel == 1) {
+        // Profile index is 1 for technicians (2,4) and service lead (1)
+        selectedNavIndex = 1;
       } else if (userLevel == 5) {
         selectedNavIndex = 4; // Profile is index 4 for level 5 users (drivers)
       } else {
@@ -624,7 +625,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     // Handle navigation based on selected index and user level
-    if (userLevel == 4) {
+    if (userLevel == 4 || userLevel == 2) {
       // Technician navigation: Home (0), Profile (1), Reports (2), Missions (3)
       switch (index) {
         case 0: // Home
@@ -645,8 +646,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
           break;
       }
-    } else if (userLevel == 2) {
-      // Service provider navigation: Home (0), Profile (1), Services (2)
+    } else if (userLevel == 1 && organType == 'technician') {
+      // Service team lead (technician) navigation:
+      // Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
           if (ModalRoute.of(context)?.settings.name != '/home') {
@@ -655,13 +657,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           break;
         case 1: // Profile - already here
           break;
-        case 2: // Services
+        case 2: // Reports
           if (ModalRoute.of(context)?.settings.name !=
-              '/service-provider-services') {
+              '/technician-reports') {
             Navigator.pushReplacementNamed(
               context,
-              '/service-provider-services',
+              '/technician-reports',
             );
+          }
+          break;
+        case 3: // Missions (organization tasks)
+          if (ModalRoute.of(context)?.settings.name !=
+              '/technician-organ-tasks') {
+            Navigator.pushReplacementNamed(
+              context,
+              '/technician-organ-tasks',
+            );
+          }
+          break;
+        case 4: // Users
+          if (ModalRoute.of(context)?.settings.name != '/users') {
+            Navigator.pushReplacementNamed(context, '/users');
           }
           break;
       }
@@ -884,8 +900,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: AppLocalizations.of(context)!.pro_loading_profile,
                 ),
               )
-            : userActive
-            ? RefreshIndicator(
+            : RefreshIndicator(
                 onRefresh: _fetchProfile,
                 color: AppColors.lapisLazuli,
                 child: SingleChildScrollView(
@@ -1292,8 +1307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-              )
-            : _buildInactiveState(),
+              ),
         bottomNavigationBar: SharedBottomNavigation(
           selectedIndex: selectedNavIndex,
           userLevel: userLevel,
@@ -1303,93 +1317,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Inactive state for level 3 users
-  Widget _buildInactiveState() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Icon(
-                Icons.person_off_outlined,
-                size: 64,
-                color: AppColors.lapisLazuli,
-              ),
-            ),
-
-            SizedBox(height: 24),
-
-            // Title
-            Text(
-              AppLocalizations.of(context)!.pro_waiting_for_activation,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.titleLarge?.color,
-              ),
-            ),
-
-            SizedBox(height: 12),
-
-            // Description
-            Text(
-              AppLocalizations.of(
-                context,
-              )!.pro_waiting_for_activation_description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-                height: 1.5,
-              ),
-            ),
-
-            SizedBox(height: 32),
-
-            // Contact Admin Button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context)!.pro_contact_admin,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      backgroundColor: AppColors.lapisLazuli,
-                    ),
-                  );
-                },
-                icon: Icon(Icons.support_agent, size: 20),
-                label: Text(
-                  AppLocalizations.of(context)!.pro_contact_admin_button,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.lapisLazuli,
-                  side: BorderSide(color: AppColors.lapisLazuli, width: 2),
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // Key-Value row for details
   Widget _kvRow(String keyLabel, String value) {

@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/screens/command_list_screen.dart';
-import 'package:uzita/screens/device_list_screen.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/main.dart';
 import 'package:uzita/screens/settings_screen.dart';
@@ -129,9 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (response.statusCode == 403) {
         // Permission denied
         if (userLevel >= 3 && mounted) {
+          // For level 3+ (مثلاً کاربر عادی)، فقط خود کاربر را به‌عنوان ۱ نفر فعال در نظر بگیر
           setState(() => onlineUserCount = 1);
-        } else if (mounted) {
-          // Admin/representative: keep previous count and show a hint
+        } else if (userLevel == 1 && mounted) {
+          // فقط برای ادمین / نماینده سازمان پیام هشدار نشان بده
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.home_access_denies),
@@ -719,7 +719,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Handle navigation based on selected index and user level
-    if (userLevel == 4) {
+    if (userLevel == 4 || userLevel == 2) {
       // Technician navigation: Home (0), Profile (1), Reports (2), Missions (3)
       switch (index) {
         case 0: // Home
@@ -741,8 +741,8 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           break;
       }
-    } else if (userLevel == 2) {
-      // Service provider navigation: Home (0), Profile (1), Services (2)
+    } else if (userLevel == 1) {
+      // Service team lead navigation: Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
           if (ModalRoute.of(context)?.settings.name != '/home') {
@@ -752,13 +752,27 @@ class _HomeScreenState extends State<HomeScreen> {
         case 1: // Profile
           Navigator.pushReplacementNamed(context, '/profile');
           break;
-        case 2: // Services
+        case 2: // Reports
           if (ModalRoute.of(context)?.settings.name !=
-              '/service-provider-services') {
+              '/technician-reports') {
             Navigator.pushReplacementNamed(
               context,
-              '/service-provider-services',
+              '/technician-reports',
             );
+          }
+          break;
+        case 3: // Missions (organization tasks)
+          if (ModalRoute.of(context)?.settings.name !=
+              '/technician-organ-tasks') {
+            Navigator.pushReplacementNamed(
+              context,
+              '/technician-organ-tasks',
+            );
+          }
+          break;
+        case 4: // Users
+          if (ModalRoute.of(context)?.settings.name != '/users') {
+            Navigator.pushReplacementNamed(context, '/users');
           }
           break;
       }
@@ -1497,30 +1511,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Navigation Cards
                                   Column(
                                     children: [
-                                      // Device list - hidden for level 4 and 5 (driver)
-                                      if (userLevel != 4 && userLevel != 5)
-                                        _buildNavigationCard(
-                                          icon: SvgPicture.asset(
-                                            'assets/icons/device.svg',
-                                            width: 24,
-                                            height: 24,
-                                          ),
-                                          iconColor: Colors.transparent,
-                                          title: AppLocalizations.of(
-                                            context,
-                                          )!.home_device_list,
-                                          subtitle: AppLocalizations.of(
-                                            context,
-                                          )!.home_device_list_description,
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  DeviceListScreen(),
-                                            ),
-                                          ),
-                                        ),
-                                      if (userLevel != 4) SizedBox(height: 12),
                                       // User list - only for level 1 and 2
                                       if (userLevel == 1 || userLevel == 2)
                                         _buildNavigationCard(

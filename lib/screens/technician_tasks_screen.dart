@@ -269,16 +269,18 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
           ),
         ),
       ),
-      body: Directionality(
-        textDirection:
-            Provider.of<SettingsProvider>(
-                  context,
-                  listen: false,
-                ).selectedLanguage ==
-                'en'
-            ? TextDirection.ltr
-            : TextDirection.rtl,
-          child: Column(
+      body: !userActive
+          ? _buildInactiveState()
+          : Directionality(
+              textDirection:
+                  Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).selectedLanguage ==
+                      'en'
+                  ? TextDirection.ltr
+                  : TextDirection.rtl,
+              child: Column(
             children: [
               // Blue header box
               Container(
@@ -474,7 +476,10 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                         );
                       },
                       child: Container(
-                        margin: EdgeInsets.only(bottom: 12),
+                        margin: EdgeInsets.symmetric(
+                          horizontal: kSpacing / 2,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardTheme.color,
                           borderRadius: BorderRadius.circular(16),
@@ -713,7 +718,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
               ),
             ],
               ),
-      ),
+              ),
       drawer: SharedAppDrawer(
         username: username,
         userRoleTitle: userRoleTitle,
@@ -765,6 +770,93 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
         userLevel: userLevel,
         onItemTapped: _onNavItemTapped,
       ),
+      ),
+    );
+  }
+
+  // Inactive state (for users whose account is not active)
+  Widget _buildInactiveState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Icon(
+                Icons.support_agent_outlined,
+                size: 64,
+                color: AppColors.lapisLazuli,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Title
+            Text(
+              AppLocalizations.of(context)!.tls_waiting_for_activation,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Description
+            Text(
+              AppLocalizations.of(context)!
+                  .tls_waiting_for_activation_description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Contact Admin Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context)!.tls_contact_admin,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: AppColors.lapisLazuli,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.support_agent, size: 20),
+                label: Text(
+                  AppLocalizations.of(context)!.tls_contact_admin_button,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.lapisLazuli,
+                  side: const BorderSide(
+                    color: AppColors.lapisLazuli,
+                    width: 2,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
