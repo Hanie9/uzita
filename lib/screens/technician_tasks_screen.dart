@@ -439,13 +439,12 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                 color: AppColors.lapisLazuli,
                 child: ListView.builder(
                   padding: EdgeInsets.only(
-                    left: kSpacing,
-                    right: kSpacing,
-                    top: kSpacing,
-                    bottom:
-                                kSpacing +
-                                MediaQuery.of(context).padding.bottom +
-                                20,
+                    left: ui.scale(base: 16, min: 12, max: 20),
+                    right: ui.scale(base: 16, min: 12, max: 20),
+                    top: ui.scale(base: 16, min: 12, max: 20),
+                    bottom: ui.scale(base: 16, min: 12, max: 20) +
+                        MediaQuery.of(context).padding.bottom +
+                        20,
                   ),
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
@@ -476,8 +475,8 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                         );
                       },
                       child: Container(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: kSpacing / 2,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 0,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(

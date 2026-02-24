@@ -7,12 +7,14 @@ class SharedBottomNavigation extends StatelessWidget {
   final int selectedIndex;
   final int userLevel;
   final Function(int) onItemTapped;
+  final String organType;
 
   const SharedBottomNavigation({
     super.key,
     required this.selectedIndex,
     required this.userLevel,
     required this.onItemTapped,
+    this.organType = '',
   });
 
   @override
@@ -255,7 +257,7 @@ class SharedBottomNavigation extends StatelessWidget {
                         onTap: () => onItemTapped(3),
                       ),
                     ]
-            : userLevel == 1
+            : (userLevel == 1 && organType == 'technician')
             ? isRTL
                 ? [
                     // For level 1 users (service team lead) in RTL:

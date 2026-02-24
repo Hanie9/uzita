@@ -42,6 +42,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
   String userRoleTitle = '';
   bool userModir = false;
   bool userActive = false;
+  String organType = '';
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -64,6 +65,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
       userLevel = prefs.getInt('level') ?? 3;
       userModir = prefs.getBool('modir') ?? false;
       userActive = prefs.getBool('active') ?? false;
+      organType = (prefs.getString('organ_type') ?? '').toLowerCase();
       userRoleTitle = _getUserRoleTitle(userLevel, userModir);
     });
   }
@@ -371,7 +373,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
     });
 
     // Handle navigation based on user level
-    if (userLevel == 1) {
+    if (userLevel == 1 && organType == 'technician') {
       // Service team lead navigation: Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
@@ -405,7 +407,12 @@ class _CommandListScreenState extends State<CommandListScreen> {
         case 1: // Devices
           Navigator.pushReplacementNamed(context, '/devices');
           break;
-        case 2: // Reports - already here
+        case 2: // Reports
+          if (userLevel == 3) {
+            Navigator.pushReplacementNamed(context, '/reports');
+          } else {
+            // For admins/privileged: this screen shows commands as reports
+          }
           break;
         case 3: // Profile
           Navigator.pushReplacementNamed(context, '/profile');
@@ -1603,6 +1610,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
           selectedIndex: selectedNavIndex,
           userLevel: userLevel,
           onItemTapped: _onNavItemTapped,
+          organType: organType,
         ),
       ),
     );

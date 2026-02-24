@@ -27,6 +27,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   bool isLoading = true;
   int selectedNavIndex = 2; // Reports tab index for level 4 users
   int userLevel = 4;
+  String organType = '';
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
@@ -44,6 +45,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     final bool isModir = prefs.getBool('modir') ?? false;
     setState(() {
       userLevel = prefs.getInt('level') ?? 4;
+      organType = (prefs.getString('organ_type') ?? '').toLowerCase();
       username = prefs.getString('username') ?? '';
       userActive = prefs.getBool('active') ?? true;
       if (isModir) {
@@ -140,7 +142,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     });
 
     // Technician / service-lead navigation from reports screen
-    if (userLevel == 1) {
+    if (userLevel == 1 && organType == 'technician') {
       // Service team lead: Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
@@ -158,6 +160,24 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
           );
           break;
         case 4: // Users
+          Navigator.pushReplacementNamed(context, '/users');
+          break;
+      }
+    } else if (userLevel == 1) {
+      // Level 1 non-technician: Devices (1), Reports (2), Home (0), Users (4), Profile (3)
+      switch (index) {
+        case 0:
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 1:
+          Navigator.pushReplacementNamed(context, '/devices');
+          break;
+        case 2: // Reports - already here
+          break;
+        case 3:
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+        case 4:
           Navigator.pushReplacementNamed(context, '/users');
           break;
       }
@@ -358,12 +378,12 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                               localizations.nav_reports,
                               style: TextStyle(
                                 fontSize: ui.scale(
-                                  base: 14,
-                                  min: 12,
-                                  max: 16,
+                                  base: 18,
+                                  min: 16,
+                                  max: 20,
                                 ),
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withValues(alpha: 0.95),
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             isLoading
@@ -394,12 +414,12 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                     '${tasks.length} ${localizations.nav_report}',
                                     style: TextStyle(
                                       fontSize: ui.scale(
-                                        base: 18,
-                                        min: 16,
-                                        max: 20,
+                                        base: 13,
+                                        min: 12,
+                                        max: 15,
                                       ),
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withValues(alpha: 0.9),
                                     ),
                                   ),
                           ],
@@ -454,12 +474,12 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                 color: AppColors.lapisLazuli,
                 child: ListView.builder(
                   padding: EdgeInsets.only(
-                    left: kSpacing,
-                    right: kSpacing,
-                    top: kSpacing,
-                              bottom: kSpacing +
-                                  MediaQuery.of(context).padding.bottom +
-                                  20,
+                    left: ui.scale(base: 16, min: 12, max: 20),
+                    right: ui.scale(base: 16, min: 12, max: 20),
+                    top: ui.scale(base: 16, min: 12, max: 20),
+                    bottom: ui.scale(base: 16, min: 12, max: 20) +
+                        MediaQuery.of(context).padding.bottom +
+                        20,
                   ),
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
@@ -475,13 +495,15 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                         : priceValue.toString();
 
                     return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/technician-task-detail',
-                          arguments: task,
-                        );
-                      },
+                      onTap: (userLevel == 2)
+                          ? null
+                          : () {
+                              Navigator.pushNamed(
+                                context,
+                                '/technician-task-detail',
+                                arguments: task,
+                              );
+                            },
                       child: Container(
                         margin: EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
@@ -661,19 +683,21 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                   ],
                                 ),
                               ),
-                              Icon(
-                                Icons.chevron_left,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.5),
-                                textDirection:
-                                    Directionality.of(context) ==
-                                        TextDirection.rtl
-                                    ? TextDirection.ltr
-                                    : TextDirection.rtl,
-                              ),
+                              // Hide arrow (>) for normal technician (level 2)
+                              if (userLevel != 2)
+                                Icon(
+                                  Icons.chevron_left,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withValues(alpha: 0.5),
+                                  textDirection:
+                                      Directionality.of(context) ==
+                                          TextDirection.rtl
+                                      ? TextDirection.ltr
+                                      : TextDirection.rtl,
+                                ),
                             ],
                           ),
                         ),
@@ -731,7 +755,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         selectedIndex: selectedNavIndex,
         userLevel: userLevel,
         onItemTapped: _onNavItemTapped,
-            ),
+        organType: organType,
+      ),
       ),
     );
   }

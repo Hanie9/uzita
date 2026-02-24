@@ -302,6 +302,7 @@ class _ServiceProviderServiceDetailScreenState
     final hazine = widget.service['hazine']?.toString() ?? '0';
     final sayerHazine = widget.service['sayer_hazine']?.toString() ?? '0';
     final time = widget.service['time']?.toString() ?? '0';
+    final bool isWarranty = widget.service['warranty'] == true;
     final createdAt = widget.service['created_at'] ?? '';
     final status = currentStatus ?? widget.service['status'] ?? 'open';
     final technician = widget.service['technician'];
@@ -757,6 +758,41 @@ class _ServiceProviderServiceDetailScreenState
                           ],
                         ),
                       ),
+                      if (isWarranty) ...[
+                        SizedBox(height: 12),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.lapisLazuli.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.verified_user,
+                                color: AppColors.lapisLazuli,
+                                size: 22,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                localizations.sls_payable_zero,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 16),
                       Row(
                         children: [

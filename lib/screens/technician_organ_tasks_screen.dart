@@ -29,6 +29,7 @@ class _TechnicianOrganTasksScreenState
   bool isAuthorized = true;
   int userLevel = 3;
   int selectedNavIndex = 3; // Missions tab for service team lead
+  String organType = '';
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
@@ -47,6 +48,7 @@ class _TechnicianOrganTasksScreenState
     final int level = prefs.getInt('level') ?? 3;
     final String name = prefs.getString('username') ?? '';
     final bool active = prefs.getBool('active') ?? true;
+    final String organ = (prefs.getString('organ_type') ?? '').toLowerCase();
 
     if (!mounted) return;
 
@@ -64,6 +66,7 @@ class _TechnicianOrganTasksScreenState
 
     setState(() {
       userLevel = level;
+      organType = organ;
       username = name;
       userActive = active;
       userRoleTitle = roleTitle;
@@ -457,7 +460,7 @@ class _TechnicianOrganTasksScreenState
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        String msg = 'سرویس واگذار شد.';
+        String msg = AppLocalizations.of(context)!.tech_assignment_success;
         try {
           final dynamic data = json.decode(utf8.decode(response.bodyBytes));
           if (data is Map && data['message'] != null) {
@@ -540,7 +543,7 @@ class _TechnicianOrganTasksScreenState
       },
       child: Container(
         key: ValueKey('task_$taskId'),
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
@@ -917,9 +920,9 @@ class _TechnicianOrganTasksScreenState
                 Text(
                   localizations.tech_missions,
                   style: TextStyle(
-                    fontSize: ui.scale(base: 14, min: 12, max: 16),
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontWeight: FontWeight.w500,
+                    fontSize: ui.scale(base: 18, min: 16, max: 20),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 // فقط متن تعداد مأموریت‌ها وابسته به لود شدن است
@@ -937,9 +940,9 @@ class _TechnicianOrganTasksScreenState
                     : Text(
                         '${orgTasks.length + personalTasks.length} ${localizations.tech_mission}',
                         style: TextStyle(
-                          fontSize: ui.scale(base: 18, min: 16, max: 20),
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          fontSize: ui.scale(base: 13, min: 12, max: 15),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
               ],
@@ -1055,27 +1058,28 @@ class _TechnicianOrganTasksScreenState
                                   onRefresh: _fetchTasks,
                                   color: AppColors.lapisLazuli,
                                   child: ListView(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 12),
+                                    padding: EdgeInsets.only(
+                                      left: ui.scale(base: 16, min: 12, max: 20),
+                                      right: ui.scale(base: 16, min: 12, max: 20),
+                                      bottom: 12,
+                                    ),
                                     children: [
                                       if (orgTasks.isNotEmpty) ...[
                                         Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: ui.scale(
-                                              base: 16,
-                                              min: 12,
-                                              max: 20,
-                                            ),
                                             vertical: ui.scale(
                                               base: 4,
                                               min: 2,
                                               max: 6,
                                             ),
                                           ),
-                                          child: const Text(
-                                            'ماموریت‌های سازمان (نیازمند واگذاری)',
-                                            style: TextStyle(
+                                          child: Text(
+                                            localizations.organ_missions_need_assignment,
+                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                               fontWeight: FontWeight.w600,
+                                            ) ?? TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Theme.of(context).textTheme.bodyLarge?.color,
                                             ),
                                           ),
                                         ),
@@ -1087,21 +1091,19 @@ class _TechnicianOrganTasksScreenState
                                       if (personalTasks.isNotEmpty) ...[
                                         Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: ui.scale(
-                                              base: 16,
-                                              min: 12,
-                                              max: 20,
-                                            ),
                                             vertical: ui.scale(
                                               base: 8,
                                               min: 6,
                                               max: 10,
                                             ),
                                           ),
-                                          child: const Text(
-                                            'ماموریت‌های من',
-                                            style: TextStyle(
+                                          child: Text(
+                                            localizations.my_missions,
+                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                               fontWeight: FontWeight.w600,
+                                            ) ?? TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Theme.of(context).textTheme.bodyLarge?.color,
                                             ),
                                           ),
                                         ),
@@ -1173,6 +1175,7 @@ class _TechnicianOrganTasksScreenState
         selectedIndex: selectedNavIndex,
         userLevel: userLevel,
         onItemTapped: _onNavItemTapped,
+        organType: organType,
       ),
     );
   }

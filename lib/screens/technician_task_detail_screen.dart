@@ -36,6 +36,7 @@ class _TechnicianTaskDetailScreenState
   final _otherCostsController = TextEditingController();
   DateTime? secondVisitDate;
   bool checkTaskSubmitted = false;
+  bool warranty = false;
 
   // Step 3: Report
   final _reportFormKey = GlobalKey<FormState>();
@@ -60,7 +61,29 @@ class _TechnicianTaskDetailScreenState
         widget.task['time'] != null &&
         widget.task['time'] != '0' &&
         widget.task['time'] != 0;
+    warranty = widget.task['warranty'] == true;
     _fetchPieces();
+    _loadFirstVisitFlagIfNeeded();
+  }
+
+  // If backend task list does not yet include the stored first visit date,
+  // avoid forcing technician to re-enter it on this device by remembering
+  // successful submissions per-task in local storage.
+  Future<void> _loadFirstVisitFlagIfNeeded() async {
+    // If we already have a date from backend, no need for local fallback.
+    if (firstVisitDateSet) return;
+
+    final taskId = widget.task['id']?.toString() ?? '';
+    if (taskId.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'first_visit_done_$taskId';
+    final done = prefs.getBool(key) ?? false;
+    if (done && mounted) {
+      setState(() {
+        firstVisitDateSet = true;
+      });
+    }
   }
 
   Future<void> _fetchPieces() async {
@@ -315,6 +338,11 @@ class _TechnicianTaskDetailScreenState
           firstVisitDateSet = true;
           widget.task['first_visit_date'] = formatDateForAPI(firstVisitDate!);
         });
+        // Remember locally that this task's first visit date was set at least once
+        // so that on subsequent opens we don't force the technician to re-enter it
+        // even if the backend list payload doesn't yet include this field.
+        final key = 'first_visit_done_$taskId';
+        await prefs.setBool(key, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -324,13 +352,11 @@ class _TechnicianTaskDetailScreenState
           ),
         );
       } else {
-        final body = utf8.decode(response.bodyBytes);
-        final errorData = json.decode(body);
-        final errorMessage =
-            errorData['error']?.toString() ??
-            errorData['message']?.toString() ??
-            'Error: ${response.statusCode}';
-        throw Exception(errorMessage);
+        if (mounted) {
+          throw Exception(
+            AppLocalizations.of(context)!.error_unknown,
+          );
+        }
       }
     } catch (e) {
       print('Error in _submitFirstVisitDate: $e');
@@ -338,9 +364,7 @@ class _TechnicianTaskDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().replaceAll('Exception: ', '').isEmpty
-                  ? AppLocalizations.of(context)!.error_unknown
-                  : e.toString().replaceAll('Exception: ', ''),
+              AppLocalizations.of(context)!.error_unknown,
             ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
@@ -358,7 +382,9 @@ class _TechnicianTaskDetailScreenState
     if (!_checkTaskFormKey.currentState!.validate() || selectedPiece == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please fill in all required fields'),
+          content: Text(
+            AppLocalizations.of(context)!.sss_add_required,
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -389,6 +415,7 @@ class _TechnicianTaskDetailScreenState
         'time': int.parse(_timeController.text),
         'piece_name': selectedPiece,
         'sayer_hazine': int.parse(_otherCostsController.text),
+        'warranty': warranty,
       };
 
       // Include second_visit_date only if it's provided
@@ -412,6 +439,16 @@ class _TechnicianTaskDetailScreenState
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (!mounted) return;
+        // Update task with submitted values so they persist when returning to this screen
+        final timeValue = int.parse(_timeController.text);
+        widget.task['time'] = timeValue;
+        widget.task['name_piece'] = selectedPiece;
+        widget.task['piece_name'] = selectedPiece;
+        widget.task['sayer_hazine'] = int.parse(_otherCostsController.text);
+        widget.task['warranty'] = warranty;
+        if (secondVisitDate != null) {
+          widget.task['second_visit_date'] = formatDateForAPI(secondVisitDate!);
+        }
         setState(() {
           checkTaskSubmitted = true;
         });
@@ -424,13 +461,11 @@ class _TechnicianTaskDetailScreenState
           ),
         );
       } else {
-        final body = utf8.decode(response.bodyBytes);
-        final errorData = json.decode(body);
-        final errorMessage =
-            errorData['error']?.toString() ??
-            errorData['message']?.toString() ??
-            'Error: ${response.statusCode}';
-        throw Exception(errorMessage);
+        if (mounted) {
+          throw Exception(
+            AppLocalizations.of(context)!.tech_check_task_error,
+          );
+        }
       }
     } catch (e) {
       print('Error in _submitCheckTask: $e');
@@ -438,9 +473,7 @@ class _TechnicianTaskDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().replaceAll('Exception: ', '').isEmpty
-                  ? AppLocalizations.of(context)!.error_unknown
-                  : e.toString().replaceAll('Exception: ', ''),
+              AppLocalizations.of(context)!.tech_check_task_error,
             ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
@@ -525,12 +558,11 @@ class _TechnicianTaskDetailScreenState
       } else {
         final body = utf8.decode(response.bodyBytes);
         print('Error response body: $body');
-        final errorData = json.decode(body);
-        final errorMessage =
-            errorData['error']?.toString() ??
-            errorData['message']?.toString() ??
-            'Error: ${response.statusCode} - ${AppLocalizations.of(context)!.tech_confirmation_error}';
-        throw Exception(errorMessage);
+        if (mounted) {
+          throw Exception(
+            AppLocalizations.of(context)!.tech_confirmation_error,
+          );
+        }
       }
     } catch (e) {
       print('Error in _confirmTask: $e');
@@ -538,9 +570,7 @@ class _TechnicianTaskDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().replaceAll('Exception: ', '').isEmpty
-                  ? AppLocalizations.of(context)!.error_unknown
-                  : e.toString().replaceAll('Exception: ', ''),
+              AppLocalizations.of(context)!.tech_confirmation_error,
             ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
@@ -1186,8 +1216,12 @@ class _TechnicianTaskDetailScreenState
                               if (value == null || value.isEmpty) {
                                 return localizations.tech_time_required_error;
                               }
-                              if (int.tryParse(value) == null) {
-                                return 'Please enter a valid number';
+                              final parsed = int.tryParse(value);
+                              if (parsed == null) {
+                                return localizations.sss_other_costs_error_number;
+                              }
+                              if (parsed > 10000) {
+                                return localizations.tech_time_max_error;
                               }
                               return null;
                             },
@@ -1233,10 +1267,32 @@ class _TechnicianTaskDetailScreenState
                                 return localizations.tech_other_costs_error;
                               }
                               if (int.tryParse(value) == null) {
-                                return 'Please enter a valid number';
+                                return localizations.sss_other_costs_error_number;
                               }
                               return null;
                             },
+                          ),
+                          SizedBox(height: 16),
+                          // Warranty checkbox
+                          CheckboxListTile(
+                            value: warranty,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                warranty = value ?? false;
+                              });
+                            },
+                            title: Text(
+                              localizations.tech_warranty,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              textDirection: Directionality.of(context),
+                            ),
+                            activeColor: AppColors.lapisLazuli,
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
                           ),
                           SizedBox(height: 20),
                           // Second Visit Date (Optional)
@@ -1262,7 +1318,12 @@ class _TechnicianTaskDetailScreenState
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.normal,
-                                  color: AppColors.iranianGray,
+                                  color: const Color.fromARGB(
+                                    255,
+                                    70,
+                                    114,
+                                    157,
+                                  ),
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),
@@ -1404,14 +1465,18 @@ class _TechnicianTaskDetailScreenState
                           ],
                         ),
                         SizedBox(height: 20),
-                        // Piece Name
-                        if (widget.task['name_piece'] != null)
+                        // Piece Name (support both name_piece and piece_name from API)
+                        if (widget.task['name_piece'] != null ||
+                            widget.task['piece_name'] != null)
                           _buildInfoRow(
                             localizations.tech_piece_name,
-                            widget.task['name_piece'].toString(),
+                            (widget.task['name_piece'] ??
+                                    widget.task['piece_name'])
+                                .toString(),
                             Icons.build,
                           ),
-                        if (widget.task['name_piece'] != null)
+                        if (widget.task['name_piece'] != null ||
+                            widget.task['piece_name'] != null)
                           SizedBox(height: 12),
                         // Time Required
                         if (widget.task['time'] != null)

@@ -38,9 +38,13 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
   String? selectedTime;
   String? selectedPiece;
   String? selectedUrgency;
+  List<String> selectedSubjects = [];
   List<String> timeOptions = [];
   List<String> pieceOptions = [];
   int userLevel = 3;
+
+  /// Subject type values for service request (level 1 & 3). Labels from localization.
+  static const List<String> subjectTypeValues = ['lock', 'password', 'learn', 'reopening'];
 
   bool isLoading = false;
 
@@ -143,8 +147,10 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
   Future<void> submitRequest() async {
     // Validate based on user level
     if (userLevel == 1 || userLevel == 3) {
-      // For level 1 and 3: validate title, description, address, phone, urgency
-      if (!_formKey.currentState!.validate() || selectedUrgency == null) {
+      // For level 1 and 3: validate title, description, address, phone, urgency, subject
+      if (!_formKey.currentState!.validate() ||
+          selectedUrgency == null ||
+          selectedSubjects.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.sss_add_required),
@@ -175,13 +181,14 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
       Map<String, dynamic> requestBody;
 
       if (userLevel == 1 || userLevel == 3) {
-        // For level 1 and 3: send title, description, address, phone, urgency
+        // For level 1 and 3: send title, description, address, phone, urgency, subject
         requestBody = {
           'title': _titleController.text,
           'description': _descriptionController.text,
           'address': _addressController.text,
           'phone': _phoneController.text,
           'urgency': selectedUrgency,
+          'subject': selectedSubjects,
         };
         // Add serial_number if provided (optional)
         if (_serialNumberController.text.trim().isNotEmpty) {
@@ -635,6 +642,53 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                           },
                         ),
                         SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
+                        // Subject (موضوع) - below title for level 1 and 3
+                        if (userLevel == 1 || userLevel == 3) ...[
+                          Text(
+                            AppLocalizations.of(context)!.sss_subject,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.lapisLazuli,
+                            ),
+                            textDirection: Directionality.of(context),
+                          ),
+                          SizedBox(height: ui.scale(base: 8, min: 6, max: 12)),
+                          Wrap(
+                            spacing: ui.scale(base: 8, min: 6, max: 12),
+                            runSpacing: ui.scale(base: 8, min: 6, max: 12),
+                            children: subjectTypeValues.map((value) {
+                              final loc = AppLocalizations.of(context)!;
+                              final label = value == 'lock'
+                                  ? loc.sss_subject_lock
+                                  : value == 'password'
+                                      ? loc.sss_subject_password
+                                      : value == 'learn'
+                                          ? loc.sss_subject_learn
+                                          : loc.sss_subject_reopening;
+                              final isSelected = selectedSubjects.contains(value);
+                              return FilterChip(
+                                label: Text(
+                                  label,
+                                  textDirection: Directionality.of(context),
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      selectedSubjects = List.from(selectedSubjects)..add(value);
+                                    } else {
+                                      selectedSubjects = selectedSubjects.where((s) => s != value).toList();
+                                    }
+                                  });
+                                },
+                                selectedColor: AppColors.lapisLazuli.withValues(alpha: 0.25),
+                                checkmarkColor: AppColors.lapisLazuli,
+                              );
+                            }).toList(),
+                          ),
+                          SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
+                        ],
                         // Description Field
                         Text(
                           AppLocalizations.of(

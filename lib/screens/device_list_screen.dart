@@ -39,6 +39,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   bool userModir = false;
   bool userActive = false;
   bool isWarehouse = false;
+  String organType = '';
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -1092,6 +1093,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
       userModir = prefs.getBool('modir') ?? false;
       userActive = prefs.getBool('active') ?? false;
       isWarehouse = prefs.getBool('is_warehouse') ?? false;
+      organType = (prefs.getString('organ_type') ?? '').toLowerCase();
       userRoleTitle = _getUserRoleTitle(userLevel, userModir);
 
       // If user is not active, stop loading immediately
@@ -1577,6 +1579,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           selectedIndex: selectedNavIndex,
           userLevel: userLevel,
           onItemTapped: _onNavItemTapped,
+          organType: organType,
         ),
       ),
     );
@@ -1685,7 +1688,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     });
 
     // Handle navigation based on user level
-    if (userLevel == 1) {
+    if (userLevel == 1 && organType == 'technician') {
       // Service team lead navigation: Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
@@ -1719,7 +1722,11 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
         case 1: // Devices - already here
           break;
         case 2: // Reports
-          Navigator.pushReplacementNamed(context, '/commands');
+          if (userLevel == 3) {
+            Navigator.pushReplacementNamed(context, '/reports');
+          } else {
+            Navigator.pushReplacementNamed(context, '/commands');
+          }
           break;
         case 3: // Profile
           Navigator.pushReplacementNamed(context, '/profile');

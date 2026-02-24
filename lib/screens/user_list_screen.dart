@@ -30,6 +30,7 @@ class _UserListScreenState extends State<UserListScreen> {
   bool isLoading = true; // Add loading state
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String organType = '';
 
   // فیلترها
   String? filterUsername;
@@ -43,6 +44,7 @@ class _UserListScreenState extends State<UserListScreen> {
       username = prefs.getString('username') ?? '';
       userLevel = prefs.getInt('level') ?? 3;
       userModir = prefs.getBool('modir') ?? false;
+      organType = (prefs.getString('organ_type') ?? '').toLowerCase();
 
       // Set user role title
       if (userModir) {
@@ -144,9 +146,12 @@ class _UserListScreenState extends State<UserListScreen> {
         setState(() {
           isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.uls_no_access)),
-        );
+        // Do not show "cannot view users" snackbar for normal technicians (level 2, 4)
+        if (userLevel == 1) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.uls_no_access)),
+          );
+        }
       } else {
         setState(() {
           isLoading = false; // Set loading to false on error
@@ -184,8 +189,9 @@ class _UserListScreenState extends State<UserListScreen> {
     });
 
     // Handle navigation based on user level
-    if (userLevel == 1) {
-      // Service team lead navigation: Home (0), Profile (1), Missions (2), Users (4)
+    if (userLevel == 1 && organType == 'technician') {
+      // Service team lead (technician organization) navigation:
+      // Home (0), Profile (1), Reports (2), Missions (3), Users (4)
       switch (index) {
         case 0: // Home
           Navigator.pushReplacementNamed(context, '/home');
@@ -193,13 +199,13 @@ class _UserListScreenState extends State<UserListScreen> {
         case 1: // Profile
           Navigator.pushReplacementNamed(context, '/profile');
           break;
-        case 2: // Missions (organization tasks)
+        case 2: // Reports (technician reports)
           Navigator.pushReplacementNamed(
             context,
             '/technician-reports',
           );
           break;
-        case 3: // Reports
+        case 3: // Missions (organization tasks)
           Navigator.pushReplacementNamed(
             context,
             '/technician-organ-tasks',
@@ -1513,6 +1519,7 @@ class _UserListScreenState extends State<UserListScreen> {
           selectedIndex: selectedNavIndex,
           userLevel: userLevel,
           onItemTapped: _onNavItemTapped,
+          organType: organType,
         ),
       ),
     );

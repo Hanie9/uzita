@@ -33,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool userActive = false;
   String organType = '';
   int selectedNavIndex = 3;
+  bool _userMetaLoaded = false;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -83,6 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         selectedNavIndex = 3; // Profile is index 3 for other users
       }
+      _userMetaLoaded = true;
 
       // Set user role title (modir overrides level)
       final bool isModir = prefs.getBool('modir') ?? false;
@@ -230,9 +232,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? List<dynamic>.from(allowedDevicesData)
                 : <dynamic>[];
 
+            // Organization name (support multiple keys for technicians and others)
             organName =
                 data['organ_name']?.toString() ??
-                profile['organ_name']?.toString();
+                profile['organ_name']?.toString() ??
+                data['organization_name']?.toString() ??
+                profile['organization_name']?.toString() ??
+                data['organ_title']?.toString() ??
+                profile['organ_title']?.toString();
 
             // Update role title from fetched level (modir overrides)
             // Use level from API if available, otherwise use stored level
@@ -1177,21 +1184,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           ? userRoleTitle
                                           : '—',
                                     ),
-                                    // Hide organ_name and allowed_devices for level 4 (technicians)
-                                    if (userLevel != 4) ...[
-                                      _kvRow(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.pro_organ_name,
-                                        (organName ?? '—'),
-                                      ),
+                                    // Organization name: show for all (including technicians)
+                                    _kvRow(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.pro_organ_name,
+                                      (organName ?? '—'),
+                                    ),
+                                    // Show allowed devices count only when organ_type is not 'technician'
+                                    if (organType != 'technician')
                                       _kvRow(
                                         AppLocalizations.of(
                                           context,
                                         )!.pro_allowed_devices_count,
                                         allowedDevices.length.toString(),
                                       ),
-                                    ],
                                     _kvRow(
                                       AppLocalizations.of(
                                         context,
@@ -1308,11 +1315,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-        bottomNavigationBar: SharedBottomNavigation(
-          selectedIndex: selectedNavIndex,
-          userLevel: userLevel,
-          onItemTapped: _onNavItemTapped,
-        ),
+        bottomNavigationBar: _userMetaLoaded
+            ? SharedBottomNavigation(
+                selectedIndex: selectedNavIndex,
+                userLevel: userLevel,
+                onItemTapped: _onNavItemTapped,
+                organType: organType,
+              )
+            : null,
       ),
     );
   }

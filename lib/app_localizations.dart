@@ -490,8 +490,10 @@ class AppLocalizations {
       'dds_transfer_ownership': 'Transfer ownership',
       'dds_transfer_ownership_organ_code': 'New owner organization code',
       'dds_transfer_ownership_organ_code_hint': 'Enter organization code',
-      'dds_transfer_ownership_organ_code_required': 'Organization code is required',
-      'dds_transfer_ownership_success': 'Ownership transfer request registered successfully',
+      'dds_transfer_ownership_organ_code_required':
+          'Organization code is required',
+      'dds_transfer_ownership_success':
+          'Ownership transfer request registered successfully',
       'dds_transfer_ownership_error': 'Error transferring ownership',
       'dls_transfer_list': 'Transfer requests',
       'dls_transfer_device_name': 'Device name',
@@ -499,7 +501,8 @@ class AppLocalizations {
       'dls_transfer_new_organ': 'To organization',
       'dls_transfer_confirm': 'Confirm transfer',
       'dls_transfer_reject': 'Reject transfer',
-      'dls_transfer_confirm_success': 'Device successfully added to your organization',
+      'dls_transfer_confirm_success':
+          'Device successfully added to your organization',
       'dls_transfer_reject_success': 'Transfer request rejected',
       'dls_transfer_error': 'Error processing transfer request',
       'dls_no_transfers': 'No transfer requests',
@@ -1013,6 +1016,13 @@ class AppLocalizations {
       'sss_urgency_normal': 'Normal',
       'sss_urgency_urgent': 'Urgent',
       'sss_urgency_very_urgent': 'Very urgent',
+      'sss_subject': 'Subject',
+      'sss_subject_hint': 'Select one or more subjects',
+      'sss_subject_error': 'Please select at least one subject',
+      'sss_subject_lock': 'Lock',
+      'sss_subject_password': 'Password',
+      'sss_subject_learn': 'Training',
+      'sss_subject_reopening': 'Reopening',
 
       // Service List Screen (sls_)
       'sls_error_connecting': 'Error connecting to server',
@@ -1026,6 +1036,7 @@ class AppLocalizations {
       'sls_need_piece': 'Required piece',
       'sls_all_cost': 'Total cost:',
       'sls_tooman': 'Toman',
+      'sls_payable_zero': 'Payable amount: 0 Toman',
       'sls_date_register': 'Registration date:',
       'sls_no_request': 'No service requests yet',
       'sls_no_request_description': 'Click to register a new request',
@@ -1074,6 +1085,8 @@ class AppLocalizations {
       // Technician Screens (tech_)
       'tech_missions': 'Missions',
       'tech_mission': 'Mission',
+      'organ_missions_need_assignment': 'Organ missions (need assignment)',
+      'my_missions': 'My missions',
       'tech_no_missions': 'No missions',
       'tech_no_missions_description':
           'You have no pending missions at the moment.',
@@ -1087,6 +1100,7 @@ class AppLocalizations {
       'tech_confirm_task': 'Confirm Task Completion',
       'tech_confirmation_success': 'Task confirmed successfully',
       'tech_confirmation_error': 'Error confirming task',
+      'tech_assignment_success': 'Service assignment completed successfully',
       'tech_no_completed_tasks': 'No completed tasks',
       'tech_no_completed_tasks_description':
           'You have no completed tasks at the moment.',
@@ -1102,10 +1116,12 @@ class AppLocalizations {
       'tech_time_required': 'Time Required (minutes)',
       'tech_time_required_hint': 'Enter time in minutes',
       'tech_time_required_error': 'Please enter time',
+      'tech_time_max_error': 'Time must be at most 10000 minutes',
       'tech_other_costs': 'Other Costs',
       'tech_other_costs_hint': 'Enter other costs',
       'tech_other_costs_error': 'Please enter other costs',
-      'tech_second_visit_date': 'Second Visit Date (Optional)',
+      'tech_warranty': 'Warranty',
+      'tech_second_visit_date': 'Second Visit Date',
       'tech_second_visit_date_hint': 'Select second visit date if needed',
       'tech_submit_check_task': 'Submit Task Check',
       'tech_check_task_success': 'Task check submitted successfully',
@@ -1608,7 +1624,8 @@ class AppLocalizations {
       'dds_transfer_ownership_organ_code': 'شماره سازمان مالک جدید',
       'dds_transfer_ownership_organ_code_hint': 'شماره سازمان را وارد کنید',
       'dds_transfer_ownership_organ_code_required': 'شماره سازمان الزامی است',
-      'dds_transfer_ownership_success': 'درخواست انتقال مالکیت دستگاه شما با موفقیت ثبت شد.',
+      'dds_transfer_ownership_success':
+          'درخواست انتقال مالکیت دستگاه شما با موفقیت ثبت شد.',
       'dds_transfer_ownership_error': 'خطا در انتقال مالکیت',
       'dls_transfer_list': 'درخواست‌های انتقال',
       'dls_transfer_device_name': 'نام دستگاه',
@@ -1616,7 +1633,8 @@ class AppLocalizations {
       'dls_transfer_new_organ': 'به سازمان',
       'dls_transfer_confirm': 'تایید انتقال',
       'dls_transfer_reject': 'رد انتقال',
-      'dls_transfer_confirm_success': 'دستگاه با موفقیت به سازمان شما افزوده شد.',
+      'dls_transfer_confirm_success':
+          'دستگاه با موفقیت به سازمان شما افزوده شد.',
       'dls_transfer_reject_success': 'درخواست انتقال رد شد',
       'dls_transfer_error': 'خطا در پردازش درخواست انتقال',
       'dls_no_transfers': 'هیچ درخواست انتقالی وجود ندارد',
@@ -2124,6 +2142,13 @@ class AppLocalizations {
       'sss_urgency_normal': 'عادی',
       'sss_urgency_urgent': 'فوری',
       'sss_urgency_very_urgent': 'خیلی فوری',
+      'sss_subject': 'موضوع',
+      'sss_subject_hint': 'یک یا چند موضوع انتخاب کنید',
+      'sss_subject_error': 'لطفاً حداقل یک موضوع انتخاب کنید',
+      'sss_subject_lock': 'قفل',
+      'sss_subject_password': 'رمز',
+      'sss_subject_learn': 'آموزش',
+      'sss_subject_reopening': 'بازگشایی',
 
       // Service List Screen (sls_)
       'sls_error_connecting': 'خطا در اتصال به سرور',
@@ -2137,6 +2162,7 @@ class AppLocalizations {
       'sls_need_piece': 'قطعه مورد نیاز',
       'sls_all_cost': 'هزینه کل:',
       'sls_tooman': 'تومان',
+      'sls_payable_zero': 'مقدار قابل پرداخت: 0 تومان',
       'sls_date_register': 'تاریخ ثبت:',
       'sls_no_request': 'هنوز درخواست سرویسی ندارید',
       'sls_no_request_description': 'برای ثبت درخواست جدید کلیک کنید',
@@ -2185,6 +2211,8 @@ class AppLocalizations {
       // Technician Screens (tech_)
       'tech_missions': 'ماموریت ها',
       'tech_mission': 'ماموریت',
+      'organ_missions_need_assignment': 'ماموریت‌های سازمان (نیازمند واگذاری)',
+      'my_missions': 'ماموریت‌های من',
       'tech_no_missions': 'ماموریتی وجود ندارد',
       'tech_no_missions_description': 'در حال حاضر ماموریت در انتظاری ندارید.',
       'tech_task_details': 'جزئیات ماموریت',
@@ -2196,6 +2224,7 @@ class AppLocalizations {
       'tech_phone': 'تلفن',
       'tech_confirm_task': 'تایید اتمام کار',
       'tech_confirmation_success': 'ماموریت با موفقیت تایید شد',
+      'tech_assignment_success': 'سرویس واگذار شد.',
       'tech_first_visit_date': 'زمان مراجعه اولیه',
       'tech_first_visit_date_hint': 'زمان مراجعه اولیه را انتخاب کنید',
       'tech_first_visit_date_error': 'لطفاً زمان مراجعه اولیه را انتخاب کنید',
@@ -2208,10 +2237,12 @@ class AppLocalizations {
       'tech_time_required': 'زمان مورد نیاز (دقیقه)',
       'tech_time_required_hint': 'زمان را به دقیقه وارد کنید',
       'tech_time_required_error': 'لطفاً زمان را وارد کنید',
+      'tech_time_max_error': 'زمان نباید بیشتر از ۱۰۰۰۰ دقیقه باشد',
       'tech_other_costs': 'سایر هزینه‌ها',
       'tech_other_costs_hint': 'سایر هزینه‌ها را وارد کنید',
       'tech_other_costs_error': 'لطفاً سایر هزینه‌ها را وارد کنید',
-      'tech_second_visit_date': 'زمان مراجعه مجدد (اختیاری)',
+      'tech_warranty': 'گارانتی',
+      'tech_second_visit_date': 'زمان مراجعه مجدد',
       'tech_second_visit_date_hint':
           'در صورت نیاز زمان مراجعه مجدد را انتخاب کنید',
       'tech_submit_check_task': 'ثبت بررسی مأموریت',
@@ -3011,6 +3042,14 @@ class AppLocalizations {
   String get sss_urgency_urgent => _getLocalizedValue('sss_urgency_urgent');
   String get sss_urgency_very_urgent =>
       _getLocalizedValue('sss_urgency_very_urgent');
+  String get sss_subject => _getLocalizedValue('sss_subject');
+  String get sss_subject_hint => _getLocalizedValue('sss_subject_hint');
+  String get sss_subject_error => _getLocalizedValue('sss_subject_error');
+  String get sss_subject_lock => _getLocalizedValue('sss_subject_lock');
+  String get sss_subject_password => _getLocalizedValue('sss_subject_password');
+  String get sss_subject_learn => _getLocalizedValue('sss_subject_learn');
+  String get sss_subject_reopening =>
+      _getLocalizedValue('sss_subject_reopening');
 
   // Service List Screen getters (sls_*)
   String get sls_error_connecting => _getLocalizedValue('sls_error_connecting');
@@ -3026,6 +3065,7 @@ class AppLocalizations {
   String get sls_need_piece => _getLocalizedValue('sls_need_piece');
   String get sls_all_cost => _getLocalizedValue('sls_all_cost');
   String get sls_tooman => _getLocalizedValue('sls_tooman');
+  String get sls_payable_zero => _getLocalizedValue('sls_payable_zero');
   String get sls_date_register => _getLocalizedValue('sls_date_register');
   String get sls_no_request => _getLocalizedValue('sls_no_request');
   String get sls_no_request_description =>
@@ -3082,6 +3122,9 @@ class AppLocalizations {
   // Technician Screen getters (tech_*)
   String get tech_missions => _getLocalizedValue('tech_missions');
   String get tech_mission => _getLocalizedValue('tech_mission');
+  String get organ_missions_need_assignment =>
+      _getLocalizedValue('organ_missions_need_assignment');
+  String get my_missions => _getLocalizedValue('my_missions');
   String get tech_no_missions => _getLocalizedValue('tech_no_missions');
   String get tech_no_missions_description =>
       _getLocalizedValue('tech_no_missions_description');
@@ -3097,6 +3140,8 @@ class AppLocalizations {
       _getLocalizedValue('tech_confirmation_success');
   String get tech_confirmation_error =>
       _getLocalizedValue('tech_confirmation_error');
+  String get tech_assignment_success =>
+      _getLocalizedValue('tech_assignment_success');
   String get tech_no_completed_tasks =>
       _getLocalizedValue('tech_no_completed_tasks');
   String get tech_no_completed_tasks_description =>
@@ -3120,11 +3165,13 @@ class AppLocalizations {
       _getLocalizedValue('tech_time_required_hint');
   String get tech_time_required_error =>
       _getLocalizedValue('tech_time_required_error');
+  String get tech_time_max_error => _getLocalizedValue('tech_time_max_error');
   String get tech_other_costs => _getLocalizedValue('tech_other_costs');
   String get tech_other_costs_hint =>
       _getLocalizedValue('tech_other_costs_hint');
   String get tech_other_costs_error =>
       _getLocalizedValue('tech_other_costs_error');
+  String get tech_warranty => _getLocalizedValue('tech_warranty');
   String get tech_second_visit_date =>
       _getLocalizedValue('tech_second_visit_date');
   String get tech_second_visit_date_hint =>
@@ -3341,14 +3388,12 @@ class AppLocalizations {
   String get ct_information_description =>
       _getLocalizedValue('ct_information_description');
   String get ct_subject => _getLocalizedValue('ct_subject');
-  String get ct_subject_required =>
-      _getLocalizedValue('ct_subject_required');
+  String get ct_subject_required => _getLocalizedValue('ct_subject_required');
   String get ct_subject_product_update =>
       _getLocalizedValue('ct_subject_product_update');
   String get ct_subject_part_update =>
       _getLocalizedValue('ct_subject_part_update');
-  String get ct_subject_feedback =>
-      _getLocalizedValue('ct_subject_feedback');
+  String get ct_subject_feedback => _getLocalizedValue('ct_subject_feedback');
   String get ct_subject_other => _getLocalizedValue('ct_subject_other');
   String get ct_title => _getLocalizedValue('ct_title');
   String get ct_title_example => _getLocalizedValue('ct_title_example');
