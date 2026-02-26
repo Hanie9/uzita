@@ -213,6 +213,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   Future<void> _openPiecesMenu() async {
     final localizations = AppLocalizations.of(context)!;
     final Set<String> tempSelected = Set<String>.from(_selectedPieces);
+    String searchQuery = '';
 
     await showModalBottomSheet<void>(
       context: context,
@@ -229,6 +230,13 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
               minChildSize: 0.4,
               maxChildSize: 0.9,
               builder: (context, scrollController) {
+                final List<String> filteredPieces =
+                    _availablePieces.where((piece) {
+                  if (searchQuery.trim().isEmpty) return true;
+                  final query = searchQuery.toLowerCase();
+                  return piece.toLowerCase().contains(query);
+                }).toList();
+
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -256,16 +264,79 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                       ),
                     ),
                     const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.format_list_numbered,
+                                size: 18,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${filteredPieces.length} / ${_availablePieces.length}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                localizations.trn_pieces,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.iranianGray,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            decoration: InputDecoration(
+                              hintText: localizations.trn_piece_hint,
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                size: 20,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              modalSetState(() {
+                                searchQuery = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     Expanded(
                       child: ListView.builder(
                         controller: scrollController,
-                        itemCount: _availablePieces.length,
+                        itemCount: filteredPieces.length,
                         itemBuilder: (context, index) {
-                          final piece = _availablePieces[index];
+                          final piece = filteredPieces[index];
                           final bool isChecked = tempSelected.contains(piece);
                           return CheckboxListTile(
                             value: isChecked,
-                            title: Text(piece, style: TextStyle(fontSize: 18)),
+                            title:
+                                Text(piece, style: const TextStyle(fontSize: 18)),
                             onChanged: (checked) {
                               modalSetState(() {
                                 if (checked == true) {

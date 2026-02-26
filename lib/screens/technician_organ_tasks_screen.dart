@@ -82,8 +82,8 @@ class _TechnicianOrganTasksScreenState
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('token');
       final int level = prefs.getInt('level') ?? 3;
-      final String organType =
-          (prefs.getString('organ_type') ?? '').toLowerCase();
+      final String organType = (prefs.getString('organ_type') ?? '')
+          .toLowerCase();
 
       setState(() {
         userLevel = level;
@@ -114,10 +114,8 @@ class _TechnicianOrganTasksScreenState
       await SessionManager().onNetworkRequest();
 
       final int ts = DateTime.now().millisecondsSinceEpoch;
-      final Uri orgUrl =
-          Uri.parse('$apiBaseUrl/technician-organ/tasks?ts=$ts');
-      final Uri personalUrl =
-          Uri.parse('$baseUrl5/technician/tasks?ts=$ts');
+      final Uri orgUrl = Uri.parse('$apiBaseUrl/technician-organ/tasks?ts=$ts');
+      final Uri personalUrl = Uri.parse('$baseUrl5/technician/tasks?ts=$ts');
 
       final http.Response orgResponse = await http.get(
         orgUrl,
@@ -141,26 +139,27 @@ class _TechnicianOrganTasksScreenState
 
       List<Map<String, dynamic>> parsedOrgTasks = <Map<String, dynamic>>[];
       if (orgResponse.statusCode == 200) {
-        final dynamic data =
-            json.decode(utf8.decode(orgResponse.bodyBytes));
+        final dynamic data = json.decode(utf8.decode(orgResponse.bodyBytes));
         if (data is List) {
-          parsedOrgTasks = data.whereType<Map<String, dynamic>>().map<
-              Map<String, dynamic>>(
-            (Map<String, dynamic> item) => Map<String, dynamic>.from(item),
-          )
+          parsedOrgTasks = data
+              .whereType<Map<String, dynamic>>()
+              .map<Map<String, dynamic>>(
+                (Map<String, dynamic> item) => Map<String, dynamic>.from(item),
+              )
               // فقط ماموریت‌هایی که هنوز باز هستند
               .where(
-            (Map<String, dynamic> t) =>
-                (t['status'] ?? 'open').toString() == 'open',
-          ).toList();
+                (Map<String, dynamic> t) =>
+                    (t['status'] ?? 'open').toString() == 'open',
+              )
+              .toList();
         }
       }
 
-      List<Map<String, dynamic>> parsedPersonalTasks =
-          <Map<String, dynamic>>[];
+      List<Map<String, dynamic>> parsedPersonalTasks = <Map<String, dynamic>>[];
       if (personalResponse.statusCode == 200) {
-        final dynamic data =
-            json.decode(utf8.decode(personalResponse.bodyBytes));
+        final dynamic data = json.decode(
+          utf8.decode(personalResponse.bodyBytes),
+        );
         List<dynamic> rawList = <dynamic>[];
         if (data is List) {
           rawList = data;
@@ -170,8 +169,7 @@ class _TechnicianOrganTasksScreenState
         parsedPersonalTasks = rawList
             .whereType<Map<String, dynamic>>()
             .map<Map<String, dynamic>>(
-              (Map<String, dynamic> item) =>
-                  Map<String, dynamic>.from(item),
+              (Map<String, dynamic> item) => Map<String, dynamic>.from(item),
             )
             .toList();
       }
@@ -212,10 +210,7 @@ class _TechnicianOrganTasksScreenState
           Navigator.pushReplacementNamed(context, '/profile');
           break;
         case 2: // Reports
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-reports',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-reports');
           break;
         case 3: // Missions - already here
           break;
@@ -323,9 +318,7 @@ class _TechnicianOrganTasksScreenState
       context: context,
       barrierDismissible: false,
       builder: (BuildContext ctx) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
@@ -366,62 +359,63 @@ class _TechnicianOrganTasksScreenState
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
-          builder: (
-            BuildContext context,
-            void Function(void Function()) setStateDialog,
-          ) {
-            return AlertDialog(
-              backgroundColor: Theme.of(context).cardTheme.color,
-              title: const Text(
-                'واگذاری مأموریت',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: users.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Map<String, String> user = users[index];
-                    final String username = user['username']!;
-                    final String display = user['display']!;
-                    final bool isChecked = selectedUsername == username;
+          builder:
+              (
+                BuildContext context,
+                void Function(void Function()) setStateDialog,
+              ) {
+                return AlertDialog(
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                  title: const Text(
+                    'واگذاری مأموریت',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: users.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final Map<String, String> user = users[index];
+                        final String username = user['username']!;
+                        final String display = user['display']!;
+                        final bool isChecked = selectedUsername == username;
 
-                    return CheckboxListTile(
-                      value: isChecked,
-                      onChanged: (bool? checked) {
-                        setStateDialog(() {
-                          if (checked == true) {
-                            selectedUsername = username;
-                          } else if (selectedUsername == username) {
-                            selectedUsername = null;
-                          }
-                        });
+                        return CheckboxListTile(
+                          value: isChecked,
+                          onChanged: (bool? checked) {
+                            setStateDialog(() {
+                              if (checked == true) {
+                                selectedUsername = username;
+                              } else if (selectedUsername == username) {
+                                selectedUsername = null;
+                              }
+                            });
+                          },
+                          title: Text(display),
+                        );
                       },
-                      title: Text(display),
-                    );
-                  },
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('انصراف'),
-                ),
-                ElevatedButton(
-                  onPressed: isAssigning || selectedUsername == null
-                      ? null
-                      : () async {
-                          final String username = selectedUsername!.trim();
-                          if (username.isEmpty) return;
-                          Navigator.of(dialogContext).pop();
-                          await _assignTask(task['id'], username);
-                        },
-                  child: const Text('واگذاری'),
-                ),
-              ],
-            );
-          },
+                    ),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('انصراف'),
+                    ),
+                    ElevatedButton(
+                      onPressed: isAssigning || selectedUsername == null
+                          ? null
+                          : () async {
+                              final String username = selectedUsername!.trim();
+                              if (username.isEmpty) return;
+                              Navigator.of(dialogContext).pop();
+                              await _assignTask(task['id'], username);
+                            },
+                      child: const Text('واگذاری'),
+                    ),
+                  ],
+                );
+              },
         );
       },
     );
@@ -509,10 +503,7 @@ class _TechnicianOrganTasksScreenState
     }
   }
 
-  Widget _buildTaskCard(
-    Map<String, dynamic> task,
-    bool canAssign,
-  ) {
+  Widget _buildTaskCard(Map<String, dynamic> task, bool canAssign) {
     final localizations = AppLocalizations.of(context)!;
     final String taskId = (task['id'] ?? '').toString();
     final String title = (task['title'] ?? '---').toString();
@@ -521,16 +512,14 @@ class _TechnicianOrganTasksScreenState
     final String createdAt = task['created_at']?.toString() ?? '';
     final dynamic priceValue =
         task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
-    final String price =
-        priceValue == null ? '---' : priceValue.toString();
+    final String price = priceValue == null ? '---' : priceValue.toString();
 
     return GestureDetector(
       onTap: () {
         // For tasks in the organization assignment section (canAssign == true),
         // mark them so that the detail screen only shows basic task info
         // without visit date / report forms.
-        final Map<String, dynamic> taskToSend =
-            Map<String, dynamic>.from(task);
+        final Map<String, dynamic> taskToSend = Map<String, dynamic>.from(task);
         if (canAssign) {
           taskToSend['from_organ_assign_list'] = true;
         }
@@ -614,10 +603,9 @@ class _TechnicianOrganTasksScreenState
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.color,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
                             ),
                             textDirection: Directionality.of(context),
                             overflow: TextOverflow.ellipsis,
@@ -640,10 +628,7 @@ class _TechnicianOrganTasksScreenState
                         Flexible(
                           child: Text(
                             urgency != null
-                                ? _getUrgencyText(
-                                    urgency,
-                                    localizations,
-                                  )
+                                ? _getUrgencyText(urgency, localizations)
                                 : '---',
                             style: const TextStyle(
                               fontSize: 12,
@@ -732,15 +717,12 @@ class _TechnicianOrganTasksScreenState
               else
                 Icon(
                   Icons.chevron_left,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withValues(alpha: 0.5),
-                  textDirection:
-                      Directionality.of(context) == TextDirection.rtl
-                          ? TextDirection.ltr
-                          : TextDirection.rtl,
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                  textDirection: Directionality.of(context) == TextDirection.rtl
+                      ? TextDirection.ltr
+                      : TextDirection.rtl,
                 ),
             ],
           ),
@@ -909,9 +891,7 @@ class _TechnicianOrganTasksScreenState
               size: ui.scale(base: 20, min: 16, max: 24),
             ),
           ),
-          SizedBox(
-            width: ui.scale(base: 12, min: 8, max: 16),
-          ),
+          SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -933,8 +913,9 @@ class _TechnicianOrganTasksScreenState
                         height: ui.scale(base: 18, min: 16, max: 20),
                         child: const CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(
@@ -992,8 +973,7 @@ class _TechnicianOrganTasksScreenState
                             Icons.menu,
                             color: theme.appBarTheme.iconTheme?.color,
                           ),
-                          onPressed: () =>
-                              Scaffold.of(context).openDrawer(),
+                          onPressed: () => Scaffold.of(context).openDrawer(),
                         ),
                       ),
                       IconButton(
@@ -1039,85 +1019,88 @@ class _TechnicianOrganTasksScreenState
       body: !userActive
           ? _buildInactiveState()
           : !isAuthorized
-              ? Center(
-                  child: Text(
-                    localizations.home_access_denies,
-                  ),
-                )
-              : Column(
-                  children: [
-                    _buildHeader(ui, localizations),
-                    Expanded(
-                      child: isLoading
-                          ? const Center(
-                              child: CircularProgressIndicator(),
-                            )
-                          : orgTasks.isEmpty && personalTasks.isEmpty
-                              ? _buildEmptyState()
-                              : RefreshIndicator(
-                                  onRefresh: _fetchTasks,
-                                  color: AppColors.lapisLazuli,
-                                  child: ListView(
-                                    padding: EdgeInsets.only(
-                                      left: ui.scale(base: 16, min: 12, max: 20),
-                                      right: ui.scale(base: 16, min: 12, max: 20),
-                                      bottom: 12,
-                                    ),
-                                    children: [
-                                      if (orgTasks.isNotEmpty) ...[
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: ui.scale(
-                                              base: 4,
-                                              min: 2,
-                                              max: 6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            localizations.organ_missions_need_assignment,
-                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ) ?? TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                                            ),
-                                          ),
+          ? Center(child: Text(localizations.home_access_denies))
+          : Column(
+              children: [
+                _buildHeader(ui, localizations),
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : orgTasks.isEmpty && personalTasks.isEmpty
+                      ? _buildEmptyState()
+                      : RefreshIndicator(
+                          onRefresh: _fetchTasks,
+                          color: AppColors.lapisLazuli,
+                          child: ListView(
+                            padding: EdgeInsets.only(
+                              left: ui.scale(base: 16, min: 12, max: 20),
+                              right: ui.scale(base: 16, min: 12, max: 20),
+                              bottom: 12,
+                            ),
+                            children: [
+                              if (orgTasks.isNotEmpty) ...[
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: ui.scale(base: 4, min: 2, max: 6),
+                                  ),
+                                  child: Text(
+                                    localizations
+                                        .organ_missions_need_assignment,
+                                    style:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ) ??
+                                        TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color,
                                         ),
-                                        ...orgTasks.map(
-                                          (Map<String, dynamic> task) =>
-                                              _buildTaskCard(task, true),
-                                        ),
-                                      ],
-                                      if (personalTasks.isNotEmpty) ...[
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: ui.scale(
-                                              base: 8,
-                                              min: 6,
-                                              max: 10,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            localizations.my_missions,
-                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ) ?? TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                                            ),
-                                          ),
-                                        ),
-                                        ...personalTasks.map(
-                                          (Map<String, dynamic> task) =>
-                                              _buildTaskCard(task, false),
-                                        ),
-                                      ],
-                                    ],
                                   ),
                                 ),
-                    ),
-                  ],
+                                ...orgTasks.map(
+                                  (Map<String, dynamic> task) =>
+                                      _buildTaskCard(task, true),
+                                ),
+                              ],
+                              if (personalTasks.isNotEmpty) ...[
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: ui.scale(
+                                      base: 8,
+                                      min: 6,
+                                      max: 10,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    localizations.my_missions,
+                                    style:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ) ??
+                                        TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color,
+                                        ),
+                                  ),
+                                ),
+                                ...personalTasks.map(
+                                  (Map<String, dynamic> task) =>
+                                      _buildTaskCard(task, false),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                 ),
+              ],
+            ),
       drawer: SharedAppDrawer(
         username: username,
         userRoleTitle: userRoleTitle,
@@ -1126,30 +1109,23 @@ class _TechnicianOrganTasksScreenState
         refreshUserData: _loadUserMeta,
         userActive: userActive,
         logout: () async {
-          final SharedPreferences prefs =
-              await SharedPreferences.getInstance();
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
 
           final String? saved = prefs.getString('saved_username');
-          final String? preservedLanguage =
-              prefs.getString('selectedLanguage');
-          final bool? preservedDarkMode =
-              prefs.getBool('darkModeEnabled');
-          final double? preservedTextSize =
-              prefs.getDouble('textSize');
-          final bool? preservedNotifications =
-              prefs.getBool('notificationsEnabled');
+          final String? preservedLanguage = prefs.getString('selectedLanguage');
+          final bool? preservedDarkMode = prefs.getBool('darkModeEnabled');
+          final double? preservedTextSize = prefs.getDouble('textSize');
+          final bool? preservedNotifications = prefs.getBool(
+            'notificationsEnabled',
+          );
 
           await prefs.clear();
 
           if (saved != null && saved.isNotEmpty) {
             await prefs.setString('saved_username', saved);
           }
-          if (preservedLanguage != null &&
-              preservedLanguage.isNotEmpty) {
-            await prefs.setString(
-              'selectedLanguage',
-              preservedLanguage,
-            );
+          if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
+            await prefs.setString('selectedLanguage', preservedLanguage);
           }
           if (preservedDarkMode != null) {
             await prefs.setBool('darkModeEnabled', preservedDarkMode);
@@ -1158,10 +1134,7 @@ class _TechnicianOrganTasksScreenState
             await prefs.setDouble('textSize', preservedTextSize);
           }
           if (preservedNotifications != null) {
-            await prefs.setBool(
-              'notificationsEnabled',
-              preservedNotifications,
-            );
+            await prefs.setBool('notificationsEnabled', preservedNotifications);
           }
 
           if (!mounted) return;
@@ -1215,8 +1188,9 @@ class _TechnicianOrganTasksScreenState
             const SizedBox(height: 12),
             // Description
             Text(
-              AppLocalizations.of(context)!
-                  .tls_waiting_for_activation_description,
+              AppLocalizations.of(
+                context,
+              )!.tls_waiting_for_activation_description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

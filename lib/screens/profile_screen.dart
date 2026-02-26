@@ -1192,7 +1192,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       (organName ?? '—'),
                                     ),
                                     // Show allowed devices count only when organ_type is not 'technician'
-                                    if (organType != 'technician')
+                                    // and user is not a driver (level 5)
+                                    if (organType != 'technician' &&
+                                        userLevel != 5)
                                       _kvRow(
                                         AppLocalizations.of(
                                           context,
