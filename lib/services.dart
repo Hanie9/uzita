@@ -27,11 +27,11 @@ const double kIconSize = 28.0;
 
 /// Map backend/raw user level to the new 3-level scheme used in the app:
 /// 1 => level 1 (admin / technician manager)
-/// 5 => level 3 (driver)
+/// 3 or 5 => level 3 (driver)
 /// every other value => level 2 (user / technician)
 int getLogicalUserLevel(int rawLevel) {
   if (rawLevel == 1) return 1;
-  if (rawLevel == 5) return 3;
+  if (rawLevel == 3 || rawLevel == 5) return 3;
   return 2;
 }
 

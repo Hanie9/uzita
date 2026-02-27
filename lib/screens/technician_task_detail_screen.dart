@@ -125,6 +125,151 @@ class _TechnicianTaskDetailScreenState
     }
   }
 
+  Future<void> _openPiecePicker() async {
+    if (pieceOptions.isEmpty) return;
+    final localizations = AppLocalizations.of(context)!;
+    final TextEditingController searchController = TextEditingController();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (modalContext, modalSetState) {
+            final String query = searchController.text;
+            final List<String> filtered = pieceOptions.where((String p) {
+              if (query.trim().isEmpty) return true;
+              return p.toLowerCase().contains(query.toLowerCase());
+            }).toList();
+
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.6,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            localizations.tech_piece_name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(bottomSheetContext).pop(),
+                            child: Text(localizations.trn_ok),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.format_list_numbered,
+                                size: 18,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${filtered.length} / ${pieceOptions.length}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                localizations.trn_pieces,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.iranianGray,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: localizations.trn_piece_hint,
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                size: 20,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onChanged: (_) => modalSetState(() {}),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final piece = filtered[index];
+                          return ListTile(
+                            title: Text(
+                              piece,
+                              style: const TextStyle(fontSize: 18),
+                              textDirection: Directionality.of(context),
+                            ),
+                            onTap: () {
+                              setState(() {
+                                selectedPiece = piece;
+                              });
+                              Navigator.of(bottomSheetContext).pop();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+    searchController.dispose();
+  }
+
   @override
   void dispose() {
     _timeController.dispose();
@@ -353,9 +498,7 @@ class _TechnicianTaskDetailScreenState
         );
       } else {
         if (mounted) {
-          throw Exception(
-            AppLocalizations.of(context)!.error_unknown,
-          );
+          throw Exception(AppLocalizations.of(context)!.error_unknown);
         }
       }
     } catch (e) {
@@ -363,9 +506,7 @@ class _TechnicianTaskDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.error_unknown,
-            ),
+            content: Text(AppLocalizations.of(context)!.error_unknown),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -382,9 +523,7 @@ class _TechnicianTaskDetailScreenState
     if (!_checkTaskFormKey.currentState!.validate() || selectedPiece == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.sss_add_required,
-          ),
+          content: Text(AppLocalizations.of(context)!.sss_add_required),
           backgroundColor: Colors.red,
         ),
       );
@@ -462,9 +601,7 @@ class _TechnicianTaskDetailScreenState
         );
       } else {
         if (mounted) {
-          throw Exception(
-            AppLocalizations.of(context)!.tech_check_task_error,
-          );
+          throw Exception(AppLocalizations.of(context)!.tech_check_task_error);
         }
       }
     } catch (e) {
@@ -472,9 +609,7 @@ class _TechnicianTaskDetailScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.tech_check_task_error,
-            ),
+            content: Text(AppLocalizations.of(context)!.tech_check_task_error),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -647,12 +782,7 @@ class _TechnicianTaskDetailScreenState
     final phone = widget.task['phone'] ?? '---';
     final urgency = widget.task['urgency']?.toString();
     final String assignedUsername =
-        (widget.task['assigned_username'] ??
-                widget.task['assigned_to'] ??
-                widget.task['technician_username'] ??
-                widget.task['technician'] ??
-                '')
-            .toString();
+        (widget.task['technician']?.toString() ?? '---');
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -1130,7 +1260,7 @@ class _TechnicianTaskDetailScreenState
                             ],
                           ),
                           SizedBox(height: 20),
-                          // Piece Selection
+                          // Piece Selection (searchable, like new goods request)
                           Text(
                             localizations.tech_piece_name,
                             style: TextStyle(
@@ -1140,55 +1270,65 @@ class _TechnicianTaskDetailScreenState
                             ),
                           ),
                           SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: selectedPiece,
-                            decoration: InputDecoration(
-                              hintText: localizations.tech_piece_name_hint,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.04,
-                                    ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.lapisLazuli,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyLarge?.color,
-                            ),
-                            items: pieceOptions.map((String part) {
-                              return DropdownMenuItem<String>(
-                                value: part,
-                                child: Text(
-                                  part,
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                selectedPiece = newValue;
-                              });
-                            },
+                          FormField<String>(
+                            initialValue: selectedPiece,
                             validator: (value) {
-                              if (value == null) {
+                              if (selectedPiece == null) {
                                 return localizations.tech_piece_name_error;
                               }
                               return null;
+                            },
+                            builder: (FormFieldState<String> state) {
+                              return InkWell(
+                                onTap: () async {
+                                  await _openPiecePicker();
+                                  state.didChange(selectedPiece);
+                                },
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    hintText: localizations.tech_piece_name_hint,
+                                    errorText: state.errorText,
+                                    filled: true,
+                                    fillColor:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[800]
+                                        : AppColors.lapisLazuli.withValues(
+                                            alpha: 0.04,
+                                          ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: AppColors.lapisLazuli,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    suffixIcon: const Icon(
+                                      Icons.arrow_drop_down,
+                                      color: AppColors.lapisLazuli,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    selectedPiece ??
+                                        localizations.tech_piece_name_hint,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: selectedPiece != null
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge
+                                              ?.color
+                                          : Theme.of(context)
+                                              .hintColor,
+                                    ),
+                                    textDirection: Directionality.of(context),
+                                  ),
+                                ),
+                              );
                             },
                           ),
                           SizedBox(height: 20),
@@ -1233,7 +1373,8 @@ class _TechnicianTaskDetailScreenState
                               }
                               final parsed = int.tryParse(value);
                               if (parsed == null) {
-                                return localizations.sss_other_costs_error_number;
+                                return localizations
+                                    .sss_other_costs_error_number;
                               }
                               if (parsed > 10000) {
                                 return localizations.tech_time_max_error;
@@ -1282,7 +1423,8 @@ class _TechnicianTaskDetailScreenState
                                 return localizations.tech_other_costs_error;
                               }
                               if (int.tryParse(value) == null) {
-                                return localizations.sss_other_costs_error_number;
+                                return localizations
+                                    .sss_other_costs_error_number;
                               }
                               return null;
                             },

@@ -44,7 +44,12 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
   int userLevel = 3;
 
   /// Subject type values for service request (level 1 & 3). Labels from localization.
-  static const List<String> subjectTypeValues = ['lock', 'password', 'learn', 'reopening'];
+  static const List<String> subjectTypeValues = [
+    'lock',
+    'password',
+    'learn',
+    'reopening',
+  ];
 
   bool isLoading = false;
 
@@ -662,11 +667,13 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                               final label = value == 'lock'
                                   ? loc.sss_subject_lock
                                   : value == 'password'
-                                      ? loc.sss_subject_password
-                                      : value == 'learn'
-                                          ? loc.sss_subject_learn
-                                          : loc.sss_subject_reopening;
-                              final isSelected = selectedSubjects.contains(value);
+                                  ? loc.sss_subject_password
+                                  : value == 'learn'
+                                  ? loc.sss_subject_learn
+                                  : loc.sss_subject_reopening;
+                              final isSelected = selectedSubjects.contains(
+                                value,
+                              );
                               return FilterChip(
                                 label: Text(
                                   label,
@@ -676,18 +683,26 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 onSelected: (selected) {
                                   setState(() {
                                     if (selected) {
-                                      selectedSubjects = List.from(selectedSubjects)..add(value);
+                                      selectedSubjects = List.from(
+                                        selectedSubjects,
+                                      )..add(value);
                                     } else {
-                                      selectedSubjects = selectedSubjects.where((s) => s != value).toList();
+                                      selectedSubjects = selectedSubjects
+                                          .where((s) => s != value)
+                                          .toList();
                                     }
                                   });
                                 },
-                                selectedColor: AppColors.lapisLazuli.withValues(alpha: 0.25),
+                                selectedColor: AppColors.lapisLazuli.withValues(
+                                  alpha: 0.25,
+                                ),
                                 checkmarkColor: AppColors.lapisLazuli,
                               );
                             }).toList(),
                           ),
-                          SizedBox(height: ui.scale(base: 20, min: 14, max: 24)),
+                          SizedBox(
+                            height: ui.scale(base: 20, min: 14, max: 24),
+                          ),
                         ],
                         // Description Field
                         Text(

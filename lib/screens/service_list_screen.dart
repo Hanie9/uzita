@@ -58,18 +58,38 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
+      if (token == null || token.isEmpty) {
+        if (mounted) setState(() => isLoading = false);
+        return;
+      }
 
       final ts = DateTime.now().millisecondsSinceEpoch;
+      final headers = <String, String>{
+        'Authorization': 'Bearer $token',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Connection': 'close',
+      };
       await SessionManager().onNetworkRequest();
-      final response = await http.get(
+
+      // Try primary endpoint first
+      http.Response response = await http.get(
         Uri.parse('$baseUrl5/listservice/?ts=$ts'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-          'Connection': 'close',
-        },
+        headers: headers,
       );
+
+      // If server error (500, 502, 503), try alternative endpoint used by some backends
+      if (response.statusCode >= 500 && response.statusCode < 600) {
+        final altResponse = await http.get(
+          Uri.parse('$baseUrl5/services/?ts=$ts'),
+          headers: headers,
+        );
+        if (altResponse.statusCode == 200) {
+          response = altResponse;
+        }
+      }
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final body = utf8.decode(response.bodyBytes);
@@ -81,8 +101,14 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
           setState(() => isLoading = false);
           return;
         }
+        List list = [];
+        if (data is List) {
+          list = data;
+        } else if (data is Map && data['results'] is List) {
+          list = data['results'] as List;
+        }
         setState(() {
-          services = (data as List);
+          services = list;
           isLoading = false;
         });
       } else if (response.statusCode == 403) {
@@ -97,7 +123,10 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
           ),
         );
       } else {
-        setState(() => isLoading = false);
+        setState(() {
+          services = [];
+          isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -107,12 +136,17 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
         );
       }
     } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.sls_error_connecting),
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          services = [];
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.sls_error_connecting),
+          ),
+        );
+      }
     }
   }
 
@@ -354,7 +388,17 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                       ),
                     )
                   : services.isEmpty
-                  ? _buildEmptyState()
+                  ? RefreshIndicator(
+                      onRefresh: fetchServices,
+                      color: AppColors.lapisLazuli,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: _buildEmptyState(),
+                        ),
+                      ),
+                    )
                   : RefreshIndicator(
                       onRefresh: fetchServices,
                       color: AppColors.lapisLazuli,
@@ -625,6 +669,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

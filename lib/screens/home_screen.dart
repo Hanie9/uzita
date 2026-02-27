@@ -1650,9 +1650,12 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                         title: AppLocalizations.of(
                                           context,
                                         )!.home_reports,
-                                        subtitle: (getLogicalUserLevel(
+                                        subtitle: (((getLogicalUserLevel(
                                                       userLevel) ==
-                                                  2 &&
+                                                    1) ||
+                                                  getLogicalUserLevel(
+                                                        userLevel) ==
+                                                    2) &&
                                                 organType == 'technician')
                                             ? AppLocalizations.of(
                                                 context,
@@ -1666,9 +1669,10 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                                 context,
                                               )!.home_reports_description,
                                         onTap: () {
-                                          if (getLogicalUserLevel(
-                                                        userLevel) ==
-                                                  2 &&
+                                          final int logicalLevel =
+                                              getLogicalUserLevel(userLevel);
+                                          if ((logicalLevel == 1 ||
+                                                  logicalLevel == 2) &&
                                               organType == 'technician') {
                                             Navigator.push(
                                               context,

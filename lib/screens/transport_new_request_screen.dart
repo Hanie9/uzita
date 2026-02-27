@@ -213,7 +213,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   Future<void> _openPiecesMenu() async {
     final localizations = AppLocalizations.of(context)!;
     final Set<String> tempSelected = Set<String>.from(_selectedPieces);
-    String searchQuery = '';
+    final TextEditingController searchController = TextEditingController();
 
     await showModalBottomSheet<void>(
       context: context,
@@ -224,19 +224,20 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
       builder: (bottomSheetContext) {
         return StatefulBuilder(
           builder: (modalContext, modalSetState) {
+            final String searchQuery = searchController.text;
+            final List<String> filteredPieces =
+                _availablePieces.where((piece) {
+              if (searchQuery.trim().isEmpty) return true;
+              final query = searchQuery.toLowerCase();
+              return piece.toLowerCase().contains(query);
+            }).toList();
+
             return DraggableScrollableSheet(
               expand: false,
               initialChildSize: 0.6,
               minChildSize: 0.4,
               maxChildSize: 0.9,
               builder: (context, scrollController) {
-                final List<String> filteredPieces =
-                    _availablePieces.where((piece) {
-                  if (searchQuery.trim().isEmpty) return true;
-                  final query = searchQuery.toLowerCase();
-                  return piece.toLowerCase().contains(query);
-                }).toList();
-
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -301,6 +302,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                           ),
                           const SizedBox(height: 8),
                           TextField(
+                            controller: searchController,
                             decoration: InputDecoration(
                               hintText: localizations.trn_piece_hint,
                               prefixIcon: const Icon(
@@ -317,11 +319,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onChanged: (value) {
-                              modalSetState(() {
-                                searchQuery = value;
-                              });
-                            },
+                            onChanged: (_) => modalSetState(() {}),
                           ),
                         ],
                       ),
@@ -363,6 +361,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
         );
       },
     );
+    searchController.dispose();
   }
 
   @override

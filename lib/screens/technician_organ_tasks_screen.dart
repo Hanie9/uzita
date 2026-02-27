@@ -943,7 +943,7 @@ class _TechnicianOrganTasksScreenState
                         ),
                       )
                     : Text(
-                        '${orgTasks.length + personalTasks.length} ${localizations.tech_mission}',
+                        '${_getUniqueMissionsCount()} ${localizations.tech_mission}',
                         style: TextStyle(
                           fontSize: ui.scale(base: 13, min: 12, max: 15),
                           fontWeight: FontWeight.w600,
@@ -956,6 +956,29 @@ class _TechnicianOrganTasksScreenState
         ],
       ),
     );
+  }
+
+  /// Returns the count of unique missions across organization missions and
+  /// the manager's own missions. If the same mission appears in both lists,
+  /// it is only counted once (based on its `id`).
+  int _getUniqueMissionsCount() {
+    final Set<String> ids = <String>{};
+
+    for (final Map<String, dynamic> t in orgTasks) {
+      final String id = (t['id'] ?? '').toString();
+      if (id.isNotEmpty) {
+        ids.add(id);
+      }
+    }
+
+    for (final Map<String, dynamic> t in personalTasks) {
+      final String id = (t['id'] ?? '').toString();
+      if (id.isNotEmpty) {
+        ids.add(id);
+      }
+    }
+
+    return ids.length;
   }
 
   @override

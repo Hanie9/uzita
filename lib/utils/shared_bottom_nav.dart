@@ -48,8 +48,8 @@ class SharedBottomNavigation extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: (getLogicalUserLevel(userLevel) == 2)
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: (getLogicalUserLevel(userLevel) == 2)
             ? isRTL
                   ? [
                       // For technician users in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)
@@ -113,10 +113,10 @@ class SharedBottomNavigation extends StatelessWidget {
                         onTap: () => onItemTapped(1),
                       ),
                     ]
-            : userLevel == 3
+            : getLogicalUserLevel(userLevel) == 3
             ? isRTL
                   ? [
-                      // Driver users in RTL: Profile, Public loads, Home (center), Missions, Reports
+                      // Driver users in RTL: Profile, Public loads, Missions, Home
                       _buildNavItem(
                         icon: Icons.person,
                         label: localizations.nav_profile,
@@ -131,7 +131,13 @@ class SharedBottomNavigation extends StatelessWidget {
                         color: AppColors.lapisLazuli,
                         onTap: () => onItemTapped(3),
                       ),
-                      // Centered home icon
+                      _buildNavItem(
+                        icon: Icons.assignment,
+                        label: localizations.nav_missions,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
                       _buildNavItem(
                         icon: Icons.home,
                         label: localizations.nav_home,
@@ -139,38 +145,9 @@ class SharedBottomNavigation extends StatelessWidget {
                         color: AppColors.lapisLazuli,
                         onTap: () => onItemTapped(0),
                       ),
-                      _buildNavItem(
-                        icon: Icons.assignment,
-                        label: localizations.nav_missions,
-                        isActive: selectedIndex == 2,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(2),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.list_alt,
-                        label: localizations.nav_reports,
-                        isActive: selectedIndex == 1,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(1),
-                      ),
                     ]
                   : [
-                      // Driver users in LTR: Reports, Missions, Home (center), Public loads, Profile
-                      _buildNavItem(
-                        icon: Icons.list_alt,
-                        label: localizations.nav_reports,
-                        isActive: selectedIndex == 1,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(1),
-                      ),
-                      _buildNavItem(
-                        icon: Icons.assignment,
-                        label: localizations.nav_missions,
-                        isActive: selectedIndex == 2,
-                        color: AppColors.lapisLazuli,
-                        onTap: () => onItemTapped(2),
-                      ),
-                      // Centered home icon
+                      // Driver users in LTR: Home, Public loads, Missions, Profile
                       _buildNavItem(
                         icon: Icons.home,
                         label: localizations.nav_home,
@@ -184,6 +161,13 @@ class SharedBottomNavigation extends StatelessWidget {
                         isActive: selectedIndex == 3,
                         color: AppColors.lapisLazuli,
                         onTap: () => onItemTapped(3),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.assignment,
+                        label: localizations.nav_missions,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
                       ),
                       _buildNavItem(
                         icon: Icons.person,
