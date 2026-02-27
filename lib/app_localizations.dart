@@ -1085,7 +1085,7 @@ class AppLocalizations {
       // Technician Screens (tech_)
       'tech_missions': 'Missions',
       'tech_mission': 'Mission',
-      'organ_missions_need_assignment': 'Organ missions (need assignment)',
+      'organ_missions_need_assignment': 'Organization missions',
       'my_missions': 'My missions',
       'tech_no_missions': 'No missions',
       'tech_no_missions_description':
@@ -1101,6 +1101,14 @@ class AppLocalizations {
       'tech_confirmation_success': 'Task confirmed successfully',
       'tech_confirmation_error': 'Error confirming task',
       'tech_assignment_success': 'Service assignment completed successfully',
+      'tech_assign_dialog_title': 'Assign mission',
+      'tech_assign_dialog_no_users':
+          'No users were found for your organization.',
+      'tech_assign_dialog_ok': 'OK',
+      'tech_assign_dialog_cancel': 'Cancel',
+      'tech_assign_dialog_assign': 'Assign',
+      'tech_assign_error': 'Error assigning mission',
+      'tech_assign_server_error': 'Error connecting to server',
       'tech_no_completed_tasks': 'No completed tasks',
       'tech_no_completed_tasks_description':
           'You have no completed tasks at the moment.',
@@ -1134,6 +1142,7 @@ class AppLocalizations {
       'tech_urgency_normal': 'Normal',
       'tech_urgency_urgent': 'Urgent',
       'tech_urgency_very_urgent': 'Very Urgent',
+      'tech_assigned_to': 'Assigned to',
 
       // Driver Screens (driver_)
       'driver_missions': 'Missions',
@@ -2211,7 +2220,7 @@ class AppLocalizations {
       // Technician Screens (tech_)
       'tech_missions': 'ماموریت ها',
       'tech_mission': 'ماموریت',
-      'organ_missions_need_assignment': 'ماموریت‌های سازمان (نیازمند واگذاری)',
+      'organ_missions_need_assignment': 'ماموریت‌های سازمان',
       'my_missions': 'ماموریت‌های من',
       'tech_no_missions': 'ماموریتی وجود ندارد',
       'tech_no_missions_description': 'در حال حاضر ماموریت در انتظاری ندارید.',
@@ -2225,6 +2234,13 @@ class AppLocalizations {
       'tech_confirm_task': 'تایید اتمام کار',
       'tech_confirmation_success': 'ماموریت با موفقیت تایید شد',
       'tech_assignment_success': 'سرویس واگذار شد.',
+      'tech_assign_dialog_title': 'واگذاری مأموریت',
+      'tech_assign_dialog_no_users': 'هیچ کاربری برای سازمان شما یافت نشد.',
+      'tech_assign_dialog_ok': 'باشه',
+      'tech_assign_dialog_cancel': 'انصراف',
+      'tech_assign_dialog_assign': 'واگذاری',
+      'tech_assign_error': 'خطا در واگذاری مأموریت',
+      'tech_assign_server_error': 'خطا در ارتباط با سرور',
       'tech_first_visit_date': 'زمان مراجعه اولیه',
       'tech_first_visit_date_hint': 'زمان مراجعه اولیه را انتخاب کنید',
       'tech_first_visit_date_error': 'لطفاً زمان مراجعه اولیه را انتخاب کنید',
@@ -2256,6 +2272,7 @@ class AppLocalizations {
       'tech_urgency_normal': 'عادی',
       'tech_urgency_urgent': 'فوری',
       'tech_urgency_very_urgent': 'خیلی فوری',
+      'tech_assigned_to': 'واگذار شده به',
       'tech_confirmation_error': 'خطا در تایید ماموریت',
       'tech_no_completed_tasks': 'ماموریت انجام شده‌ای وجود ندارد',
       'tech_no_completed_tasks_description':
@@ -3142,6 +3159,19 @@ class AppLocalizations {
       _getLocalizedValue('tech_confirmation_error');
   String get tech_assignment_success =>
       _getLocalizedValue('tech_assignment_success');
+  String get tech_assign_dialog_title =>
+      _getLocalizedValue('tech_assign_dialog_title');
+  String get tech_assign_dialog_no_users =>
+      _getLocalizedValue('tech_assign_dialog_no_users');
+  String get tech_assign_dialog_ok =>
+      _getLocalizedValue('tech_assign_dialog_ok');
+  String get tech_assign_dialog_cancel =>
+      _getLocalizedValue('tech_assign_dialog_cancel');
+  String get tech_assign_dialog_assign =>
+      _getLocalizedValue('tech_assign_dialog_assign');
+  String get tech_assign_error => _getLocalizedValue('tech_assign_error');
+  String get tech_assign_server_error =>
+      _getLocalizedValue('tech_assign_server_error');
   String get tech_no_completed_tasks =>
       _getLocalizedValue('tech_no_completed_tasks');
   String get tech_no_completed_tasks_description =>
@@ -3191,6 +3221,7 @@ class AppLocalizations {
   String get tech_urgency_urgent => _getLocalizedValue('tech_urgency_urgent');
   String get tech_urgency_very_urgent =>
       _getLocalizedValue('tech_urgency_very_urgent');
+  String get tech_assigned_to => _getLocalizedValue('tech_assigned_to');
 
   // Driver Screen getters (driver_*)
   String get driver_missions => _getLocalizedValue('driver_missions');

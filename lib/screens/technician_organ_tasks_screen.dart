@@ -144,17 +144,19 @@ class _TechnicianOrganTasksScreenState
       if (orgResponse.statusCode == 200) {
         final dynamic data = json.decode(utf8.decode(orgResponse.bodyBytes));
         if (data is List) {
+          // For the service organization manager, show all *active* organization
+          // missions (those that are not yet completed / done), whether assigned
+          // or not.
           parsedOrgTasks = data
               .whereType<Map<String, dynamic>>()
               .map<Map<String, dynamic>>(
                 (Map<String, dynamic> item) => Map<String, dynamic>.from(item),
               )
-              // فقط ماموریت‌هایی که هنوز باز هستند
-              .where(
-                (Map<String, dynamic> t) =>
-                    (t['status'] ?? 'open').toString() == 'open',
-              )
-              .toList();
+              .where((Map<String, dynamic> t) {
+                final String status =
+                    (t['status'] ?? '').toString().toLowerCase();
+                return status != 'done';
+              }).toList();
         }
       }
 
@@ -337,14 +339,15 @@ class _TechnicianOrganTasksScreenState
       await showDialog<void>(
         context: context,
         builder: (BuildContext ctx) {
+          final loc = AppLocalizations.of(ctx)!;
           return AlertDialog(
             backgroundColor: Theme.of(ctx).cardTheme.color,
-            title: const Text('واگذاری مأموریت'),
-            content: const Text('هیچ کاربری برای سازمان شما یافت نشد.'),
+            title: Text(loc.tech_assign_dialog_title),
+            content: Text(loc.tech_assign_dialog_no_users),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('باشه'),
+                child: Text(loc.tech_assign_dialog_ok),
               ),
             ],
           );
@@ -367,11 +370,12 @@ class _TechnicianOrganTasksScreenState
                 BuildContext context,
                 void Function(void Function()) setStateDialog,
               ) {
+                final loc = AppLocalizations.of(context)!;
                 return AlertDialog(
                   backgroundColor: Theme.of(context).cardTheme.color,
-                  title: const Text(
-                    'واگذاری مأموریت',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  title: Text(
+                    loc.tech_assign_dialog_title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   content: SizedBox(
                     width: double.maxFinite,
@@ -403,7 +407,7 @@ class _TechnicianOrganTasksScreenState
                   actions: <Widget>[
                     TextButton(
                       onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('انصراف'),
+                      child: Text(loc.tech_assign_dialog_cancel),
                     ),
                     ElevatedButton(
                       onPressed: isAssigning || selectedUsername == null
@@ -414,7 +418,7 @@ class _TechnicianOrganTasksScreenState
                               Navigator.of(dialogContext).pop();
                               await _assignTask(task['id'], username);
                             },
-                      child: const Text('واگذاری'),
+                      child: Text(loc.tech_assign_dialog_assign),
                     ),
                   ],
                 );
@@ -468,14 +472,18 @@ class _TechnicianOrganTasksScreenState
         }
 
         if (mounted) {
-          // Remove the assigned task from current orgTasks list immediately
+          // Update the assigned task in the local orgTasks list so it remains
+          // visible under organization missions but without the assign button.
           setState(() {
-            orgTasks = orgTasks
-                .where(
-                  (Map<String, dynamic> t) =>
-                      (t['id'] ?? '').toString() != id.toString(),
-                )
-                .toList();
+            orgTasks = orgTasks.map((Map<String, dynamic> t) {
+              if ((t['id'] ?? '').toString() == id.toString()) {
+                final Map<String, dynamic> updated = Map<String, dynamic>.from(t);
+                updated['status'] = 'assigned';
+                updated['assigned_username'] = username;
+                return updated;
+              }
+              return t;
+            }).toList();
           });
 
           ScaffoldMessenger.of(
@@ -487,7 +495,10 @@ class _TechnicianOrganTasksScreenState
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('خطا در واگذاری مأموریت')),
+            SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.tech_assign_error),
+            ),
           );
         }
       }
@@ -495,7 +506,13 @@ class _TechnicianOrganTasksScreenState
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('خطا در ارتباط با سرور')));
+        ).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.tech_assign_server_error,
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -506,7 +523,11 @@ class _TechnicianOrganTasksScreenState
     }
   }
 
-  Widget _buildTaskCard(Map<String, dynamic> task, bool canAssign) {
+  Widget _buildTaskCard(
+    Map<String, dynamic> task, {
+    required bool isOrgTask,
+    required bool canAssign,
+  }) {
     final localizations = AppLocalizations.of(context)!;
     final String taskId = (task['id'] ?? '').toString();
     final String title = (task['title'] ?? '---').toString();
@@ -519,11 +540,11 @@ class _TechnicianOrganTasksScreenState
 
     return GestureDetector(
       onTap: () {
-        // For tasks in the organization assignment section (canAssign == true),
-        // mark them so that the detail screen only shows basic task info
-        // without visit date / report forms.
+        // For organization missions (سرگروه تکنسین), mark the task so that
+        // the detail screen only shows basic info without visit date / report
+        // / cost forms – both before and after assignment.
         final Map<String, dynamic> taskToSend = Map<String, dynamic>.from(task);
-        if (canAssign) {
+        if (isOrgTask) {
           taskToSend['from_organ_assign_list'] = true;
         }
 
@@ -709,9 +730,9 @@ class _TechnicianOrganTasksScreenState
                     size: 18,
                     color: AppColors.lapisLazuli,
                   ),
-                  label: const Text(
-                    'واگذاری',
-                    style: TextStyle(
+                  label: Text(
+                    localizations.tech_assign_dialog_assign,
+                    style: const TextStyle(
                       color: AppColors.lapisLazuli,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1062,10 +1083,29 @@ class _TechnicianOrganTasksScreenState
                                           ).textTheme.bodyLarge?.color,
                                         ),
                                   ),
-                                ),
+                            ),
                                 ...orgTasks.map(
-                                  (Map<String, dynamic> task) =>
-                                      _buildTaskCard(task, true),
+                                  (Map<String, dynamic> task) {
+                                    // Determine if this mission is already assigned
+                                    final String assignedUsername = (task['assigned_username'] ??
+                                            task['technician_username'] ??
+                                            task['assigned_to'] ??
+                                            task['technician'] ??
+                                            '')
+                                        .toString()
+                                        .trim();
+                                    final bool hasAssignee =
+                                        assignedUsername.isNotEmpty;
+
+                                    // Show assign button only when not yet assigned
+                                    final bool canAssign = !hasAssignee;
+
+                                    return _buildTaskCard(
+                                      task,
+                                      isOrgTask: true,
+                                      canAssign: canAssign,
+                                    );
+                                  },
                                 ),
                               ],
                               if (personalTasks.isNotEmpty) ...[
@@ -1095,7 +1135,11 @@ class _TechnicianOrganTasksScreenState
                                 ),
                                 ...personalTasks.map(
                                   (Map<String, dynamic> task) =>
-                                      _buildTaskCard(task, false),
+                                      _buildTaskCard(
+                                    task,
+                                    isOrgTask: false,
+                                    canAssign: false,
+                                  ),
                                 ),
                               ],
                             ],

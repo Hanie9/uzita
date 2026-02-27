@@ -646,6 +646,13 @@ class _TechnicianTaskDetailScreenState
     final address = widget.task['address'] ?? '---';
     final phone = widget.task['phone'] ?? '---';
     final urgency = widget.task['urgency']?.toString();
+    final String assignedUsername =
+        (widget.task['assigned_username'] ??
+                widget.task['assigned_to'] ??
+                widget.task['technician_username'] ??
+                widget.task['technician'] ??
+                '')
+            .toString();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -945,6 +952,14 @@ class _TechnicianTaskDetailScreenState
                         phone,
                         Icons.phone,
                       ),
+                      if (assignedUsername.isNotEmpty) ...[
+                        SizedBox(height: 12),
+                        _buildInfoRow(
+                          localizations.tech_assigned_to,
+                          assignedUsername,
+                          Icons.person,
+                        ),
+                      ],
                       if (urgency != null) ...[
                         SizedBox(height: 12),
                         _buildInfoRow(

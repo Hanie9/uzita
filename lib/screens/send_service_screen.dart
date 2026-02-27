@@ -181,14 +181,14 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
       Map<String, dynamic> requestBody;
 
       if (userLevel == 1 || userLevel == 3) {
-        // For level 1 and 3: send title, description, address, phone, urgency, subject
+        // For level 1 and 3: send title, description, address, phone, urgency, subjects[]
         requestBody = {
           'title': _titleController.text,
           'description': _descriptionController.text,
           'address': _addressController.text,
           'phone': _phoneController.text,
           'urgency': selectedUrgency,
-          'subject': selectedSubjects,
+          'subjects': selectedSubjects,
         };
         // Add serial_number if provided (optional)
         if (_serialNumberController.text.trim().isNotEmpty) {
