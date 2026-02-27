@@ -330,26 +330,6 @@ class SharedAppDrawer extends StatelessWidget {
                         ),
                         ListTile(
                           minLeadingWidth: leadingWidth,
-                          leading: Icon(Icons.refresh_outlined, size: iconSize),
-                          title: Text(
-                            localizations.shareddrawer_refresh_data,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          contentPadding: tilePadding,
-                          minVerticalPadding: tileMinVerticalPad,
-                          horizontalTitleGap: horizontalTitleGap,
-                          dense: useDense,
-                          visualDensity: VisualDensity(
-                            vertical: verticalDensity,
-                          ),
-                          onTap: () {
-                            Navigator.pop(context);
-                            refreshUserData();
-                          },
-                        ),
-                        ListTile(
-                          minLeadingWidth: leadingWidth,
                           leading: Icon(Icons.lock_outline, size: iconSize),
                           title: Text(
                             localizations.shareddrawer_change_password,
