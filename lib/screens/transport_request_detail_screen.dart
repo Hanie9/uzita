@@ -704,22 +704,16 @@ class _TransportRequestDetailScreenState
     final String comment = (requestData['comment'] ?? '---').toString();
     final String grade = (requestData['grade'] ?? '---').toString();
 
-    // Check if user can rate (customers: level 1, 2, 4, 6 and status is 'done')
-    final bool canRate =
-        (userLevel == 1 ||
-            userLevel == 2 ||
-            userLevel == 4 ||
-            userLevel == 6) &&
+    // Check if user can rate:
+    // allow all non-driver logical levels (1 and 2) when status is 'done'
+    final int logicalLevel = getLogicalUserLevel(userLevel);
+    final bool canRate = (logicalLevel == 1 || logicalLevel == 2) &&
         status == 'done' &&
         (grade == '---' || grade.isEmpty);
 
-    // Check if user can complete task (customers: level 1, 2, 4, 6 and status is 'assigned')
+    // Check if user can complete task: same access rule but status 'assigned'
     final bool canCompleteTask =
-        (userLevel == 1 ||
-            userLevel == 2 ||
-            userLevel == 4 ||
-            userLevel == 6) &&
-        status == 'assigned';
+        (logicalLevel == 1 || logicalLevel == 2) && status == 'assigned';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

@@ -24,8 +24,8 @@ class DriverMissionsScreen extends StatefulWidget {
 class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
   List tasks = [];
   bool isLoading = true;
-  int selectedNavIndex = 2; // Missions tab index for level 5 users
-  int userLevel = 5;
+  int selectedNavIndex = 2; // Missions tab index for driver users
+  int userLevel = 3;
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
@@ -41,12 +41,13 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      userLevel = prefs.getInt('level') ?? 5;
+      final rawLevel = prefs.getInt('level') ?? 3;
+      userLevel = getLogicalUserLevel(rawLevel);
       username = prefs.getString('username') ?? '';
       userActive = prefs.getBool('active') ?? true;
       if (userLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-      } else if (userLevel == 5) {
+      } else if (userLevel == 3) {
         userRoleTitle = AppLocalizations.of(context)!.home_driver;
       } else {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;

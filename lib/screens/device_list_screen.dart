@@ -1104,18 +1104,26 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
   }
 
   String _getUserRoleTitle(int level, bool modir) {
-    if (level == 1 && modir) {
-      return AppLocalizations.of(context)!.dls_company_representative;
-    } else if (level == 1) {
-      return AppLocalizations.of(context)!.dls_admin;
+    final localizations = AppLocalizations.of(context)!;
+    final int logicalLevel = getLogicalUserLevel(level);
+    final String organ = organType.toLowerCase();
+
+    if (modir && logicalLevel == 1 && organ == 'technician') {
+      return localizations.dls_company_representative;
     }
-    switch (level) {
+
+    switch (logicalLevel) {
+      case 1:
+        return localizations.dls_admin;
       case 2:
-        return AppLocalizations.of(context)!.dls_installer;
+        if (organ == 'technician') {
+          return localizations.dls_installer;
+        }
+        return localizations.dls_regular_user;
       case 3:
-        return AppLocalizations.of(context)!.dls_regular_user;
+        return localizations.home_driver;
       default:
-        return AppLocalizations.of(context)!.dls_user;
+        return localizations.dls_user;
     }
   }
 

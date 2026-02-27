@@ -25,8 +25,8 @@ class TechnicianReportsScreen extends StatefulWidget {
 class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   List tasks = [];
   bool isLoading = true;
-  int selectedNavIndex = 2; // Reports tab index for level 4 users
-  int userLevel = 4;
+  int selectedNavIndex = 2; // Reports tab index for technician users
+  int userLevel = 2;
   String organType = '';
   String username = '';
   String userRoleTitle = '';
@@ -44,18 +44,20 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final bool isModir = prefs.getBool('modir') ?? false;
     setState(() {
-      userLevel = prefs.getInt('level') ?? 4;
+      userLevel = prefs.getInt('level') ?? 2;
       organType = (prefs.getString('organ_type') ?? '').toLowerCase();
       username = prefs.getString('username') ?? '';
       userActive = prefs.getBool('active') ?? true;
-      if (isModir) {
-        userRoleTitle = AppLocalizations.of(
-          context,
-        )!.pro_company_representative;
-      } else if (userLevel == 1) {
+      final int logicalLevel = getLogicalUserLevel(userLevel);
+      if (isModir && logicalLevel == 1 && organType == 'technician') {
+        userRoleTitle =
+            AppLocalizations.of(context)!.pro_company_representative;
+      } else if (logicalLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-      } else if (userLevel == 2 || userLevel == 4) {
+      } else if (logicalLevel == 2 && organType == 'technician') {
         userRoleTitle = AppLocalizations.of(context)!.pro_installer;
+      } else if (logicalLevel == 3) {
+        userRoleTitle = AppLocalizations.of(context)!.home_driver;
       } else {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;
       }

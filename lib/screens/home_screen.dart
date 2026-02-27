@@ -44,10 +44,10 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Statistics data
-  int activeDeviceCount = 0;
-  int onlineUserCount = 0;
-  int missionCount = 0; // For level 4 (technicians) and level 5 (drivers)
+// Statistics data
+int activeDeviceCount = 0;
+int onlineUserCount = 0;
+int missionCount = 0; // For technicians (level 2) and drivers (level 3)
 
   // Add: Fetch and count active users
   Future<void> fetchAndCountActiveUsers() async {
@@ -194,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Fetch and count missions for level 4 (technicians) and level 5 (drivers)
+  // Fetch and count missions for technicians (level 2) and drivers (level 3)
   Future<void> fetchAndCountMissions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -205,11 +205,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       String apiUrl;
+      final int logicalLevel = getLogicalUserLevel(userLevel);
+      final String organ = organType.toLowerCase();
 
-      if (userLevel == 2 || userLevel == 4) {
-        // Level 2 (normal technician) and Level 4: technician missions
+      if (logicalLevel == 2 && organ == 'technician') {
+        // Technician missions
         apiUrl = '$baseUrl5/technician/tasks?ts=$ts';
-      } else if (userLevel == 5) {
+      } else if (logicalLevel == 3) {
         // Driver missions
         apiUrl = '$baseUrl5/transport/task?ts=$ts';
       } else {
@@ -233,9 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final dynamic data = json.decode(body);
 
         int count = 0;
-
-        if (userLevel == 2 || userLevel == 4) {
-          // For technicians (level 2 and 4): count only pending missions (technician_confirm == false)
+        if (logicalLevel == 2 && organ == 'technician') {
+          // For technicians: count only pending missions (technician_confirm == false)
           if (data is List) {
             count = data
                 .where(
@@ -251,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
             }
             return;
           }
-        } else if (userLevel == 5) {
+        } else if (logicalLevel == 3) {
           // For drivers: count all missions (all tasks are pending for driver)
           if (data is List) {
             count = data.length;
@@ -402,24 +403,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   true; // ensure it shows again if server banner changed
             }
 
-            // Set user role title
+            // Set user role title using logical level
             final int level = data['level'] ?? 3;
             final bool isModir = data['modir'] ?? false;
-            if (isModir) {
+            final int logicalLevel = getLogicalUserLevel(level);
+            if (isModir && logicalLevel == 1 && organType == 'technician') {
               userRoleTitle = AppLocalizations.of(
                 context,
               )!.home_company_representative;
-            } else if (level == 1) {
+            } else if (logicalLevel == 1) {
               userRoleTitle = AppLocalizations.of(context)!.home_admin;
-            } else if (level == 2 || level == 4) {
-              // Level 2 and 4 are both installers (technicians)
+            } else if (logicalLevel == 2 && organType == 'technician') {
               userRoleTitle = AppLocalizations.of(context)!.home_installer;
-            } else if (level == 3) {
+            } else if (logicalLevel == 2) {
               userRoleTitle = AppLocalizations.of(context)!.home_user;
-            } else if (level == 5) {
+            } else if (logicalLevel == 3) {
               userRoleTitle = AppLocalizations.of(context)!.home_driver;
-            } else if (level == 6) {
-              userRoleTitle = AppLocalizations.of(context)!.home_retailer;
+            } else {
+              userRoleTitle = AppLocalizations.of(context)!.home_user;
             }
 
             isLoading = false;
@@ -427,15 +428,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         if (mounted) {
-          // Fetch statistics based on user level
-          if (userLevel == 2 || userLevel == 4 || userLevel == 5) {
-            // Level 2 (normal technician), Level 4 (technicians), Level 5 (drivers): Fetch missions
+          // Fetch statistics based on logical user level
+          final int logicalLevel = getLogicalUserLevel(userLevel);
+          if (logicalLevel == 2 || logicalLevel == 3) {
             fetchAndCountMissions();
-          } else if (userLevel == 3) {
-            // Level 3: Only fetch active devices (no users access)
-            fetchAndCountActiveDevices();
-          } else {
-            // Level 1: Fetch both devices and users
+          } else if (logicalLevel == 1) {
             fetchAndCountActiveDevices();
             fetchAndCountActiveUsers();
           }
@@ -485,23 +482,26 @@ class _HomeScreenState extends State<HomeScreen> {
           isWarehouse = storedIsWarehouse ?? false;
           organType = storedOrganType;
 
-          // Set user role title
-          if (storedModir == true) {
-            userRoleTitle = AppLocalizations.of(
-              context,
-            )!.home_company_representative;
-          } else if (storedLevel == 1) {
-            userRoleTitle = AppLocalizations.of(context)!.home_admin;
-          } else if (storedLevel == 2 || storedLevel == 4) {
-            // Level 2 and 4 are both installers (technicians)
-            userRoleTitle = AppLocalizations.of(context)!.home_installer;
-          } else if (storedLevel == 3) {
-            userRoleTitle = AppLocalizations.of(context)!.home_user;
-          } else if (storedLevel == 5) {
-            userRoleTitle = AppLocalizations.of(context)!.home_driver;
-          } else if (storedLevel == 6) {
-            userRoleTitle = AppLocalizations.of(context)!.home_retailer;
-          }
+        // Set user role title using logical level
+        final int logicalStoredLevel = getLogicalUserLevel(storedLevel ?? 3);
+        final String storedOrgan =
+            (prefs.getString('organ_type') ?? '').toLowerCase();
+        if (storedModir == true &&
+            logicalStoredLevel == 1 &&
+            storedOrgan == 'technician') {
+          userRoleTitle =
+              AppLocalizations.of(context)!.home_company_representative;
+        } else if (logicalStoredLevel == 1) {
+          userRoleTitle = AppLocalizations.of(context)!.home_admin;
+        } else if (logicalStoredLevel == 2 && storedOrgan == 'technician') {
+          userRoleTitle = AppLocalizations.of(context)!.home_installer;
+        } else if (logicalStoredLevel == 2) {
+          userRoleTitle = AppLocalizations.of(context)!.home_user;
+        } else if (logicalStoredLevel == 3) {
+          userRoleTitle = AppLocalizations.of(context)!.home_driver;
+        } else {
+          userRoleTitle = AppLocalizations.of(context)!.home_user;
+        }
 
           isLoading = false;
         });
@@ -509,14 +509,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // After user data is loaded, fetch statistics
       if (mounted) {
-        if (userLevel == 2 || userLevel == 4 || userLevel == 5) {
-          // Level 2 (normal technician), Level 4 (technicians), Level 5 (drivers): Fetch missions
+        final int logicalLevel = getLogicalUserLevel(userLevel);
+        if (logicalLevel == 2 || logicalLevel == 3) {
+          // Technicians and drivers: fetch missions
           fetchAndCountMissions();
-        } else if (userLevel == 3) {
-          // Level 3: Only fetch active devices (no users access)
-          fetchAndCountActiveDevices();
-        } else {
-          // Level 1: Fetch both devices and users
+        } else if (logicalLevel == 1) {
+          // Admin: fetch both devices and users
           fetchAndCountActiveDevices();
           fetchAndCountActiveUsers();
         }
@@ -533,15 +531,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // تابع برای refresh کردن دیتا (اختیاری)
   Future<void> refreshUserData() async {
     await loadUserDataFromServer();
-    // Refresh statistics based on user level
-    if (userLevel == 2 || userLevel == 4 || userLevel == 5) {
-      // Level 2 (normal technician), Level 4 (technicians), Level 5 (drivers): Fetch missions
+    // Refresh statistics based on logical user level
+    final int logicalLevel = getLogicalUserLevel(userLevel);
+    if (logicalLevel == 2 || logicalLevel == 3) {
       await fetchAndCountMissions();
-    } else if (userLevel == 3) {
-      // Level 3: Only fetch active devices (no users access)
-      await fetchAndCountActiveDevices();
-    } else {
-      // Level 1: Fetch both devices and users
+    } else if (logicalLevel == 1) {
       await fetchAndCountActiveDevices();
       await fetchAndCountActiveUsers();
     }
@@ -730,7 +724,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Handle navigation based on selected index and user level
-    if (userLevel == 4 || userLevel == 2) {
+    final int logicalLevel = getLogicalUserLevel(userLevel);
+    if (logicalLevel == 2 && organType == 'technician') {
       // Technician navigation: Home (0), Profile (1), Reports (2), Missions (3)
       switch (index) {
         case 0: // Home
@@ -788,7 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           break;
       }
-    } else if (userLevel == 5) {
+    } else if (getLogicalUserLevel(userLevel) == 3) {
       // Driver navigation: Home (0), Reports (1), Missions (2), Public loads (3), Profile (4)
       switch (index) {
         case 0: // Home
@@ -854,21 +849,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _getUserRoleTitle(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    if (userModir) {
-      return localizations.home_company_representative;
-    } else if (userLevel == 1) {
-      return localizations.home_admin;
-    } else if (userLevel == 2 || userLevel == 4) {
-      // Level 2 and 4 are both installers (technicians)
-      return localizations.home_installer;
-    } else if (userLevel == 3) {
-      return localizations.home_user;
-    } else if (userLevel == 5) {
-      return localizations.home_driver;
-    } else if (userLevel == 6) {
-      return localizations.home_retailer;
+    final String organ = organType.toLowerCase();
+    final int logicalLevel = getLogicalUserLevel(userLevel);
+
+    // Level 1: if technician org -> "مدیر سرویس کار" (use company representative),
+    //          else -> "مدیر" (admin)
+    // Level 2: if technician org -> "سرویس کار" (installer),
+    //          else -> "کاربر" (user)
+    // Level 3: always "راننده" (driver)
+    switch (logicalLevel) {
+      case 1:
+        if (organ == 'technician') {
+          return localizations.home_company_representative;
+        }
+        return localizations.home_admin;
+      case 2:
+        if (organ == 'technician') {
+          return localizations.home_installer;
+        }
+        return localizations.home_user;
+      case 3:
+        return localizations.home_driver;
+      default:
+        if (organ == 'technician') {
+          return localizations.home_installer;
+        }
+        return localizations.home_user;
     }
-    return '';
   }
 
   @override
@@ -1197,9 +1204,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Stack(
                                     children: [
                                       // Logo section with extra space to accommodate overlay cards
-                                      // Less height for drivers (level 5) to reduce spacing
+                                      // Less height for drivers to reduce spacing
                                       SizedBox(
-                                        height: (userLevel == 5)
+                                        height: (getLogicalUserLevel(userLevel) ==
+                                                3)
                                             ? logoHeight + 18
                                             : logoHeight + 28,
                                         child: Stack(
@@ -1225,11 +1233,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                         right: 0,
                                         child: Column(
                                           children: [
-                                            // For level 2 (normal technician), level 4 (technicians), level 5 (drivers): Show missions count (single card)
-                                            // For other levels: Show devices and users count (two cards)
-                                            if (userLevel == 2 ||
-                                                userLevel == 4 ||
-                                                userLevel == 5)
+                                            // For technicians and drivers: show missions count (single card)
+                                            // For other levels: show devices and users count (two cards)
+                                            if (getLogicalUserLevel(
+                                                      userLevel) ==
+                                                  2 ||
+                                                getLogicalUserLevel(
+                                                      userLevel) ==
+                                                  3)
                                               Container(
                                                 width: double.infinity,
                                                 height: 100,
@@ -1628,7 +1639,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           (userLevel == 1 &&
                                               organType != 'technician'))
                                         SizedBox(height: 12),
-                                      // Reports - for level 4, show technician reports
+                                      // Reports card
                                       _buildNavigationCard(
                                         icon: SvgPicture.asset(
                                           'assets/icons/report.svg',
@@ -1639,13 +1650,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                         title: AppLocalizations.of(
                                           context,
                                         )!.home_reports,
-                                        subtitle: (userLevel == 4 ||
-                                                (userLevel == 1 &&
-                                                    organType == 'technician'))
+                                        subtitle: (getLogicalUserLevel(
+                                                      userLevel) ==
+                                                  2 &&
+                                                organType == 'technician')
                                             ? AppLocalizations.of(
                                                 context,
                                               )!.home_reports_description_technician
-                                            : userLevel == 5
+                                            : getLogicalUserLevel(userLevel) ==
+                                                    3
                                             ? AppLocalizations.of(
                                                 context,
                                               )!.home_reports_description_driver
@@ -1653,9 +1666,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 context,
                                               )!.home_reports_description,
                                         onTap: () {
-                                          if (userLevel == 4 ||
-                                              (userLevel == 1 &&
-                                                  organType == 'technician')) {
+                                          if (getLogicalUserLevel(
+                                                        userLevel) ==
+                                                  2 &&
+                                              organType == 'technician') {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
@@ -1663,7 +1677,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     TechnicianReportsScreen(),
                                               ),
                                             );
-                                          } else if (userLevel == 5) {
+                                          } else if (getLogicalUserLevel(
+                                                    userLevel) ==
+                                                3) {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(

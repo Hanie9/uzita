@@ -891,18 +891,31 @@ class _UserListScreenState extends State<UserListScreen> {
     final bool isModir =
         (user['modir'] == true) || (userData?['modir'] == true);
 
-    if (isModir) {
+    if (isModir && level == '1') {
       userRoleTitle = AppLocalizations.of(context)!.uls_company_representative;
       levelColor = Colors.red;
-    } else if (level == '1') {
-      userRoleTitle = AppLocalizations.of(context)!.uls_admin;
-      levelColor = Colors.red;
-    } else if (level == '2') {
-      userRoleTitle = AppLocalizations.of(context)!.uls_installer;
-      levelColor = Colors.orange;
-    } else if (level == '3') {
-      userRoleTitle = AppLocalizations.of(context)!.uls_user;
-      levelColor = const Color(0xFF007BA7);
+    } else {
+      final int rawLevel = int.tryParse(level) ?? 0;
+      final int logicalLevel = getLogicalUserLevel(rawLevel);
+
+      // We don't have organ_type per user here, so assume non-technician labels.
+      switch (logicalLevel) {
+        case 1:
+          userRoleTitle = AppLocalizations.of(context)!.uls_admin;
+          levelColor = Colors.red;
+          break;
+        case 2:
+          userRoleTitle = AppLocalizations.of(context)!.uls_user;
+          levelColor = const Color(0xFF007BA7);
+          break;
+        case 3:
+          userRoleTitle = AppLocalizations.of(context)!.home_driver;
+          levelColor = Colors.orange;
+          break;
+        default:
+          userRoleTitle = AppLocalizations.of(context)!.uls_user;
+          levelColor = const Color(0xFF007BA7);
+      }
     }
 
     final theme = Theme.of(context);

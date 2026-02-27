@@ -54,12 +54,15 @@ class _TechnicianOrganTasksScreenState
 
     final AppLocalizations localizations = AppLocalizations.of(context)!;
     String roleTitle;
-    if (isModir) {
+    final int logicalLevel = getLogicalUserLevel(level);
+    if (isModir && logicalLevel == 1 && organ == 'technician') {
       roleTitle = localizations.pro_company_representative;
-    } else if (level == 1) {
+    } else if (logicalLevel == 1) {
       roleTitle = localizations.pro_admin;
-    } else if (level == 2 || level == 4) {
+    } else if (logicalLevel == 2 && organ == 'technician') {
       roleTitle = localizations.pro_installer;
+    } else if (logicalLevel == 3) {
+      roleTitle = localizations.home_driver;
     } else {
       roleTitle = localizations.pro_user;
     }

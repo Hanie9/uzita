@@ -71,18 +71,26 @@ class _CommandListScreenState extends State<CommandListScreen> {
   }
 
   String _getUserRoleTitle(int level, bool modir) {
-    if (level == 1 && modir) {
-      return AppLocalizations.of(context)!.cls_company_representative;
-    } else if (level == 1) {
-      return AppLocalizations.of(context)!.cls_admin;
+    final localizations = AppLocalizations.of(context)!;
+    final int logicalLevel = getLogicalUserLevel(level);
+    final String organ = organType.toLowerCase();
+
+    if (modir && logicalLevel == 1 && organ == 'technician') {
+      return localizations.cls_company_representative;
     }
-    switch (level) {
+
+    switch (logicalLevel) {
+      case 1:
+        return localizations.cls_admin;
       case 2:
-        return AppLocalizations.of(context)!.cls_installer;
+        if (organ == 'technician') {
+          return localizations.cls_installer;
+        }
+        return localizations.cls_regular_user;
       case 3:
-        return AppLocalizations.of(context)!.cls_regular_user;
+        return localizations.home_driver;
       default:
-        return AppLocalizations.of(context)!.cls_user;
+        return localizations.cls_user;
     }
   }
 

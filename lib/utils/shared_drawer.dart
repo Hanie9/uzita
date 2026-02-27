@@ -454,10 +454,8 @@ class SharedAppDrawer extends StatelessWidget {
                           userLevel: userLevel,
                           userModir: userModir,
                         ),
-                        if (userLevel == 1 ||
-                            userLevel == 2 ||
-                            userLevel == 4 ||
-                            userLevel == 6)
+                        if (getLogicalUserLevel(userLevel) == 1 ||
+                            getLogicalUserLevel(userLevel) == 2)
                           ListTile(
                             minLeadingWidth: leadingWidth,
                             leading: Icon(

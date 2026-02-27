@@ -5,7 +5,10 @@ import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:uzita/app_localizations.dart';
 import 'dart:convert';
 import 'package:uzita/services.dart'
-    show baseUrl5, AppColors; // reuse API base URL and colors
+    show
+        baseUrl5,
+        AppColors,
+        getLogicalUserLevel; // reuse API base URL and helpers
 import 'package:uzita/screens/editpassword_screen.dart';
 import 'package:uzita/screens/help_screen.dart';
 import 'package:uzita/screens/login_screen.dart';
@@ -72,37 +75,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       username = prefs.getString('username') ?? '';
-      userLevel = prefs.getInt('level') ?? 3;
+      final rawLevel = prefs.getInt('level') ?? 3;
+      userLevel = getLogicalUserLevel(rawLevel);
       userActive = prefs.getBool('active') ?? false;
       organType = (prefs.getString('organ_type') ?? '').toLowerCase();
-      // Set correct selectedNavIndex based on user level
-      if (userLevel == 4 || userLevel == 2 || userLevel == 1) {
-        // Profile index is 1 for technicians (2,4) and service lead (1)
+      // Set correct selectedNavIndex based on logical user level
+      final int logicalLevel = userLevel;
+      final bool isTechOrgan = organType == 'technician';
+      if ((logicalLevel == 1 || logicalLevel == 2) && isTechOrgan) {
+        // Technicians and their manager: profile at index 1
         selectedNavIndex = 1;
-      } else if (userLevel == 5) {
-        selectedNavIndex = 4; // Profile is index 4 for level 5 users (drivers)
+      } else if (logicalLevel == 3) {
+        // Driver: profile at index 4
+        selectedNavIndex = 4;
       } else {
-        selectedNavIndex = 3; // Profile is index 3 for other users
+        // Other users: profile at index 3
+        selectedNavIndex = 3;
       }
       _userMetaLoaded = true;
 
-      // Set user role title (modir overrides level)
+      // Set user role title (modir overrides level, using new 3-level scheme)
       final bool isModir = prefs.getBool('modir') ?? false;
-      if (isModir) {
+      if (isModir && logicalLevel == 1 && organType == 'technician') {
         userRoleTitle = AppLocalizations.of(
           context,
         )!.pro_company_representative;
-      } else if (userLevel == 1) {
+      } else if (logicalLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-      } else if (userLevel == 2 || userLevel == 4) {
-        // Level 2 and 4 are both installers (technicians)
+      } else if (logicalLevel == 2 && organType == 'technician') {
         userRoleTitle = AppLocalizations.of(context)!.pro_installer;
-      } else if (userLevel == 3) {
+      } else if (logicalLevel == 2) {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;
-      } else if (userLevel == 5) {
+      } else if (logicalLevel == 3) {
         userRoleTitle = AppLocalizations.of(context)!.home_driver;
-      } else if (userLevel == 6) {
-        userRoleTitle = AppLocalizations.of(context)!.home_retailer;
       } else {
         userRoleTitle = AppLocalizations.of(context)!.pro_user;
       }
@@ -241,30 +246,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 data['organ_title']?.toString() ??
                 profile['organ_title']?.toString();
 
-            // Update role title from fetched level (modir overrides)
-            // Use level from API if available, otherwise use stored level
-            final int effectiveLevel = level ?? userLevel;
-            if (effectiveLevel > 0) {
-              userLevel = effectiveLevel;
+            // Update role title from fetched level using new 3-level scheme
+            final int effectiveLevelRaw = level ?? userLevel;
+            if (effectiveLevelRaw > 0) {
+              userLevel = effectiveLevelRaw;
               final bool isModir =
                   (profile['modir'] == true) ||
                   (data['modir'] == true) ||
                   (prefs.getBool('modir') ?? false);
-              if (isModir) {
+              final int logicalLevel = getLogicalUserLevel(userLevel);
+              final String organ = (prefs.getString('organ_type') ?? '')
+                  .toLowerCase();
+
+              if (isModir && logicalLevel == 1 && organ == 'technician') {
                 userRoleTitle = AppLocalizations.of(
                   context,
                 )!.pro_company_representative;
-              } else if (userLevel == 1) {
+              } else if (logicalLevel == 1) {
                 userRoleTitle = AppLocalizations.of(context)!.pro_admin;
-              } else if (userLevel == 2 || userLevel == 4) {
-                // Level 2 and 4 are both installers (technicians)
+              } else if (logicalLevel == 2 && organ == 'technician') {
                 userRoleTitle = AppLocalizations.of(context)!.pro_installer;
-              } else if (userLevel == 3) {
+              } else if (logicalLevel == 2) {
                 userRoleTitle = AppLocalizations.of(context)!.pro_user;
-              } else if (userLevel == 5) {
+              } else if (logicalLevel == 3) {
                 userRoleTitle = AppLocalizations.of(context)!.home_driver;
-              } else if (userLevel == 6) {
-                userRoleTitle = AppLocalizations.of(context)!.home_retailer;
               } else {
                 userRoleTitle = AppLocalizations.of(context)!.pro_user;
               }
@@ -632,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     // Handle navigation based on selected index and user level
-    if (userLevel == 4 || userLevel == 2) {
+    if (getLogicalUserLevel(userLevel) == 2) {
       // Technician navigation: Home (0), Profile (1), Reports (2), Missions (3)
       switch (index) {
         case 0: // Home
@@ -665,21 +670,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         case 1: // Profile - already here
           break;
         case 2: // Reports
-          if (ModalRoute.of(context)?.settings.name !=
-              '/technician-reports') {
-            Navigator.pushReplacementNamed(
-              context,
-              '/technician-reports',
-            );
+          if (ModalRoute.of(context)?.settings.name != '/technician-reports') {
+            Navigator.pushReplacementNamed(context, '/technician-reports');
           }
           break;
         case 3: // Missions (organization tasks)
           if (ModalRoute.of(context)?.settings.name !=
               '/technician-organ-tasks') {
-            Navigator.pushReplacementNamed(
-              context,
-              '/technician-organ-tasks',
-            );
+            Navigator.pushReplacementNamed(context, '/technician-organ-tasks');
           }
           break;
         case 4: // Users
@@ -688,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
           break;
       }
-    } else if (userLevel == 5) {
+    } else if (getLogicalUserLevel(userLevel) == 3) {
       // Driver navigation: Home (0), Reports (1), Missions (2), Public loads (3), Profile (4)
       switch (index) {
         case 0: // Home
@@ -1192,9 +1190,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       (organName ?? '—'),
                                     ),
                                     // Show allowed devices count only when organ_type is not 'technician'
-                                    // and user is not a driver (level 5)
+                                    // and user is not a driver (logical level 3)
                                     if (organType != 'technician' &&
-                                        userLevel != 5)
+                                        getLogicalUserLevel(userLevel) != 3)
                                       _kvRow(
                                         AppLocalizations.of(
                                           context,
@@ -1328,7 +1326,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-
 
   // Key-Value row for details
   Widget _kvRow(String keyLabel, String value) {

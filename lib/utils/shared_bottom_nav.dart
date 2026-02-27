@@ -49,10 +49,10 @@ class SharedBottomNavigation extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: (userLevel == 4 || userLevel == 2)
+        children: (getLogicalUserLevel(userLevel) == 2)
             ? isRTL
                   ? [
-                      // For level 4 users (technicians) in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)
+                      // For technician users in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)
                       _buildNavItem(
                         icon: Icons.person,
                         label: localizations.nav_profile,
@@ -83,7 +83,7 @@ class SharedBottomNavigation extends StatelessWidget {
                       ),
                     ]
                   : [
-                      // For level 4 users (technicians) in LTR: Home (leftmost), Reports, Missions, Profile (rightmost)
+                      // For technician users in LTR: Home (leftmost), Reports, Missions, Profile (rightmost)
                       _buildNavItem(
                         icon: Icons.home,
                         label: localizations.nav_home,
@@ -113,10 +113,10 @@ class SharedBottomNavigation extends StatelessWidget {
                         onTap: () => onItemTapped(1),
                       ),
                     ]
-            : userLevel == 5
+            : userLevel == 3
             ? isRTL
                   ? [
-                      // Driver (level 5) in RTL: Profile, Public loads, Home (center), Missions, Reports
+                      // Driver users in RTL: Profile, Public loads, Home (center), Missions, Reports
                       _buildNavItem(
                         icon: Icons.person,
                         label: localizations.nav_profile,
@@ -155,7 +155,7 @@ class SharedBottomNavigation extends StatelessWidget {
                       ),
                     ]
                   : [
-                      // Driver (level 5) in LTR: Reports, Missions, Home (center), Public loads, Profile
+                      // Driver users in LTR: Reports, Missions, Home (center), Public loads, Profile
                       _buildNavItem(
                         icon: Icons.list_alt,
                         label: localizations.nav_reports,
