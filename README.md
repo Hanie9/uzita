@@ -76,7 +76,7 @@ flutter build web --release --base-href /pwa/
   - `technician_reports_screen.dart` – گزارشات تکنسین / مدیر سازمان سرویس‌کار
   - `driver_missions_screen.dart`, `driver_reports_screen.dart`, `driver_public_loads_screen.dart` – بخش راننده
   - `service_list_screen.dart`, `send_service_screen.dart` – لیست و درخواست‌های سرویس
-  - `transport_new_request_screen.dart` – درخواست جدید کالا
+  - `transport_new_request_screen.dart` – درخواست جدید حمل
   - سایر صفحات پروفایل، تیکت‌ها، کاربران و ...
 - `lib/utils/`:
   - `shared_bottom_nav.dart` – نوار ناوبری پایین مشترک با منطق نقش‌ها

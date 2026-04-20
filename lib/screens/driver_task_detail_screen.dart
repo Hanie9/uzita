@@ -146,7 +146,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
   Future<void> _completeTask() async {
     final localizations = AppLocalizations.of(context)!;
-    
+
     // Show dialog to enter report
     final report = await showDialog<String>(
       context: context,
@@ -166,12 +166,12 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
             maxLines: 5,
             autofocus: true,
           ),
-        actions: [
-          TextButton(
+          actions: [
+            TextButton(
               onPressed: () => Navigator.pop(context, null),
-            child: Text(localizations.home_no),
-          ),
-          TextButton(
+              child: Text(localizations.home_no),
+            ),
+            TextButton(
               onPressed: () {
                 if (reportController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -184,9 +184,9 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                 }
                 Navigator.pop(context, reportController.text.trim());
               },
-            child: Text(localizations.home_yes),
-          ),
-        ],
+              child: Text(localizations.home_yes),
+            ),
+          ],
         );
       },
     );
@@ -211,9 +211,8 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       await SessionManager().onNetworkRequest();
 
       // Confirm task with report
-      final url =
-          '$baseUrl5/transport/task/$taskId/confirm';
-      
+      final url = '$baseUrl5/transport/task/$taskId/confirm';
+
       final requestBody = <String, dynamic>{'report': report};
 
       final response = await http.post(
@@ -240,7 +239,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.green),
         );
-        
+
         // Navigate back to missions screen
         Navigator.pop(context, true);
       } else {
@@ -284,8 +283,14 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     final String report = (taskData['report'] ?? '').toString();
     final String status = (taskData['status'] ?? 'open').toString();
     final String createdAt = (taskData['created_at'] ?? '').toString();
+    final String invoiceNum = (taskData['invoice_number'] ?? '').toString();
+    final String outputNum = (taskData['output_number'] ?? '').toString();
+    final String coordination = (taskData['coordination_person'] ?? '')
+        .toString();
     final bool driverConfirm = taskData['driver_confirm'] ?? false;
     final bool customerConfirm = taskData['customer_confirm'] ?? false;
+    final String paymentType = (taskData['payment_type'] ?? '').toString();
+    final String customer = (taskData['customer'] ?? '').toString();
     // Handle price_transport - can be null, number, or string
     final dynamic priceTransportValue = taskData['price_transport'];
     final String priceTransport = priceTransportValue == null
@@ -354,129 +359,164 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         child: RefreshIndicator(
           onRefresh: _refreshTaskData,
           color: AppColors.lapisLazuli,
-        child: SingleChildScrollView(
+          child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-            ui.scale(base: 20, min: 16, max: 24),
-            ui.scale(base: 20, min: 16, max: 24),
-            ui.scale(base: 20, min: 16, max: 24),
-            ui.scale(base: 20, min: 16, max: 24) +
-                MediaQuery.of(context).padding.bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusBackgroundColor(status),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      _getStatusText(status, localizations),
-                      style: const TextStyle(
+            padding: EdgeInsets.fromLTRB(
+              ui.scale(base: 20, min: 16, max: 24),
+              ui.scale(base: 20, min: 16, max: 24),
+              ui.scale(base: 20, min: 16, max: 24),
+              ui.scale(base: 20, min: 16, max: 24) +
+                  MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status banner
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getStatusBackgroundColor(status),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
                         color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        size: 24,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        _getStatusText(status, localizations),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              _buildInfoItem(
-                context,
-                icon: Icons.location_city,
-                title: localizations.driver_mabda,
-                value: mabda,
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              _buildInfoItem(
-                context,
-                icon: Icons.location_on,
-                title: localizations.driver_maghsad,
-                value: maghsad,
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              _buildInfoItem(
-                context,
-                icon: Icons.phone,
-                title: localizations.driver_phone,
-                value: phone,
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              _buildInfoItem(
-                context,
-                icon: Icons.attach_money,
-                title: localizations.driver_price_transport,
-                value: priceTransport == '---'
-                    ? '---'
-                    : '$priceTransport ${localizations.sls_tooman}',
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              _buildInfoItem(
-                context,
-                icon: Icons.check_circle,
-                title: localizations.driver_driver_confirm,
-                value: driverConfirm
-                    ? localizations.driver_yes
-                    : localizations.driver_no,
-              ),
-              SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-              _buildInfoItem(
-                context,
-                icon: Icons.verified_user,
-                title: localizations.driver_customer_confirm,
-                value: customerConfirm
-                    ? localizations.driver_yes
-                    : localizations.driver_no,
-              ),
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              Text(
-                localizations.driver_description,
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.location_city,
+                  title: localizations.driver_mabda,
+                  value: mabda,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.location_on,
+                  title: localizations.driver_maghsad,
+                  value: maghsad,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.phone,
+                  title: localizations.driver_phone,
+                  value: phone,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.attach_money,
+                  title: localizations.driver_price_transport,
+                  value: priceTransport == '---'
+                      ? '---'
+                      : '$priceTransport ${localizations.sls_tooman}',
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.check_circle,
+                  title: localizations.driver_driver_confirm,
+                  value: driverConfirm
+                      ? localizations.driver_yes
+                      : localizations.driver_no,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.verified_user,
+                  title: localizations.driver_customer_confirm,
+                  value: customerConfirm
+                      ? localizations.driver_yes
+                      : localizations.driver_no,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.receipt_long,
+                  title: localizations.trn_invoice,
+                  value: invoiceNum,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.numbers,
+                  title: localizations.trn_output_number,
+                  value: outputNum,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.person,
+                  title: localizations.trn_coordination_person,
+                  value: coordination,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.payment,
+                  title: localizations.trn_payment_type,
+                  value: paymentType,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.person,
+                  title: localizations.trn_customer,
+                  value: customer,
+                ),
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                Text(
+                  localizations.driver_description,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[700]!
-                        : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                    width: 1,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
+                    ),
                   ),
                 ),
-                child: Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color:
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87,
-                  ),
-                ),
-              ),
                 // Report section (only for reports)
                 if (widget.isReport && report.isNotEmpty) ...[
                   SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
@@ -512,85 +552,85 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                     ),
                   ),
                 ],
-              SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
-              if (createdAt.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.iranianGray.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: AppColors.iranianGray,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${localizations.driver_created_at} ${_formatDate(context, createdAt)}',
-                        style: const TextStyle(
-                          fontSize: 14,
+                SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
+                if (createdAt.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.iranianGray.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 20,
                           color: AppColors.iranianGray,
-                          fontWeight: FontWeight.w500,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Complete Task Button (only for missions when driver_confirm is false, not reports)
-                if (!widget.isReport && driverConfirm == false)
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: ui.scale(base: 24, min: 20, max: 28),
-                    bottom: ui.scale(base: 16, min: 12, max: 20),
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _completeTask,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lapisLazuli,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: ui.scale(base: 16, min: 14, max: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${localizations.driver_created_at} ${_formatDate(context, createdAt)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.iranianGray,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.check_circle, size: 20),
-                                const SizedBox(width: 8),
-                                Text(
-                                  localizations.driver_complete_task,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
+                      ],
                     ),
                   ),
-                ),
-            ],
+                // Complete Task Button (only for missions when driver_confirm is false, not reports)
+                if (!widget.isReport && driverConfirm == false)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: ui.scale(base: 24, min: 20, max: 28),
+                      bottom: ui.scale(base: 16, min: 12, max: 20),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _completeTask,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lapisLazuli,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: ui.scale(base: 16, min: 14, max: 18),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: isLoading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.check_circle, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    localizations.driver_complete_task,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

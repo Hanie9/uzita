@@ -729,21 +729,21 @@ class AppLocalizations {
       'login_admin_register': 'Admin registration',
 
       // Transport Requests (trr_, trn_, trd_)
-      'shareddrawer_transport_requests': 'Goods requests',
-      'trr_title': 'Goods requests',
-      'trr_header': 'Goods requests',
+      'shareddrawer_transport_requests': 'Transport requests',
+      'trr_title': 'Transport requests',
+      'trr_header': 'Transport requests',
       'trr_count_label': 'requests',
       'trr_new_request': 'New request',
-      'trr_loading': 'Loading goods requests...',
-      'trr_no_requests': 'No goods requests found',
+      'trr_loading': 'Loading Transport requests...',
+      'trr_no_requests': 'No Transport requests found',
       'trr_no_requests_description':
-          'There are currently no goods requests in the system.',
-      'trr_error_fetching_requests': 'Error fetching goods requests',
+          'There are currently no Transport requests in the system.',
+      'trr_error_fetching_requests': 'Error fetching Transport requests',
       'trr_error_fetching_requests_status_code_403': 'Access denied',
       'trr_error_connecting_server': 'Error connecting to server',
 
-      'trn_title': 'New goods request',
-      'trn_form_title': 'Goods request form',
+      'trn_title': 'New Transport request',
+      'trn_form_title': 'Transport request form',
       'trn_pieces': 'Parts',
       'trn_piece_hint': 'Enter part name',
       'trn_add_piece': 'Add part',
@@ -756,16 +756,35 @@ class AppLocalizations {
       'trn_description': 'Description',
       'trn_description_hint': 'Enter description',
       'trn_description_error': 'Please enter description',
+      'trn_invoice': 'Invoice number',
+      'trn_invoice_hint': 'Enter invoice number',
+      'trn_invoice_error': 'Please enter invoice number',
+      'trn_output_number': 'Output number',
+      'trn_output_number_hint': 'Enter output number',
+      'trn_output_number_error': 'Please enter output number',
+      'trn_customer': 'Customer',
+      'trn_customer_hint': 'Enter customer',
+      'trn_customer_error': 'Please enter customer',
+      'trn_coordination_person': 'Coordination person',
+      'trn_coordination_person_hint': 'Enter coordination person',
+      'trn_coordination_person_error': 'Please enter coordination person',
+      'trn_payment_type': 'Payment type',
+      'trn_payment_type_hint': 'Enter payment type',
+      'trn_payment_type_error': 'Please enter payment type',
+      'trn_price_transport': 'Price transport',
+      'trn_price_transport_hint': 'Enter price transport',
+      'trn_price_transport_error': 'Please enter price transport',
       'trn_required_error': 'Please fill in all required fields',
       'trn_success_title': 'Successfully',
-      'trn_success_message': 'Your goods request has been submitted',
+      'trn_success_message': 'Your Transport request has been submitted',
       'trn_ok': 'OK',
       'trn_submit': 'Send request',
       'trn_loading_sending': 'Sending...',
       'trn_error_send_request': 'Error sending request',
       'trn_error_connecting': 'Error connecting to server',
+      'trn_direct': 'direct',
 
-      'trd_title': 'Goods request details',
+      'trd_title': 'Transport request details',
       'trd_pieces': 'Requested parts',
       'trd_maghsad': 'Destination',
       'trd_phone': 'Phone number',
@@ -1869,21 +1888,21 @@ class AppLocalizations {
       'login_admin_register': 'ثبت‌نام مدیر',
 
       // Transport Requests (trr_, trn_, trd_)
-      'shareddrawer_transport_requests': 'درخواست کالا',
-      'trr_title': 'درخواست کالا',
-      'trr_header': 'درخواست کالا',
+      'shareddrawer_transport_requests': 'درخواست حمل',
+      'trr_title': 'درخواست حمل',
+      'trr_header': 'درخواست حمل',
       'trr_count_label': 'درخواست',
       'trr_new_request': 'درخواست جدید',
-      'trr_loading': 'در حال بارگذاری درخواست‌های کالا...',
-      'trr_no_requests': 'درخواستی برای کالا ثبت نشده است',
+      'trr_loading': 'در حال بارگذاری درخواست‌های حمل...',
+      'trr_no_requests': 'درخواستی برای حمل ثبت نشده است',
       'trr_no_requests_description':
-          'هنوز هیچ درخواستی برای کالا در سیستم ثبت نشده است.',
-      'trr_error_fetching_requests': 'خطا در دریافت درخواست‌های کالا',
+          'هنوز هیچ درخواستی برای حمل در سیستم ثبت نشده است.',
+      'trr_error_fetching_requests': 'خطا در دریافت درخواست‌های حمل',
       'trr_error_fetching_requests_status_code_403': 'دسترسی غیرمجاز',
       'trr_error_connecting_server': 'خطا در اتصال به سرور',
 
-      'trn_title': 'درخواست جدید کالا',
-      'trn_form_title': 'فرم درخواست کالا',
+      'trn_title': 'درخواست جدید حمل',
+      'trn_form_title': 'فرم درخواست حمل',
       'trn_pieces': 'قطعات',
       'trn_piece_hint': 'نام قطعه را وارد کنید',
       'trn_add_piece': 'افزودن قطعه',
@@ -1896,6 +1915,24 @@ class AppLocalizations {
       'trn_description': 'توضیحات',
       'trn_description_hint': 'توضیحات را وارد کنید',
       'trn_description_error': 'لطفاً توضیحات را وارد کنید',
+      'trn_invoice': 'شماره فاکتور',
+      'trn_invoice_hint': 'شماره فاکتور را وارد کنید',
+      'trn_invoice_error': 'لطفاً شماره فاکتور را وارد کنید',
+      'trn_output_number': 'شماره خروجی',
+      'trn_output_number_hint': 'شماره خروجی را وارد کنید',
+      'trn_output_number_error': 'لطفاً شماره خروجی را وارد کنید',
+      'trn_customer': 'مشتری',
+      'trn_customer_hint': 'مشتری را وارد کنید',
+      'trn_customer_error': 'لطفاً مشتری را وارد کنید',
+      'trn_coordination_person': 'نفر هماهنگی',
+      'trn_coordination_person_hint': 'نفر هماهنگی را وارد کنید',
+      'trn_coordination_person_error': 'لطفاً نفر هماهنگی را وارد کنید',
+      'trn_payment_type': 'نوع پرداخت',
+      'trn_payment_type_hint': 'نوع پرداخت را وارد کنید',
+      'trn_payment_type_error': 'لطفاً نوع پرداخت را وارد کنید',
+      'trn_price_transport': 'قیمت حمل',
+      'trn_price_transport_hint': 'قیمت حمل را وارد کنید',
+      'trn_price_transport_error': 'لطفاً قیمت حمل را وارد کنید',
       'trn_required_error': 'لطفاً همه فیلدهای ضروری را تکمیل کنید',
       'trn_success_title': 'موفقیت آمیز',
       'trn_success_message': 'درخواست شما با موفقیت ثبت شد',
@@ -1904,8 +1941,9 @@ class AppLocalizations {
       'trn_loading_sending': 'در حال ارسال...',
       'trn_error_send_request': 'خطا در ارسال درخواست',
       'trn_error_connecting': 'خطا در اتصال به سرور',
+      'trn_direct': 'مستقیم از مشتری',
 
-      'trd_title': 'جزئیات درخواست کالا',
+      'trd_title': 'جزئیات درخواست حمل',
       'trd_pieces': 'قطعات درخواستی',
       'trd_maghsad': 'مقصد',
       'trd_phone': 'شماره تماس',
@@ -2485,6 +2523,33 @@ class AppLocalizations {
   String get trn_description_hint => _getLocalizedValue('trn_description_hint');
   String get trn_description_error =>
       _getLocalizedValue('trn_description_error');
+  String get trn_invoice => _getLocalizedValue('trn_invoice');
+  String get trn_invoice_hint => _getLocalizedValue('trn_invoice_hint');
+  String get trn_invoice_error => _getLocalizedValue('trn_invoice_error');
+  String get trn_output_number => _getLocalizedValue('trn_output_number');
+  String get trn_output_number_hint =>
+      _getLocalizedValue('trn_output_number_hint');
+  String get trn_output_number_error =>
+      _getLocalizedValue('trn_output_number_error');
+  String get trn_customer => _getLocalizedValue('trn_customer');
+  String get trn_customer_hint => _getLocalizedValue('trn_customer_hint');
+  String get trn_customer_error => _getLocalizedValue('trn_customer_error');
+  String get trn_coordination_person =>
+      _getLocalizedValue('trn_coordination_person');
+  String get trn_coordination_person_hint =>
+      _getLocalizedValue('trn_coordination_person_hint');
+  String get trn_coordination_person_error =>
+      _getLocalizedValue('trn_coordination_person_error');
+  String get trn_payment_type => _getLocalizedValue('trn_payment_type');
+  String get trn_payment_type_hint =>
+      _getLocalizedValue('trn_payment_type_hint');
+  String get trn_payment_type_error =>
+      _getLocalizedValue('trn_payment_type_error');
+  String get trn_price_transport => _getLocalizedValue('trn_price_transport');
+  String get trn_price_transport_hint =>
+      _getLocalizedValue('trn_price_transport_hint');
+  String get trn_price_transport_error =>
+      _getLocalizedValue('trn_price_transport_error');
   String get trn_required_error => _getLocalizedValue('trn_required_error');
   String get trn_success_title => _getLocalizedValue('trn_success_title');
   String get trn_success_message => _getLocalizedValue('trn_success_message');
@@ -2494,6 +2559,7 @@ class AppLocalizations {
   String get trn_error_send_request =>
       _getLocalizedValue('trn_error_send_request');
   String get trn_error_connecting => _getLocalizedValue('trn_error_connecting');
+  String get trn_direct => _getLocalizedValue('trn_direct');
 
   String get trd_title => _getLocalizedValue('trd_title');
   String get trd_pieces => _getLocalizedValue('trd_pieces');

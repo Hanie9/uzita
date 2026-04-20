@@ -24,6 +24,7 @@ final String baseUrl5 = apiBaseUrl;
 const double kSpacing = 20.0;
 const double kRadius = 16.0;
 const double kIconSize = 28.0;
+const paymentTypes = [('direct', 'مستقیم از مشتری'), ('invoice', 'فاکتور')];
 
 /// Map backend/raw user level to the new 3-level scheme used in the app:
 /// 1 => level 1 (admin / technician manager)

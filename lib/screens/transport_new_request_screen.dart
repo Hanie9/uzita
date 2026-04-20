@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:convert' show utf8;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,58 +23,73 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   final _maghsadController = TextEditingController();
   final _phoneController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _invoiceController = TextEditingController();
+  final _outputController = TextEditingController();
+  final _customerController = TextEditingController();
+  final _coordinationController = TextEditingController();
+  final _paymentController = TextEditingController();
+  final _priceController = TextEditingController();
 
   // Shared list of available parts (loaded from API)
-  List<String> _availablePieces = [];
+  // List<String> _availablePieces = [];
 
-  final List<String> _selectedPieces = <String>[];
+  String? _selectedPayment;
+
+  final List<Map<String, String>> paymentTypes = [
+    {
+      'value': 'direct',
+      'label_en': 'Direct from customer',
+      'label_fa': 'مستقیم از مشتری',
+    },
+    {'value': 'invoice', 'label_en': 'Invoice', 'label_fa': 'فاکتور'},
+  ];
 
   bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchPieces();
+    // _fetchPieces();
   }
 
-  Future<void> _fetchPieces() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+  // Future<void> _fetchPieces() async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token');
 
-      if (token == null) return;
+  //     if (token == null) return;
 
-      await SessionManager().onNetworkRequest();
-      final response = await http.get(
-        Uri.parse('$baseUrl5/listpieces'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
+  //     await SessionManager().onNetworkRequest();
+  //     final response = await http.get(
+  //       Uri.parse('$baseUrl5/listpieces'),
+  //       headers: {
+  //         'Authorization': 'Bearer $token',
+  //         'Content-Type': 'application/json',
+  //       },
+  //     );
 
-      if (!mounted) return;
+  //     if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        if (data is List) {
-          setState(() {
-            _availablePieces = data
-                .map((item) => item['name']?.toString() ?? '')
-                .where((name) => name.isNotEmpty)
-                .toList();
-          });
-        }
-      }
-    } catch (e) {
-      // If API fails, keep empty list - pieces will be loaded from API only
-      if (mounted) {
-        setState(() {
-          _availablePieces = [];
-        });
-      }
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(utf8.decode(response.bodyBytes));
+  //       if (data is List) {
+  //         setState(() {
+  //           _availablePieces = data
+  //               .map((item) => item['name']?.toString() ?? '')
+  //               .where((name) => name.isNotEmpty)
+  //               .toList();
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     // If API fails, keep empty list - pieces will be loaded from API only
+  //     if (mounted) {
+  //       setState(() {
+  //         _availablePieces = [];
+  //       });
+  //     }
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -83,6 +97,19 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
     _phoneController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  String _getpaymentLabel(String value) {
+    final localizations = AppLocalizations.of(context)!;
+
+    switch (value) {
+      case 'direct':
+        return localizations.trn_direct;
+      case 'invoice':
+        return localizations.trn_invoice;
+      default:
+        return '';
+    }
   }
 
   Future<void> _submit() async {
@@ -95,12 +122,12 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
       return;
     }
 
-    if (_selectedPieces.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(localizations.trn_required_error)));
-      return;
-    }
+    // if (_selectedPayment) {
+    //   ScaffoldMessenger.of(
+    //     context,
+    //   ).showSnackBar(SnackBar(content: Text(localizations.trn_required_error)));
+    //   return;
+    // }
 
     setState(() => isLoading = true);
 
@@ -109,10 +136,15 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
       final token = prefs.getString('token');
 
       final body = <String, dynamic>{
-        'pieces': _selectedPieces,
+        'invoice_number': _invoiceController.text.trim(),
+        'output_number': _outputController.text.trim(),
         'maghsad': _maghsadController.text.trim(),
         'phone': _phoneController.text.trim(),
         'description': _descriptionController.text.trim(),
+        'customer': _customerController.text.trim(),
+        'coordination_person': _coordinationController.text.trim(),
+        'payment_type': _paymentController.text.trim(),
+        'price_transport': _priceController.value,
       };
 
       await SessionManager().onNetworkRequest();
@@ -210,159 +242,160 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
     }
   }
 
-  Future<void> _openPiecesMenu() async {
-    final localizations = AppLocalizations.of(context)!;
-    final Set<String> tempSelected = Set<String>.from(_selectedPieces);
-    final TextEditingController searchController = TextEditingController();
+  // Future<void> _openPiecesMenu() async {
+  //   final localizations = AppLocalizations.of(context)!;
+  //   final Set<String> tempSelected = Set<String>.from(_selectedPieces);
+  //   final TextEditingController searchController = TextEditingController();
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (bottomSheetContext) {
-        return StatefulBuilder(
-          builder: (modalContext, modalSetState) {
-            final String searchQuery = searchController.text;
-            final List<String> filteredPieces =
-                _availablePieces.where((piece) {
-              if (searchQuery.trim().isEmpty) return true;
-              final query = searchQuery.toLowerCase();
-              return piece.toLowerCase().contains(query);
-            }).toList();
+  //   await showModalBottomSheet<void>(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  //     ),
+  //     builder: (bottomSheetContext) {
+  //       return StatefulBuilder(
+  //         builder: (modalContext, modalSetState) {
+  //           final String searchQuery = searchController.text;
+  //           final List<String> filteredPieces = _availablePieces.where((piece) {
+  //             if (searchQuery.trim().isEmpty) return true;
+  //             final query = searchQuery.toLowerCase();
+  //             return piece.toLowerCase().contains(query);
+  //           }).toList();
 
-            return DraggableScrollableSheet(
-              expand: false,
-              initialChildSize: 0.6,
-              minChildSize: 0.4,
-              maxChildSize: 0.9,
-              builder: (context, scrollController) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            localizations.trn_pieces,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.of(bottomSheetContext).pop(),
-                            child: Text(localizations.trn_ok),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.format_list_numbered,
-                                size: 18,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${filteredPieces.length} / ${_availablePieces.length}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                localizations.trn_pieces,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.iranianGray,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: localizations.trn_piece_hint,
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                size: 20,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onChanged: (_) => modalSetState(() {}),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        controller: scrollController,
-                        itemCount: filteredPieces.length,
-                        itemBuilder: (context, index) {
-                          final piece = filteredPieces[index];
-                          final bool isChecked = tempSelected.contains(piece);
-                          return CheckboxListTile(
-                            value: isChecked,
-                            title:
-                                Text(piece, style: const TextStyle(fontSize: 18)),
-                            onChanged: (checked) {
-                              modalSetState(() {
-                                if (checked == true) {
-                                  tempSelected.add(piece);
-                                } else {
-                                  tempSelected.remove(piece);
-                                }
-                              });
-                              setState(() {
-                                _selectedPieces
-                                  ..clear()
-                                  ..addAll(tempSelected);
-                              });
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-    searchController.dispose();
-  }
+  //           return DraggableScrollableSheet(
+  //             expand: false,
+  //             initialChildSize: 0.6,
+  //             minChildSize: 0.4,
+  //             maxChildSize: 0.9,
+  //             builder: (context, scrollController) {
+  //               return Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Padding(
+  //                     padding: const EdgeInsets.symmetric(
+  //                       horizontal: 16,
+  //                       vertical: 12,
+  //                     ),
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Text(
+  //                           localizations.trn_pieces,
+  //                           style: const TextStyle(
+  //                             fontSize: 16,
+  //                             fontWeight: FontWeight.w600,
+  //                           ),
+  //                         ),
+  //                         TextButton(
+  //                           onPressed: () =>
+  //                               Navigator.of(bottomSheetContext).pop(),
+  //                           child: Text(localizations.trn_ok),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   const Divider(height: 1),
+  //                   Padding(
+  //                     padding: const EdgeInsets.symmetric(
+  //                       horizontal: 16,
+  //                       vertical: 8,
+  //                     ),
+  //                     child: Column(
+  //                       crossAxisAlignment: CrossAxisAlignment.start,
+  //                       children: [
+  //                         Row(
+  //                           children: [
+  //                             const Icon(
+  //                               Icons.format_list_numbered,
+  //                               size: 18,
+  //                               color: AppColors.lapisLazuli,
+  //                             ),
+  //                             const SizedBox(width: 6),
+  //                             Text(
+  //                               '${filteredPieces.length} / ${_availablePieces.length}',
+  //                               style: const TextStyle(
+  //                                 fontSize: 14,
+  //                                 fontWeight: FontWeight.w700,
+  //                                 color: AppColors.lapisLazuli,
+  //                               ),
+  //                             ),
+  //                             const SizedBox(width: 6),
+  //                             Text(
+  //                               localizations.trn_pieces,
+  //                               style: const TextStyle(
+  //                                 fontSize: 13,
+  //                                 fontWeight: FontWeight.w500,
+  //                                 color: AppColors.iranianGray,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         const SizedBox(height: 8),
+  //                         TextField(
+  //                           controller: searchController,
+  //                           decoration: InputDecoration(
+  //                             hintText: localizations.trn_piece_hint,
+  //                             prefixIcon: const Icon(
+  //                               Icons.search,
+  //                               size: 20,
+  //                               color: AppColors.lapisLazuli,
+  //                             ),
+  //                             isDense: true,
+  //                             contentPadding: const EdgeInsets.symmetric(
+  //                               horizontal: 12,
+  //                               vertical: 10,
+  //                             ),
+  //                             border: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(12),
+  //                             ),
+  //                           ),
+  //                           onChanged: (_) => modalSetState(() {}),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   Expanded(
+  //                     child: ListView.builder(
+  //                       controller: scrollController,
+  //                       itemCount: filteredPieces.length,
+  //                       itemBuilder: (context, index) {
+  //                         final piece = filteredPieces[index];
+  //                         final bool isChecked = tempSelected.contains(piece);
+  //                         return CheckboxListTile(
+  //                           value: isChecked,
+  //                           title: Text(
+  //                             piece,
+  //                             style: const TextStyle(fontSize: 18),
+  //                           ),
+  //                           onChanged: (checked) {
+  //                             modalSetState(() {
+  //                               if (checked == true) {
+  //                                 tempSelected.add(piece);
+  //                               } else {
+  //                                 tempSelected.remove(piece);
+  //                               }
+  //                             });
+  //                             setState(() {
+  //                               _selectedPieces
+  //                                 ..clear()
+  //                                 ..addAll(tempSelected);
+  //                             });
+  //                           },
+  //                         );
+  //                       },
+  //                     ),
+  //                   ),
+  //                 ],
+  //               );
+  //             },
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  //   searchController.dispose();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -534,66 +567,65 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          localizations.trn_pieces,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.lapisLazuli,
-                          ),
-                          textDirection: Directionality.of(context),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _selectedPieces.isEmpty
-                              ? [
-                                  Chip(
-                                    label: Text(localizations.trd_unknown),
-                                    backgroundColor: AppColors.lapisLazuli
-                                        .withValues(alpha: 0.06),
-                                  ),
-                                ]
-                              : _selectedPieces
-                                    .map(
-                                      (p) => Chip(
-                                        label: Text(
-                                          p,
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                        labelPadding: EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        onDeleted: () {
-                                          setState(() {
-                                            _selectedPieces.remove(p);
-                                          });
-                                        },
-                                      ),
-                                    )
-                                    .toList(),
-                        ),
-                        Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: TextButton.icon(
-                            onPressed: _openPiecesMenu,
-                            icon: const Icon(
-                              Icons.add,
-                              color: AppColors.lapisLazuli,
-                              size: 18,
-                            ),
-                            label: Text(
-                              localizations.trn_add_piece,
-                              style: const TextStyle(
-                                color: AppColors.lapisLazuli,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        // Text(
+                        //   localizations.trn_pieces,
+                        //   style: const TextStyle(
+                        //     fontSize: 16,
+                        //     fontWeight: FontWeight.w600,
+                        //     color: AppColors.lapisLazuli,
+                        //   ),
+                        //   textDirection: Directionality.of(context),
+                        // ),
+                        // const SizedBox(height: 8),
+                        // Wrap(
+                        //   spacing: 8,
+                        //   runSpacing: 8,
+                        //   children: _selectedPieces.isEmpty
+                        //       ? [
+                        //           Chip(
+                        //             label: Text(localizations.trd_unknown),
+                        //             backgroundColor: AppColors.lapisLazuli
+                        //                 .withValues(alpha: 0.06),
+                        //           ),
+                        //         ]
+                        //       : _selectedPieces
+                        //             .map(
+                        //               (p) => Chip(
+                        //                 label: Text(
+                        //                   p,
+                        //                   style: TextStyle(fontSize: 16),
+                        //                 ),
+                        //                 labelPadding: EdgeInsets.symmetric(
+                        //                   horizontal: 12,
+                        //                   vertical: 8,
+                        //                 ),
+                        //                 onDeleted: () {
+                        //                   setState(() {
+                        //                     _selectedPieces.remove(p);
+                        //                   });
+                        //                 },
+                        //               ),
+                        //             )
+                        //             .toList(),
+                        // ),
+                        // Align(
+                        //   alignment: AlignmentDirectional.centerEnd,
+                        //   child: TextButton.icon(
+                        //     onPressed: _openPiecesMenu,
+                        //     icon: const Icon(
+                        //       Icons.add,
+                        //       color: AppColors.lapisLazuli,
+                        //       size: 18,
+                        //     ),
+                        //     label: Text(
+                        //       localizations.trn_add_piece,
+                        //       style: const TextStyle(
+                        //         color: AppColors.lapisLazuli,
+                        //         fontWeight: FontWeight.w500,
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
                         Text(
                           localizations.trn_maghsad,
                           style: const TextStyle(
@@ -768,6 +800,446 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return localizations.trn_description_error;
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        Text(
+                          localizations.trn_invoice,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
+                          ),
+                          textDirection: Directionality.of(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _invoiceController,
+                          textDirection: Directionality.of(context),
+                          textAlign:
+                              Directionality.of(context) == TextDirection.rtl
+                              ? TextAlign.right
+                              : TextAlign.left,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            hintText: localizations.trn_invoice_hint,
+                            hintStyle: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : AppColors.lapisLazuli.withValues(alpha: 0.04),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: const BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.receipt_long,
+                              color: AppColors.lapisLazuli,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return localizations.trn_invoice_error;
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        Text(
+                          localizations.trn_output_number,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _outputController,
+                          textDirection: Directionality.of(context),
+                          textAlign:
+                              Directionality.of(context) == TextDirection.rtl
+                              ? TextAlign.right
+                              : TextAlign.left,
+                          decoration: InputDecoration(
+                            hintText: localizations.trn_output_number_hint,
+                            hintStyle: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : AppColors.lapisLazuli.withValues(alpha: 0.04),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: const BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.location_on,
+                              color: AppColors.lapisLazuli,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return localizations.trn_output_number_error;
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        Text(
+                          localizations.trn_customer,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
+                          ),
+                          textDirection: Directionality.of(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _customerController,
+                          textDirection: Directionality.of(context),
+                          textAlign:
+                              Directionality.of(context) == TextDirection.rtl
+                              ? TextAlign.right
+                              : TextAlign.left,
+                          decoration: InputDecoration(
+                            hintText: localizations.trn_customer_hint,
+                            hintStyle: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : AppColors.lapisLazuli.withValues(alpha: 0.04),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: const BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.person,
+                              color: AppColors.lapisLazuli,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return localizations.trn_customer_error;
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        Text(
+                          localizations.trn_coordination_person,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
+                          ),
+                          textDirection: Directionality.of(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _coordinationController,
+                          textDirection: Directionality.of(context),
+                          textAlign:
+                              Directionality.of(context) == TextDirection.rtl
+                              ? TextAlign.right
+                              : TextAlign.left,
+                          decoration: InputDecoration(
+                            hintText:
+                                localizations.trn_coordination_person_hint,
+                            hintStyle: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : AppColors.lapisLazuli.withValues(alpha: 0.04),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: const BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.person,
+                              color: AppColors.lapisLazuli,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return localizations
+                                  .trn_coordination_person_error;
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(
+                            UiScale(context).scale(base: 20, min: 16, max: 24),
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(
+                              UiScale(
+                                context,
+                              ).scale(base: 16, min: 12, max: 20),
+                            ),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[200]!,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  SizedBox(
+                                    width: UiScale(
+                                      context,
+                                    ).scale(base: 12, min: 8, max: 16),
+                                  ),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.trn_payment_type,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontSize: UiScale(
+                                            context,
+                                          ).scale(base: 16, min: 14, max: 18),
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Vazir',
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: UiScale(
+                                  context,
+                                ).scale(base: 16, min: 12, max: 20),
+                              ),
+                              DropdownButtonFormField<String>(
+                                value: _selectedPayment,
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(
+                                    context,
+                                  )!.trn_payment_type_hint,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      UiScale(
+                                        context,
+                                      ).scale(base: 12, min: 8, max: 16),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.grey[600]!
+                                          : Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      UiScale(
+                                        context,
+                                      ).scale(base: 12, min: 8, max: 16),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: AppColors.lapisLazuli,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      UiScale(
+                                        context,
+                                      ).scale(base: 12, min: 8, max: 16),
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: Colors.red,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[800]
+                                      : Colors.grey[50],
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: UiScale(
+                                      context,
+                                    ).scale(base: 16, min: 12, max: 20),
+                                    vertical: UiScale(
+                                      context,
+                                    ).scale(base: 12, min: 8, max: 16),
+                                  ),
+                                ),
+                                items: paymentTypes.map((subject) {
+                                  return DropdownMenuItem<String>(
+                                    value: subject['value'],
+                                    child: Text(
+                                      _getpaymentLabel(subject['value']!),
+                                      style: TextStyle(fontFamily: 'Vazir'),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedPayment = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return AppLocalizations.of(
+                                      context,
+                                    )!.trn_payment_type_error;
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                        Text(
+                          localizations.trn_price_transport,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
+                          ),
+                          textDirection: Directionality.of(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _priceController,
+                          textDirection: Directionality.of(context),
+                          textAlign:
+                              Directionality.of(context) == TextDirection.rtl
+                              ? TextAlign.right
+                              : TextAlign.left,
+                          decoration: InputDecoration(
+                            hintText: localizations.trn_price_transport_hint,
+                            hintStyle: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : AppColors.lapisLazuli.withValues(alpha: 0.04),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ui.scale(base: 14, min: 12, max: 18),
+                              ),
+                              borderSide: const BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.attach_money,
+                              color: AppColors.lapisLazuli,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return localizations.trn_price_transport_error;
                             }
                             return null;
                           },

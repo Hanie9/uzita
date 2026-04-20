@@ -68,9 +68,7 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
       final ts = DateTime.now().millisecondsSinceEpoch;
       await SessionManager().onNetworkRequest();
       final response = await http.get(
-        Uri.parse(
-          '$baseUrl5/transport/listrequest?ts=$ts',
-        ),
+        Uri.parse('$baseUrl5/transport/listrequest?ts=$ts'),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',
@@ -150,13 +148,13 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
     }
   }
 
-  String _buildPiecesSummary(List<dynamic> pieces) {
-    if (pieces.isEmpty) return '---';
-    final safePieces = pieces.map((e) => e.toString()).toList();
-    if (safePieces.length == 1) return safePieces.first;
-    if (safePieces.length == 2) return '${safePieces[0]} و ${safePieces[1]}';
-    return '${safePieces[0]} و ${safePieces[1]} و ...';
-  }
+  // String _buildPiecesSummary(List<dynamic> pieces) {
+  //   if (pieces.isEmpty) return '---';
+  //   final safePieces = pieces.map((e) => e.toString()).toList();
+  //   if (safePieces.length == 1) return safePieces.first;
+  //   if (safePieces.length == 2) return '${safePieces[0]} و ${safePieces[1]}';
+  //   return '${safePieces[0]} و ${safePieces[1]} و ...';
+  // }
 
   String _getStatusText(String status, AppLocalizations localizations) {
     switch (status) {
@@ -427,8 +425,8 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                         itemCount: requests.length,
                         itemBuilder: (context, index) {
                           final request = requests[index] as Map;
-                          final List<dynamic> pieces =
-                              (request['pieces'] as List?) ?? [];
+                          // final List<dynamic> pieces =
+                          //     (request['pieces'] as List?) ?? [];
                           final createdAt = (request['created_at'] ?? '')
                               .toString();
                           final status = (request['status'] ?? 'open')
@@ -514,22 +512,22 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            _buildPiecesSummary(pieces),
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.color,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            textDirection: Directionality.of(
-                                              context,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
+                                          // Text(
+                                          //   _buildPiecesSummary(pieces),
+                                          //   style: TextStyle(
+                                          //     fontSize: 16,
+                                          //     fontWeight: FontWeight.bold,
+                                          //     color: Theme.of(
+                                          //       context,
+                                          //     ).textTheme.bodyMedium?.color,
+                                          //   ),
+                                          //   maxLines: 1,
+                                          //   overflow: TextOverflow.ellipsis,
+                                          //   textDirection: Directionality.of(
+                                          //     context,
+                                          //   ),
+                                          // ),
+                                          // const SizedBox(height: 6),
                                           Wrap(
                                             spacing: 12,
                                             runSpacing: 4,
