@@ -821,6 +821,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               Directionality.of(context) == TextDirection.rtl
                               ? TextAlign.right
                               : TextAlign.left,
+                          keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             hintText: localizations.trn_invoice_hint,
                             hintStyle: TextStyle(
@@ -879,6 +880,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               Directionality.of(context) == TextDirection.rtl
                               ? TextAlign.right
                               : TextAlign.left,
+                          keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             hintText: localizations.trn_output_number_hint,
                             hintStyle: TextStyle(
@@ -1147,6 +1149,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               Directionality.of(context) == TextDirection.rtl
                               ? TextAlign.right
                               : TextAlign.left,
+                          keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             hintText: localizations.trn_price_transport_hint,
                             hintStyle: TextStyle(

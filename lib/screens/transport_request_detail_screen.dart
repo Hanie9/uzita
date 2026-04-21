@@ -716,6 +716,19 @@ class _TransportRequestDetailScreenState
         status == 'done' &&
         (grade == '---' || grade.isEmpty);
 
+    String getpaymentLabel(String value) {
+      final localizations = AppLocalizations.of(context)!;
+
+      switch (value) {
+        case 'direct':
+          return localizations.trn_direct;
+        case 'invoice':
+          return localizations.trn_invoice;
+        default:
+          return '';
+      }
+    }
+
     // Check if user can complete task: same access rule but status 'assigned'
     final bool canCompleteTask =
         (logicalLevel == 1 || logicalLevel == 2) && status == 'assigned';
@@ -899,7 +912,7 @@ class _TransportRequestDetailScreenState
                   context,
                   icon: Icons.money,
                   title: localizations.trn_payment_type,
-                  value: paymentType,
+                  value: getpaymentLabel(paymentType),
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(

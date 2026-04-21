@@ -322,9 +322,8 @@ class AppLocalizations {
       'uds_change_level_title': 'Change user level',
       'uds_current_level': 'Current level:',
       'uds_select_new_level': 'Select new level:',
-      'uds_level_1': 'Level 1 - Full admin',
-      'uds_level_2': 'Level 2 - Manager',
-      'uds_level_3': 'Level 3 - Regular user',
+      'uds_level_1': 'Level 1 - Admin',
+      'uds_level_2': 'Level 2 - User',
       'uds_unknown': 'Unknown',
       'uds_level_1_description': 'Full access to all features',
       'uds_level_2_description': 'Limited management access',
@@ -1439,9 +1438,8 @@ class AppLocalizations {
       'uls_phone': 'شماره تلفن',
       'uls_user_code': 'کد کاربر',
       'uls_access_level': 'سطح دسترسی',
-      'uls_level1': 'سطح 1 - مدیر کل',
-      'uls_level2': 'سطح 2 - مدیر',
-      'uls_level3': 'سطح 3 - کاربر عادی',
+      'uls_level1': 'سطح 1 - مدیر',
+      'uls_level2': 'سطح 2 - کاربر',
       'uls_cancel': 'انصراف',
       'uls_submit': 'افزودن کاربر',
       'uls_fill_all': 'لطفاً تمام فیلدها را پر کنید',
@@ -2685,7 +2683,6 @@ class AppLocalizations {
   String get uds_select_new_level => _getLocalizedValue('uds_select_new_level');
   String get uds_level_1 => _getLocalizedValue('uds_level_1');
   String get uds_level_2 => _getLocalizedValue('uds_level_2');
-  String get uds_level_3 => _getLocalizedValue('uds_level_3');
   String get uds_unknown => _getLocalizedValue('uds_unknown');
   String get uds_level_1_description =>
       _getLocalizedValue('uds_level_1_description');

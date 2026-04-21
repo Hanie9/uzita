@@ -154,7 +154,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         value: level,
                         isExpanded: true,
                         onChanged: (val) => setState(() => level = val!),
-                        items: [1, 2, 3]
+                        items: [1, 2]
                             .map(
                               (e) => DropdownMenuItem(
                                 value: e,
