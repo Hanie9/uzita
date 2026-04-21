@@ -391,13 +391,13 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         )!.uds_level_2_description;
                         levelColor = AppColors.lapisLazuli;
                         break;
-                      // case 3:
-                      //   levelTitle = AppLocalizations.of(context)!.uds_level_3;
-                      //   levelDescription = AppLocalizations.of(
-                      //     context,
-                      //   )!.uds_level_3_description;
-                      //   levelColor = AppColors.lapisLazuli;
-                      //   break;
+                      case 3:
+                        levelTitle = AppLocalizations.of(context)!.uds_level_3;
+                        levelDescription = AppLocalizations.of(
+                          context,
+                        )!.uds_level_3_description;
+                        levelColor = AppColors.lapisLazuli;
+                        break;
                     }
 
                     bool isCurrentLevel = widget.user['level'] == level;
@@ -544,10 +544,10 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             levelName = AppLocalizations.of(context)!.uds_level_2;
             levelColor = Color(0xFF007BA7);
             break;
-          // case 3:
-          //   levelName = AppLocalizations.of(context)!.uds_level_3;
-          //   levelColor = Color(0xFF007BA7);
-          //   break;
+          case 3:
+            levelName = AppLocalizations.of(context)!.uds_level_3;
+            levelColor = Color(0xFF007BA7);
+            break;
         }
 
         return AlertDialog(
@@ -1453,8 +1453,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         return AppLocalizations.of(context)!.uds_level_1;
       case 2:
         return AppLocalizations.of(context)!.uds_level_2;
-      // case 3:
-      //   return AppLocalizations.of(context)!.uds_level_3;
+      case 3:
+        return AppLocalizations.of(context)!.uds_level_3;
       default:
         return AppLocalizations.of(context)!.uds_unknown;
     }

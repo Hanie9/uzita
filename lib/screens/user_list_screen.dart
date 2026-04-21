@@ -149,7 +149,9 @@ class _UserListScreenState extends State<UserListScreen> {
         // Do not show "cannot view users" snackbar for normal technicians (level 2, 4)
         if (userLevel == 1) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.uls_no_access)),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.uls_no_access),
+            ),
           );
         }
       } else {
@@ -200,16 +202,10 @@ class _UserListScreenState extends State<UserListScreen> {
           Navigator.pushReplacementNamed(context, '/profile');
           break;
         case 2: // Reports (technician reports)
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-reports',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-reports');
           break;
         case 3: // Missions (organization tasks)
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-organ-tasks',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-organ-tasks');
           break;
         case 4: // Users - already here
           break;
@@ -1294,12 +1290,10 @@ class _UserListScreenState extends State<UserListScreen> {
                               ),
                               SizedBox(height: 4),
                               Row(
-                                      children: [
+                                children: [
                                   Icon(
                                     Icons.list_alt,
-                                    color: Colors.white.withValues(
-                                      alpha: 0.8,
-                                    ),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                     size: 14,
                                   ),
                                   SizedBox(width: 4),
@@ -1314,18 +1308,18 @@ class _UserListScreenState extends State<UserListScreen> {
                                                   Colors.white,
                                                 ),
                                           ),
-                                    )
-                                  : Text(
-                                      '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
-                                      style: TextStyle(
+                                        )
+                                      : Text(
+                                          '${users.length} ${AppLocalizations.of(context)!.uls_users_count}',
+                                          style: TextStyle(
                                             color: Colors.white.withValues(
                                               alpha: 0.9,
                                             ),
                                             fontSize: 12,
                                           ),
-                                      ),
+                                        ),
                                 ],
-                                    ),
+                              ),
                             ],
                           ),
                           Container(
