@@ -699,7 +699,15 @@ class _TransportRequestDetailScreenState
     final String createdAt = (requestData['created_at'] ?? '').toString();
     final String comment = (requestData['comment'] ?? '---').toString();
     final String grade = (requestData['grade'] ?? '---').toString();
-
+    final String priceTransport = (requestData['price_transport'] ?? '---')
+        .toString();
+    final String invoice = (requestData['invoice_number'] ?? '---').toString();
+    final String output = (requestData['output_number'] ?? '---').toString();
+    final String paymentType = (requestData['payment_type'] ?? '---')
+        .toString();
+    final String customer = (requestData['customer'] ?? '---').toString();
+    final String coordination = (requestData['coordination_person'] ?? '---')
+        .toString();
     // Check if user can rate:
     // allow all non-driver logical levels (1 and 2) when status is 'done'
     final int logicalLevel = getLogicalUserLevel(userLevel);
@@ -857,6 +865,48 @@ class _TransportRequestDetailScreenState
                   icon: Icons.phone,
                   title: localizations.trd_phone,
                   value: phone,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.receipt_long,
+                  title: localizations.trn_invoice,
+                  value: invoice,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.numbers,
+                  title: localizations.trn_output_number,
+                  value: output,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.person,
+                  title: localizations.trn_customer,
+                  value: customer,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.person,
+                  title: localizations.trn_coordination_person,
+                  value: coordination,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.money,
+                  title: localizations.trn_payment_type,
+                  value: paymentType,
+                ),
+                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                _buildInfoItem(
+                  context,
+                  icon: Icons.attach_money,
+                  title: localizations.trn_price_transport,
+                  value: priceTransport,
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 // Driver information section with all details

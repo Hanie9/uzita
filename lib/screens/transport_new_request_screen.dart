@@ -27,7 +27,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   final _outputController = TextEditingController();
   final _customerController = TextEditingController();
   final _coordinationController = TextEditingController();
-  final _paymentController = TextEditingController();
+  // final _paymentController = TextEditingController();
   final _priceController = TextEditingController();
 
   // Shared list of available parts (loaded from API)
@@ -143,8 +143,8 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
         'description': _descriptionController.text.trim(),
         'customer': _customerController.text.trim(),
         'coordination_person': _coordinationController.text.trim(),
-        'payment_type': _paymentController.text.trim(),
-        'price_transport': _priceController.value,
+        'payment_type': _selectedPayment.toString(),
+        'price_transport': int.tryParse(_priceController.text.trim()) ?? 0,
       };
 
       await SessionManager().onNetworkRequest();
@@ -812,7 +812,6 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                             fontWeight: FontWeight.w600,
                             color: AppColors.lapisLazuli,
                           ),
-                          textDirection: Directionality.of(context),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -822,7 +821,6 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               Directionality.of(context) == TextDirection.rtl
                               ? TextAlign.right
                               : TextAlign.left,
-                          maxLines: 4,
                           decoration: InputDecoration(
                             hintText: localizations.trn_invoice_hint,
                             hintStyle: TextStyle(
@@ -911,7 +909,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               ),
                             ),
                             prefixIcon: const Icon(
-                              Icons.location_on,
+                              Icons.numbers,
                               color: AppColors.lapisLazuli,
                             ),
                           ),
@@ -1043,147 +1041,93 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                           },
                         ),
                         SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(
-                            UiScale(context).scale(base: 20, min: 16, max: 24),
+                        Text(
+                          localizations.trn_payment_type,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.lapisLazuli,
                           ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(
-                              UiScale(
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedPayment,
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.trn_payment_type_hint,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
+                              borderSide: BorderSide(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[600]!
+                                    : Colors.grey[300]!,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
+                              borderSide: BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                UiScale(
+                                  context,
+                                ).scale(base: 12, min: 8, max: 16),
+                              ),
+                              borderSide: BorderSide(
+                                color: Colors.red,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : Colors.grey[50],
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: UiScale(
                                 context,
                               ).scale(base: 16, min: 12, max: 20),
+                              vertical: UiScale(
+                                context,
+                              ).scale(base: 12, min: 8, max: 16),
                             ),
-                            border: Border.all(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[700]!
-                                  : Colors.grey[200]!,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: UiScale(
-                                      context,
-                                    ).scale(base: 12, min: 8, max: 16),
-                                  ),
-                                  Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.trn_payment_type,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontSize: UiScale(
-                                            context,
-                                          ).scale(base: 16, min: 14, max: 18),
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Vazir',
-                                        ),
-                                  ),
-                                ],
+                          items: paymentTypes.map((subject) {
+                            return DropdownMenuItem<String>(
+                              value: subject['value'],
+                              child: Text(
+                                _getpaymentLabel(subject['value']!),
+                                style: TextStyle(fontFamily: 'Vazir'),
                               ),
-                              SizedBox(
-                                height: UiScale(
-                                  context,
-                                ).scale(base: 16, min: 12, max: 20),
-                              ),
-                              DropdownButtonFormField<String>(
-                                value: _selectedPayment,
-                                decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(
-                                    context,
-                                  )!.trn_payment_type_hint,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      UiScale(
-                                        context,
-                                      ).scale(base: 12, min: 8, max: 16),
-                                    ),
-                                    borderSide: BorderSide(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      UiScale(
-                                        context,
-                                      ).scale(base: 12, min: 8, max: 16),
-                                    ),
-                                    borderSide: BorderSide(
-                                      color: AppColors.lapisLazuli,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      UiScale(
-                                        context,
-                                      ).scale(base: 12, min: 8, max: 16),
-                                    ),
-                                    borderSide: BorderSide(
-                                      color: Colors.red,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  filled: true,
-                                  fillColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[800]
-                                      : Colors.grey[50],
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: UiScale(
-                                      context,
-                                    ).scale(base: 16, min: 12, max: 20),
-                                    vertical: UiScale(
-                                      context,
-                                    ).scale(base: 12, min: 8, max: 16),
-                                  ),
-                                ),
-                                items: paymentTypes.map((subject) {
-                                  return DropdownMenuItem<String>(
-                                    value: subject['value'],
-                                    child: Text(
-                                      _getpaymentLabel(subject['value']!),
-                                      style: TextStyle(fontFamily: 'Vazir'),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedPayment = value;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return AppLocalizations.of(
-                                      context,
-                                    )!.trn_payment_type_error;
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedPayment = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return AppLocalizations.of(
+                                context,
+                              )!.trn_payment_type_error;
+                            }
+                            return null;
+                          },
                         ),
                         SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                         Text(

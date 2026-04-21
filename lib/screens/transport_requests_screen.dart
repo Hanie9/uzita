@@ -431,6 +431,8 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                               .toString();
                           final status = (request['status'] ?? 'open')
                               .toString();
+                          final price = (request['price_transport'] ?? '---')
+                              .toString();
 
                           return GestureDetector(
                             onTap: () {
@@ -527,7 +529,37 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                                           //     context,
                                           //   ),
                                           // ),
-                                          // const SizedBox(height: 6),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
+                                            children: [
+                                              const Icon(
+                                                Icons.attach_money,
+                                                size: 14,
+                                                color: AppColors.iranianGray,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  '$price تومان',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        AppColors.iranianGray,
+                                                  ),
+                                                  textDirection:
+                                                      Directionality.of(
+                                                        context,
+                                                      ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 6),
                                           Wrap(
                                             spacing: 12,
                                             runSpacing: 4,
