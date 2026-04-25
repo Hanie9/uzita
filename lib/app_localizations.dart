@@ -276,9 +276,9 @@ class AppLocalizations {
       'uls_phone': 'Phone number',
       'uls_user_code': 'User code',
       'uls_access_level': 'Access level',
-      'uls_level1': 'Level 1 - Full admin',
-      'uls_level2': 'Level 2 - Manager',
-      'uls_level3': 'Level 3 - Regular user',
+      'uls_level1': 'Level 1 - Admin',
+      'uls_level2': 'Level 2 - User',
+      // 'uls_level3': 'Level 3 - Regular user',
       'uls_cancel': 'Cancel',
       'uls_submit': 'Add user',
       'uls_fill_all': 'Please fill in all fields',
@@ -294,9 +294,9 @@ class AppLocalizations {
       'uls_active': 'Active',
       'uls_inactive': 'Inactive',
       'uls_clear': 'Clear',
-      'uls_full_admin': 'Full admin',
-      'uls_manager': 'Manager',
-      'uls_regular_user': 'Regular user',
+      'uls_full_admin': 'Admin',
+      'uls_manager': 'User',
+      // 'uls_regular_user': 'Regular user',
       'uls_apply': 'Apply filter',
       'uls_code': 'Code',
 
@@ -322,13 +322,13 @@ class AppLocalizations {
       'uds_change_level_title': 'Change user level',
       'uds_current_level': 'Current level:',
       'uds_select_new_level': 'Select new level:',
-      'uds_level_1': 'Level 1 - Full admin',
-      'uds_level_2': 'Level 2 - Manager',
-      'uds_level_3': 'Level 3 - Regular user',
+      'uds_level_1': 'Level 1 - Admin',
+      'uds_level_2': 'Level 2 - User',
+      // 'uds_level_3': 'Level 3 - Regular user',
       'uds_unknown': 'Unknown',
       'uds_level_1_description': 'Full access to all features',
-      'uds_level_2_description': 'Limited management access',
-      'uds_level_3_description': 'Regular user access',
+      'uds_level_2_description': 'Regular user access',
+      // 'uds_level_3_description': 'Regular user access',
       'uds_level_1_color': 'Red',
       'uds_confirm_level_title': 'Confirm level change',
       'uds_confirm_level_msg':
@@ -353,9 +353,9 @@ class AppLocalizations {
       'uds_allowed_devices': 'Allowed devices',
       'uds_manage_allowed_devices': 'Manage allowed devices',
       'uds_clear': 'Clear',
-      'uds_full_admin': 'Full admin',
-      'uds_manager': 'Manager',
-      'uds_regular_user': 'Regular user',
+      'uds_full_admin': 'Admin',
+      'uds_manager': 'User',
+      // 'uds_regular_user': 'Regular user',
       'uds_apply': 'Apply filter',
       'uds_wait': 'Please wait',
       'uds_disable_access': 'Disable user access',
@@ -1439,9 +1439,9 @@ class AppLocalizations {
       'uls_phone': 'شماره تلفن',
       'uls_user_code': 'کد کاربر',
       'uls_access_level': 'سطح دسترسی',
-      'uls_level1': 'سطح 1 - مدیر کل',
-      'uls_level2': 'سطح 2 - مدیر',
-      'uls_level3': 'سطح 3 - کاربر عادی',
+      'uls_level1': 'سطح 1 - مدیر',
+      'uls_level2': 'سطح 2 - کاربر',
+      // 'uls_level3': 'سطح 3 - کاربر عادی',
       'uls_cancel': 'انصراف',
       'uls_submit': 'افزودن کاربر',
       'uls_fill_all': 'لطفاً تمام فیلدها را پر کنید',
@@ -1485,13 +1485,13 @@ class AppLocalizations {
       'uds_change_level_title': 'تغیین سطح کاربر',
       'uds_current_level': 'سطح فعلی:',
       'uds_select_new_level': 'سطح جدید را انتخاب کنید:',
-      'uds_level_1': 'سطح 1 - مدیر کل',
-      'uds_level_2': 'سطح 2 - مدیر',
-      'uds_level_3': 'سطح 3 - کاربر عادی',
+      'uds_level_1': 'سطح 1 - مدیر',
+      'uds_level_2': 'سطح 2 - کاربر',
+      // 'uds_level_3': 'سطح 3 - کاربر عادی',
       'uds_unknown': 'نامشخص',
       'uds_level_1_description': 'دسترسی کامل به تمام امکانات',
-      'uds_level_2_description': 'دسترسی مدیریتی محدود',
-      'uds_level_3_description': 'دسترسی عادی',
+      'uds_level_2_description': 'دسترسی عادی',
+      // 'uds_level_3_description': 'دسترسی عادی',
       'uds_level_1_color': 'قرمز',
       'uds_confirm_level_title': 'تایید تغییر سطح',
       'uds_confirm_level_msg': 'آیا از تغییر سطح این کاربر مطمئن هستید؟',
@@ -2633,7 +2633,7 @@ class AppLocalizations {
   String get uls_access_level => _getLocalizedValue('uls_access_level');
   String get uls_level1 => _getLocalizedValue('uls_level1');
   String get uls_level2 => _getLocalizedValue('uls_level2');
-  String get uls_level3 => _getLocalizedValue('uls_level3');
+  // String get uls_level3 => _getLocalizedValue('uls_level3');
   String get uls_cancel => _getLocalizedValue('uls_cancel');
   String get uls_submit => _getLocalizedValue('uls_submit');
   String get uls_fill_all => _getLocalizedValue('uls_fill_all');
@@ -2685,14 +2685,14 @@ class AppLocalizations {
   String get uds_select_new_level => _getLocalizedValue('uds_select_new_level');
   String get uds_level_1 => _getLocalizedValue('uds_level_1');
   String get uds_level_2 => _getLocalizedValue('uds_level_2');
-  String get uds_level_3 => _getLocalizedValue('uds_level_3');
+  // String get uds_level_3 => _getLocalizedValue('uds_level_3');
   String get uds_unknown => _getLocalizedValue('uds_unknown');
   String get uds_level_1_description =>
       _getLocalizedValue('uds_level_1_description');
   String get uds_level_2_description =>
       _getLocalizedValue('uds_level_2_description');
-  String get uds_level_3_description =>
-      _getLocalizedValue('uds_level_3_description');
+  // String get uds_level_3_description =>
+  // _getLocalizedValue('uds_level_3_description');
   String get uds_level_1_color => _getLocalizedValue('uds_level_1_color');
   String get uds_confirm_level_title =>
       _getLocalizedValue('uds_confirm_level_title');

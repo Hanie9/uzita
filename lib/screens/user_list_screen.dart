@@ -236,9 +236,13 @@ class _UserListScreenState extends State<UserListScreen> {
     final passwordController = TextEditingController();
     final phoneController = TextEditingController();
     final codeController = TextEditingController();
-    int? level = 3; // Default to level 3 - کاربر عادی
+    int? level = 1;
     String message = '';
     bool isLoading = false;
+    // final userLevels = {
+    //   1: AppLocalizations.of(context)!.uds_level_1,
+    //   2: AppLocalizations.of(context)!.uds_level_2,
+    // }
 
     showDialog(
       context: context,
@@ -310,12 +314,12 @@ class _UserListScreenState extends State<UserListScreen> {
                       ),
                     ),
                     child: DropdownButtonFormField<int>(
-                      value: level ?? 3,
+                      value: level ?? 2,
                       decoration: InputDecoration(
                         labelText: AppLocalizations.of(
                           context,
                         )!.uls_access_level,
-                        hintText: AppLocalizations.of(context)!.uls_level3,
+                        hintText: AppLocalizations.of(context)!.uls_level2,
                         prefixIcon: Icon(
                           Icons.admin_panel_settings,
                           color: Color(0xFF007BA7),
@@ -348,15 +352,15 @@ class _UserListScreenState extends State<UserListScreen> {
                             softWrap: false,
                           ),
                         ),
-                        DropdownMenuItem(
-                          value: 3,
-                          child: Text(
-                            AppLocalizations.of(context)!.uls_level3,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
-                          ),
-                        ),
+                        // DropdownMenuItem(
+                        //   value: 3,
+                        //   child: Text(
+                        //     AppLocalizations.of(context)!.uls_level3,
+                        //     maxLines: 1,
+                        //     overflow: TextOverflow.ellipsis,
+                        //     softWrap: false,
+                        //   ),
+                        // ),
                       ],
                       onChanged: (val) {
                         setDialogState(() {
