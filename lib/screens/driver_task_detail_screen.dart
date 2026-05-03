@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shamsi_date/shamsi_date.dart';
@@ -30,6 +31,19 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
   void initState() {
     super.initState();
     taskData = Map<String, dynamic>.from(widget.task);
+  }
+
+  String getpaymentLabel(String value) {
+    final localizations = AppLocalizations.of(context)!;
+
+    switch (value) {
+      case 'direct':
+        return localizations.trn_direct;
+      case 'invoice':
+        return localizations.trn_invoice;
+      default:
+        return '';
+    }
   }
 
   Future<void> _refreshTaskData() async {
@@ -148,23 +162,43 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     final localizations = AppLocalizations.of(context)!;
 
     // Show dialog to enter report
+    final reportController = TextEditingController();
+    final feeController = TextEditingController();
+
     final report = await showDialog<String>(
       context: context,
       builder: (context) {
-        final reportController = TextEditingController();
         return AlertDialog(
           title: Text(localizations.driver_enter_report),
-          content: TextField(
-            controller: reportController,
-            decoration: InputDecoration(
-              labelText: localizations.driver_report,
-              hintText: localizations.driver_report,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: reportController,
+                decoration: InputDecoration(
+                  labelText: localizations.driver_report,
+                  hintText: localizations.driver_report,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                maxLines: 5,
+                autofocus: true,
               ),
-            ),
-            maxLines: 5,
-            autofocus: true,
+              const SizedBox(height: 12),
+              TextField(
+                controller: feeController,
+                decoration: InputDecoration(
+                  labelText: localizations.driver_fee_received,
+                  hintText: localizations.driver_fee_received_hint,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -177,6 +211,16 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(localizations.driver_report_required),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                if (feeController.text.trim().isNotEmpty &&
+                    int.tryParse(feeController.text.trim()) == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(localizations.driver_fee_received_invalid),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -200,12 +244,12 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        throw Exception(AppLocalizations.of(context)!.error_token_missing);
+        throw Exception(localizations.error_token_missing);
       }
 
       final taskId = taskData['id']?.toString() ?? '';
       if (taskId.isEmpty) {
-        throw Exception(AppLocalizations.of(context)!.error_task_id_missing);
+        throw Exception(localizations.error_task_id_missing);
       }
 
       await SessionManager().onNetworkRequest();
@@ -214,6 +258,10 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       final url = '$baseUrl5/transport/task/$taskId/confirm';
 
       final requestBody = <String, dynamic>{'report': report};
+
+      if (feeController.text.trim().isNotEmpty) {
+        requestBody['fee_received'] = int.parse(feeController.text.trim());
+      }
 
       final response = await http.post(
         Uri.parse(url),
@@ -296,6 +344,10 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     final String priceTransport = priceTransportValue == null
         ? '---'
         : priceTransportValue.toString();
+    final dynamic feeReceivedValue = taskData['fee_received'];
+    final String feeReceived = feeReceivedValue == null
+        ? '---'
+        : feeReceivedValue.toString();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -424,13 +476,24 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   value: phone,
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                if (!widget.isReport) ...[
+                  _buildInfoItem(
+                    context,
+                    icon: Icons.attach_money,
+                    title: localizations.driver_price_transport,
+                    value: priceTransport == '---'
+                        ? '---'
+                        : '$priceTransport ${localizations.sls_tooman}',
+                  ),
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                ],
                 _buildInfoItem(
                   context,
                   icon: Icons.attach_money,
-                  title: localizations.driver_price_transport,
-                  value: priceTransport == '---'
+                  title: localizations.driver_fee_received,
+                  value: feeReceived == '---'
                       ? '---'
-                      : '$priceTransport ${localizations.sls_tooman}',
+                      : '$feeReceived ${localizations.sls_tooman}',
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(
@@ -476,7 +539,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   context,
                   icon: Icons.payment,
                   title: localizations.trn_payment_type,
-                  value: paymentType,
+                  value: getpaymentLabel(paymentType),
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(

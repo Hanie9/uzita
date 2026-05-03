@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/app_localizations.dart';
@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/ui_scale.dart';
-import 'package:uzita/utils/shared_bottom_nav.dart';
+// import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
@@ -29,7 +29,7 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
-  DateTime? _lastBackPressedAt;
+  // DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -76,9 +76,7 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        Uri.parse(
-          '$baseUrl5/transport/report?ts=$ts',
-        ),
+        Uri.parse('$baseUrl5/transport/report?ts=$ts'),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',
@@ -129,28 +127,28 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
     }
   }
 
-  void _onNavItemTapped(int index) {
-    setState(() {
-      selectedNavIndex = index;
-    });
+  // void _onNavItemTapped(int index) {
+  //   setState(() {
+  //     selectedNavIndex = index;
+  //   });
 
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1: // Reports - already here
-        break;
-      case 2: // Missions
-        Navigator.pushReplacementNamed(context, '/driver-missions');
-        break;
-      case 3: // Public loads
-        Navigator.pushReplacementNamed(context, '/transport-public-loads');
-        break;
-      case 4: // Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-    }
-  }
+  //   switch (index) {
+  //     case 0: // Home
+  //       Navigator.pushReplacementNamed(context, '/home');
+  //       break;
+  //     case 1: // Reports - already here
+  //       break;
+  //     case 2: // Missions
+  //       Navigator.pushReplacementNamed(context, '/driver-missions');
+  //       break;
+  //     case 3: // Public loads
+  //       Navigator.pushReplacementNamed(context, '/transport-public-loads');
+  //       break;
+  //     case 4: // Profile
+  //       Navigator.pushReplacementNamed(context, '/profile');
+  //       break;
+  //   }
+  // }
 
   String _formatDate(String dateString) {
     try {
@@ -196,6 +194,19 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
     }
   }
 
+  String getpaymentLabel(String value) {
+    final localizations = AppLocalizations.of(context)!;
+
+    switch (value) {
+      case 'direct':
+        return localizations.trn_direct;
+      case 'invoice':
+        return localizations.trn_invoice;
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -203,29 +214,29 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
     final localizations = AppLocalizations.of(context)!;
 
     return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-        // If drawer is open, close it instead of exiting
-        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-          _scaffoldKey.currentState?.closeDrawer();
-          return;
-        }
-        final now = DateTime.now();
-        if (_lastBackPressedAt == null ||
-            now.difference(_lastBackPressedAt!) > const Duration(seconds: 2)) {
-          _lastBackPressedAt = now;
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations.click_again_to_exit),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        } else {
-          SystemNavigator.pop();
-        }
-      },
+      canPop: true,
+      // onPopInvoked: (didPop) {
+      //   // if (didPop) return;
+      //   // // If drawer is open, close it instead of exiting
+      //   // if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      //   //   _scaffoldKey.currentState?.closeDrawer();
+      //   //   return;
+      //   // }
+      //   final now = DateTime.now();
+      //   if (_lastBackPressedAt == null ||
+      //       now.difference(_lastBackPressedAt!) > const Duration(seconds: 2)) {
+      //     _lastBackPressedAt = now;
+      //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(
+      //         content: Text(localizations.click_again_to_exit),
+      //         duration: const Duration(seconds: 2),
+      //       ),
+      //     );
+      //   } else {
+      //     SystemNavigator.pop();
+      //   }
+      // },
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -317,429 +328,501 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
                     ? TextDirection.ltr
                     : TextDirection.rtl,
                 child: Column(
-            children: [
-              // Blue header box
-              Container(
-                width: double.infinity,
-                margin: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                  vertical: ui.scale(base: 8, min: 6, max: 12),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                  vertical: ui.scale(base: 12, min: 8, max: 16),
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.lapisLazuli,
-                      AppColors.lapisLazuli.withValues(alpha: 0.85),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(
-                    ui.scale(base: 12, min: 10, max: 14),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.lapisLazuli.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
                   children: [
+                    // Blue header box
                     Container(
-                      width: ui.scale(base: 40, min: 32, max: 48),
-                      height: ui.scale(base: 40, min: 32, max: 48),
+                      width: double.infinity,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                        vertical: ui.scale(base: 8, min: 6, max: 12),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                        vertical: ui.scale(base: 12, min: 8, max: 16),
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.description,
-                        color: Colors.white,
-                        size: ui.scale(base: 20, min: 16, max: 24),
-                      ),
-                    ),
-                    SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                localizations.nav_reports,
-                                style: TextStyle(
-                                  fontSize: ui.scale(
-                                    base: 14,
-                                    min: 12,
-                                    max: 16,
-                                  ),
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              isLoading
-                                  ? Row(
-                                      children: [
-                                        SizedBox(
-                                          width: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          height: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Text(
-                                      '${tasks.length} ${localizations.nav_report}',
-                                      style: TextStyle(
-                                        fontSize: ui.scale(
-                                          base: 18,
-                                          min: 16,
-                                          max: 20,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                            ],
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.lapisLazuli,
+                            AppColors.lapisLazuli.withValues(alpha: 0.85),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          ui.scale(base: 12, min: 10, max: 14),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // Content
-              Expanded(
-          child: isLoading
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          top: 20,
-                          bottom: MediaQuery.of(context).padding.bottom,
-                        ),
-                        decoration: BoxDecoration(
-                                color: AppColors.lapisLazuli.withValues(
-                                  alpha: 0.1,
-                                ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.lapisLazuli,
-                          ),
-                          strokeWidth: 3,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Text(
-                        localizations.sls_loading,
-                        style: TextStyle(
-                          color: AppColors.lapisLazuli,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : tasks.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: fetchTasks,
-                  color: AppColors.lapisLazuli,
-                  child: ListView.builder(
-                    padding: EdgeInsets.only(
-                      left: kSpacing,
-                      right: kSpacing,
-                      top: kSpacing,
-                      bottom:
-                                kSpacing +
-                                MediaQuery.of(context).padding.bottom +
-                                20,
-                    ),
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      final task = tasks[index];
-                            final maghsad =
-                                task['maghsad']?.toString() ?? '---';
-                      final mabda = task['mabda']?.toString() ?? '---';
-                      final status = task['status']?.toString() ?? 'open';
-                            final createdAt =
-                                task['created_at']?.toString() ?? '';
-                      final dynamic priceTransportValue =
-                          task['price_transport'];
-                            final String priceTransport =
-                                priceTransportValue == null
-                          ? '---'
-                          : priceTransportValue.toString();
-
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/driver-task-detail',
-                            arguments: {'task': task, 'isReport': true},
-                          );
-                        },
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.black.withValues(alpha: 0.2)
-                                    : AppColors.lapisLazuli.withValues(
-                                        alpha: 0.06,
-                                      ),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                            border: Border.all(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[700]!
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.08,
-                                    ),
-                              width: 1,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: ui.scale(base: 40, min: 32, max: 48),
+                            height: ui.scale(base: 40, min: 32, max: 48),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.description,
+                              color: Colors.white,
+                              size: ui.scale(base: 20, min: 16, max: 24),
                             ),
                           ),
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
+                          SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
+                          Expanded(
                             child: Row(
-                              textDirection: Directionality.of(context),
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Status badge (like service list)
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(
-                                      status,
-                                    ).withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                    border: Border.all(
-                                      color: _getStatusColor(
-                                        status,
-                                      ).withValues(alpha: 0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    _getStatusText(status, localizations),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: _getStatusColor(status),
-                                    ),
-                                          textDirection: Directionality.of(
-                                            context,
-                                          ),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Origin --> Destination
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        textDirection: Directionality.of(
-                                          context,
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      localizations.nav_reports,
+                                      style: TextStyle(
+                                        fontSize: ui.scale(
+                                          base: 14,
+                                          min: 12,
+                                          max: 16,
                                         ),
-                                        children: [
-                                          Icon(
-                                            Icons.location_city,
-                                            size: 14,
-                                            color: AppColors.iranianGray,
-                                          ),
-                                          SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              mabda,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color:
-                                                          AppColors.iranianGray,
-                                              ),
-                                                    textDirection:
-                                                        Directionality.of(
-                                                context,
-                                              ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          SizedBox(width: 6),
-                                          Icon(
-                                            Icons.arrow_forward,
-                                            size: 16,
-                                            color: AppColors.iranianGray,
-                                          ),
-                                          SizedBox(width: 6),
-                                          Icon(
-                                            Icons.location_on,
-                                            size: 14,
-                                            color: AppColors.lapisLazuli,
-                                          ),
-                                          SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              maghsad,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium
-                                                          ?.color,
-                                              ),
-                                                    textDirection:
-                                                        Directionality.of(
-                                                context,
-                                              ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 6),
-                                      // Price
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        textDirection: Directionality.of(
-                                          context,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
                                         ),
-                                        children: [
-                                          Icon(
-                                            Icons.attach_money,
-                                            size: 14,
-                                            color: AppColors.iranianGray,
-                                          ),
-                                          SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              priceTransport == '---'
-                                                  ? '---'
-                                                  : '$priceTransport ${localizations.sls_tooman}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                      color:
-                                                          AppColors.iranianGray,
-                                              ),
-                                                    textDirection:
-                                                        Directionality.of(
-                                                context,
-                                              ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      SizedBox(height: 4),
-                                      // Date
-                                      if (createdAt.isNotEmpty)
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                                textDirection:
-                                                    Directionality.of(context),
-                                          children: [
-                                            Icon(
-                                              Icons.calendar_today,
-                                              size: 14,
-                                                    color:
-                                                        AppColors.iranianGray,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                _formatDate(createdAt),
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                        color: AppColors
-                                                            .iranianGray,
+                                    ),
+                                    isLoading
+                                        ? Row(
+                                            children: [
+                                              SizedBox(
+                                                width: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
                                                 ),
-                                                textDirection:
-                                                          Directionality.of(
-                                                            context,
-                                                          ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
+                                                height: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
+                                                ),
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white),
+                                                ),
                                               ),
+                                            ],
+                                          )
+                                        : Text(
+                                            '${tasks.length} ${localizations.nav_report}',
+                                            style: TextStyle(
+                                              fontSize: ui.scale(
+                                                base: 18,
+                                                min: 16,
+                                                max: 20,
+                                              ),
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
                                             ),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_left,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color
-                                      ?.withValues(alpha: 0.5),
-                                  textDirection:
-                                      Directionality.of(context) ==
-                                          TextDirection.rtl
-                                      ? TextDirection.ltr
-                                      : TextDirection.rtl,
+                                          ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        ],
                       ),
-              ),
-            ],
+                    ),
+                    // Content
+                    Expanded(
+                      child: isLoading
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.only(
+                                      left: 20,
+                                      right: 20,
+                                      top: 20,
+                                      bottom: MediaQuery.of(
+                                        context,
+                                      ).padding.bottom,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.lapisLazuli.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.lapisLazuli,
+                                      ),
+                                      strokeWidth: 3,
+                                    ),
+                                  ),
+                                  SizedBox(height: 20),
+                                  Text(
+                                    localizations.sls_loading,
+                                    style: TextStyle(
+                                      color: AppColors.lapisLazuli,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : tasks.isEmpty
+                          ? _buildEmptyState()
+                          : RefreshIndicator(
+                              onRefresh: fetchTasks,
+                              color: AppColors.lapisLazuli,
+                              child: ListView.builder(
+                                padding: EdgeInsets.only(
+                                  left: kSpacing,
+                                  right: kSpacing,
+                                  top: kSpacing,
+                                  bottom:
+                                      kSpacing +
+                                      MediaQuery.of(context).padding.bottom +
+                                      20,
+                                ),
+                                itemCount: tasks.length,
+                                itemBuilder: (context, index) {
+                                  final task = tasks[index];
+                                  final maghsad =
+                                      task['maghsad']?.toString() ?? '---';
+                                  final mabda =
+                                      task['mabda']?.toString() ?? '---';
+                                  final status =
+                                      task['status']?.toString() ?? 'open';
+                                  final createdAt =
+                                      task['created_at']?.toString() ?? '';
+                                  final paymentType =
+                                      task['payment_type']?.toString() ?? '---';
+                                  final dynamic feeReceivedValue =
+                                      task['fee_received'];
+                                  final String feeReceived =
+                                      feeReceivedValue == null
+                                      ? '---'
+                                      : feeReceivedValue.toString();
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/driver-task-detail',
+                                        arguments: {
+                                          'task': task,
+                                          'isReport': true,
+                                        },
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).cardTheme.color,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.black.withValues(
+                                                    alpha: 0.2,
+                                                  )
+                                                : AppColors.lapisLazuli
+                                                      .withValues(alpha: 0.06),
+                                            blurRadius: 8,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                        border: Border.all(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey[700]!
+                                              : AppColors.lapisLazuli
+                                                    .withValues(alpha: 0.08),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Row(
+                                          textDirection: Directionality.of(
+                                            context,
+                                          ),
+                                          children: [
+                                            // Status badge (like service list)
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getStatusColor(
+                                                  status,
+                                                ).withValues(alpha: 0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: _getStatusColor(
+                                                    status,
+                                                  ).withValues(alpha: 0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                _getStatusText(
+                                                  status,
+                                                  localizations,
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _getStatusColor(
+                                                    status,
+                                                  ),
+                                                ),
+                                                textDirection:
+                                                    Directionality.of(context),
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Origin --> Destination
+                                                  Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    textDirection:
+                                                        Directionality.of(
+                                                          context,
+                                                        ),
+                                                    children: [
+                                                      Icon(
+                                                        Icons.location_city,
+                                                        size: 14,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Flexible(
+                                                        child: Text(
+                                                          mabda,
+                                                          style: TextStyle(
+                                                            fontSize: 13,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: AppColors
+                                                                .iranianGray,
+                                                          ),
+                                                          textDirection:
+                                                              Directionality.of(
+                                                                context,
+                                                              ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 6),
+                                                      Icon(
+                                                        Icons.arrow_forward,
+                                                        size: 16,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      SizedBox(width: 6),
+                                                      Icon(
+                                                        Icons.location_on,
+                                                        size: 14,
+                                                        color: AppColors
+                                                            .lapisLazuli,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Flexible(
+                                                        child: Text(
+                                                          maghsad,
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .textTheme
+                                                                    .bodyMedium
+                                                                    ?.color,
+                                                          ),
+                                                          textDirection:
+                                                              Directionality.of(
+                                                                context,
+                                                              ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 6),
+                                                  // Payment type
+                                                  Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    textDirection:
+                                                        Directionality.of(
+                                                          context,
+                                                        ),
+                                                    children: [
+                                                      Icon(
+                                                        Icons.payment,
+                                                        size: 14,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Flexible(
+                                                        child: Text(
+                                                          getpaymentLabel(
+                                                            paymentType,
+                                                          ),
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: AppColors
+                                                                .iranianGray,
+                                                          ),
+                                                          textDirection:
+                                                              Directionality.of(
+                                                                context,
+                                                              ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  // Fee received
+                                                  Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    textDirection:
+                                                        Directionality.of(
+                                                          context,
+                                                        ),
+                                                    children: [
+                                                      Icon(
+                                                        Icons.attach_money,
+                                                        size: 14,
+                                                        color: AppColors
+                                                            .iranianGray,
+                                                      ),
+                                                      SizedBox(width: 4),
+                                                      Flexible(
+                                                        child: Text(
+                                                          feeReceived == '---'
+                                                              ? '---'
+                                                              : '$feeReceived ${localizations.sls_tooman}',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: AppColors
+                                                                .iranianGray,
+                                                          ),
+                                                          textDirection:
+                                                              Directionality.of(
+                                                                context,
+                                                              ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  // Date
+                                                  if (createdAt.isNotEmpty)
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      textDirection:
+                                                          Directionality.of(
+                                                            context,
+                                                          ),
+                                                      children: [
+                                                        Icon(
+                                                          Icons.calendar_today,
+                                                          size: 14,
+                                                          color: AppColors
+                                                              .iranianGray,
+                                                        ),
+                                                        SizedBox(width: 4),
+                                                        Flexible(
+                                                          child: Text(
+                                                            _formatDate(
+                                                              createdAt,
+                                                            ),
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: AppColors
+                                                                  .iranianGray,
+                                                            ),
+                                                            textDirection:
+                                                                Directionality.of(
+                                                                  context,
+                                                                ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.chevron_left,
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.color
+                                                  ?.withValues(alpha: 0.5),
+                                              textDirection:
+                                                  Directionality.of(context) ==
+                                                      TextDirection.rtl
+                                                  ? TextDirection.ltr
+                                                  : TextDirection.rtl,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
-        ),
+              ),
         drawer: SharedAppDrawer(
           username: username,
           userRoleTitle: userRoleTitle,
@@ -786,11 +869,11 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
             );
           },
         ),
-        bottomNavigationBar: SharedBottomNavigation(
-          selectedIndex: selectedNavIndex,
-          userLevel: userLevel,
-          onItemTapped: _onNavItemTapped,
-        ),
+        // bottomNavigationBar: SharedBottomNavigation(
+        //   selectedIndex: selectedNavIndex,
+        //   userLevel: userLevel,
+        //   onItemTapped: _onNavItemTapped,
+        // ),
       ),
     );
   }
@@ -886,8 +969,9 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
             const SizedBox(height: 12),
             // Description
             Text(
-              AppLocalizations.of(context)!
-                  .tls_waiting_for_activation_description,
+              AppLocalizations.of(
+                context,
+              )!.tls_waiting_for_activation_description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

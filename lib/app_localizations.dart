@@ -1192,6 +1192,9 @@ class AppLocalizations {
       'driver_enter_report': 'Enter Report',
       'driver_report': 'Report',
       'driver_report_required': 'Report is required',
+      'driver_fee_received': 'Fee Received',
+      'driver_fee_received_hint': 'Enter received fee (optional)',
+      'driver_fee_received_invalid': 'Please enter a valid amount',
       'driver_weight': 'Weight',
       'driver_insurance': 'Insurance',
       'driver_select_load': 'Select Load',
@@ -2345,6 +2348,9 @@ class AppLocalizations {
       'driver_enter_report': 'وارد کردن گزارش',
       'driver_report': 'گزارش',
       'driver_report_required': 'گزارش الزامی است',
+      'driver_fee_received': 'مبلغ دریافتی',
+      'driver_fee_received_hint': 'مبلغ دریافتی را وارد کنید (اختیاری)',
+      'driver_fee_received_invalid': 'لطفا مبلغ معتبر وارد کنید',
       'driver_weight': 'وزن',
       'driver_insurance': 'بیمه',
       'driver_select_load': 'انتخاب بار',
@@ -3326,6 +3332,11 @@ class AppLocalizations {
   String get driver_report => _getLocalizedValue('driver_report');
   String get driver_report_required =>
       _getLocalizedValue('driver_report_required');
+  String get driver_fee_received => _getLocalizedValue('driver_fee_received');
+  String get driver_fee_received_hint =>
+      _getLocalizedValue('driver_fee_received_hint');
+  String get driver_fee_received_invalid =>
+      _getLocalizedValue('driver_fee_received_invalid');
   String get driver_weight => _getLocalizedValue('driver_weight');
   String get driver_insurance => _getLocalizedValue('driver_insurance');
   String get driver_select_load => _getLocalizedValue('driver_select_load');
