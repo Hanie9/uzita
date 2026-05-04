@@ -158,6 +158,12 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     }
   }
 
+  bool _hasValue(dynamic value) {
+    if (value == null) return false;
+    final text = value.toString().trim();
+    return text.isNotEmpty && text.toLowerCase() != 'null';
+  }
+
   Future<void> _completeTask() async {
     final localizations = AppLocalizations.of(context)!;
 
@@ -331,10 +337,17 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     final String report = (taskData['report'] ?? '').toString();
     final String status = (taskData['status'] ?? 'open').toString();
     final String createdAt = (taskData['created_at'] ?? '').toString();
-    final String invoiceNum = (taskData['invoice_number'] ?? '').toString();
+    final String productDescription = (taskData['product_description'] ?? '')
+        .toString();
     final String outputNum = (taskData['output_number'] ?? '').toString();
     final String coordination = (taskData['coordination_person'] ?? '')
         .toString();
+    final bool hasProductDescription = _hasValue(
+      taskData['product_description'],
+    );
+    final bool hasOutputNum = _hasValue(taskData['output_number']);
+    final bool hasCoordination = _hasValue(taskData['coordination_person']);
+    final bool hasCustomer = _hasValue(taskData['customer']);
     final bool driverConfirm = taskData['driver_confirm'] ?? false;
     final bool customerConfirm = taskData['customer_confirm'] ?? false;
     final String paymentType = (taskData['payment_type'] ?? '').toString();
@@ -346,7 +359,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         : priceTransportValue.toString();
     final dynamic feeReceivedValue = taskData['fee_received'];
     final String feeReceived = feeReceivedValue == null
-        ? '---'
+        ? '0'
         : feeReceivedValue.toString();
 
     return Scaffold(
@@ -513,27 +526,33 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                       ? localizations.driver_yes
                       : localizations.driver_no,
                 ),
-                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-                _buildInfoItem(
-                  context,
-                  icon: Icons.receipt_long,
-                  title: localizations.trn_invoice,
-                  value: invoiceNum,
-                ),
-                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-                _buildInfoItem(
-                  context,
-                  icon: Icons.numbers,
-                  title: localizations.trn_output_number,
-                  value: outputNum,
-                ),
-                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-                _buildInfoItem(
-                  context,
-                  icon: Icons.person,
-                  title: localizations.trn_coordination_person,
-                  value: coordination,
-                ),
+                if (hasProductDescription) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  _buildInfoItem(
+                    context,
+                    icon: Icons.edit_document,
+                    title: localizations.trn_product_description,
+                    value: productDescription,
+                  ),
+                ],
+                if (hasOutputNum) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  _buildInfoItem(
+                    context,
+                    icon: Icons.numbers,
+                    title: localizations.trn_output_number,
+                    value: outputNum,
+                  ),
+                ],
+                if (hasCoordination) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  _buildInfoItem(
+                    context,
+                    icon: Icons.person,
+                    title: localizations.trn_coordination_person,
+                    value: coordination,
+                  ),
+                ],
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(
                   context,
@@ -541,13 +560,15 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   title: localizations.trn_payment_type,
                   value: getpaymentLabel(paymentType),
                 ),
-                SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
-                _buildInfoItem(
-                  context,
-                  icon: Icons.person,
-                  title: localizations.trn_customer,
-                  value: customer,
-                ),
+                if (hasCustomer) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  _buildInfoItem(
+                    context,
+                    icon: Icons.person,
+                    title: localizations.trn_customer,
+                    value: customer,
+                  ),
+                ],
                 SizedBox(height: ui.scale(base: 20, min: 16, max: 24)),
                 Text(
                   localizations.driver_description,

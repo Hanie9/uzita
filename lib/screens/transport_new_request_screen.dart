@@ -23,7 +23,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   final _maghsadController = TextEditingController();
   final _phoneController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _invoiceController = TextEditingController();
+  final _productDescriptionController = TextEditingController();
   final _outputController = TextEditingController();
   final _customerController = TextEditingController();
   final _coordinationController = TextEditingController();
@@ -41,7 +41,11 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
       'label_en': 'Direct from customer',
       'label_fa': 'مستقیم از مشتری',
     },
-    {'value': 'invoice', 'label_en': 'Invoice', 'label_fa': 'فاکتور'},
+    {
+      'value': 'invoice',
+      'label_en': 'Additional to the invoice',
+      'label_fa': 'اضافه بر فاکتور',
+    },
   ];
 
   bool isLoading = false;
@@ -136,7 +140,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
       final token = prefs.getString('token');
 
       final body = <String, dynamic>{
-        'invoice_number': _invoiceController.text.trim(),
+        'product_description': _productDescriptionController.text.trim(),
         'output_number': _outputController.text.trim(),
         'maghsad': _maghsadController.text.trim(),
         'phone': _phoneController.text.trim(),
@@ -806,7 +810,7 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                         ),
                         SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                         Text(
-                          localizations.trn_invoice,
+                          localizations.trn_product_description,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -815,15 +819,16 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
-                          controller: _invoiceController,
+                          controller: _productDescriptionController,
+                          maxLines: 3,
                           textDirection: Directionality.of(context),
                           textAlign:
                               Directionality.of(context) == TextDirection.rtl
                               ? TextAlign.right
                               : TextAlign.left,
-                          keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
-                            hintText: localizations.trn_invoice_hint,
+                            hintText:
+                                localizations.trn_product_description_hint,
                             hintStyle: TextStyle(
                               color:
                                   Theme.of(context).brightness ==
@@ -852,14 +857,11 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                               ),
                             ),
                             prefixIcon: const Icon(
-                              Icons.receipt_long,
+                              Icons.edit_document,
                               color: AppColors.lapisLazuli,
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return localizations.trn_invoice_error;
-                            }
                             return null;
                           },
                         ),

@@ -23,6 +23,9 @@
   <meta name="flutter-web-renderer" content="html">
   <meta name="theme-color" content="#0175C2">
 
+  <!-- Prevent loading external fonts like Google Fonts -->
+  <meta http-equiv="Content-Security-Policy" content="font-src 'self' data:; style-src 'self' 'unsafe-inline';">
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,7 +46,17 @@
   <!-- Preload app fonts to avoid swap on PWA start -->
   <link rel="preload" href="assets/fonts/Nasalization.otf" as="font" type="font/otf" crossorigin>
   <link rel="preload" href="assets/fonts/InterFont/Inter%20Regular.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/InterFont/Inter%20Bold.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/InterFont/Inter%20Light.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/InterFont/Inter%20Medium.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/InterFont/Inter%20SemiBold.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/InterFont/Inter%20ExtraBold.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/InterFont/Inter%20Black.otf" as="font" type="font/otf" crossorigin>
   <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Light.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Medium.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Thin.ttf" as="font" type="font/ttf" crossorigin>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

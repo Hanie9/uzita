@@ -701,7 +701,8 @@ class _TransportRequestDetailScreenState
     final String grade = (requestData['grade'] ?? '---').toString();
     final String priceTransport = (requestData['price_transport'] ?? '---')
         .toString();
-    final String invoice = (requestData['invoice_number'] ?? '---').toString();
+    final String productDescription =
+        (requestData['product_description'] ?? '---').toString();
     final String output = (requestData['output_number'] ?? '---').toString();
     final String paymentType = (requestData['payment_type'] ?? '---')
         .toString();
@@ -882,9 +883,9 @@ class _TransportRequestDetailScreenState
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(
                   context,
-                  icon: Icons.receipt_long,
-                  title: localizations.trn_invoice,
-                  value: invoice,
+                  icon: Icons.edit_document,
+                  title: localizations.trn_product_description,
+                  value: productDescription,
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(

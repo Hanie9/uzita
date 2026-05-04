@@ -17,6 +17,8 @@ Widget buildPasswordChangeForm({
   required String error,
   required bool loading,
   required bool isFormValid,
+  required bool obscurePassword,
+  required VoidCallback onToggle,
 }) {
   return Builder(
     builder: (context) {
@@ -195,7 +197,7 @@ Widget buildPasswordChangeForm({
 
                             TextField(
                               controller: controllers['newPassword'],
-                              obscureText: true,
+                              obscureText: obscurePassword,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: screenWidth * 0.035),
                               decoration: InputDecoration(
@@ -210,7 +212,31 @@ Widget buildPasswordChangeForm({
                                       : const Color.fromARGB(255, 99, 97, 97),
                                   fontSize: screenWidth * 0.04,
                                 ),
-                                hintTextDirection: TextDirection.rtl,
+                                hintTextDirection: Directionality.of(context),
+                                prefixIcon: Padding(
+                                  padding: EdgeInsets.all(
+                                    screenWidth * 0.02,
+                                  ), // 2% of screen width
+                                  child: GestureDetector(
+                                    onTap: onToggle,
+                                    child: Icon(
+                                      obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? (Colors.grey[400] ?? Colors.grey)
+                                          : const Color.fromARGB(
+                                              255,
+                                              80,
+                                              77,
+                                              77,
+                                            ),
+                                      size: screenHeight * 0.03,
+                                    ),
+                                  ),
+                                ),
                                 suffixIcon: Padding(
                                   padding: EdgeInsets.all(screenWidth * 0.02),
                                   child: Icon(
@@ -236,7 +262,7 @@ Widget buildPasswordChangeForm({
 
                             TextField(
                               controller: controllers['confirmPassword'],
-                              obscureText: true,
+                              obscureText: obscurePassword,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: screenWidth * 0.035),
                               decoration: InputDecoration(
@@ -251,7 +277,31 @@ Widget buildPasswordChangeForm({
                                       : const Color.fromARGB(255, 99, 97, 97),
                                   fontSize: screenWidth * 0.04,
                                 ),
-                                hintTextDirection: TextDirection.rtl,
+                                hintTextDirection: Directionality.of(context),
+                                prefixIcon: Padding(
+                                  padding: EdgeInsets.all(
+                                    screenWidth * 0.02,
+                                  ), // 2% of screen width
+                                  child: GestureDetector(
+                                    onTap: onToggle,
+                                    child: Icon(
+                                      obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? (Colors.grey[400] ?? Colors.grey)
+                                          : const Color.fromARGB(
+                                              255,
+                                              80,
+                                              77,
+                                              77,
+                                            ),
+                                      size: screenHeight * 0.03,
+                                    ),
+                                  ),
+                                ),
                                 suffixIcon: Padding(
                                   padding: EdgeInsets.all(screenWidth * 0.02),
                                   child: Icon(
@@ -433,6 +483,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   String error = '';
   bool loading = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -533,6 +584,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       error: error,
       loading: loading,
       isFormValid: _isValidForm(),
+      obscurePassword: _obscurePassword,
+      onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
     );
   }
 }

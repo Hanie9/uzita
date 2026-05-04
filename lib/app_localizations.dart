@@ -756,9 +756,10 @@ class AppLocalizations {
       'trn_description': 'Description',
       'trn_description_hint': 'Enter description',
       'trn_description_error': 'Please enter description',
-      'trn_invoice': 'Invoice number',
-      'trn_invoice_hint': 'Enter invoice number',
-      'trn_invoice_error': 'Please enter invoice number',
+      'trn_invoice': 'Additional to the invoice',
+      'trn_product_description_hint': 'Enter product description',
+      'trn_product_description_error': 'Please enter product description',
+      'trn_product_description': 'Product description',
       'trn_output_number': 'Output number',
       'trn_output_number_hint': 'Enter output number',
       'trn_output_number_error': 'Please enter output number',
@@ -1918,9 +1919,11 @@ class AppLocalizations {
       'trn_description': 'توضیحات',
       'trn_description_hint': 'توضیحات را وارد کنید',
       'trn_description_error': 'لطفاً توضیحات را وارد کنید',
-      'trn_invoice': 'شماره فاکتور',
-      'trn_invoice_hint': 'شماره فاکتور را وارد کنید',
-      'trn_invoice_error': 'لطفاً شماره فاکتور را وارد کنید',
+      'trn_invoice': 'اضافه بر فاکتور',
+
+      'trn_product_description_hint': 'شرح کالا را وارد کنید',
+      'trn_product_description_error': 'لطفا شرح کالا را وارد کنید',
+      'trn_product_description': 'شرح کالا',
       'trn_output_number': 'شماره خروجی',
       'trn_output_number_hint': 'شماره خروجی را وارد کنید',
       'trn_output_number_error': 'لطفاً شماره خروجی را وارد کنید',
@@ -2530,8 +2533,12 @@ class AppLocalizations {
   String get trn_description_error =>
       _getLocalizedValue('trn_description_error');
   String get trn_invoice => _getLocalizedValue('trn_invoice');
-  String get trn_invoice_hint => _getLocalizedValue('trn_invoice_hint');
-  String get trn_invoice_error => _getLocalizedValue('trn_invoice_error');
+  String get trn_product_description_hint =>
+      _getLocalizedValue('trn_product_description_hint');
+  String get trn_product_description_error =>
+      _getLocalizedValue('trn_product_description_error');
+  String get trn_product_description =>
+      _getLocalizedValue('trn_product_description');
   String get trn_output_number => _getLocalizedValue('trn_output_number');
   String get trn_output_number_hint =>
       _getLocalizedValue('trn_output_number_hint');
