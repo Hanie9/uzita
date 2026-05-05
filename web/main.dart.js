@@ -34410,8 +34410,8 @@ for(;r!==-1;){q=r===0?0:B.d.FV(a,"\n",r-1)+1
 if(c===r-q)return q
 r=B.d.hW(a,b,r+1)}return null},
 bn0(){var s=A.ng()
-if(B.d.p(s.grN(s),"uzita-iot.ir"))return"/api"
-return"https://uzita-iot.ir/api"},
+if(B.d.p(s.grN(s),"device-control.liara.run"))return"/api"
+return"https://device-control.liara.run/api"},
 hI(a,b){return A.bqC(a,b)},
 bqC(a,b){var s=0,r=A.z(t.Wd),q,p,o
 var $async$hI=A.v(function(c,d){if(c===1)return A.w(d,r)
