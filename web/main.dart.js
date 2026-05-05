@@ -37624,7 +37624,7 @@ ga4B(a){var s=this.b
 return s==null?null:s.nonce},
 ga2W(){var s=this.b
 s=s==null?null:s.fontFallbackBaseUrl
-return s==null?"https://fonts.gstatic.com/s/":s}}
+return s}}
 A.TL.prototype={
 gmj(a){var s,r,q=this.d
 if(q==null){q=v.G
