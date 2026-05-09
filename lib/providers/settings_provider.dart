@@ -19,56 +19,9 @@ class SettingsProvider with ChangeNotifier {
       'DEBUG: [SettingsProvider] Generating theme - Dark mode: $_darkModeEnabled',
     );
     final ThemeData baseTheme = _darkModeEnabled ? darkTheme : lightTheme;
-    final bool isFarsi = _selectedLanguage != 'en';
-
-    // Use local fonts for each language
-    final TextTheme themedText = baseTheme.textTheme.copyWith(
-      displayLarge: baseTheme.textTheme.displayLarge?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      displayMedium: baseTheme.textTheme.displayMedium?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      displaySmall: baseTheme.textTheme.displaySmall?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      headlineLarge: baseTheme.textTheme.headlineLarge?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      headlineMedium: baseTheme.textTheme.headlineMedium?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      headlineSmall: baseTheme.textTheme.headlineSmall?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      titleLarge: baseTheme.textTheme.titleLarge?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      titleMedium: baseTheme.textTheme.titleMedium?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      titleSmall: baseTheme.textTheme.titleSmall?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      bodyLarge: baseTheme.textTheme.bodyLarge?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      bodyMedium: baseTheme.textTheme.bodyMedium?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      bodySmall: baseTheme.textTheme.bodySmall?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      labelLarge: baseTheme.textTheme.labelLarge?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      labelMedium: baseTheme.textTheme.labelMedium?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-      labelSmall: baseTheme.textTheme.labelSmall?.copyWith(
-        fontFamily: isFarsi ? 'Vazir' : 'Inter',
-      ),
-    );
+    // Custom fonts are currently unavailable in assets/fonts, so we keep
+    // the platform default family to prevent external font fetch attempts.
+    final TextTheme themedText = baseTheme.textTheme;
 
     final RoundedRectangleBorder buttonShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12),
@@ -198,6 +151,7 @@ class SettingsProvider with ChangeNotifier {
 
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
+    fontFamily: 'sans-serif',
     brightness: Brightness.light,
     primaryColor: const Color(0xFF007BA7),
     scaffoldBackgroundColor: Colors.grey[50],
@@ -238,6 +192,7 @@ class SettingsProvider with ChangeNotifier {
 
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
+    fontFamily: 'sans-serif',
     brightness: Brightness.dark,
     primaryColor: const Color(0xFF007BA7),
     scaffoldBackgroundColor: const Color(0xFF121212),

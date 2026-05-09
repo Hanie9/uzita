@@ -184,15 +184,15 @@ class _MyAppState extends State<MyApp> {
               return TechnicianTaskDetailScreen(task: task);
             },
             '/technician-reports': (context) => TechnicianReportsScreen(),
-            '/transport-requests': (context) =>
-                const TransportRequestsScreen(),
+            '/transport-requests': (context) => const TransportRequestsScreen(),
             '/transport-public-loads': (context) =>
                 const DriverPublicLoadsScreen(),
             '/driver-missions': (context) => const DriverMissionsScreen(),
             '/driver-reports': (context) => const DriverReportsScreen(),
             '/driver-task-detail': (context) {
               final args =
-                  ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
               // Check if arguments contain 'task' key (new format) or is the task itself (old format)
               final task = args['task'] as Map<String, dynamic>? ?? args;
               final isReport = args['isReport'] as bool? ?? false;

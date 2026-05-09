@@ -20,7 +20,6 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="uzita - Device Control Application">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="flutter-web-renderer" content="html">
   <meta name="theme-color" content="#0175C2">
 
   <!-- Prevent loading external fonts like Google Fonts -->
@@ -43,26 +42,28 @@
   <title>uzita</title>
   <link rel="manifest" href="manifest.json?v=6">
 
-  <!-- Preload app fonts to avoid swap on PWA start -->
-  <link rel="preload" href="assets/fonts/Nasalization.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20Regular.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20Bold.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20Light.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20Medium.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20SemiBold.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20ExtraBold.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/InterFont/Inter%20Black.otf" as="font" type="font/otf" crossorigin>
-  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Bold.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Light.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Medium.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/fonts/vazir-font-v16.1.0/Vazir-Thin.ttf" as="font" type="font/ttf" crossorigin>
 </head>
 <body>
   <script>
+    // Remove stale service workers/caches so clients receive fresh builds.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const key of keys) {
+          caches.delete(key);
+        }
+      });
+    }
+  </script>
+  <script>
     window.flutterConfiguration = {
-      fontFallbackBaseUrl: '',
-      renderer: 'html',
+      useLocalCanvasKit: true,
     };
   </script>
   <script src="flutter_bootstrap.js" async></script>
