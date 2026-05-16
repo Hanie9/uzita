@@ -43,11 +43,18 @@ class _TechnicianTaskDetailScreenState
   List<Map<String, dynamic>> tariffList = [];
   Set<int> selectedPieceIds = {};
   Set<int> selectedTariffIds = {};
+  Map<String, dynamic>? _checkTaskSnapshot;
+
+  static bool _parseApiBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is String) return value.toLowerCase() == 'true';
+    return false;
+  }
 
   @override
   void initState() {
     super.initState();
-    isConfirmed = widget.task['technician_confirm'] == true;
+    isConfirmed = _parseApiBool(widget.task['technician_confirm']);
     firstVisitDateSet = widget.task['first_visit_date'] != null;
     if (firstVisitDateSet) {
       try {
@@ -61,7 +68,7 @@ class _TechnicianTaskDetailScreenState
     _fetchPieces();
     _fetchTariffs();
     _loadFirstVisitFlagIfNeeded();
-    _loadCheckTaskFlagIfNeeded();
+    _loadCheckTaskSnapshot();
   }
 
   bool _taskHasCheckTaskData(Map<String, dynamic> task) {
@@ -70,7 +77,314 @@ class _TechnicianTaskDetailScreenState
     final tariffIds = task['tariff_ids'];
     if (tariffIds is List && tariffIds.isNotEmpty) return true;
     if (task['name_piece'] != null || task['piece_name'] != null) return true;
+    if (task['second_visit_date'] != null &&
+        task['second_visit_date'].toString().isNotEmpty) {
+      return true;
+    }
+    final sayer = task['sayer_hazine'];
+    if (sayer != null) {
+      final parsed = int.tryParse(sayer.toString());
+      if (parsed != null && parsed > 0) return true;
+    }
     return false;
+  }
+
+  List<String> _stringListFromSnapshot(dynamic raw) {
+    if (raw is! List || raw.isEmpty) return <String>[];
+    return raw.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+  }
+
+  dynamic _pieceIdsRaw() {
+    final fromTask = widget.task['piece_ids'];
+    if (fromTask is List && fromTask.isNotEmpty) return fromTask;
+    final fromSnap = _checkTaskSnapshot?['piece_ids'];
+    if (fromSnap is List && fromSnap.isNotEmpty) return fromSnap;
+    if (selectedPieceIds.isNotEmpty) return selectedPieceIds.toList();
+    return fromTask;
+  }
+
+  dynamic _tariffIdsRaw() {
+    final fromTask = widget.task['tariff_ids'];
+    if (fromTask is List && fromTask.isNotEmpty) return fromTask;
+    final fromSnap = _checkTaskSnapshot?['tariff_ids'];
+    if (fromSnap is List && fromSnap.isNotEmpty) return fromSnap;
+    if (selectedTariffIds.isNotEmpty) return selectedTariffIds.toList();
+    return fromTask;
+  }
+
+  dynamic _submittedSayerHazine() {
+    if (widget.task['sayer_hazine'] != null) {
+      return widget.task['sayer_hazine'];
+    }
+    return _checkTaskSnapshot?['sayer_hazine'];
+  }
+
+  String? _submittedSecondVisitDate() {
+    final fromTask = widget.task['second_visit_date'];
+    if (fromTask != null && fromTask.toString().isNotEmpty) {
+      return fromTask.toString();
+    }
+    final fromSnap = _checkTaskSnapshot?['second_visit_date'];
+    if (fromSnap != null && fromSnap.toString().isNotEmpty) {
+      return fromSnap.toString();
+    }
+    return null;
+  }
+
+  List<String> _pieceLabelsForTask() {
+    final cached = _stringListFromSnapshot(_checkTaskSnapshot?['piece_labels']);
+    if (cached.isNotEmpty) return cached;
+
+    var labels = _labelsForIds(
+      source: pieceList,
+      idsRaw: _pieceIdsRaw(),
+      isTariff: false,
+    );
+    if (labels.isEmpty) {
+      final ids = _pieceIdsRaw();
+      if (ids is List) {
+        for (final rawId in ids) {
+          final id = int.tryParse(rawId.toString()) ?? 0;
+          if (id <= 0) continue;
+          final match = pieceList.where((p) => _itemId(p) == id);
+          labels.add(
+            match.isNotEmpty ? _pieceDisplayName(match.first) : '#$id',
+          );
+        }
+      }
+    }
+    if (labels.isEmpty &&
+        (widget.task['name_piece'] != null ||
+            widget.task['piece_name'] != null)) {
+      labels = [
+        (widget.task['name_piece'] ?? widget.task['piece_name']).toString(),
+      ];
+    }
+    return labels;
+  }
+
+  List<String> _tariffLabelsForTask() {
+    final cached = _stringListFromSnapshot(_checkTaskSnapshot?['tariff_labels']);
+    if (cached.isNotEmpty) return cached;
+
+    var labels = _labelsForIds(
+      source: tariffList,
+      idsRaw: _tariffIdsRaw(),
+      isTariff: true,
+    );
+    if (labels.isEmpty) {
+      final ids = _tariffIdsRaw();
+      if (ids is List) {
+        final loc = AppLocalizations.of(context)!;
+        for (final rawId in ids) {
+          final id = int.tryParse(rawId.toString()) ?? 0;
+          if (id <= 0) continue;
+          final match = tariffList.where((t) => _itemId(t) == id);
+          labels.add(
+            match.isNotEmpty
+                ? '${match.first['name']} — ${_tariffPriceLabel(match.first, loc)}'
+                : '#$id',
+          );
+        }
+      }
+    }
+    return labels;
+  }
+
+  Future<void> _saveCheckTaskSnapshot(
+    SharedPreferences prefs,
+    String taskId,
+  ) async {
+    final pieceLabels = _labelsForIds(
+      source: pieceList,
+      idsRaw: selectedPieceIds.toList(),
+      isTariff: false,
+    );
+    final tariffLabels = _labelsForIds(
+      source: tariffList,
+      idsRaw: selectedTariffIds.toList(),
+      isTariff: true,
+    );
+
+    final snapshot = <String, dynamic>{
+      'piece_ids': selectedPieceIds.toList(),
+      'tariff_ids': selectedTariffIds.toList(),
+      'piece_labels': pieceLabels.isNotEmpty
+          ? pieceLabels
+          : selectedPieceIds.map((id) => '#$id').toList(),
+      'tariff_labels': tariffLabels.isNotEmpty
+          ? tariffLabels
+          : selectedTariffIds.map((id) => '#$id').toList(),
+      'sayer_hazine': int.tryParse(_otherCostsController.text) ?? 0,
+    };
+    if (secondVisitDate != null) {
+      snapshot['second_visit_date'] = formatDateForAPI(secondVisitDate!);
+    }
+
+    await prefs.setString('check_task_snapshot_$taskId', json.encode(snapshot));
+    _checkTaskSnapshot = snapshot;
+  }
+
+  void _applyCheckTaskSnapshot(Map<String, dynamic> snap) {
+    if (widget.task['piece_ids'] == null && snap['piece_ids'] != null) {
+      widget.task['piece_ids'] = snap['piece_ids'];
+    }
+    if (widget.task['tariff_ids'] == null && snap['tariff_ids'] != null) {
+      widget.task['tariff_ids'] = snap['tariff_ids'];
+    }
+    if (widget.task['sayer_hazine'] == null && snap['sayer_hazine'] != null) {
+      widget.task['sayer_hazine'] = snap['sayer_hazine'];
+    }
+    if (widget.task['second_visit_date'] == null &&
+        snap['second_visit_date'] != null) {
+      widget.task['second_visit_date'] = snap['second_visit_date'];
+    }
+
+    final pieceIds = snap['piece_ids'];
+    if (pieceIds is List && selectedPieceIds.isEmpty) {
+      selectedPieceIds = pieceIds
+          .map((e) => int.tryParse(e.toString()) ?? 0)
+          .where((id) => id > 0)
+          .toSet();
+    }
+    final tariffIds = snap['tariff_ids'];
+    if (tariffIds is List && selectedTariffIds.isEmpty) {
+      selectedTariffIds = tariffIds
+          .map((e) => int.tryParse(e.toString()) ?? 0)
+          .where((id) => id > 0)
+          .toSet();
+    }
+
+    final sayer = snap['sayer_hazine'];
+    if (sayer != null && _otherCostsController.text.isEmpty) {
+      _otherCostsController.text = sayer.toString();
+    }
+
+    final second = snap['second_visit_date'];
+    if (second != null &&
+        secondVisitDate == null &&
+        second.toString().isNotEmpty) {
+      try {
+        secondVisitDate = DateTime.parse(second.toString());
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _loadCheckTaskSnapshot() async {
+    final taskId = widget.task['id']?.toString() ?? '';
+    if (taskId.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('check_task_done_$taskId') ?? false;
+    final raw = prefs.getString('check_task_snapshot_$taskId');
+
+    if (raw != null) {
+      try {
+        final snap = Map<String, dynamic>.from(json.decode(raw) as Map);
+        _checkTaskSnapshot = snap;
+        _applyCheckTaskSnapshot(snap);
+      } catch (_) {
+        // ignore corrupt snapshot
+      }
+    }
+
+    if (!mounted) return;
+    if (done || _checkTaskSnapshot != null || checkTaskSubmitted) {
+      setState(() => checkTaskSubmitted = true);
+    }
+  }
+
+  Widget? _buildCheckTaskSummaryCard(AppLocalizations localizations) {
+    if (!checkTaskSubmitted) return null;
+
+    final pieceLabels = _pieceLabelsForTask();
+    final tariffLabels = _tariffLabelsForTask();
+    final sayer = _submittedSayerHazine();
+    final secondVisit = _submittedSecondVisitDate();
+
+    final bool hasContent = pieceLabels.isNotEmpty ||
+        tariffLabels.isNotEmpty ||
+        sayer != null ||
+        secondVisit != null;
+    if (!hasContent) return null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(top: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: AppColors.lapisLazuli,
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline,
+                color: AppColors.lapisLazuli,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                localizations.tech_check_task_submitted_info,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.lapisLazuli,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (pieceLabels.isNotEmpty)
+            _buildGroupedListSection(
+              title: localizations.tech_piece_name,
+              icon: Icons.build,
+              items: pieceLabels,
+            ),
+          if (pieceLabels.isNotEmpty && tariffLabels.isNotEmpty)
+            const SizedBox(height: 12),
+          if (tariffLabels.isNotEmpty)
+            _buildGroupedListSection(
+              title: localizations.tech_tariffs,
+              icon: Icons.receipt_long,
+              items: tariffLabels,
+            ),
+          if (sayer != null) ...[
+            if (pieceLabels.isNotEmpty || tariffLabels.isNotEmpty)
+              const SizedBox(height: 12),
+            _buildInfoRow(
+              localizations.tech_other_costs,
+              '$sayer ${localizations.sls_tooman}',
+              Icons.attach_money,
+            ),
+          ],
+          if (secondVisit != null) ...[
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              localizations.tech_second_visit_date,
+              formatDate(secondVisit, context),
+              Icons.calendar_today,
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   void _hydrateSelectionsFromTask() {
@@ -87,17 +401,6 @@ class _TechnicianTaskDetailScreenState
           .map((e) => int.tryParse(e.toString()) ?? 0)
           .where((id) => id > 0)
           .toSet();
-    }
-  }
-
-  Future<void> _loadCheckTaskFlagIfNeeded() async {
-    if (checkTaskSubmitted) return;
-    final taskId = widget.task['id']?.toString() ?? '';
-    if (taskId.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    final done = prefs.getBool('check_task_done_$taskId') ?? false;
-    if (done && mounted) {
-      setState(() => checkTaskSubmitted = true);
     }
   }
 
@@ -206,6 +509,9 @@ class _TechnicianTaskDetailScreenState
                 .map((e) => Map<String, dynamic>.from(e))
                 .where((item) => _itemId(item) > 0)
                 .toList();
+            if (checkTaskSubmitted && _checkTaskSnapshot != null) {
+              _checkTaskSnapshot!['piece_labels'] = _pieceLabelsForTask();
+            }
           });
         }
       }
@@ -242,6 +548,9 @@ class _TechnicianTaskDetailScreenState
                 .map((e) => Map<String, dynamic>.from(e))
                 .where((item) => _itemId(item) > 0)
                 .toList();
+            if (checkTaskSubmitted && _checkTaskSnapshot != null) {
+              _checkTaskSnapshot!['tariff_labels'] = _tariffLabelsForTask();
+            }
           });
         }
       }
@@ -722,6 +1031,7 @@ class _TechnicianTaskDetailScreenState
         final taskIdKey = widget.task['id']?.toString() ?? '';
         if (taskIdKey.isNotEmpty) {
           await prefs.setBool('check_task_done_$taskIdKey', true);
+          await _saveCheckTaskSnapshot(prefs, taskIdKey);
         }
         setState(() {
           checkTaskSubmitted = true;
@@ -908,6 +1218,10 @@ class _TechnicianTaskDetailScreenState
     // selection, check-task form, or report submission steps.
     final bool isFromOrganAssignList =
         widget.task['from_organ_assign_list'] == true;
+    final bool isFromReportsList =
+        widget.task['from_reports_list'] == true;
+    final bool isReadOnlyDetail =
+        isFromOrganAssignList || isFromReportsList;
 
     final title = widget.task['title'] ?? '---';
     final description = widget.task['description'] ?? '---';
@@ -943,7 +1257,9 @@ class _TechnicianTaskDetailScreenState
                         onPressed: () => Navigator.pop(context),
                       ),
                       Text(
-                        localizations.tech_task_details,
+                        isFromReportsList
+                            ? localizations.tech_report_details
+                            : localizations.tech_task_details,
                         style: Theme.of(context).appBarTheme.titleTextStyle
                             ?.copyWith(
                               fontSize: 20,
@@ -1239,7 +1555,7 @@ class _TechnicianTaskDetailScreenState
                 SizedBox(height: 20),
 
                 // Step 1: First Visit Date
-                if (!isFromOrganAssignList &&
+                if (!isReadOnlyDetail &&
                     !firstVisitDateSet &&
                     !isConfirmed)
                   Container(
@@ -1356,7 +1672,7 @@ class _TechnicianTaskDetailScreenState
                   ),
 
                 // Step 2: Check Task Form
-                if (!isFromOrganAssignList &&
+                if (!isReadOnlyDetail &&
                     firstVisitDateSet &&
                     !checkTaskSubmitted &&
                     !isConfirmed)
@@ -1671,128 +1987,20 @@ class _TechnicianTaskDetailScreenState
                     ),
                   ),
 
-                // Display submitted check task information
-                if (!isFromOrganAssignList &&
+                // Submitted check-task summary card (above report form)
+                if (!isReadOnlyDetail &&
                     firstVisitDateSet &&
                     checkTaskSubmitted &&
                     !isConfirmed)
-                  Container(
-                    padding: EdgeInsets.all(20),
-                    margin: EdgeInsets.only(top: 20),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.black.withValues(alpha: 0.2)
-                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey[700]!
-                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 24,
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              localizations.tech_check_task,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.lapisLazuli,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 20),
-                        ...() {
-                          var pieceLabels = _labelsForIds(
-                            source: pieceList,
-                            idsRaw: widget.task['piece_ids'],
-                            isTariff: false,
-                          );
-                          if (pieceLabels.isEmpty &&
-                              (widget.task['name_piece'] != null ||
-                                  widget.task['piece_name'] != null)) {
-                            pieceLabels = [
-                              (widget.task['name_piece'] ??
-                                      widget.task['piece_name'])
-                                  .toString(),
-                            ];
-                          }
-                          return pieceLabels
-                              .map(
-                                (label) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _buildInfoRow(
-                                    localizations.tech_piece_name,
-                                    label,
-                                    Icons.build,
-                                  ),
-                                ),
-                              )
-                              .toList();
-                        }(),
-                        ...() {
-                          final tariffLabels = _labelsForIds(
-                            source: tariffList,
-                            idsRaw: widget.task['tariff_ids'],
-                            isTariff: true,
-                          );
-                          return tariffLabels
-                              .map(
-                                (label) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _buildInfoRow(
-                                    localizations.tech_tariffs,
-                                    label,
-                                    Icons.receipt_long,
-                                  ),
-                                ),
-                              )
-                              .toList();
-                        }(),
-                        // Other Costs
-                        if (widget.task['sayer_hazine'] != null)
-                          _buildInfoRow(
-                            localizations.tech_other_costs,
-                            '${widget.task['sayer_hazine']} ${localizations.sls_tooman}',
-                            Icons.attach_money,
-                          ),
-                        if (widget.task['sayer_hazine'] != null)
-                          SizedBox(height: 12),
-                        // Second Visit Date
-                        if (widget.task['second_visit_date'] != null)
-                          _buildInfoRow(
-                            localizations.tech_second_visit_date,
-                            formatDate(
-                              widget.task['second_visit_date'].toString(),
-                              context,
-                            ),
-                            Icons.calendar_today,
-                          ),
-                      ],
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final card = _buildCheckTaskSummaryCard(localizations);
+                      return card ?? const SizedBox.shrink();
+                    },
                   ),
 
                 // Step 3: Report and Final Confirmation
-                // Only show when first visit date is set AND check task is submitted AND not yet confirmed
-                if (!isFromOrganAssignList &&
+                if (!isReadOnlyDetail &&
                     firstVisitDateSet &&
                     checkTaskSubmitted &&
                     !isConfirmed)
@@ -1947,6 +2155,50 @@ class _TechnicianTaskDetailScreenState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGroupedListSection({
+    required String title,
+    required IconData icon,
+    required List<String> items,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.iranianGray),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.iranianGray,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    item,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.lapisLazuli,
+                    ),
+                    textDirection: Directionality.of(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

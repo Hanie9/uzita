@@ -510,25 +510,21 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                       ? '---'
                                       : priceValue.toString();
 
-                                  final bool isTechnicianOrgManager =
-                                      userLevel == 1 &&
-                                      organType == 'technician';
-                                  final bool isNormalTechnician =
-                                      userLevel == 2;
-                                  final bool allowTap =
-                                      !isNormalTechnician &&
-                                      !isTechnicianOrgManager;
-
                                   return GestureDetector(
-                                    onTap: allowTap
-                                        ? () {
-                                            Navigator.pushNamed(
-                                              context,
-                                              '/technician-task-detail',
-                                              arguments: task,
+                                    onTap: () {
+                                      final Map<String, dynamic> taskToSend =
+                                          task is Map<String, dynamic>
+                                          ? Map<String, dynamic>.from(task)
+                                          : Map<String, dynamic>.from(
+                                              task as Map,
                                             );
-                                          }
-                                        : null,
+                                      taskToSend['from_reports_list'] = true;
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/technician-task-detail',
+                                        arguments: taskToSend,
+                                      );
+                                    },
                                     child: Container(
                                       margin: EdgeInsets.only(bottom: 12),
                                       decoration: BoxDecoration(
@@ -765,25 +761,19 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                                 ],
                                               ),
                                             ),
-                                            // Hide arrow (>) for normal technician (level 2)
-                                            // and for technician organization manager (level 1, organ_type=technician)
-                                            if (!isNormalTechnician &&
-                                                !isTechnicianOrgManager)
-                                              Icon(
-                                                Icons.chevron_left,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.color
-                                                    ?.withValues(alpha: 0.5),
-                                                textDirection:
-                                                    Directionality.of(
-                                                          context,
-                                                        ) ==
-                                                        TextDirection.rtl
-                                                    ? TextDirection.ltr
-                                                    : TextDirection.rtl,
-                                              ),
+                                            Icon(
+                                              Icons.chevron_left,
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.color
+                                                  ?.withValues(alpha: 0.5),
+                                              textDirection:
+                                                  Directionality.of(context) ==
+                                                      TextDirection.rtl
+                                                  ? TextDirection.ltr
+                                                  : TextDirection.rtl,
+                                            ),
                                           ],
                                         ),
                                       ),

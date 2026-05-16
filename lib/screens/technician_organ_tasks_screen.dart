@@ -76,6 +76,52 @@ class _TechnicianOrganTasksScreenState
     });
   }
 
+  /// Normalizes organ-task JSON from `/technician-organ/tasks` for UI logic.
+  Map<String, dynamic> _normalizeOrgTask(Map<String, dynamic> raw) {
+    final Map<String, dynamic> t = Map<String, dynamic>.from(raw);
+    t['status'] = (t['status'] ?? '').toString().toLowerCase();
+
+    final dynamic technician = t['technician'];
+    if (technician is String && technician.trim().isNotEmpty) {
+      t['technician_username'] = technician.trim();
+    } else if (technician is Map) {
+      final String? fromMap =
+          technician['username']?.toString() ?? technician['name']?.toString();
+      if (fromMap != null && fromMap.trim().isNotEmpty) {
+        t['technician_username'] = fromMap.trim();
+      }
+    }
+
+    if (t['technician_confirm'] is String) {
+      t['technician_confirm'] =
+          t['technician_confirm'].toString().toLowerCase() == 'true';
+    }
+    if (t['customer_confirm'] is String) {
+      t['customer_confirm'] =
+          t['customer_confirm'].toString().toLowerCase() == 'true';
+    }
+    if (t['warranty'] is String) {
+      t['warranty'] = t['warranty'].toString().toLowerCase() == 'true';
+    }
+
+    return t;
+  }
+
+  bool _canAssignOrgTask(Map<String, dynamic> task) {
+    final String status = (task['status'] ?? '').toString().toLowerCase();
+    if (status == 'assigned' || status == 'done' || status == 'canceled') {
+      return false;
+    }
+    final String assignedUsername = (task['assigned_username'] ??
+            task['technician_username'] ??
+            task['assigned_to'] ??
+            task['technician'] ??
+            '')
+        .toString()
+        .trim();
+    return assignedUsername.isEmpty;
+  }
+
   Future<void> _fetchTasks() async {
     setState(() {
       isLoading = true;
@@ -148,15 +194,13 @@ class _TechnicianOrganTasksScreenState
           // missions (those that are not yet completed / done), whether assigned
           // or not.
           parsedOrgTasks = data
-              .whereType<Map<String, dynamic>>()
-              .map<Map<String, dynamic>>(
-                (Map<String, dynamic> item) => Map<String, dynamic>.from(item),
+              .whereType<Map>()
+              .map(
+                (dynamic item) =>
+                    _normalizeOrgTask(Map<String, dynamic>.from(item as Map)),
               )
-              .where((Map<String, dynamic> t) {
-                final String status =
-                    (t['status'] ?? '').toString().toLowerCase();
-                return status != 'done';
-              }).toList();
+              .where((Map<String, dynamic> t) => t['status'] != 'done')
+              .toList();
         }
       }
 
@@ -532,7 +576,8 @@ class _TechnicianOrganTasksScreenState
     final String taskId = (task['id'] ?? '').toString();
     final String title = (task['title'] ?? '---').toString();
     final String? urgency = task['urgency']?.toString();
-    final String status = task['status']?.toString() ?? 'open';
+    final String status =
+        (task['status'] ?? 'open').toString().toLowerCase();
     final String createdAt = task['created_at']?.toString() ?? '';
     final dynamic priceValue =
         task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
@@ -1109,19 +1154,7 @@ class _TechnicianOrganTasksScreenState
                             ),
                                 ...orgTasks.map(
                                   (Map<String, dynamic> task) {
-                                    // Determine if this mission is already assigned
-                                    final String assignedUsername = (task['assigned_username'] ??
-                                            task['technician_username'] ??
-                                            task['assigned_to'] ??
-                                            task['technician'] ??
-                                            '')
-                                        .toString()
-                                        .trim();
-                                    final bool hasAssignee =
-                                        assignedUsername.isNotEmpty;
-
-                                    // Show assign button only when not yet assigned
-                                    final bool canAssign = !hasAssignee;
+                                    final bool canAssign = _canAssignOrgTask(task);
 
                                     return _buildTaskCard(
                                       task,

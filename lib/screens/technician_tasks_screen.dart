@@ -124,7 +124,16 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
           }
           
           setState(() {
-            tasks = uniqueTasks.values.toList();
+            tasks = uniqueTasks.values.map((dynamic task) {
+              if (task is! Map) return task;
+              final Map<String, dynamic> t = Map<String, dynamic>.from(task);
+              t['status'] = (t['status'] ?? 'open').toString().toLowerCase();
+              if (t['technician_confirm'] is String) {
+                t['technician_confirm'] =
+                    t['technician_confirm'].toString().toLowerCase() == 'true';
+              }
+              return t;
+            }).toList();
             isLoading = false;
           });
         }
@@ -455,7 +464,8 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                 task['id']?.toString() ?? index.toString();
                     final title = task['title']?.toString() ?? '---';
                     final urgency = task['urgency']?.toString();
-                    final status = task['status']?.toString() ?? 'open';
+                    final status =
+                        (task['status'] ?? 'open').toString().toLowerCase();
                             final createdAt =
                                 task['created_at']?.toString() ?? '';
                     // Get price - could be 'hazine', 'sayer_hazine', or 'price'

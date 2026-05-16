@@ -1111,6 +1111,7 @@ class AppLocalizations {
       'tech_no_missions_description':
           'You have no pending missions at the moment.',
       'tech_task_details': 'Task Details',
+      'tech_report_details': 'Report Details',
       'tech_price': 'Price',
       'tech_location': 'Location',
       'tech_organ_name': 'Organization',
@@ -1138,6 +1139,7 @@ class AppLocalizations {
       'tech_set_first_visit': 'Set First Visit Date',
       'tech_first_visit_success': 'First visit date set successfully',
       'tech_check_task': 'Check Task',
+      'tech_check_task_submitted_info': 'Submitted check details',
       'tech_piece_name': 'Required Parts',
       'tech_piece_name_hint': 'Select parts (optional)',
       'tech_piece_name_error': 'Please select piece',
@@ -2272,6 +2274,7 @@ class AppLocalizations {
       'tech_no_missions': 'ماموریتی وجود ندارد',
       'tech_no_missions_description': 'در حال حاضر ماموریت در انتظاری ندارید.',
       'tech_task_details': 'جزئیات ماموریت',
+      'tech_report_details': 'جزئیات گزارش',
       'tech_price': 'قیمت',
       'tech_location': 'موقعیت',
       'tech_organ_name': 'سازمان',
@@ -2294,6 +2297,7 @@ class AppLocalizations {
       'tech_set_first_visit': 'ثبت زمان مراجعه اولیه',
       'tech_first_visit_success': 'زمان مراجعه اولیه با موفقیت ثبت شد',
       'tech_check_task': 'بررسی مأموریت',
+      'tech_check_task_submitted_info': 'اطلاعات ثبت‌شده در بررسی',
       'tech_piece_name': 'قطعات مورد نیاز',
       'tech_piece_name_hint': 'قطعات را انتخاب کنید (اختیاری)',
       'tech_piece_name_error': 'لطفاً قطعه را انتخاب کنید',
@@ -3231,6 +3235,7 @@ class AppLocalizations {
   String get tech_no_missions_description =>
       _getLocalizedValue('tech_no_missions_description');
   String get tech_task_details => _getLocalizedValue('tech_task_details');
+  String get tech_report_details => _getLocalizedValue('tech_report_details');
   String get tech_price => _getLocalizedValue('tech_price');
   String get tech_location => _getLocalizedValue('tech_location');
   String get tech_organ_name => _getLocalizedValue('tech_organ_name');
@@ -3271,6 +3276,8 @@ class AppLocalizations {
   String get tech_first_visit_success =>
       _getLocalizedValue('tech_first_visit_success');
   String get tech_check_task => _getLocalizedValue('tech_check_task');
+  String get tech_check_task_submitted_info =>
+      _getLocalizedValue('tech_check_task_submitted_info');
   String get tech_piece_name => _getLocalizedValue('tech_piece_name');
   String get tech_piece_name_hint => _getLocalizedValue('tech_piece_name_hint');
   String get tech_piece_name_error =>
