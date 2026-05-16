@@ -31,18 +31,18 @@ class _TechnicianTaskDetailScreenState
 
   // Step 2: Check task fields
   final _checkTaskFormKey = GlobalKey<FormState>();
-  String? selectedPiece;
-  final _timeController = TextEditingController();
   final _otherCostsController = TextEditingController();
   DateTime? secondVisitDate;
   bool checkTaskSubmitted = false;
-  bool warranty = false;
 
   // Step 3: Report
   final _reportFormKey = GlobalKey<FormState>();
   final _reportController = TextEditingController();
 
-  List<String> pieceOptions = [];
+  List<Map<String, dynamic>> pieceList = [];
+  List<Map<String, dynamic>> tariffList = [];
+  Set<int> selectedPieceIds = {};
+  Set<int> selectedTariffIds = {};
 
   @override
   void initState() {
@@ -56,14 +56,107 @@ class _TechnicianTaskDetailScreenState
         firstVisitDateSet = false;
       }
     }
-    // Check if check task is already submitted
-    checkTaskSubmitted =
-        widget.task['time'] != null &&
-        widget.task['time'] != '0' &&
-        widget.task['time'] != 0;
-    warranty = widget.task['warranty'] == true;
+    checkTaskSubmitted = _taskHasCheckTaskData(widget.task);
+    _hydrateSelectionsFromTask();
     _fetchPieces();
+    _fetchTariffs();
     _loadFirstVisitFlagIfNeeded();
+    _loadCheckTaskFlagIfNeeded();
+  }
+
+  bool _taskHasCheckTaskData(Map<String, dynamic> task) {
+    final pieceIds = task['piece_ids'];
+    if (pieceIds is List && pieceIds.isNotEmpty) return true;
+    final tariffIds = task['tariff_ids'];
+    if (tariffIds is List && tariffIds.isNotEmpty) return true;
+    if (task['name_piece'] != null || task['piece_name'] != null) return true;
+    return false;
+  }
+
+  void _hydrateSelectionsFromTask() {
+    final pieceIds = widget.task['piece_ids'];
+    if (pieceIds is List) {
+      selectedPieceIds = pieceIds
+          .map((e) => int.tryParse(e.toString()) ?? 0)
+          .where((id) => id > 0)
+          .toSet();
+    }
+    final tariffIds = widget.task['tariff_ids'];
+    if (tariffIds is List) {
+      selectedTariffIds = tariffIds
+          .map((e) => int.tryParse(e.toString()) ?? 0)
+          .where((id) => id > 0)
+          .toSet();
+    }
+  }
+
+  Future<void> _loadCheckTaskFlagIfNeeded() async {
+    if (checkTaskSubmitted) return;
+    final taskId = widget.task['id']?.toString() ?? '';
+    if (taskId.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('check_task_done_$taskId') ?? false;
+    if (done && mounted) {
+      setState(() => checkTaskSubmitted = true);
+    }
+  }
+
+  int _itemId(Map<String, dynamic> item) {
+    final id = item['id'];
+    if (id is int) return id;
+    return int.tryParse(id?.toString() ?? '') ?? 0;
+  }
+
+  String _pieceDisplayName(Map<String, dynamic> piece) {
+    final name = piece['name']?.toString() ?? '';
+    final code = piece['code']?.toString() ?? '';
+    if (code.isNotEmpty) return '$name ($code)';
+    return name;
+  }
+
+  String _tariffPriceLabel(Map<String, dynamic> tariff, AppLocalizations loc) {
+    if (tariff['is_const_price'] == true) {
+      final price = tariff['price'];
+      return '$price ${loc.sls_tooman}';
+    }
+    return loc.tech_tariff_agreed;
+  }
+
+  String _selectedPiecesSummary(AppLocalizations loc) {
+    if (selectedPieceIds.isEmpty) return loc.tech_piece_name_hint;
+    return pieceList
+        .where((p) => selectedPieceIds.contains(_itemId(p)))
+        .map(_pieceDisplayName)
+        .join('، ');
+  }
+
+  String _selectedTariffsSummary(AppLocalizations loc) {
+    if (selectedTariffIds.isEmpty) return loc.tech_tariffs_hint;
+    return tariffList
+        .where((t) => selectedTariffIds.contains(_itemId(t)))
+        .map((t) => t['name']?.toString() ?? '')
+        .where((n) => n.isNotEmpty)
+        .join('، ');
+  }
+
+  List<String> _labelsForIds({
+    required List<Map<String, dynamic>> source,
+    required dynamic idsRaw,
+    required bool isTariff,
+  }) {
+    if (idsRaw is! List || idsRaw.isEmpty) return [];
+    final loc = AppLocalizations.of(context)!;
+    final ids = idsRaw
+        .map((e) => int.tryParse(e.toString()) ?? 0)
+        .where((id) => id > 0)
+        .toSet();
+    return source.where((item) => ids.contains(_itemId(item))).map((item) {
+      if (isTariff) {
+        final name = item['name']?.toString() ?? '';
+        return '$name — ${_tariffPriceLabel(item, loc)}';
+      }
+      return _pieceDisplayName(item);
+    }).toList();
   }
 
   // If backend task list does not yet include the stored first visit date,
@@ -108,27 +201,88 @@ class _TechnicianTaskDetailScreenState
         final data = json.decode(utf8.decode(response.bodyBytes));
         if (data is List) {
           setState(() {
-            pieceOptions = data
-                .map((item) => item['name']?.toString() ?? '')
-                .where((name) => name.isNotEmpty)
+            pieceList = data
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .where((item) => _itemId(item) > 0)
                 .toList();
           });
         }
       }
     } catch (e) {
-      // If API fails, keep empty list - pieces will be loaded from API only
       if (mounted) {
-        setState(() {
-          pieceOptions = [];
-        });
+        setState(() => pieceList = []);
+      }
+    }
+  }
+
+  Future<void> _fetchTariffs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return;
+
+      await SessionManager().onNetworkRequest();
+      final response = await http.get(
+        Uri.parse('$baseUrl5/listtariffs'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        if (data is List) {
+          setState(() {
+            tariffList = data
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .where((item) => _itemId(item) > 0)
+                .toList();
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => tariffList = []);
       }
     }
   }
 
   Future<void> _openPiecePicker() async {
-    if (pieceOptions.isEmpty) return;
+    await _openMultiSelectPicker(
+      title: AppLocalizations.of(context)!.tech_piece_name,
+      items: pieceList,
+      initialSelection: Set<int>.from(selectedPieceIds),
+      isTariff: false,
+      onConfirm: (ids) => setState(() => selectedPieceIds = ids),
+    );
+  }
+
+  Future<void> _openTariffPicker() async {
+    await _openMultiSelectPicker(
+      title: AppLocalizations.of(context)!.tech_tariffs,
+      items: tariffList,
+      initialSelection: Set<int>.from(selectedTariffIds),
+      isTariff: true,
+      onConfirm: (ids) => setState(() => selectedTariffIds = ids),
+    );
+  }
+
+  Future<void> _openMultiSelectPicker({
+    required String title,
+    required List<Map<String, dynamic>> items,
+    required Set<int> initialSelection,
+    required bool isTariff,
+    required void Function(Set<int> selectedIds) onConfirm,
+  }) async {
+    if (items.isEmpty) return;
     final localizations = AppLocalizations.of(context)!;
-    final TextEditingController searchController = TextEditingController();
+    final searchController = TextEditingController();
+    final tempSelection = Set<int>.from(initialSelection);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -139,20 +293,21 @@ class _TechnicianTaskDetailScreenState
       builder: (bottomSheetContext) {
         return StatefulBuilder(
           builder: (modalContext, modalSetState) {
-            final String query = searchController.text;
-            final List<String> filtered = pieceOptions.where((String p) {
-              if (query.trim().isEmpty) return true;
-              return p.toLowerCase().contains(query.toLowerCase());
+            final query = searchController.text.trim().toLowerCase();
+            final filtered = items.where((item) {
+              if (query.isEmpty) return true;
+              final name = item['name']?.toString().toLowerCase() ?? '';
+              final code = item['code']?.toString().toLowerCase() ?? '';
+              return name.contains(query) || code.contains(query);
             }).toList();
 
             return DraggableScrollableSheet(
               expand: false,
-              initialChildSize: 0.6,
+              initialChildSize: 0.65,
               minChildSize: 0.4,
               maxChildSize: 0.9,
               builder: (context, scrollController) {
                 return Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -162,16 +317,20 @@ class _TechnicianTaskDetailScreenState
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            localizations.tech_piece_name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                Navigator.of(bottomSheetContext).pop(),
+                            onPressed: () {
+                              onConfirm(tempSelection);
+                              Navigator.of(bottomSheetContext).pop();
+                            },
                             child: Text(localizations.trn_ok),
                           ),
                         ],
@@ -183,58 +342,21 @@ class _TechnicianTaskDetailScreenState
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.format_list_numbered,
-                                size: 18,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${filtered.length} / ${pieceOptions.length}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                localizations.trn_pieces,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.iranianGray,
-                                ),
-                              ),
-                            ],
+                      child: TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          hintText: localizations.trn_piece_hint,
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            size: 20,
+                            color: AppColors.lapisLazuli,
                           ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: localizations.trn_piece_hint,
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                size: 20,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onChanged: (_) => modalSetState(() {}),
+                          isDense: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ],
+                        ),
+                        onChanged: (_) => modalSetState(() {}),
                       ),
                     ),
                     Expanded(
@@ -242,18 +364,39 @@ class _TechnicianTaskDetailScreenState
                         controller: scrollController,
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
-                          final piece = filtered[index];
-                          return ListTile(
+                          final item = filtered[index];
+                          final id = _itemId(item);
+                          final checked = tempSelection.contains(id);
+                          final titleText = isTariff
+                              ? (item['name']?.toString() ?? '')
+                              : _pieceDisplayName(item);
+                          final subtitle = isTariff
+                              ? _tariffPriceLabel(item, localizations)
+                              : null;
+
+                          return CheckboxListTile(
+                            value: checked,
+                            activeColor: AppColors.lapisLazuli,
                             title: Text(
-                              piece,
-                              style: const TextStyle(fontSize: 18),
+                              titleText,
+                              style: const TextStyle(fontSize: 16),
                               textDirection: Directionality.of(context),
                             ),
-                            onTap: () {
-                              setState(() {
-                                selectedPiece = piece;
+                            subtitle: subtitle != null
+                                ? Text(
+                                    subtitle,
+                                    style: const TextStyle(fontSize: 14),
+                                    textDirection: Directionality.of(context),
+                                  )
+                                : null,
+                            onChanged: (value) {
+                              modalSetState(() {
+                                if (value == true) {
+                                  tempSelection.add(id);
+                                } else {
+                                  tempSelection.remove(id);
+                                }
                               });
-                              Navigator.of(bottomSheetContext).pop();
                             },
                           );
                         },
@@ -272,7 +415,6 @@ class _TechnicianTaskDetailScreenState
 
   @override
   void dispose() {
-    _timeController.dispose();
     _otherCostsController.dispose();
     _reportController.dispose();
     super.dispose();
@@ -520,13 +662,7 @@ class _TechnicianTaskDetailScreenState
   }
 
   Future<void> _submitCheckTask() async {
-    if (!_checkTaskFormKey.currentState!.validate() || selectedPiece == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.sss_add_required),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (!_checkTaskFormKey.currentState!.validate()) {
       return;
     }
 
@@ -551,10 +687,9 @@ class _TechnicianTaskDetailScreenState
       print('Sending POST request to: $url');
 
       final requestBody = <String, dynamic>{
-        'time': int.parse(_timeController.text),
-        'piece_name': selectedPiece,
+        'piece_ids': selectedPieceIds.toList()..sort(),
+        'tariff_ids': selectedTariffIds.toList()..sort(),
         'sayer_hazine': int.parse(_otherCostsController.text),
-        'warranty': warranty,
       };
 
       // Include second_visit_date only if it's provided
@@ -578,15 +713,15 @@ class _TechnicianTaskDetailScreenState
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (!mounted) return;
-        // Update task with submitted values so they persist when returning to this screen
-        final timeValue = int.parse(_timeController.text);
-        widget.task['time'] = timeValue;
-        widget.task['name_piece'] = selectedPiece;
-        widget.task['piece_name'] = selectedPiece;
+        widget.task['piece_ids'] = selectedPieceIds.toList();
+        widget.task['tariff_ids'] = selectedTariffIds.toList();
         widget.task['sayer_hazine'] = int.parse(_otherCostsController.text);
-        widget.task['warranty'] = warranty;
         if (secondVisitDate != null) {
           widget.task['second_visit_date'] = formatDateForAPI(secondVisitDate!);
+        }
+        final taskIdKey = widget.task['id']?.toString() ?? '';
+        if (taskIdKey.isNotEmpty) {
+          await prefs.setBool('check_task_done_$taskIdKey', true);
         }
         setState(() {
           checkTaskSubmitted = true;
@@ -1260,7 +1395,7 @@ class _TechnicianTaskDetailScreenState
                             ],
                           ),
                           SizedBox(height: 20),
-                          // Piece Selection (searchable, like new goods request)
+                          // Pieces (multi-select, searchable)
                           Text(
                             localizations.tech_piece_name,
                             style: TextStyle(
@@ -1270,71 +1405,53 @@ class _TechnicianTaskDetailScreenState
                             ),
                           ),
                           SizedBox(height: 8),
-                          FormField<String>(
-                            initialValue: selectedPiece,
-                            validator: (value) {
-                              if (selectedPiece == null) {
-                                return localizations.tech_piece_name_error;
-                              }
-                              return null;
-                            },
-                            builder: (FormFieldState<String> state) {
-                              return InkWell(
-                                onTap: () async {
-                                  await _openPiecePicker();
-                                  state.didChange(selectedPiece);
-                                },
-                                child: InputDecorator(
-                                  decoration: InputDecoration(
-                                    hintText: localizations.tech_piece_name_hint,
-                                    errorText: state.errorText,
-                                    filled: true,
-                                    fillColor:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.grey[800]
-                                        : AppColors.lapisLazuli.withValues(
-                                            alpha: 0.04,
-                                          ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: AppColors.lapisLazuli,
-                                        width: 2,
+                          InkWell(
+                            onTap: _openPiecePicker,
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                hintText: localizations.tech_piece_name_hint,
+                                filled: true,
+                                fillColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[800]
+                                    : AppColors.lapisLazuli.withValues(
+                                        alpha: 0.04,
                                       ),
-                                    ),
-                                    suffixIcon: const Icon(
-                                      Icons.arrow_drop_down,
-                                      color: AppColors.lapisLazuli,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    selectedPiece ??
-                                        localizations.tech_piece_name_hint,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: selectedPiece != null
-                                          ? Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge
-                                              ?.color
-                                          : Theme.of(context)
-                                              .hintColor,
-                                    ),
-                                    textDirection: Directionality.of(context),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.lapisLazuli,
+                                    width: 2,
                                   ),
                                 ),
-                              );
-                            },
+                                suffixIcon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              child: Text(
+                                _selectedPiecesSummary(localizations),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selectedPieceIds.isNotEmpty
+                                      ? Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.color
+                                      : Theme.of(context).hintColor,
+                                ),
+                                textDirection: Directionality.of(context),
+                              ),
+                            ),
                           ),
                           SizedBox(height: 20),
-                          // Time Required
+                          // Tariffs (multi-select, searchable)
                           Text(
-                            localizations.tech_time_required,
+                            localizations.tech_tariffs,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -1342,45 +1459,48 @@ class _TechnicianTaskDetailScreenState
                             ),
                           ),
                           SizedBox(height: 8),
-                          TextFormField(
-                            controller: _timeController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: localizations.tech_time_required_hint,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.04,
-                                    ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
+                          InkWell(
+                            onTap: _openTariffPicker,
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                hintText: localizations.tech_tariffs_hint,
+                                filled: true,
+                                fillColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[800]
+                                    : AppColors.lapisLazuli.withValues(
+                                        alpha: 0.04,
+                                      ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.lapisLazuli,
+                                    width: 2,
+                                  ),
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.arrow_drop_down,
                                   color: AppColors.lapisLazuli,
-                                  width: 2,
                                 ),
                               ),
+                              child: Text(
+                                _selectedTariffsSummary(localizations),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selectedTariffIds.isNotEmpty
+                                      ? Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge?.color
+                                      : Theme.of(context).hintColor,
+                                ),
+                                textDirection: Directionality.of(context),
+                              ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return localizations.tech_time_required_error;
-                              }
-                              final parsed = int.tryParse(value);
-                              if (parsed == null) {
-                                return localizations
-                                    .sss_other_costs_error_number;
-                              }
-                              if (parsed > 10000) {
-                                return localizations.tech_time_max_error;
-                              }
-                              return null;
-                            },
                           ),
                           SizedBox(height: 20),
                           // Other Costs
@@ -1428,28 +1548,6 @@ class _TechnicianTaskDetailScreenState
                               }
                               return null;
                             },
-                          ),
-                          SizedBox(height: 16),
-                          // Warranty checkbox
-                          CheckboxListTile(
-                            value: warranty,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                warranty = value ?? false;
-                              });
-                            },
-                            title: Text(
-                              localizations.tech_warranty,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              textDirection: Directionality.of(context),
-                            ),
-                            activeColor: AppColors.lapisLazuli,
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.leading,
                           ),
                           SizedBox(height: 20),
                           // Second Visit Date (Optional)
@@ -1622,27 +1720,53 @@ class _TechnicianTaskDetailScreenState
                           ],
                         ),
                         SizedBox(height: 20),
-                        // Piece Name (support both name_piece and piece_name from API)
-                        if (widget.task['name_piece'] != null ||
-                            widget.task['piece_name'] != null)
-                          _buildInfoRow(
-                            localizations.tech_piece_name,
-                            (widget.task['name_piece'] ??
-                                    widget.task['piece_name'])
-                                .toString(),
-                            Icons.build,
-                          ),
-                        if (widget.task['name_piece'] != null ||
-                            widget.task['piece_name'] != null)
-                          SizedBox(height: 12),
-                        // Time Required
-                        if (widget.task['time'] != null)
-                          _buildInfoRow(
-                            localizations.tech_time_required,
-                            '${widget.task['time']} دقیقه',
-                            Icons.access_time,
-                          ),
-                        if (widget.task['time'] != null) SizedBox(height: 12),
+                        ...() {
+                          var pieceLabels = _labelsForIds(
+                            source: pieceList,
+                            idsRaw: widget.task['piece_ids'],
+                            isTariff: false,
+                          );
+                          if (pieceLabels.isEmpty &&
+                              (widget.task['name_piece'] != null ||
+                                  widget.task['piece_name'] != null)) {
+                            pieceLabels = [
+                              (widget.task['name_piece'] ??
+                                      widget.task['piece_name'])
+                                  .toString(),
+                            ];
+                          }
+                          return pieceLabels
+                              .map(
+                                (label) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _buildInfoRow(
+                                    localizations.tech_piece_name,
+                                    label,
+                                    Icons.build,
+                                  ),
+                                ),
+                              )
+                              .toList();
+                        }(),
+                        ...() {
+                          final tariffLabels = _labelsForIds(
+                            source: tariffList,
+                            idsRaw: widget.task['tariff_ids'],
+                            isTariff: true,
+                          );
+                          return tariffLabels
+                              .map(
+                                (label) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _buildInfoRow(
+                                    localizations.tech_tariffs,
+                                    label,
+                                    Icons.receipt_long,
+                                  ),
+                                ),
+                              )
+                              .toList();
+                        }(),
                         // Other Costs
                         if (widget.task['sayer_hazine'] != null)
                           _buildInfoRow(

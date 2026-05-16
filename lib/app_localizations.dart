@@ -1138,9 +1138,12 @@ class AppLocalizations {
       'tech_set_first_visit': 'Set First Visit Date',
       'tech_first_visit_success': 'First visit date set successfully',
       'tech_check_task': 'Check Task',
-      'tech_piece_name': 'Required Piece',
-      'tech_piece_name_hint': 'Select piece',
+      'tech_piece_name': 'Required Parts',
+      'tech_piece_name_hint': 'Select parts (optional)',
       'tech_piece_name_error': 'Please select piece',
+      'tech_tariffs': 'Tariffs',
+      'tech_tariffs_hint': 'Select tariffs (optional)',
+      'tech_tariff_agreed': 'Agreed',
       'tech_time_required': 'Time Required (minutes)',
       'tech_time_required_hint': 'Enter time in minutes',
       'tech_time_required_error': 'Please enter time',
@@ -2291,9 +2294,12 @@ class AppLocalizations {
       'tech_set_first_visit': 'ثبت زمان مراجعه اولیه',
       'tech_first_visit_success': 'زمان مراجعه اولیه با موفقیت ثبت شد',
       'tech_check_task': 'بررسی مأموریت',
-      'tech_piece_name': 'قطعه مورد نیاز',
-      'tech_piece_name_hint': 'قطعه را انتخاب کنید',
+      'tech_piece_name': 'قطعات مورد نیاز',
+      'tech_piece_name_hint': 'قطعات را انتخاب کنید (اختیاری)',
       'tech_piece_name_error': 'لطفاً قطعه را انتخاب کنید',
+      'tech_tariffs': 'تعرفه‌ها',
+      'tech_tariffs_hint': 'تعرفه‌ها را انتخاب کنید (اختیاری)',
+      'tech_tariff_agreed': 'توافقی',
       'tech_time_required': 'زمان مورد نیاز (دقیقه)',
       'tech_time_required_hint': 'زمان را به دقیقه وارد کنید',
       'tech_time_required_error': 'لطفاً زمان را وارد کنید',
@@ -3269,6 +3275,9 @@ class AppLocalizations {
   String get tech_piece_name_hint => _getLocalizedValue('tech_piece_name_hint');
   String get tech_piece_name_error =>
       _getLocalizedValue('tech_piece_name_error');
+  String get tech_tariffs => _getLocalizedValue('tech_tariffs');
+  String get tech_tariffs_hint => _getLocalizedValue('tech_tariffs_hint');
+  String get tech_tariff_agreed => _getLocalizedValue('tech_tariff_agreed');
   String get tech_time_required => _getLocalizedValue('tech_time_required');
   String get tech_time_required_hint =>
       _getLocalizedValue('tech_time_required_hint');

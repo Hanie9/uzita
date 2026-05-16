@@ -1,5 +1,14 @@
 allprojects {
   repositories {
+    val offlineRepo = rootProject.file("offline-maven-repo")
+    if (offlineRepo.exists()) {
+      maven(url = offlineRepo.toURI())
+    }
+    maven(url = "https://maven.myket.ir")
+    maven(url = "https://maven.tarazerp.ir")
+    maven(url = "https://maven.aliyun.com/repository/google")
+    maven(url = "https://maven.aliyun.com/repository/gradle-plugin")
+    maven(url = "https://maven.aliyun.com/repository/public")
     google()
     mavenCentral()
   }

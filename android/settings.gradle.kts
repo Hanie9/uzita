@@ -1,4 +1,5 @@
 pluginManagement {
+    val offlineRepo = file("offline-maven-repo")
     val flutterSdkPath = run {
         val properties = java.util.Properties()
         file("local.properties").inputStream().use { properties.load(it) }
@@ -9,7 +10,16 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
-        gradlePluginPortal()
+        if (offlineRepo.exists()) {
+            maven(url = offlineRepo.toURI())
+        }
+        // Mirrors first (Iran / restricted networks); then upstream fallbacks.
+        maven(url = "https://maven.myket.ir")
+        maven(url = "https://maven.tarazerp.ir")
+        maven(url = "https://maven.aliyun.com/repository/google")
+        maven(url = "https://maven.aliyun.com/repository/gradle-plugin")
+        maven(url = "https://maven.aliyun.com/repository/public")
+        // Avoid gradlePluginPortal(): it still resolves artifacts via plugins-artifacts.gradle.org.
         google()
         mavenCentral()
     }
@@ -36,7 +46,7 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.7.3" apply false
+    id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
 }
 
