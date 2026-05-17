@@ -1153,6 +1153,7 @@ class AppLocalizations {
       'tech_other_costs': 'Other Costs',
       'tech_other_costs_hint': 'Enter other costs',
       'tech_other_costs_error': 'Please enter other costs',
+      'tech_final_cost': 'Final cost',
       'tech_warranty': 'Warranty',
       'tech_second_visit_date': 'Second Visit Date',
       'tech_second_visit_date_hint': 'Select second visit date if needed',
@@ -2311,6 +2312,7 @@ class AppLocalizations {
       'tech_other_costs': 'سایر هزینه‌ها',
       'tech_other_costs_hint': 'سایر هزینه‌ها را وارد کنید',
       'tech_other_costs_error': 'لطفاً سایر هزینه‌ها را وارد کنید',
+      'tech_final_cost': 'هزینه نهایی',
       'tech_warranty': 'گارانتی',
       'tech_second_visit_date': 'زمان مراجعه مجدد',
       'tech_second_visit_date_hint':
@@ -3296,6 +3298,7 @@ class AppLocalizations {
       _getLocalizedValue('tech_other_costs_hint');
   String get tech_other_costs_error =>
       _getLocalizedValue('tech_other_costs_error');
+  String get tech_final_cost => _getLocalizedValue('tech_final_cost');
   String get tech_warranty => _getLocalizedValue('tech_warranty');
   String get tech_second_visit_date =>
       _getLocalizedValue('tech_second_visit_date');

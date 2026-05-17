@@ -11,6 +11,7 @@ import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import 'package:uzita/utils/technician_org_assignment.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 
 class TechnicianOrganTasksScreen extends StatefulWidget {
@@ -24,7 +25,6 @@ class TechnicianOrganTasksScreen extends StatefulWidget {
 class _TechnicianOrganTasksScreenState
     extends State<TechnicianOrganTasksScreen> {
   bool isLoading = true;
-  bool isAssigning = false;
   List<Map<String, dynamic>> orgTasks = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> personalTasks = <Map<String, dynamic>>[];
   bool isAuthorized = true;
@@ -80,19 +80,22 @@ class _TechnicianOrganTasksScreenState
   Map<String, dynamic> _normalizeOrgTask(Map<String, dynamic> raw) =>
       normalizeTechnicianTask(raw);
 
-  bool _canAssignOrgTask(Map<String, dynamic> task) {
-    final String status = (task['status'] ?? '').toString().toLowerCase();
-    if (status == 'assigned' || status == 'done' || status == 'canceled') {
-      return false;
+  /// Unassigned org missions first (assign button), then the rest.
+  List<Map<String, dynamic>> _sortOrgTasksNeedingAssignmentFirst(
+    List<Map<String, dynamic>> tasks,
+  ) {
+    final List<Map<String, dynamic>> needsAssign = <Map<String, dynamic>>[];
+    final List<Map<String, dynamic>> others = <Map<String, dynamic>>[];
+
+    for (final Map<String, dynamic> task in tasks) {
+      if (canAssignOrgTask(task)) {
+        needsAssign.add(task);
+      } else {
+        others.add(task);
+      }
     }
-    final String assignedUsername = (task['assigned_username'] ??
-            task['technician_username'] ??
-            task['assigned_to'] ??
-            task['technician'] ??
-            '')
-        .toString()
-        .trim();
-    return assignedUsername.isEmpty;
+
+    return <Map<String, dynamic>>[...needsAssign, ...others];
   }
 
   Future<void> _fetchTasks() async {
@@ -200,7 +203,7 @@ class _TechnicianOrganTasksScreenState
 
       if (mounted) {
         setState(() {
-          orgTasks = parsedOrgTasks;
+          orgTasks = _sortOrgTasksNeedingAssignmentFirst(parsedOrgTasks);
           personalTasks = parsedPersonalTasks;
         });
       }
@@ -261,285 +264,28 @@ class _TechnicianOrganTasksScreenState
     }
   }
 
-  Future<List<Map<String, String>>> _fetchOrgUsers() async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('token');
-      if (token == null || token.isEmpty) {
-        return <Map<String, String>>[];
-      }
-
-      await SessionManager().onNetworkRequest();
-
-      String url = '$apiBaseUrl/listuser/';
-      final Map<String, String> queryParams = <String, String>{
-        'ts': DateTime.now().millisecondsSinceEpoch.toString(),
-      };
-
-      url += '?${Uri(queryParameters: queryParams).query}';
-
-      final http.Response response = await http.get(
-        Uri.parse(url),
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-          'Connection': 'close',
-        },
-      );
-
-      if (response.statusCode != 200) {
-        return <Map<String, String>>[];
-      }
-
-      final dynamic data = json.decode(utf8.decode(response.bodyBytes));
-      List<dynamic> rawUsers = <dynamic>[];
-
-      if (data is List) {
-        rawUsers = data;
-      } else if (data is Map && data['results'] is List) {
-        rawUsers = List<dynamic>.from(data['results'] as List);
-      } else if (data is Map && data['data'] is List) {
-        rawUsers = List<dynamic>.from(data['data'] as List);
-      }
-
-      return rawUsers
-          .map<Map<String, String>>((dynamic item) {
-            final Map<String, dynamic> map = item is Map<String, dynamic>
-                ? item
-                : <String, dynamic>{};
-            final dynamic userData = map['user'] ?? map;
-            final Map<String, dynamic> user = userData is Map<String, dynamic>
-                ? userData
-                : <String, dynamic>{};
-
-            final String username = (user['username'] ?? '').toString().trim();
-            final String firstName = (user['first_name'] ?? '')
-                .toString()
-                .trim();
-            final String lastName = (user['last_name'] ?? '').toString().trim();
-            String display = username;
-            final String fullName = '$firstName $lastName'.trim();
-            if (fullName.isNotEmpty) {
-              display = '$fullName ($username)';
-            }
-
-            return <String, String>{'username': username, 'display': display};
-          })
-          .where((Map<String, String> u) => u['username']!.isNotEmpty)
-          .toList();
-    } catch (_) {
-      return <Map<String, String>>[];
-    }
-  }
-
-  Future<void> _openAssignmentDialog(Map<String, dynamic> task) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String currentUsername = prefs.getString('username') ?? '';
-
-    // Step 1: show loading dialog while fetching users
-    showDialog<void>(
+  void _openAssignmentDialog(Map<String, dynamic> task) {
+    showOrganTaskAssignmentDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext ctx) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
-
-    final List<Map<String, String>> users = await _fetchOrgUsers();
-
-    if (!mounted) return;
-
-    // Close loading dialog
-    Navigator.of(context, rootNavigator: true).pop();
-
-    if (users.isEmpty) {
-      // No users to assign to – show a simple info dialog
-      await showDialog<void>(
-        context: context,
-        builder: (BuildContext ctx) {
-          final loc = AppLocalizations.of(ctx)!;
-          return AlertDialog(
-            backgroundColor: Theme.of(ctx).cardTheme.color,
-            title: Text(loc.tech_assign_dialog_title),
-            content: Text(loc.tech_assign_dialog_no_users),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text(loc.tech_assign_dialog_ok),
-              ),
-            ],
-          );
-        },
-      );
-      return;
-    }
-
-    String? selectedUsername = currentUsername.trim().isNotEmpty
-        ? currentUsername.trim()
-        : null;
-
-    // Step 2: show actual assignment dialog with loaded users
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder:
-              (
-                BuildContext context,
-                void Function(void Function()) setStateDialog,
-              ) {
-                final loc = AppLocalizations.of(context)!;
-                return AlertDialog(
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                  title: Text(
-                    loc.tech_assign_dialog_title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  content: SizedBox(
-                    width: double.maxFinite,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: users.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final Map<String, String> user = users[index];
-                        final String username = user['username']!;
-                        final String display = user['display']!;
-                        final bool isChecked = selectedUsername == username;
-
-                        return CheckboxListTile(
-                          value: isChecked,
-                          onChanged: (bool? checked) {
-                            setStateDialog(() {
-                              if (checked == true) {
-                                selectedUsername = username;
-                              } else if (selectedUsername == username) {
-                                selectedUsername = null;
-                              }
-                            });
-                          },
-                          title: Text(display),
-                        );
-                      },
-                    ),
-                  ),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: Text(loc.tech_assign_dialog_cancel),
-                    ),
-                    ElevatedButton(
-                      onPressed: isAssigning || selectedUsername == null
-                          ? null
-                          : () async {
-                              final String username = selectedUsername!.trim();
-                              if (username.isEmpty) return;
-                              Navigator.of(dialogContext).pop();
-                              await _assignTask(task['id'], username);
-                            },
-                      child: Text(loc.tech_assign_dialog_assign),
-                    ),
-                  ],
-                );
-              },
-        );
-      },
-    );
-  }
-
-  Future<void> _assignTask(dynamic id, String username) async {
-    setState(() {
-      isAssigning = true;
-    });
-
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('token');
-      if (token == null || token.isEmpty) {
+      task: task,
+      onAssigned: (String username, Map<String, dynamic> updated) {
+        if (!mounted) return;
         setState(() {
-          isAssigning = false;
-        });
-        return;
-      }
-
-      await SessionManager().onNetworkRequest();
-
-      final Uri url = Uri.parse(
-        '$apiBaseUrl/technician-organ/tasks/$id/assignment',
-      );
-
-      final http.Response response = await http.post(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(<String, String>{'username': username}),
-      );
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        String msg = AppLocalizations.of(context)!.tech_assignment_success;
-        try {
-          final dynamic data = json.decode(utf8.decode(response.bodyBytes));
-          if (data is Map && data['message'] != null) {
-            msg = data['message'].toString();
-          }
-        } catch (_) {
-          // ignore parse errors, keep default message
-        }
-
-        if (mounted) {
-          // Update the assigned task in the local orgTasks list so it remains
-          // visible under organization missions but without the assign button.
-          setState(() {
-            orgTasks = orgTasks.map((Map<String, dynamic> t) {
-              if ((t['id'] ?? '').toString() == id.toString()) {
-                final Map<String, dynamic> updated = Map<String, dynamic>.from(t);
-                updated['status'] = 'assigned';
-                updated['assigned_username'] = username;
-                return updated;
+          orgTasks = _sortOrgTasksNeedingAssignmentFirst(
+            orgTasks.map((Map<String, dynamic> t) {
+              if ((t['id'] ?? '').toString() == (task['id'] ?? '').toString()) {
+                final Map<String, dynamic> merged =
+                    Map<String, dynamic>.from(t);
+                merged.addAll(updated);
+                return merged;
               }
               return t;
-            }).toList();
-          });
-
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(msg)));
-        }
-        // Then refetch from server to sync with backend
-        await _fetchTasks();
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.tech_assign_error),
-            ),
+            }).toList(),
           );
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.tech_assign_server_error,
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isAssigning = false;
         });
-      }
-    }
+        _fetchTasks();
+      },
+    );
   }
 
   Widget _buildTaskCard(
@@ -565,23 +311,19 @@ class _TechnicianOrganTasksScreenState
             .join('، ')
         : '';
 
-    return GestureDetector(
-      onTap: () {
-        // For organization missions (سرگروه تکنسین), mark the task so that
-        // the detail screen only shows basic info without visit date / report
-        // / cost forms – both before and after assignment.
-        final Map<String, dynamic> taskToSend = Map<String, dynamic>.from(task);
-        if (isOrgTask) {
-          taskToSend['from_organ_assign_list'] = true;
-        }
+    void openTaskDetail() {
+      final Map<String, dynamic> taskToSend = Map<String, dynamic>.from(task);
+      if (isOrgTask) {
+        taskToSend['from_organ_assign_list'] = true;
+      }
+      Navigator.pushNamed(
+        context,
+        '/technician-task-detail',
+        arguments: taskToSend,
+      );
+    }
 
-        Navigator.pushNamed(
-          context,
-          '/technician-task-detail',
-          arguments: taskToSend,
-        );
-      },
-      child: Container(
+    return Container(
         key: ValueKey('task_$taskId'),
         margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
         decoration: BoxDecoration(
@@ -608,6 +350,13 @@ class _TechnicianOrganTasksScreenState
           child: Row(
             textDirection: Directionality.of(context),
             children: [
+              Expanded(
+                child: InkWell(
+                  onTap: openTaskDetail,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    textDirection: Directionality.of(context),
+                    children: [
               // Status badge
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -775,7 +524,10 @@ class _TechnicianOrganTasksScreenState
                   ],
                 ),
               ),
-              // Trailing action: assign button instead of chevron
+                    ],
+                  ),
+                ),
+              ),
               if (canAssign)
                 TextButton.icon(
                   onPressed: () => _openAssignmentDialog(task),
@@ -805,7 +557,6 @@ class _TechnicianOrganTasksScreenState
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -1163,7 +914,7 @@ class _TechnicianOrganTasksScreenState
                             ),
                                 ...orgTasks.map(
                                   (Map<String, dynamic> task) {
-                                    final bool canAssign = _canAssignOrgTask(task);
+                                    final bool canAssign = canAssignOrgTask(task);
 
                                     return _buildTaskCard(
                                       task,

@@ -8,6 +8,8 @@ import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/technician_org_assignment.dart';
+import 'package:uzita/utils/technician_task_utils.dart';
 import 'dart:convert';
 
 class TechnicianTaskDetailScreen extends StatefulWidget {
@@ -72,7 +74,6 @@ class _TechnicianTaskDetailScreenState
         firstVisitDateSet = false;
       }
     }
-    checkTaskSubmitted = _taskHasCheckTaskData(widget.task);
     _hydrateSelectionsFromTask();
     _fetchPieces();
     _fetchTariffs();
@@ -205,10 +206,8 @@ class _TechnicianTaskDetailScreenState
   bool _hasApiCheckMissionContent() {
     if (_embeddedObjectList(widget.task['pieces']).isNotEmpty) return true;
     if (_embeddedObjectList(widget.task['tariffs']).isNotEmpty) return true;
-    final sayer =
-        _parsedPositiveCost(widget.task['sayer_hazine']) ??
-        _parsedPositiveCost(widget.task['hazine']);
-    if (sayer != null) return true;
+    if (_parsedPositiveCost(widget.task['sayer_hazine']) != null) return true;
+    if (_finalCostHazine() != null) return true;
     final second = widget.task['second_visit_date'];
     if (second != null && second.toString().isNotEmpty) return true;
     return false;
@@ -220,6 +219,7 @@ class _TechnicianTaskDetailScreenState
     if (_pieceMapsForDisplay().isNotEmpty) return true;
     if (_tariffMapsForDisplay().isNotEmpty) return true;
     if (_submittedSayerHazine() != null) return true;
+    if (_finalCostHazine() != null) return true;
     if (_submittedSecondVisitDate() != null) return true;
     if (_pieceLabelsForTask().isNotEmpty) return true;
     if (_tariffLabelsForTask().isNotEmpty) return true;
@@ -251,6 +251,18 @@ class _TechnicianTaskDetailScreenState
     final parsed = int.tryParse(raw.toString());
     if (parsed == null || parsed <= 0) return null;
     return parsed;
+  }
+
+  int? _parsedCostAllowZero(dynamic raw) {
+    if (raw == null) return null;
+    return int.tryParse(raw.toString());
+  }
+
+  /// Final cost from API field `hazine` (may be 0).
+  int? _finalCostHazine() {
+    final fromTask = _parsedCostAllowZero(widget.task['hazine']);
+    if (fromTask != null) return fromTask;
+    return _parsedCostAllowZero(_checkTaskSnapshot?['hazine']);
   }
 
   List<String> _stringListFromSnapshot(dynamic raw) {
@@ -285,9 +297,7 @@ class _TechnicianTaskDetailScreenState
   }
 
   int? _submittedSayerHazine() {
-    final fromTask =
-        _parsedPositiveCost(widget.task['sayer_hazine']) ??
-        _parsedPositiveCost(widget.task['hazine']);
+    final fromTask = _parsedPositiveCost(widget.task['sayer_hazine']);
     if (fromTask != null) return fromTask;
     return _parsedPositiveCost(_checkTaskSnapshot?['sayer_hazine']);
   }
@@ -490,6 +500,7 @@ class _TechnicianTaskDetailScreenState
     final pieceMaps = _pieceMapsForDisplay();
     final tariffMaps = _tariffMapsForDisplay();
     final sayer = _submittedSayerHazine();
+    final finalCost = _finalCostHazine();
     final secondVisit = _submittedSecondVisitDate();
     final subjects = showSubjects ? _subjectLabelsForTask() : <String>[];
 
@@ -526,6 +537,18 @@ class _TechnicianTaskDetailScreenState
           localizations.tech_other_costs,
           '$sayer ${localizations.sls_tooman}',
           Icons.attach_money,
+        ),
+      ],
+      if (finalCost != null) ...[
+        if (subjects.isNotEmpty ||
+            pieceLabels.isNotEmpty ||
+            tariffLabels.isNotEmpty ||
+            sayer != null)
+          const SizedBox(height: 12),
+        _buildInfoRow(
+          localizations.tech_final_cost,
+          '$finalCost ${localizations.sls_tooman}',
+          Icons.payments_outlined,
         ),
       ],
       if (secondVisit != null) ...[
@@ -594,6 +617,18 @@ class _TechnicianTaskDetailScreenState
         ],
       ),
     );
+  }
+
+  /// Check mission card: not before assign; personal only after check form submit.
+  bool _shouldShowCheckMissionCard(bool isReadOnlyDetail) {
+    if (isTechnicianUnassigned(widget.task)) return false;
+
+    if (isReadOnlyDetail) {
+      return _hasApiCheckMissionContent();
+    }
+
+    if (!checkTaskSubmitted) return false;
+    return _hasSubmittedCheckSummaryContent();
   }
 
   Widget? _buildCheckMissionDetailsCard(
@@ -1472,8 +1507,9 @@ class _TechnicianTaskDetailScreenState
     final address = widget.task['address'] ?? '---';
     final phone = widget.task['phone'] ?? '---';
     final urgency = widget.task['urgency']?.toString();
-    final String assignedUsername =
-        (widget.task['technician']?.toString() ?? '---');
+    final String? assignedUsername = resolvedTechnicianUsername(widget.task);
+    final bool showOrgAssignAction =
+        isFromOrganAssignList && canAssignOrgTask(widget.task);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -1510,18 +1546,52 @@ class _TechnicianTaskDetailScreenState
                       ),
                     ],
                   ),
-                  Image.asset(
-                    'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (showOrgAssignAction)
+                        TextButton.icon(
+                          onPressed: () {
+                            showOrganTaskAssignmentDialog(
+                              context: context,
+                              task: widget.task,
+                              onAssigned: (
+                                String username,
+                                Map<String, dynamic> updated,
+                              ) {
+                                if (!mounted) return;
+                                setState(() {
+                                  widget.task.addAll(updated);
+                                });
+                              },
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.assignment_ind,
+                            color: AppColors.lapisLazuli,
+                          ),
+                          label: Text(
+                            localizations.tech_assign_dialog_assign,
+                            style: const TextStyle(
+                              color: AppColors.lapisLazuli,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      Image.asset(
+                        'assets/logouzita.png',
+                        height: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
+                        width: ui.scale(
+                          base: screenHeight * 0.08,
+                          min: 28,
+                          max: 56,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1807,7 +1877,8 @@ class _TechnicianTaskDetailScreenState
                         phone,
                         Icons.phone,
                       ),
-                      if (assignedUsername.isNotEmpty) ...[
+                      if (assignedUsername != null &&
+                          assignedUsername.isNotEmpty) ...[
                         SizedBox(height: 12),
                         _buildInfoRow(
                           localizations.tech_assigned_to,
@@ -1854,16 +1925,12 @@ class _TechnicianTaskDetailScreenState
                 ),
                 const SizedBox(height: 20),
 
-                // Pre-filled check details from API (read-only / before first visit)
-                if (isReadOnlyDetail ||
-                    (checkTaskSubmitted &&
-                        _hasApiCheckMissionContent() &&
-                        !firstVisitDateSet))
+                if (isReadOnlyDetail && _shouldShowCheckMissionCard(true))
                   Builder(
                     builder: (context) {
                       final card = _buildCheckMissionDetailsCard(
                         localizations,
-                        readOnly: isReadOnlyDetail,
+                        readOnly: true,
                       );
                       if (card == null) return const SizedBox.shrink();
                       return Column(
@@ -2312,10 +2379,8 @@ class _TechnicianTaskDetailScreenState
                     ),
                   ),
 
-                // Check details after technician submitted the form
                 if (!isReadOnlyDetail &&
-                    firstVisitDateSet &&
-                    checkTaskSubmitted &&
+                    _shouldShowCheckMissionCard(false) &&
                     !isConfirmed)
                   Builder(
                     builder: (context) {
@@ -2323,7 +2388,10 @@ class _TechnicianTaskDetailScreenState
                         localizations,
                         readOnly: false,
                       );
-                      return card ?? const SizedBox.shrink();
+                      if (card == null) return const SizedBox.shrink();
+                      return Column(
+                        children: [card, const SizedBox(height: 20)],
+                      );
                     },
                   ),
 
