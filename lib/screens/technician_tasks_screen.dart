@@ -13,6 +13,7 @@ import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import 'package:uzita/utils/technician_task_utils.dart';
 
 class TechnicianTasksScreen extends StatefulWidget {
   const TechnicianTasksScreen({super.key});
@@ -126,13 +127,9 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
           setState(() {
             tasks = uniqueTasks.values.map((dynamic task) {
               if (task is! Map) return task;
-              final Map<String, dynamic> t = Map<String, dynamic>.from(task);
-              t['status'] = (t['status'] ?? 'open').toString().toLowerCase();
-              if (t['technician_confirm'] is String) {
-                t['technician_confirm'] =
-                    t['technician_confirm'].toString().toLowerCase() == 'true';
-              }
-              return t;
+              return normalizeTechnicianTask(
+                Map<String, dynamic>.from(task),
+              );
             }).toList();
             isLoading = false;
           });
@@ -476,14 +473,25 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                     final String price = priceValue == null
                         ? '---'
                         : priceValue.toString();
+                    final dynamic subjectsRaw = task['subjects'];
+                    final String subjectsText = subjectsRaw is List
+                        ? subjectsRaw
+                            .map((e) => e.toString())
+                            .where((s) => s.isNotEmpty)
+                            .join('، ')
+                        : '';
 
                     return GestureDetector(
                       key: ValueKey('task_$taskId'),
                       onTap: () {
+                        final Map<String, dynamic> taskToSend =
+                            normalizeTechnicianTask(
+                          Map<String, dynamic>.from(task as Map),
+                        );
                         Navigator.pushNamed(
                           context,
                           '/technician-task-detail',
-                          arguments: task,
+                          arguments: taskToSend,
                         );
                       },
                       child: Container(
@@ -596,6 +604,37 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (subjectsText.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        textDirection: Directionality.of(
+                                          context,
+                                        ),
+                                        children: [
+                                          const Icon(
+                                            Icons.label_outline,
+                                            size: 14,
+                                            color: AppColors.iranianGray,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Flexible(
+                                            child: Text(
+                                              subjectsText,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: AppColors.iranianGray,
+                                              ),
+                                              textDirection: Directionality.of(
+                                                context,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 2,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                     SizedBox(height: 4),
                                     // Urgency
                                     Row(

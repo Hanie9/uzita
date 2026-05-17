@@ -11,6 +11,7 @@ import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import 'package:uzita/utils/technician_task_utils.dart';
 
 class TechnicianOrganTasksScreen extends StatefulWidget {
   const TechnicianOrganTasksScreen({super.key});
@@ -76,36 +77,8 @@ class _TechnicianOrganTasksScreenState
     });
   }
 
-  /// Normalizes organ-task JSON from `/technician-organ/tasks` for UI logic.
-  Map<String, dynamic> _normalizeOrgTask(Map<String, dynamic> raw) {
-    final Map<String, dynamic> t = Map<String, dynamic>.from(raw);
-    t['status'] = (t['status'] ?? '').toString().toLowerCase();
-
-    final dynamic technician = t['technician'];
-    if (technician is String && technician.trim().isNotEmpty) {
-      t['technician_username'] = technician.trim();
-    } else if (technician is Map) {
-      final String? fromMap =
-          technician['username']?.toString() ?? technician['name']?.toString();
-      if (fromMap != null && fromMap.trim().isNotEmpty) {
-        t['technician_username'] = fromMap.trim();
-      }
-    }
-
-    if (t['technician_confirm'] is String) {
-      t['technician_confirm'] =
-          t['technician_confirm'].toString().toLowerCase() == 'true';
-    }
-    if (t['customer_confirm'] is String) {
-      t['customer_confirm'] =
-          t['customer_confirm'].toString().toLowerCase() == 'true';
-    }
-    if (t['warranty'] is String) {
-      t['warranty'] = t['warranty'].toString().toLowerCase() == 'true';
-    }
-
-    return t;
-  }
+  Map<String, dynamic> _normalizeOrgTask(Map<String, dynamic> raw) =>
+      normalizeTechnicianTask(raw);
 
   bool _canAssignOrgTask(Map<String, dynamic> task) {
     final String status = (task['status'] ?? '').toString().toLowerCase();
@@ -216,9 +189,11 @@ class _TechnicianOrganTasksScreenState
           rawList = List<dynamic>.from(data['results'] as List);
         }
         parsedPersonalTasks = rawList
-            .whereType<Map<String, dynamic>>()
-            .map<Map<String, dynamic>>(
-              (Map<String, dynamic> item) => Map<String, dynamic>.from(item),
+            .whereType<Map>()
+            .map(
+              (dynamic item) => normalizeTechnicianTask(
+                Map<String, dynamic>.from(item as Map),
+              ),
             )
             .toList();
       }
@@ -582,6 +557,13 @@ class _TechnicianOrganTasksScreenState
     final dynamic priceValue =
         task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
     final String price = priceValue == null ? '---' : priceValue.toString();
+    final dynamic subjectsRaw = task['subjects'];
+    final String subjectsText = subjectsRaw is List
+        ? subjectsRaw
+            .map((e) => e.toString())
+            .where((s) => s.isNotEmpty)
+            .join('، ')
+        : '';
 
     return GestureDetector(
       onTap: () {
@@ -682,6 +664,33 @@ class _TechnicianOrganTasksScreenState
                         ),
                       ],
                     ),
+                    if (subjectsText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        textDirection: Directionality.of(context),
+                        children: [
+                          const Icon(
+                            Icons.label_outline,
+                            size: 14,
+                            color: AppColors.iranianGray,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              subjectsText,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.iranianGray,
+                              ),
+                              textDirection: Directionality.of(context),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     // Urgency
                     Row(

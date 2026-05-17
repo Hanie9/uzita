@@ -45,11 +45,20 @@ class _TechnicianTaskDetailScreenState
   Set<int> selectedTariffIds = {};
   Map<String, dynamic>? _checkTaskSnapshot;
 
+  static const double _detailFieldLabelFontSize = 14;
+  static const double _checkFormFieldLabelFontSize = 17;
+
   static bool _parseApiBool(dynamic value) {
     if (value is bool) return value;
     if (value is String) return value.toLowerCase() == 'true';
     return false;
   }
+
+  bool _isPersianLocale() =>
+      Localizations.localeOf(context).languageCode != 'en';
+
+  TextDirection _contentTextDirection() =>
+      _isPersianLocale() ? TextDirection.rtl : TextDirection.ltr;
 
   @override
   void initState() {
@@ -71,7 +80,155 @@ class _TechnicianTaskDetailScreenState
     _loadCheckTaskSnapshot();
   }
 
+  List<Map<String, dynamic>> _embeddedObjectList(dynamic raw) {
+    if (raw is! List) return <Map<String, dynamic>>[];
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .where((item) => _itemId(item) > 0 || item['name'] != null)
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _mapsFromIds(
+    dynamic idsRaw,
+    List<Map<String, dynamic>> source,
+  ) {
+    if (idsRaw is! List || source.isEmpty) return <Map<String, dynamic>>[];
+    final result = <Map<String, dynamic>>[];
+    for (final rawId in idsRaw) {
+      final id = int.tryParse(rawId.toString()) ?? 0;
+      if (id <= 0) continue;
+      for (final item in source) {
+        if (_itemId(item) == id) {
+          result.add(item);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  List<Map<String, dynamic>> _pieceMapsForDisplay() {
+    final embedded = _embeddedObjectList(widget.task['pieces']);
+    if (embedded.isNotEmpty) return embedded;
+    return _mapsFromIds(_pieceIdsRaw(), pieceList);
+  }
+
+  List<Map<String, dynamic>> _tariffMapsForDisplay() {
+    final embedded = _embeddedObjectList(widget.task['tariffs']);
+    if (embedded.isNotEmpty) return embedded;
+    return _mapsFromIds(_tariffIdsRaw(), tariffList);
+  }
+
+  List<String> _parseSubjectsList(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .map((e) {
+            if (e is Map) {
+              return e['name']?.toString() ??
+                  e['title']?.toString() ??
+                  e['label']?.toString() ??
+                  '';
+            }
+            return e.toString();
+          })
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+    }
+    if (raw is String && raw.trim().isNotEmpty) {
+      final trimmed = raw.trim();
+      if (trimmed.startsWith('[')) {
+        try {
+          final decoded = json.decode(trimmed);
+          if (decoded is List) return _parseSubjectsList(decoded);
+        } catch (_) {}
+      }
+      return [trimmed];
+    }
+    return <String>[];
+  }
+
+  List<String> _subjectLabelsForTask() {
+    return _parseSubjectsList(
+      widget.task['subjects'] ??
+          widget.task['subject_list'] ??
+          widget.task['subject'],
+    );
+  }
+
+  String _piecePriceText(Map<String, dynamic> piece, AppLocalizations loc) {
+    final display = piece['display']?.toString().trim() ?? '';
+    if (display.isNotEmpty) return display;
+    final price = piece['price'];
+    if (price != null) return '$price ${loc.sls_tooman}';
+    return '';
+  }
+
+  String _labelFromEmbeddedPiece(
+    Map<String, dynamic> piece, {
+    AppLocalizations? loc,
+  }) {
+    final display = _piecePriceText(
+      piece,
+      loc ?? AppLocalizations.of(context)!,
+    );
+    final base = _pieceDisplayName(piece);
+    if (display.isNotEmpty && base.isNotEmpty) {
+      return _isPersianLocale() ? '$base : $display' : '$base — $display';
+    }
+    if (display.isNotEmpty) return display;
+    return base;
+  }
+
+  String _tariffPriceText(Map<String, dynamic> tariff, AppLocalizations loc) {
+    final display = tariff['display']?.toString().trim() ?? '';
+    if (display.isNotEmpty) return display;
+    return _tariffPriceLabel(tariff, loc);
+  }
+
+  String _labelFromEmbeddedTariff(
+    Map<String, dynamic> tariff,
+    AppLocalizations loc,
+  ) {
+    final name = tariff['name']?.toString() ?? '';
+    final price = _tariffPriceText(tariff, loc);
+    if (name.isNotEmpty && price.isNotEmpty) {
+      return _isPersianLocale() ? '$name : $price' : '$name — $price';
+    }
+    if (price.isNotEmpty) return price;
+    return name;
+  }
+
+  bool _taskHasWarranty() => _parseApiBool(widget.task['warranty']);
+
+  /// Check data already on the task from API (not local form selections).
+  bool _hasApiCheckMissionContent() {
+    if (_embeddedObjectList(widget.task['pieces']).isNotEmpty) return true;
+    if (_embeddedObjectList(widget.task['tariffs']).isNotEmpty) return true;
+    final sayer =
+        _parsedPositiveCost(widget.task['sayer_hazine']) ??
+        _parsedPositiveCost(widget.task['hazine']);
+    if (sayer != null) return true;
+    final second = widget.task['second_visit_date'];
+    if (second != null && second.toString().isNotEmpty) return true;
+    return false;
+  }
+
+  /// Summary content after check-task form was submitted (or restored).
+  bool _hasSubmittedCheckSummaryContent() {
+    if (!checkTaskSubmitted) return false;
+    if (_pieceMapsForDisplay().isNotEmpty) return true;
+    if (_tariffMapsForDisplay().isNotEmpty) return true;
+    if (_submittedSayerHazine() != null) return true;
+    if (_submittedSecondVisitDate() != null) return true;
+    if (_pieceLabelsForTask().isNotEmpty) return true;
+    if (_tariffLabelsForTask().isNotEmpty) return true;
+    return false;
+  }
+
   bool _taskHasCheckTaskData(Map<String, dynamic> task) {
+    if (_embeddedObjectList(task['pieces']).isNotEmpty) return true;
+    if (_embeddedObjectList(task['tariffs']).isNotEmpty) return true;
     final pieceIds = task['piece_ids'];
     if (pieceIds is List && pieceIds.isNotEmpty) return true;
     final tariffIds = task['tariff_ids'];
@@ -81,12 +238,19 @@ class _TechnicianTaskDetailScreenState
         task['second_visit_date'].toString().isNotEmpty) {
       return true;
     }
-    final sayer = task['sayer_hazine'];
+    final sayer = task['sayer_hazine'] ?? task['hazine'];
     if (sayer != null) {
       final parsed = int.tryParse(sayer.toString());
       if (parsed != null && parsed > 0) return true;
     }
     return false;
+  }
+
+  int? _parsedPositiveCost(dynamic raw) {
+    if (raw == null) return null;
+    final parsed = int.tryParse(raw.toString());
+    if (parsed == null || parsed <= 0) return null;
+    return parsed;
   }
 
   List<String> _stringListFromSnapshot(dynamic raw) {
@@ -95,6 +259,10 @@ class _TechnicianTaskDetailScreenState
   }
 
   dynamic _pieceIdsRaw() {
+    final embedded = _embeddedObjectList(widget.task['pieces']);
+    if (embedded.isNotEmpty) {
+      return embedded.map(_itemId).where((id) => id > 0).toList();
+    }
     final fromTask = widget.task['piece_ids'];
     if (fromTask is List && fromTask.isNotEmpty) return fromTask;
     final fromSnap = _checkTaskSnapshot?['piece_ids'];
@@ -104,6 +272,10 @@ class _TechnicianTaskDetailScreenState
   }
 
   dynamic _tariffIdsRaw() {
+    final embedded = _embeddedObjectList(widget.task['tariffs']);
+    if (embedded.isNotEmpty) {
+      return embedded.map(_itemId).where((id) => id > 0).toList();
+    }
     final fromTask = widget.task['tariff_ids'];
     if (fromTask is List && fromTask.isNotEmpty) return fromTask;
     final fromSnap = _checkTaskSnapshot?['tariff_ids'];
@@ -112,11 +284,12 @@ class _TechnicianTaskDetailScreenState
     return fromTask;
   }
 
-  dynamic _submittedSayerHazine() {
-    if (widget.task['sayer_hazine'] != null) {
-      return widget.task['sayer_hazine'];
-    }
-    return _checkTaskSnapshot?['sayer_hazine'];
+  int? _submittedSayerHazine() {
+    final fromTask =
+        _parsedPositiveCost(widget.task['sayer_hazine']) ??
+        _parsedPositiveCost(widget.task['hazine']);
+    if (fromTask != null) return fromTask;
+    return _parsedPositiveCost(_checkTaskSnapshot?['sayer_hazine']);
   }
 
   String? _submittedSecondVisitDate() {
@@ -132,6 +305,12 @@ class _TechnicianTaskDetailScreenState
   }
 
   List<String> _pieceLabelsForTask() {
+    final embedded = _embeddedObjectList(widget.task['pieces']);
+    if (embedded.isNotEmpty) {
+      final loc = AppLocalizations.of(context)!;
+      return embedded.map((p) => _labelFromEmbeddedPiece(p, loc: loc)).toList();
+    }
+
     final cached = _stringListFromSnapshot(_checkTaskSnapshot?['piece_labels']);
     if (cached.isNotEmpty) return cached;
 
@@ -164,7 +343,15 @@ class _TechnicianTaskDetailScreenState
   }
 
   List<String> _tariffLabelsForTask() {
-    final cached = _stringListFromSnapshot(_checkTaskSnapshot?['tariff_labels']);
+    final embedded = _embeddedObjectList(widget.task['tariffs']);
+    if (embedded.isNotEmpty) {
+      final loc = AppLocalizations.of(context)!;
+      return embedded.map((t) => _labelFromEmbeddedTariff(t, loc)).toList();
+    }
+
+    final cached = _stringListFromSnapshot(
+      _checkTaskSnapshot?['tariff_labels'],
+    );
     if (cached.isNotEmpty) return cached;
 
     var labels = _labelsForIds(
@@ -180,11 +367,11 @@ class _TechnicianTaskDetailScreenState
           final id = int.tryParse(rawId.toString()) ?? 0;
           if (id <= 0) continue;
           final match = tariffList.where((t) => _itemId(t) == id);
-          labels.add(
-            match.isNotEmpty
-                ? '${match.first['name']} — ${_tariffPriceLabel(match.first, loc)}'
-                : '#$id',
-          );
+          if (match.isNotEmpty) {
+            labels.add(_labelFromEmbeddedTariff(match.first, loc));
+          } else {
+            labels.add('#$id');
+          }
         }
       }
     }
@@ -294,19 +481,74 @@ class _TechnicianTaskDetailScreenState
     }
   }
 
-  Widget? _buildCheckTaskSummaryCard(AppLocalizations localizations) {
-    if (!checkTaskSubmitted) return null;
-
+  List<Widget> _buildCheckDetailsBody(
+    AppLocalizations localizations, {
+    required bool showSubjects,
+  }) {
     final pieceLabels = _pieceLabelsForTask();
     final tariffLabels = _tariffLabelsForTask();
+    final pieceMaps = _pieceMapsForDisplay();
+    final tariffMaps = _tariffMapsForDisplay();
     final sayer = _submittedSayerHazine();
     final secondVisit = _submittedSecondVisitDate();
+    final subjects = showSubjects ? _subjectLabelsForTask() : <String>[];
 
-    final bool hasContent = pieceLabels.isNotEmpty ||
-        tariffLabels.isNotEmpty ||
-        sayer != null ||
-        secondVisit != null;
-    if (!hasContent) return null;
+    return [
+      if (subjects.isNotEmpty) _buildSubjectsSection(localizations),
+      if (subjects.isNotEmpty &&
+          (pieceLabels.isNotEmpty || tariffLabels.isNotEmpty))
+        const SizedBox(height: 12),
+      if (pieceMaps.isNotEmpty)
+        _buildPiecesRequiredSection(localizations, pieceMaps)
+      else if (pieceLabels.isNotEmpty)
+        _buildGroupedListSection(
+          title: localizations.tech_piece_name,
+          icon: Icons.build,
+          items: pieceLabels,
+        ),
+      if ((pieceMaps.isNotEmpty || pieceLabels.isNotEmpty) &&
+          (tariffMaps.isNotEmpty || tariffLabels.isNotEmpty))
+        const SizedBox(height: 12),
+      if (tariffMaps.isNotEmpty)
+        _buildTariffsRequiredSection(localizations, tariffMaps)
+      else if (tariffLabels.isNotEmpty)
+        _buildGroupedListSection(
+          title: localizations.tech_tariffs,
+          icon: Icons.receipt_long,
+          items: tariffLabels,
+        ),
+      if (sayer != null) ...[
+        if (subjects.isNotEmpty ||
+            pieceLabels.isNotEmpty ||
+            tariffLabels.isNotEmpty)
+          const SizedBox(height: 12),
+        _buildInfoRow(
+          localizations.tech_other_costs,
+          '$sayer ${localizations.sls_tooman}',
+          Icons.attach_money,
+        ),
+      ],
+      if (secondVisit != null) ...[
+        const SizedBox(height: 12),
+        _buildInfoRow(
+          localizations.tech_second_visit_date,
+          formatDate(secondVisit, context),
+          Icons.calendar_today,
+        ),
+      ],
+    ];
+  }
+
+  Widget? _buildCheckDetailsCard(
+    AppLocalizations localizations, {
+    required String title,
+    required bool showSubjects,
+  }) {
+    final body = _buildCheckDetailsBody(
+      localizations,
+      showSubjects: showSubjects,
+    );
+    if (body.isEmpty) return null;
 
     return Container(
       width: double.infinity,
@@ -324,10 +566,7 @@ class _TechnicianTaskDetailScreenState
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(
-          color: AppColors.lapisLazuli,
-          width: 2,
-        ),
+        border: Border.all(color: AppColors.lapisLazuli, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,7 +580,7 @@ class _TechnicianTaskDetailScreenState
               ),
               const SizedBox(width: 12),
               Text(
-                localizations.tech_check_task_submitted_info,
+                title,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -351,56 +590,61 @@ class _TechnicianTaskDetailScreenState
             ],
           ),
           const SizedBox(height: 20),
-          if (pieceLabels.isNotEmpty)
-            _buildGroupedListSection(
-              title: localizations.tech_piece_name,
-              icon: Icons.build,
-              items: pieceLabels,
-            ),
-          if (pieceLabels.isNotEmpty && tariffLabels.isNotEmpty)
-            const SizedBox(height: 12),
-          if (tariffLabels.isNotEmpty)
-            _buildGroupedListSection(
-              title: localizations.tech_tariffs,
-              icon: Icons.receipt_long,
-              items: tariffLabels,
-            ),
-          if (sayer != null) ...[
-            if (pieceLabels.isNotEmpty || tariffLabels.isNotEmpty)
-              const SizedBox(height: 12),
-            _buildInfoRow(
-              localizations.tech_other_costs,
-              '$sayer ${localizations.sls_tooman}',
-              Icons.attach_money,
-            ),
-          ],
-          if (secondVisit != null) ...[
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              localizations.tech_second_visit_date,
-              formatDate(secondVisit, context),
-              Icons.calendar_today,
-            ),
-          ],
+          ...body,
         ],
       ),
     );
   }
 
+  Widget? _buildCheckMissionDetailsCard(
+    AppLocalizations localizations, {
+    required bool readOnly,
+  }) {
+    final bool show = readOnly
+        ? _hasApiCheckMissionContent()
+        : _hasSubmittedCheckSummaryContent();
+    if (!show) return null;
+
+    return _buildCheckDetailsCard(
+      localizations,
+      title: readOnly
+          ? localizations.tech_check_task
+          : localizations.tech_check_task_submitted_info,
+      showSubjects: false,
+    );
+  }
+
   void _hydrateSelectionsFromTask() {
-    final pieceIds = widget.task['piece_ids'];
-    if (pieceIds is List) {
-      selectedPieceIds = pieceIds
-          .map((e) => int.tryParse(e.toString()) ?? 0)
+    final embeddedPieces = _embeddedObjectList(widget.task['pieces']);
+    if (embeddedPieces.isNotEmpty) {
+      selectedPieceIds = embeddedPieces
+          .map(_itemId)
           .where((id) => id > 0)
           .toSet();
+    } else {
+      final pieceIds = widget.task['piece_ids'];
+      if (pieceIds is List) {
+        selectedPieceIds = pieceIds
+            .map((e) => int.tryParse(e.toString()) ?? 0)
+            .where((id) => id > 0)
+            .toSet();
+      }
     }
-    final tariffIds = widget.task['tariff_ids'];
-    if (tariffIds is List) {
-      selectedTariffIds = tariffIds
-          .map((e) => int.tryParse(e.toString()) ?? 0)
+
+    final embeddedTariffs = _embeddedObjectList(widget.task['tariffs']);
+    if (embeddedTariffs.isNotEmpty) {
+      selectedTariffIds = embeddedTariffs
+          .map(_itemId)
           .where((id) => id > 0)
           .toSet();
+    } else {
+      final tariffIds = widget.task['tariff_ids'];
+      if (tariffIds is List) {
+        selectedTariffIds = tariffIds
+            .map((e) => int.tryParse(e.toString()) ?? 0)
+            .where((id) => id > 0)
+            .toSet();
+      }
     }
   }
 
@@ -1218,10 +1462,8 @@ class _TechnicianTaskDetailScreenState
     // selection, check-task form, or report submission steps.
     final bool isFromOrganAssignList =
         widget.task['from_organ_assign_list'] == true;
-    final bool isFromReportsList =
-        widget.task['from_reports_list'] == true;
-    final bool isReadOnlyDetail =
-        isFromOrganAssignList || isFromReportsList;
+    final bool isFromReportsList = widget.task['from_reports_list'] == true;
+    final bool isReadOnlyDetail = isFromOrganAssignList || isFromReportsList;
 
     final title = widget.task['title'] ?? '---';
     final description = widget.task['description'] ?? '---';
@@ -1418,6 +1660,10 @@ class _TechnicianTaskDetailScreenState
                                     ?.withValues(alpha: 0.8),
                                 height: 1.4,
                               ),
+                              textDirection: _contentTextDirection(),
+                              textAlign: _isPersianLocale()
+                                  ? TextAlign.right
+                                  : TextAlign.left,
                             ),
                           ],
                         ),
@@ -1425,6 +1671,34 @@ class _TechnicianTaskDetailScreenState
                     ],
                   ),
                 ),
+
+                if (_subjectLabelsForTask().isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                    child: _buildSubjectsSection(localizations),
+                  ),
+                ],
                 SizedBox(height: 20),
 
                 // Location Information
@@ -1488,7 +1762,7 @@ class _TechnicianTaskDetailScreenState
                               Text(
                                 localizations.tech_address,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: _detailFieldLabelFontSize,
                                   color: AppColors.iranianGray,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1554,10 +1828,52 @@ class _TechnicianTaskDetailScreenState
                 ),
                 SizedBox(height: 20),
 
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: _buildWarrantySection(localizations),
+                ),
+                const SizedBox(height: 20),
+
+                // Pre-filled check details from API (read-only / before first visit)
+                if (isReadOnlyDetail ||
+                    (checkTaskSubmitted &&
+                        _hasApiCheckMissionContent() &&
+                        !firstVisitDateSet))
+                  Builder(
+                    builder: (context) {
+                      final card = _buildCheckMissionDetailsCard(
+                        localizations,
+                        readOnly: isReadOnlyDetail,
+                      );
+                      if (card == null) return const SizedBox.shrink();
+                      return Column(
+                        children: [card, const SizedBox(height: 20)],
+                      );
+                    },
+                  ),
+
                 // Step 1: First Visit Date
-                if (!isReadOnlyDetail &&
-                    !firstVisitDateSet &&
-                    !isConfirmed)
+                if (!isReadOnlyDetail && !firstVisitDateSet && !isConfirmed)
                   Container(
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -1712,12 +2028,17 @@ class _TechnicianTaskDetailScreenState
                           ),
                           SizedBox(height: 20),
                           // Pieces (multi-select, searchable)
-                          Text(
-                            localizations.tech_piece_name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.lapisLazuli,
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              localizations.tech_piece_name,
+                              style: TextStyle(
+                                fontSize: _checkFormFieldLabelFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              textDirection: _contentTextDirection(),
+                              textAlign: TextAlign.start,
                             ),
                           ),
                           SizedBox(height: 8),
@@ -1750,17 +2071,21 @@ class _TechnicianTaskDetailScreenState
                                   color: AppColors.lapisLazuli,
                                 ),
                               ),
-                              child: Text(
-                                _selectedPiecesSummary(localizations),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: selectedPieceIds.isNotEmpty
-                                      ? Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge?.color
-                                      : Theme.of(context).hintColor,
+                              child: Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Text(
+                                  _selectedPiecesSummary(localizations),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: selectedPieceIds.isNotEmpty
+                                        ? Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color
+                                        : Theme.of(context).hintColor,
+                                  ),
+                                  textDirection: _contentTextDirection(),
+                                  textAlign: TextAlign.start,
                                 ),
-                                textDirection: Directionality.of(context),
                               ),
                             ),
                           ),
@@ -1769,7 +2094,7 @@ class _TechnicianTaskDetailScreenState
                           Text(
                             localizations.tech_tariffs,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: _checkFormFieldLabelFontSize,
                               fontWeight: FontWeight.w600,
                               color: AppColors.lapisLazuli,
                             ),
@@ -1823,7 +2148,7 @@ class _TechnicianTaskDetailScreenState
                           Text(
                             localizations.tech_other_costs,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: _checkFormFieldLabelFontSize,
                               fontWeight: FontWeight.w600,
                               color: AppColors.lapisLazuli,
                             ),
@@ -1987,14 +2312,17 @@ class _TechnicianTaskDetailScreenState
                     ),
                   ),
 
-                // Submitted check-task summary card (above report form)
+                // Check details after technician submitted the form
                 if (!isReadOnlyDetail &&
                     firstVisitDateSet &&
                     checkTaskSubmitted &&
                     !isConfirmed)
                   Builder(
                     builder: (context) {
-                      final card = _buildCheckTaskSummaryCard(localizations);
+                      final card = _buildCheckMissionDetailsCard(
+                        localizations,
+                        readOnly: false,
+                      );
                       return card ?? const SizedBox.shrink();
                     },
                   ),
@@ -2158,40 +2486,289 @@ class _TechnicianTaskDetailScreenState
     );
   }
 
-  Widget _buildGroupedListSection({
+  Widget _buildWarrantySection(AppLocalizations localizations) {
+    final textDir = _contentTextDirection();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.verified_user,
+              color: AppColors.lapisLazuli,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              localizations.tech_warranty,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            _taskHasWarranty()
+                ? localizations.home_yes
+                : localizations.home_no,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.lapisLazuli,
+              height: 1.45,
+            ),
+            textDirection: textDir,
+            textAlign: TextAlign.start,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubjectsSection(AppLocalizations localizations) {
+    final subjects = _subjectLabelsForTask();
+    if (subjects.isEmpty) return const SizedBox.shrink();
+
+    final textDir = _contentTextDirection();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.label_outline,
+              color: AppColors.lapisLazuli,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              localizations.sss_subject,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...subjects.map(
+          (subject) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                subject,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.lapisLazuli,
+                  height: 1.45,
+                ),
+                textDirection: textDir,
+                textAlign: TextAlign.start,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColonPriceRow(String name, String price) {
+    const itemStyle = TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      color: AppColors.lapisLazuli,
+      height: 1.45,
+    );
+
+    final bool isPersian = _isPersianLocale();
+    final TextDirection rowDir =
+        isPersian ? TextDirection.rtl : TextDirection.ltr;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        textDirection: rowDir,
+        children: [
+          Expanded(
+            child: Text(
+              name,
+              style: itemStyle,
+              textDirection: rowDir,
+              textAlign: isPersian ? TextAlign.right : TextAlign.left,
+            ),
+          ),
+          const Text(' : ', style: itemStyle),
+          Flexible(
+            child: Text(
+              price,
+              style: itemStyle,
+              textDirection: rowDir,
+              textAlign: isPersian ? TextAlign.left : TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColonPriceListSection({
+    required AppLocalizations localizations,
     required String title,
     required IconData icon,
-    required List<String> items,
+    required List<Map<String, dynamic>> items,
+    required String Function(Map<String, dynamic>) nameFor,
+    required String Function(Map<String, dynamic>) priceFor,
+    required String Function(Map<String, dynamic>) fallbackLabelFor,
   }) {
+    final textDir = _contentTextDirection();
+    final titleStyle = TextStyle(
+      fontSize: _detailFieldLabelFontSize,
+      color: AppColors.iranianGray,
+      fontWeight: FontWeight.w500,
+    );
+    const itemStyle = TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      color: AppColors.lapisLazuli,
+      height: 1.45,
+    );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
+      textDirection: textDir,
       children: [
         Icon(icon, size: 18, color: AppColors.iranianGray),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.iranianGray,
-                  fontWeight: FontWeight.w500,
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  title,
+                  style: titleStyle,
+                  textDirection: textDir,
+                  textAlign: TextAlign.start,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...items.map((item) {
+                final name = nameFor(item);
+                final price = priceFor(item);
+                if (name.isNotEmpty && price.isNotEmpty) {
+                  return _buildColonPriceRow(name, price);
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      fallbackLabelFor(item),
+                      style: itemStyle,
+                      textDirection: textDir,
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPiecesRequiredSection(
+    AppLocalizations localizations,
+    List<Map<String, dynamic>> pieces,
+  ) {
+    return _buildColonPriceListSection(
+      localizations: localizations,
+      title: localizations.tech_piece_name,
+      icon: Icons.build,
+      items: pieces,
+      nameFor: _pieceDisplayName,
+      priceFor: (p) => _piecePriceText(p, localizations),
+      fallbackLabelFor: (p) => _labelFromEmbeddedPiece(p, loc: localizations),
+    );
+  }
+
+  Widget _buildTariffsRequiredSection(
+    AppLocalizations localizations,
+    List<Map<String, dynamic>> tariffs,
+  ) {
+    return _buildColonPriceListSection(
+      localizations: localizations,
+      title: localizations.tech_tariffs,
+      icon: Icons.receipt_long,
+      items: tariffs,
+      nameFor: (t) => t['name']?.toString() ?? '',
+      priceFor: (t) => _tariffPriceText(t, localizations),
+      fallbackLabelFor: (t) => _labelFromEmbeddedTariff(t, localizations),
+    );
+  }
+
+  Widget _buildGroupedListSection({
+    required String title,
+    required IconData icon,
+    required List<String> items,
+  }) {
+    final textDir = _contentTextDirection();
+    final titleStyle = TextStyle(
+      fontSize: _detailFieldLabelFontSize,
+      color: AppColors.iranianGray,
+      fontWeight: FontWeight.w500,
+    );
+    const itemStyle = TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      color: AppColors.lapisLazuli,
+      height: 1.45,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      textDirection: textDir,
+      children: [
+        Icon(icon, size: 18, color: AppColors.iranianGray),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  title,
+                  style: titleStyle,
+                  textDirection: textDir,
+                  textAlign: TextAlign.start,
                 ),
               ),
               const SizedBox(height: 8),
               ...items.map(
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    item,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.lapisLazuli,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      item,
+                      style: itemStyle,
+                      textDirection: textDir,
+                      textAlign: TextAlign.start,
                     ),
-                    textDirection: Directionality.of(context),
                   ),
                 ),
               ),
@@ -2203,29 +2780,43 @@ class _TechnicianTaskDetailScreenState
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
+    final textDir = _contentTextDirection();
+
     return Row(
+      textDirection: textDir,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: AppColors.iranianGray),
         SizedBox(width: 8),
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.iranianGray,
-                  fontWeight: FontWeight.w500,
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: _detailFieldLabelFontSize,
+                    color: AppColors.iranianGray,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textDirection: textDir,
+                  textAlign: TextAlign.start,
                 ),
               ),
               SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.lapisLazuli,
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.lapisLazuli,
+                  ),
+                  textDirection: textDir,
+                  textAlign: TextAlign.start,
                 ),
               ),
             ],
