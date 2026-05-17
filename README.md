@@ -1,48 +1,111 @@
-## uzita – سرویس مدیریت دستگاه و مأموریت‌ها
+<div dir="rtl" align="right">
 
-این پروژه یک اپلیکیشن Flutter است که برای مدیریت دستگاه‌ها، مأموریت‌های سرویس‌کاران، راننده‌ها، درخواست‌های سرویس و پنل مدیران سازمان طراحی شده است.  
-اپ هم به‌صورت موبایل (Android / iOS) و هم به‌صورت **PWA** (نسخه تحت وب نصب‌پذیر) قابل استفاده است.
+# uzita — مدیریت دستگاه و مأموریت‌ها
 
----
+اپلیکیشن **Flutter** برای مدیریت دستگاه‌ها، درخواست‌های سرویس، مأموریت‌های تکنسین، گزارش‌ها، حمل‌ونقل و پنل مدیران سازمان.  
+نسخه **۱.۴.۵** — پشتیبانی از **فارسی** و **انگلیسی** (راست‌به‌چپ / چپ‌به‌راست).
 
-## معماری و تکنولوژی‌ها
-
-- **Flutter 3 (channel stable)** برای UI چندسکویی
-- **Dart 3**
-- **REST API** با آدرس پایه `apiBaseUrl` که در `lib/api_config.dart` تنظیم می‌شود
-- پشتیبانی از:
-  - **تکنسین / سرویس‌کار**
-  - **مدیر سازمان سرویس‌کار**
-  - **راننده**
-  - مدیر و کاربران عادی
+| پلتفرم | وضعیت |
+|--------|--------|
+| Android | ✅ |
+| iOS | ✅ |
+| Web / PWA | ✅ |
+| Windows / Linux / macOS | قابل اجرا در حالت توسعه |
 
 ---
 
-## اجرای پروژه در حالت توسعه
+## قابلیت‌های اصلی
 
-### پیش‌نیازها
+### تکنسین (سرویس‌کار)
+- لیست **مأموریت‌های شخصی** (`/technician/tasks`)
+- جزئیات مأموریت: موضوع، موقعیت، گارانتی، بررسی (قطعات، تعرفه‌ها، هزینه‌ها)
+- مراحل کار: تاریخ مراجعه اول → فرم بررسی → گزارش و تأیید نهایی
+- گزارش‌های انجام‌شده (`/technician-reports`)
 
-- نصب Flutter 3 (کانال stable)
-- Android SDK / Xcode (در صورت نیاز به موبایل)
+### سرگروه تکنسین (مدیر سازمان)
+- مأموریت‌های سازمانی (`/technician-organ/tasks`) — تخصیص به تکنسین
+- مشاهدهٔ جزئیات فقط‌خواندنی (بدون فرم مراجعه/گزارش)
+- مأموریت‌های شخصی خود سرگروه در همان صفحه
 
-### اجرای موبایل / دسکتاپ
+### راننده
+- مأموریت‌ها، گزارش‌ها، بارهای عمومی
+
+### سایر نقش‌ها
+- درخواست و پیگیری سرویس، دستگاه‌ها، تیکت، کاربران، حمل‌ونقل و پروفایل
+
+---
+
+## فناوری‌ها
+
+- **Flutter 3** (کانال stable) و **Dart 3.8+**
+- **Provider** — تنظیمات و زبان
+- **REST API** — آدرس پایه در `lib/api_config.dart`
+- **shared_preferences** / **flutter_secure_storage** — نشست و امنیت
+- **shamsi_date** — تقویم شمسی در UI فارسی
+- فونت **وزیر** (`assets/fonts/`)
+
+---
+
+## پیش‌نیازها
+
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (stable)
+- برای Android: Android SDK و JDK
+- برای iOS (روی macOS): Xcode
+- برای وب: `flutter config --enable-web`
+
+بررسی محیط:
 
 ```bash
+flutter doctor
+```
+
+---
+
+## پیکربندی API
+
+پیش‌فرض:
+
+```text
+https://device-control.liara.run/api
+```
+
+تغییر در زمان build یا run:
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://your-api.example.com/api
+```
+
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://your-api.example.com/api
+```
+
+فایل مرجع: `lib/api_config.dart`
+
+---
+
+## اجرا در حالت توسعه
+
+```bash
+cd uzita
 flutter pub get
 flutter run
 ```
 
-### اجرای وب (dev)
+اجرای وب:
 
 ```bash
 flutter run -d chrome
 ```
 
-در صورت نیاز می‌توانید `API_BASE_URL` را برای محیط توسعه نیز با `--dart-define` تنظیم کنید.
+لیست دستگاه‌ها:
+
+```bash
+flutter devices
+```
 
 ---
 
-## ساخت نسخه‌های مختلف
+## ساخت نسخهٔ انتشار
 
 ### Android (APK)
 
@@ -50,52 +113,111 @@ flutter run -d chrome
 flutter build apk --release
 ```
 
-### iOS (archive)
+خروجی معمول:
 
-```bash
-flutter build ios --release
+```text
+build/app/outputs/flutter-apk/app-release.apk
 ```
 
-### Web / PWA
+#### محدودیت شبکه (ایران) — Gradle
 
-همان‌طور که بالاتر گفته شد:
+در صورت قطع یا کندی `plugins.gradle.org` / Maven مرکزی:
+
+- آینه‌ها و `offline-maven-repo` در `android/settings.gradle.kts` و `android/gradle.properties`
+- اسکریپت گرم‌کردن کش و export:
+
+```bash
+cd android
+./build-offline-maven-repo.sh --warm
+```
+
+جزئیات بیشتر در همان پوشهٔ `android/`.
+
+### Web / PWA
 
 ```bash
 flutter build web --release --base-href /pwa/
 ```
 
-و سپس فایل `uzita-pwa-build.zip` را روی سرور قرار دهید.
+استقرار خودکار با **GitHub Actions** (شاخهٔ `main`): `.github/workflows/deploy-pages.yml`  
+متغیر مخفی `API_BASE_URL` را در تنظیمات repository تنظیم کنید.
+
+### iOS
+
+```bash
+flutter build ios --release
+```
+
+سپس Archive از Xcode.
 
 ---
 
-## ساختار کلی ماژول‌ها (خلاصه)
+## ساختار پروژه (خلاصه)
 
-- `lib/screens/`:
-  - `home_screen.dart` – داشبورد اصلی بر اساس نقش کاربر
-  - `technician_tasks_screen.dart`, `technician_task_detail_screen.dart` – مأموریت‌های تکنسین
-  - `technician_reports_screen.dart` – گزارشات تکنسین / مدیر سازمان سرویس‌کار
-  - `driver_missions_screen.dart`, `driver_reports_screen.dart`, `driver_public_loads_screen.dart` – بخش راننده
-  - `service_list_screen.dart`, `send_service_screen.dart` – لیست و درخواست‌های سرویس
-  - `transport_new_request_screen.dart` – درخواست جدید حمل
-  - سایر صفحات پروفایل، تیکت‌ها، کاربران و ...
-- `lib/utils/`:
-  - `shared_bottom_nav.dart` – نوار ناوبری پایین مشترک با منطق نقش‌ها
-  - `shared_drawer.dart` – منوی کناری مشترک
-- `lib/services.dart`:
-  - تعریف رنگ‌ها، ثابت‌ها و تابع `getLogicalUserLevel` برای نگاشت سطح‌های بک‌اند به سه سطح منطقی (مدیر، کاربر/سرویس‌کار، راننده).
+```text
+lib/
+├── main.dart                 # مسیرها، تم، زبان، مدیریت نشست
+├── api_config.dart           # آدرس API
+├── app_localizations.dart    # ترجمهٔ fa / en
+├── services.dart             # رنگ‌ها، سطوح کاربر
+├── screens/                  # صفحات اپ
+│   ├── technician_tasks_screen.dart
+│   ├── technician_task_detail_screen.dart
+│   ├── technician_organ_tasks_screen.dart
+│   ├── technician_reports_screen.dart
+│   ├── driver_* / service_* / home_screen.dart ...
+├── utils/
+│   ├── technician_task_utils.dart   # نرمال‌سازی JSON مأموریت
+│   ├── shared_bottom_nav.dart
+│   ├── shared_drawer.dart
+│   └── http_with_session.dart
+└── services/
+    └── session_manager.dart
+
+android/          # Gradle، آینهٔ Maven، NDK
+web/              # PWA، manifest، آیکن
+assets/           # فونت و آیکن SVG
+```
+
+---
+
+## زبان و جهت UI
+
+- زبان‌ها: **فارسی (`fa`)** و **انگلیسی (`en`)**
+- در `main.dart` جهت متن از روی locale تنظیم می‌شود (RTL برای فارسی)
+- انتخاب زبان از تنظیمات اپ (`SettingsProvider`)
 
 ---
 
 ## نکات توسعه
 
-- برای نقش‌ها، همیشه از `getLogicalUserLevel(rawLevel)` استفاده کنید تا منطق سه‌سطحی (۱: مدیر، ۲: کاربر/سرویس‌کار، ۳: راننده) ثابت بماند.
-- در ناوبری پایین و منوی سایدبار از کامپوننت‌های مشترک (`SharedBottomNavigation` و `SharedAppDrawer`) استفاده شده تا رفتار بین صفحات هماهنگ باشد.
-- برای درخواست‌های شبکه همیشه قبل از call از `SessionManager().onNetworkRequest()` استفاده می‌شود تا مدیریت سشن و خطاها یکنواخت باشد.
+1. **سطح کاربر:** از `getLogicalUserLevel(level)` در `lib/services.dart` استفاده کنید (۱ مدیر، ۲ سرویس‌کار/تکنسین، ۳ راننده).
+2. **شبکه:** قبل از درخواست HTTP، `SessionManager().onNetworkRequest()` را فراخوانی کنید.
+3. **ناوبری:** `SharedBottomNavigation` و `SharedAppDrawer` برای یکنواختی بین صفحات.
+4. **مأموریت سازمانی:** با `from_organ_assign_list: true` صفحهٔ جزئیات فقط‌خواندنی می‌شود.
+5. **بررسی مأموریت:** کارت جزئیات قطعات/تعرفه فقط **بعد از ارسال فرم** (یا دادهٔ از پیش‌آمده از API) نمایش داده می‌شود، نه هنگام انتخاب در فرم.
 
 ---
 
-## راهنما
+## تست
 
-- داکیومنت اصلی Flutter: <https://docs.flutter.dev/>
-- برای تغییر آدرس API: `lib/api_config.dart`
-- برای تغییر تنظیمات PWA (آیکن‌ها، manifest و ...) به پوشه `web/` مراجعه کنید. 
+```bash
+flutter test
+```
+
+---
+
+## منابع
+
+- [مستندات Flutter](https://docs.flutter.dev/)
+- [راهنمای استقرار وب Flutter](https://docs.flutter.dev/deployment/web)
+- [Liara — بک‌اند نمونهٔ پروژه](https://device-control.liara.run/)
+
+---
+
+## مجوز و مخزن
+
+پروژهٔ خصوصی (`publish_to: 'none'` در `pubspec.yaml`).  
+برای مشارکت، از شاخهٔ feature و Pull Request استفاده کنید.
+
+</div>
