@@ -15,6 +15,7 @@ import 'package:uzita/screens/service_provider_services_screen.dart';
 import 'package:uzita/screens/service_provider_service_detail_screen.dart';
 import 'package:uzita/screens/technician_tasks_screen.dart';
 import 'package:uzita/screens/technician_task_detail_screen.dart';
+import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/screens/technician_reports_screen.dart';
 import 'package:uzita/screens/transport_requests_screen.dart';
 import 'package:uzita/screens/driver_public_loads_screen.dart';
@@ -178,10 +179,14 @@ class _MyAppState extends State<MyApp> {
             },
             '/technician-tasks': (context) => TechnicianTasksScreen(),
             '/technician-task-detail': (context) {
-              final task =
+              final Map<String, dynamic> raw =
                   ModalRoute.of(context)!.settings.arguments
                       as Map<String, dynamic>;
-              return TechnicianTaskDetailScreen(task: task);
+              return TechnicianTaskDetailScreen(
+                task: normalizeTechnicianTask(
+                  Map<String, dynamic>.from(raw),
+                ),
+              );
             },
             '/technician-reports': (context) => TechnicianReportsScreen(),
             '/transport-requests': (context) => const TransportRequestsScreen(),

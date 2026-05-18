@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/technician_org_assignment.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
+import 'package:uzita/utils/task_attachment_download.dart';
+import 'package:uzita/api_config.dart';
 import 'dart:convert';
 
 class TechnicianTaskDetailScreen extends StatefulWidget {
@@ -36,6 +38,158 @@ class _TechnicianTaskDetailScreenState
   final _otherCostsController = TextEditingController();
   DateTime? secondVisitDate;
   bool checkTaskSubmitted = false;
+  bool _isDownloadingAttachment = false;
+  String? _attachmentPath;
+  String? _attachmentName;
+
+  String? get _resolvedAttachmentPath =>
+      _attachmentPath ?? taskAttachmentPath(widget.task);
+
+  String? get _resolvedAttachmentName {
+    if (_attachmentName != null && _attachmentName!.isNotEmpty) {
+      return _attachmentName;
+    }
+    final String? name = widget.task['attachment_name']?.toString().trim();
+    return (name != null && name.isNotEmpty) ? name : null;
+  }
+
+  bool get _showsAttachment {
+    final String? path = _resolvedAttachmentPath;
+    return path != null && path.trim().isNotEmpty;
+  }
+
+  void _applyAttachmentFromTask(Map<String, dynamic> task) {
+    _attachmentPath = taskAttachmentPath(task);
+    final String? name = task['attachment_name']?.toString().trim();
+    _attachmentName =
+        (name != null && name.isNotEmpty) ? name : null;
+  }
+
+  Map<String, dynamic> get _taskForAttachment {
+    final String? path = _resolvedAttachmentPath;
+    if (path == null) return widget.task;
+    return <String, dynamic>{
+      ...widget.task,
+      'attachment': path,
+      if (_resolvedAttachmentName != null)
+        'attachment_name': _resolvedAttachmentName,
+    };
+  }
+
+  Future<void> _downloadTaskAttachment() async {
+    if (!_showsAttachment || _isDownloadingAttachment) return;
+
+    final AppLocalizations loc = AppLocalizations.of(context)!;
+    final String url = resolveTaskAttachmentUrl(_resolvedAttachmentPath!);
+    final String fileName = taskAttachmentDisplayName(_taskForAttachment);
+
+    setState(() => _isDownloadingAttachment = true);
+
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('token');
+      await SessionManager().onNetworkRequest();
+
+      final http.Response response = await http.get(
+        Uri.parse(url),
+        headers: <String, String>{
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          'Accept': '*/*',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.tech_attachment_download_failed)),
+        );
+        return;
+      }
+
+      await saveTaskAttachmentFile(
+        bytes: response.bodyBytes,
+        fileName: fileName,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.tech_attachment_download_failed)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloadingAttachment = false);
+      }
+    }
+  }
+
+  Widget _buildAttachmentCard(AppLocalizations localizations) {
+    final String fileName = taskAttachmentDisplayName(_taskForAttachment);
+    final textDir = _contentTextDirection();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.attach_file,
+              color: AppColors.lapisLazuli,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              localizations.tech_attachment,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            fileName,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: AppColors.lapisLazuli,
+            ),
+            textDirection: textDir,
+            textAlign: TextAlign.start,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton.icon(
+            onPressed: _isDownloadingAttachment ? null : _downloadTaskAttachment,
+            icon: _isDownloadingAttachment
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download, color: AppColors.lapisLazuli),
+            label: Text(
+              localizations.tech_download_attachment,
+              style: const TextStyle(
+                color: AppColors.lapisLazuli,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.lapisLazuli),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   // Step 3: Report
   final _reportFormKey = GlobalKey<FormState>();
@@ -65,6 +219,7 @@ class _TechnicianTaskDetailScreenState
   @override
   void initState() {
     super.initState();
+    _applyAttachmentFromTask(widget.task);
     isConfirmed = _parseApiBool(widget.task['technician_confirm']);
     firstVisitDateSet = widget.task['first_visit_date'] != null;
     if (firstVisitDateSet) {
@@ -79,6 +234,78 @@ class _TechnicianTaskDetailScreenState
     _fetchTariffs();
     _loadFirstVisitFlagIfNeeded();
     _loadCheckTaskSnapshot();
+    _syncAttachmentFromTaskLists();
+  }
+
+  Future<void> _syncAttachmentFromTaskLists() async {
+    final String? taskId = widget.task['id']?.toString();
+    if (taskId == null || taskId.isEmpty) return;
+
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('token');
+      if (token == null || token.isEmpty) return;
+
+      await SessionManager().onNetworkRequest();
+      final int ts = DateTime.now().millisecondsSinceEpoch;
+      final Map<String, String> headers = <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+      };
+
+      final List<String> endpoints = <String>[
+        '$apiBaseUrl/technician-organ/tasks?ts=$ts',
+        '$apiBaseUrl/technician/tasks?ts=$ts',
+      ];
+
+      for (final String url in endpoints) {
+        final http.Response response = await http.get(
+          Uri.parse(url),
+          headers: headers,
+        );
+        if (response.statusCode != 200) continue;
+
+        final dynamic data = json.decode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic>? found =
+            findTechnicianTaskInPayload(data, taskId);
+        if (found == null || !taskHasAttachment(found)) continue;
+
+        if (!mounted) return;
+        setState(() {
+          _applyAttachmentFromTask(found);
+          mergeTaskAttachmentFields(widget.task, found);
+        });
+        return;
+      }
+    } catch (_) {}
+  }
+
+  Widget _buildAttachmentSection(AppLocalizations localizations) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : AppColors.lapisLazuli.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
+      child: _buildAttachmentCard(localizations),
+    );
   }
 
   List<Map<String, dynamic>> _embeddedObjectList(dynamic raw) {
@@ -223,26 +450,6 @@ class _TechnicianTaskDetailScreenState
     if (_submittedSecondVisitDate() != null) return true;
     if (_pieceLabelsForTask().isNotEmpty) return true;
     if (_tariffLabelsForTask().isNotEmpty) return true;
-    return false;
-  }
-
-  bool _taskHasCheckTaskData(Map<String, dynamic> task) {
-    if (_embeddedObjectList(task['pieces']).isNotEmpty) return true;
-    if (_embeddedObjectList(task['tariffs']).isNotEmpty) return true;
-    final pieceIds = task['piece_ids'];
-    if (pieceIds is List && pieceIds.isNotEmpty) return true;
-    final tariffIds = task['tariff_ids'];
-    if (tariffIds is List && tariffIds.isNotEmpty) return true;
-    if (task['name_piece'] != null || task['piece_name'] != null) return true;
-    if (task['second_visit_date'] != null &&
-        task['second_visit_date'].toString().isNotEmpty) {
-      return true;
-    }
-    final sayer = task['sayer_hazine'] ?? task['hazine'];
-    if (sayer != null) {
-      final parsed = int.tryParse(sayer.toString());
-      if (parsed != null && parsed > 0) return true;
-    }
     return false;
   }
 
@@ -1610,7 +1817,7 @@ class _TechnicianTaskDetailScreenState
             : TextDirection.rtl,
         child: RefreshIndicator(
           onRefresh: () async {
-            // Refresh task data if needed
+            await _syncAttachmentFromTaskLists();
           },
           color: AppColors.lapisLazuli,
           child: SingleChildScrollView(
@@ -2546,6 +2753,11 @@ class _TechnicianTaskDetailScreenState
                       ],
                     ),
                   ),
+
+                if (_showsAttachment) ...[
+                  const SizedBox(height: 20),
+                  _buildAttachmentSection(localizations),
+                ],
               ],
             ),
           ),

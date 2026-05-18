@@ -103,13 +103,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
             isLoading = false;
           });
         } else {
-          // Handle both List and Map with results
-          List<dynamic> taskList = [];
-          if (data is List) {
-            taskList = data;
-          } else if (data is Map && data['results'] != null) {
-            taskList = data['results'] is List ? data['results'] : [];
-          }
+          final List<dynamic> taskList = extractTechnicianTaskListPayload(data);
           
           // Remove duplicates based on task ID
           final Map<int, dynamic> uniqueTasks = {};

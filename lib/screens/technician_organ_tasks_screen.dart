@@ -165,19 +165,14 @@ class _TechnicianOrganTasksScreenState
       List<Map<String, dynamic>> parsedOrgTasks = <Map<String, dynamic>>[];
       if (orgResponse.statusCode == 200) {
         final dynamic data = json.decode(utf8.decode(orgResponse.bodyBytes));
-        if (data is List) {
-          // For the service organization manager, show all *active* organization
-          // missions (those that are not yet completed / done), whether assigned
-          // or not.
-          parsedOrgTasks = data
-              .whereType<Map>()
-              .map(
-                (dynamic item) =>
-                    _normalizeOrgTask(Map<String, dynamic>.from(item as Map)),
-              )
-              .where((Map<String, dynamic> t) => t['status'] != 'done')
-              .toList();
-        }
+        parsedOrgTasks = extractTechnicianTaskListPayload(data)
+            .whereType<Map>()
+            .map(
+              (dynamic item) =>
+                  _normalizeOrgTask(Map<String, dynamic>.from(item as Map)),
+            )
+            .where((Map<String, dynamic> t) => t['status'] != 'done')
+            .toList();
       }
 
       List<Map<String, dynamic>> parsedPersonalTasks = <Map<String, dynamic>>[];
@@ -185,12 +180,7 @@ class _TechnicianOrganTasksScreenState
         final dynamic data = json.decode(
           utf8.decode(personalResponse.bodyBytes),
         );
-        List<dynamic> rawList = <dynamic>[];
-        if (data is List) {
-          rawList = data;
-        } else if (data is Map && data['results'] is List) {
-          rawList = List<dynamic>.from(data['results'] as List);
-        }
+        final List<dynamic> rawList = extractTechnicianTaskListPayload(data);
         parsedPersonalTasks = rawList
             .whereType<Map>()
             .map(
@@ -312,7 +302,8 @@ class _TechnicianOrganTasksScreenState
         : '';
 
     void openTaskDetail() {
-      final Map<String, dynamic> taskToSend = Map<String, dynamic>.from(task);
+      final Map<String, dynamic> taskToSend =
+          normalizeTechnicianTask(Map<String, dynamic>.from(task));
       if (isOrgTask) {
         taskToSend['from_organ_assign_list'] = true;
       }

@@ -11,6 +11,7 @@ import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
+import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 
@@ -513,11 +514,13 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                   return GestureDetector(
                                     onTap: () {
                                       final Map<String, dynamic> taskToSend =
-                                          task is Map<String, dynamic>
-                                          ? Map<String, dynamic>.from(task)
-                                          : Map<String, dynamic>.from(
-                                              task as Map,
-                                            );
+                                          normalizeTechnicianTask(
+                                        task is Map<String, dynamic>
+                                            ? Map<String, dynamic>.from(task)
+                                            : Map<String, dynamic>.from(
+                                                task as Map,
+                                              ),
+                                      );
                                       taskToSend['from_reports_list'] = true;
                                       Navigator.pushNamed(
                                         context,
