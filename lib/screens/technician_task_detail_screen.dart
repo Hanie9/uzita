@@ -440,6 +440,22 @@ class _TechnicianTaskDetailScreenState
     return false;
   }
 
+  /// Heuristic: technician has already submitted the check-task form.
+  ///
+  /// `pieces` and `tariffs` may be pre-populated by the original service
+  /// request, so they are not enough on their own. We rely on fields that
+  /// only get values after the technician submits the form: positive
+  /// `hazine` / `time` / `sayer_hazine` or a non-empty `second_visit_date`.
+  bool _technicianSubmittedCheckOnApi() {
+    if (_parsedPositiveCost(widget.task['hazine']) != null) return true;
+    if (_parsedPositiveCost(widget.task['time']) != null) return true;
+    if (_parsedPositiveCost(widget.task['sayer_hazine']) != null) return true;
+    final second = widget.task['second_visit_date'];
+    if (second != null && second.toString().isNotEmpty) return true;
+    if (_parseApiBool(widget.task['technician_confirm'])) return true;
+    return false;
+  }
+
   /// Summary content after check-task form was submitted (or restored).
   bool _hasSubmittedCheckSummaryContent() {
     if (!checkTaskSubmitted) return false;
@@ -826,11 +842,12 @@ class _TechnicianTaskDetailScreenState
     );
   }
 
-  /// Check mission card: not before assign; personal only after check form submit.
+  /// Check mission card: not before assign; only after technician submits form.
   bool _shouldShowCheckMissionCard(bool isReadOnlyDetail) {
     if (isTechnicianUnassigned(widget.task)) return false;
 
     if (isReadOnlyDetail) {
+      if (!_technicianSubmittedCheckOnApi()) return false;
       return _hasApiCheckMissionContent();
     }
 
@@ -843,7 +860,7 @@ class _TechnicianTaskDetailScreenState
     required bool readOnly,
   }) {
     final bool show = readOnly
-        ? _hasApiCheckMissionContent()
+        ? (_technicianSubmittedCheckOnApi() && _hasApiCheckMissionContent())
         : _hasSubmittedCheckSummaryContent();
     if (!show) return null;
 
@@ -857,6 +874,16 @@ class _TechnicianTaskDetailScreenState
   }
 
   void _hydrateSelectionsFromTask() {
+    // Pre-fill check-task form fields from API only when the technician has
+    // actually submitted the form. Otherwise the form must start empty —
+    // `pieces` / `tariffs` on the task come from the original service request
+    // (chosen at creation time), not from the technician's check submission.
+    if (!_technicianSubmittedCheckOnApi()) {
+      selectedPieceIds = <int>{};
+      selectedTariffIds = <int>{};
+      return;
+    }
+
     final embeddedPieces = _embeddedObjectList(widget.task['pieces']);
     if (embeddedPieces.isNotEmpty) {
       selectedPieceIds = embeddedPieces
