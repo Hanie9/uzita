@@ -21,6 +21,10 @@
   <meta name="description" content="uzita - Device Control Application">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0175C2">
+  <!-- index.html must not be cached long-term so PWA updates can ship -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <!-- Prevent loading external fonts like Google Fonts -->
   <meta http-equiv="Content-Security-Policy" content="font-src 'self' data:; style-src 'self' 'unsafe-inline';">
@@ -45,27 +49,81 @@
 </head>
 <body>
   <script>
-    // Remove stale service workers/caches so clients receive fresh builds.
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then((keys) => {
-        for (const key of keys) {
-          caches.delete(key);
-        }
-      });
-    }
-  </script>
-  <script>
     window.flutterConfiguration = {
       useLocalCanvasKit: true,
     };
+
+    (function () {
+      var VERSION_KEY = 'uzita_pwa_build_id';
+      var reloading = sessionStorage.getItem('uzita_pwa_reloading');
+
+      function clearAppCaches() {
+        var tasks = [];
+        if ('serviceWorker' in navigator) {
+          tasks.push(
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            })
+          );
+        }
+        if ('caches' in window) {
+          tasks.push(
+            caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            })
+          );
+        }
+        return Promise.all(tasks);
+      }
+
+      function loadFlutter() {
+        var s = document.createElement('script');
+        s.src = 'flutter_bootstrap.js';
+        s.async = true;
+        document.body.appendChild(s);
+      }
+
+      function fetchBuildId() {
+        var url = 'version.json?t=' + Date.now();
+        return fetch(url, { cache: 'no-store' }).then(function (res) {
+          if (!res.ok) throw new Error('version.json HTTP ' + res.status);
+          return res.json();
+        }).then(function (data) {
+          var version = (data.version || '0').toString();
+          var build = (data.build_number || '0').toString();
+          return version + '+' + build;
+        });
+      }
+
+      function checkForUpdate() {
+        return fetchBuildId().then(function (buildId) {
+          var stored = localStorage.getItem(VERSION_KEY);
+          if (stored && stored !== buildId && !reloading) {
+            sessionStorage.setItem('uzita_pwa_reloading', '1');
+            return clearAppCaches().then(function () {
+              localStorage.setItem(VERSION_KEY, buildId);
+              location.reload();
+            });
+          }
+          localStorage.setItem(VERSION_KEY, buildId);
+          sessionStorage.removeItem('uzita_pwa_reloading');
+        }).catch(function (err) {
+          console.warn('[uzita] PWA version check skipped:', err);
+          sessionStorage.removeItem('uzita_pwa_reloading');
+        });
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!sessionStorage.getItem('uzita_pwa_reloading')) {
+            sessionStorage.setItem('uzita_pwa_reloading', '1');
+            location.reload();
+          }
+        });
+      }
+
+      checkForUpdate().then(loadFlutter);
+    })();
   </script>
-  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

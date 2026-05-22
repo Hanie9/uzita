@@ -38,7 +38,25 @@ jobs:
         run: flutter config --enable-web
 
       - name: Build Flutter web (PWA)
-        run: flutter build web --release --base-href /uzita/ --dart-define=API_BASE_URL=$API_BASE_URL
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//')
+          BUILD="${GITHUB_RUN_NUMBER}"
+          flutter build web --release \
+            --base-href /uzita/ \
+            --build-name="$VERSION" \
+            --build-number="$BUILD" \
+            --dart-define=API_BASE_URL=$API_BASE_URL
+
+      - name: Stamp PWA version (force clients to detect updates)
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//')
+          BUILD="${GITHUB_RUN_NUMBER}"
+          printf '%s\n' \
+            "{\"app_name\":\"uzita\",\"version\":\"${VERSION}\",\"build_number\":\"${BUILD}\",\"package_name\":\"uzita\"}" \
+            > build/web/version.json
+          # Bust cache for shell HTML on CDNs that ignore Cache-Control
+          sed -i "s/manifest.json?v=[0-9]*/manifest.json?v=${BUILD}/g" build/web/index.html
+          sed -i "s/logouzita.png?v=[0-9]*/logouzita.png?v=${BUILD}/g" build/web/index.html
 
       - name: Add 404.html for GitHub Pages SPA routing
         run: |

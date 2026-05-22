@@ -136,11 +136,16 @@ cd android
 ### Web / PWA
 
 ```bash
-flutter build web --release --base-href /pwa/
+flutter build web --release --base-href /uzita/
+./scripts/stamp_pwa_version.sh
 ```
+
+بعد از هر deploy، `version.json` با شمارهٔ build جدید به‌روز می‌شود؛ مرورگر با مقایسهٔ نسخه، کش و Service Worker قدیمی را پاک کرده و اپ را reload می‌کند.
 
 استقرار خودکار با **GitHub Actions** (شاخهٔ `main`): `.github/workflows/deploy-pages.yml`  
 متغیر مخفی `API_BASE_URL` را در تنظیمات repository تنظیم کنید.
+
+اگر هنوز نسخهٔ قدیمی می‌بینید: یک بار تب را ببندید و دوباره باز کنید، یا در DevTools → Application → Clear site data.
 
 ### iOS
 
