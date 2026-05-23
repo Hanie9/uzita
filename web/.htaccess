@@ -1,6 +1,6 @@
 # Force fresh HTML/JS on each deploy (Liara / Apache static hosting).
 <IfModule mod_headers.c>
-  <FilesMatch "^(index\.html|404\.html|version\.json|flutter_bootstrap\.js|flutter_service_worker\.js|main\.dart\.js)$">
+  <FilesMatch "^(index\.html|404\.html|version\.json|flutter_bootstrap\.js|flutter_service_worker\.js|main\.dart\.js|canvaskit\.js|flutter\.js)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"

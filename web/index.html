@@ -127,6 +127,10 @@
         var s = document.createElement('script');
         s.src = assetUrl('flutter_bootstrap.js') + '?v=' + encodeURIComponent(build);
         s.async = true;
+        s.onerror = function () {
+          console.warn('[uzita] bootstrap failed, retrying with cache bust');
+          s.src = assetUrl('flutter_bootstrap.js') + '?v=' + Date.now();
+        };
         document.body.appendChild(s);
       }
 
