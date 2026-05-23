@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:uzita/services.dart';
@@ -36,6 +37,7 @@ class _TechnicianTaskDetailScreenState
   // Step 2: Check task fields
   final _checkTaskFormKey = GlobalKey<FormState>();
   final _otherCostsController = TextEditingController();
+  final _serialNumberController = TextEditingController();
   DateTime? secondVisitDate;
   bool checkTaskSubmitted = false;
   bool _isDownloadingAttachment = false;
@@ -235,6 +237,10 @@ class _TechnicianTaskDetailScreenState
     _loadFirstVisitFlagIfNeeded();
     _loadCheckTaskSnapshot();
     _syncAttachmentFromTaskLists();
+    final String? taskSerial = widget.task['serial_number']?.toString().trim();
+    if (taskSerial != null && taskSerial.isNotEmpty) {
+      _serialNumberController.text = taskSerial;
+    }
   }
 
   Future<void> _syncAttachmentFromTaskLists() async {
@@ -428,6 +434,35 @@ class _TechnicianTaskDetailScreenState
   }
 
   bool _taskHasWarranty() => _parseApiBool(widget.task['warranty']);
+
+  String? _customerFullName() {
+    final String first =
+        widget.task['customer_first_name']?.toString().trim() ?? '';
+    final String last =
+        widget.task['customer_last_name']?.toString().trim() ?? '';
+    if (first.isEmpty && last.isEmpty) return null;
+    return [first, last].where((String s) => s.isNotEmpty).join(' ');
+  }
+
+  String? _adminNoteText() {
+    final String? note = widget.task['admin_note']?.toString().trim();
+    if (note == null || note.isEmpty) return null;
+    final String lower = note.toLowerCase();
+    if (lower == 'null' || lower == 'none') return null;
+    return note;
+  }
+
+  String? _submittedSerialNumber() {
+    final String? fromTask = widget.task['serial_number']?.toString().trim();
+    if (fromTask != null && fromTask.isNotEmpty) return fromTask;
+    final dynamic fromSnap = _checkTaskSnapshot?['serial_number'];
+    if (fromSnap != null && fromSnap.toString().trim().isNotEmpty) {
+      return fromSnap.toString().trim();
+    }
+    return null;
+  }
+
+  bool _hasCustomerOrAdminInfo() => true;
 
   /// Check data already on the task from API (not local form selections).
   bool _hasApiCheckMissionContent() {
@@ -637,6 +672,10 @@ class _TechnicianTaskDetailScreenState
           : selectedTariffIds.map((id) => '#$id').toList(),
       'sayer_hazine': int.tryParse(_otherCostsController.text) ?? 0,
     };
+    final String serial = _serialNumberController.text.trim();
+    if (serial.isNotEmpty) {
+      snapshot['serial_number'] = serial;
+    }
     if (secondVisitDate != null) {
       snapshot['second_visit_date'] = formatDateForAPI(secondVisitDate!);
     }
@@ -659,6 +698,9 @@ class _TechnicianTaskDetailScreenState
         snap['second_visit_date'] != null) {
       widget.task['second_visit_date'] = snap['second_visit_date'];
     }
+    if (widget.task['serial_number'] == null && snap['serial_number'] != null) {
+      widget.task['serial_number'] = snap['serial_number'];
+    }
 
     final pieceIds = snap['piece_ids'];
     if (pieceIds is List && selectedPieceIds.isEmpty) {
@@ -678,6 +720,11 @@ class _TechnicianTaskDetailScreenState
     final sayer = snap['sayer_hazine'];
     if (sayer != null && _otherCostsController.text.isEmpty) {
       _otherCostsController.text = sayer.toString();
+    }
+
+    final serial = snap['serial_number'];
+    if (serial != null && _serialNumberController.text.isEmpty) {
+      _serialNumberController.text = serial.toString();
     }
 
     final second = snap['second_visit_date'];
@@ -780,6 +827,14 @@ class _TechnicianTaskDetailScreenState
           localizations.tech_second_visit_date,
           formatDate(secondVisit, context),
           Icons.calendar_today,
+        ),
+      ],
+      if (_submittedSerialNumber() != null) ...[
+        const SizedBox(height: 12),
+        _buildInfoRow(
+          localizations.tech_serial_number_correction,
+          _submittedSerialNumber()!,
+          Icons.qr_code,
         ),
       ],
     ];
@@ -1238,6 +1293,7 @@ class _TechnicianTaskDetailScreenState
   @override
   void dispose() {
     _otherCostsController.dispose();
+    _serialNumberController.dispose();
     _reportController.dispose();
     super.dispose();
   }
@@ -1520,6 +1576,11 @@ class _TechnicianTaskDetailScreenState
         requestBody['second_visit_date'] = formatDateForAPI(secondVisitDate!);
       }
 
+      final String serial = _serialNumberController.text.trim();
+      if (serial.isNotEmpty) {
+        requestBody['serial_number'] = serial;
+      }
+
       final response = await http.post(
         Uri.parse(url),
         headers: {
@@ -1540,6 +1601,9 @@ class _TechnicianTaskDetailScreenState
         widget.task['sayer_hazine'] = int.parse(_otherCostsController.text);
         if (secondVisitDate != null) {
           widget.task['second_visit_date'] = formatDateForAPI(secondVisitDate!);
+        }
+        if (serial.isNotEmpty) {
+          widget.task['serial_number'] = serial;
         }
         final taskIdKey = widget.task['id']?.toString() ?? '';
         if (taskIdKey.isNotEmpty) {
@@ -2133,6 +2197,11 @@ class _TechnicianTaskDetailScreenState
                 ),
                 SizedBox(height: 20),
 
+                if (_hasCustomerOrAdminInfo()) ...[
+                  _buildCustomerAdminSection(localizations),
+                  const SizedBox(height: 20),
+                ],
+
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -2492,39 +2561,75 @@ class _TechnicianTaskDetailScreenState
                             },
                           ),
                           SizedBox(height: 20),
-                          // Second Visit Date (Optional)
-                          Row(
-                            children: [
-                              Text(
-                                localizations.tech_second_visit_date,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.lapisLazuli,
-                                ),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              localizations.tech_serial_number_correction,
+                              style: TextStyle(
+                                fontSize: _checkFormFieldLabelFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
                               ),
-                              SizedBox(width: 8),
-                              Text(
-                                Provider.of<SettingsProvider>(
-                                          context,
-                                          listen: false,
-                                        ).selectedLanguage ==
-                                        'en'
-                                    ? '(Optional)'
-                                    : '(اختیاری)',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.normal,
-                                  color: const Color.fromARGB(
-                                    255,
-                                    70,
-                                    114,
-                                    157,
-                                  ),
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
+                              textDirection: _contentTextDirection(),
+                              textAlign: TextAlign.start,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          TextFormField(
+                            controller: _serialNumberController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly,
                             ],
+                            decoration: InputDecoration(
+                              hintText: localizations.tech_serial_number_hint,
+                              filled: true,
+                              fillColor:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[800]
+                                  : AppColors.lapisLazuli.withValues(
+                                      alpha: 0.04,
+                                    ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.lapisLazuli,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.qr_code,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                            validator: (String? value) {
+                              final String trimmed = value?.trim() ?? '';
+                              if (trimmed.isEmpty) return null;
+                              if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
+                                return localizations
+                                    .tech_serial_number_digits_error;
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 20),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              localizations.tech_second_visit_date,
+                              style: TextStyle(
+                                fontSize: _checkFormFieldLabelFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              textDirection: _contentTextDirection(),
+                              textAlign: TextAlign.start,
+                            ),
                           ),
                           SizedBox(height: 8),
                           GestureDetector(
@@ -2789,6 +2894,113 @@ class _TechnicianTaskDetailScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerAdminSection(AppLocalizations localizations) {
+    final String customerName = _customerFullName() ?? '---';
+    final String adminNote = _adminNoteText() ?? '---';
+    final textDir = _contentTextDirection();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : AppColors.lapisLazuli.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.person_outline,
+                color: AppColors.lapisLazuli,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                localizations.tech_task_customer_section,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            localizations.tech_customer_name,
+            customerName,
+            Icons.badge_outlined,
+          ),
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.note_alt_outlined,
+                    size: 18,
+                    color: AppColors.iranianGray,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    localizations.tech_admin_note,
+                    style: TextStyle(
+                      fontSize: _detailFieldLabelFontSize,
+                      color: AppColors.iranianGray,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textDirection: textDir,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.lapisLazuli.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Text(
+                  adminNote,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.lapisLazuli,
+                    height: 1.45,
+                  ),
+                  textDirection: textDir,
+                  textAlign: TextAlign.start,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

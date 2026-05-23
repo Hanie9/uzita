@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stamp build/web/version.json after `flutter build web` for local or custom deploys.
+# Stamp build/web/version.json and patch bootstrap for cache busting.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,8 +17,16 @@ printf '%s\n' \
   > "$WEB_DIR/version.json"
 
 if [[ -f "$WEB_DIR/index.html" ]]; then
-  sed -i "s/manifest.json?v=[0-9]*/manifest.json?v=${BUILD}/g" "$WEB_DIR/index.html"
-  sed -i "s/logouzita.png?v=[0-9]*/logouzita.png?v=${BUILD}/g" "$WEB_DIR/index.html"
+  sed -i "s/UZITA_STAMP_BUILD/${BUILD}/g" "$WEB_DIR/index.html"
+fi
+
+if [[ -f "$WEB_DIR/flutter_bootstrap.js" ]]; then
+  sed -i "s|\"mainJsPath\":\"main.dart.js\"|\"mainJsPath\":\"main.dart.js?v=${BUILD}\"|g" \
+    "$WEB_DIR/flutter_bootstrap.js"
+fi
+
+if [[ -f "$ROOT/web/.htaccess" ]]; then
+  cp "$ROOT/web/.htaccess" "$WEB_DIR/.htaccess"
 fi
 
 echo "PWA version stamped: ${VERSION}+${BUILD} -> $WEB_DIR/version.json"

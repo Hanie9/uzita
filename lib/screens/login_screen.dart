@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:uzita/utils/uzita_svg_icon.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
@@ -660,8 +660,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: EdgeInsets.all(
                                   screenWidth * 0.02,
                                 ), // 2% of screen width
-                                child: SvgPicture.asset(
-                                  'assets/icons/user.svg',
+                                child: UzitaSvgIcon(
+                                  assetPath: 'assets/icons/user.svg',
                                   colorFilter: ColorFilter.mode(
                                     Theme.of(context).brightness ==
                                             Brightness.dark
@@ -748,8 +748,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: EdgeInsets.all(
                                   screenWidth * 0.02,
                                 ), // 2% of screen width
-                                child: SvgPicture.asset(
-                                  'assets/icons/key.svg',
+                                child: UzitaSvgIcon(
+                                  assetPath: 'assets/icons/key.svg',
                                   colorFilter: ColorFilter.mode(
                                     Theme.of(context).brightness ==
                                             Brightness.dark

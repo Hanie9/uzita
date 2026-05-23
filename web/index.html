@@ -21,7 +21,6 @@
   <meta name="description" content="uzita - Device Control Application">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0175C2">
-  <!-- index.html must not be cached long-term so PWA updates can ship -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -34,17 +33,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="uzita">
-  <!-- iOS home screen icons -->
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180x180.png?v=6">
-  <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167x167.png?v=6">
-  <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152x152.png?v=6">
-  <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120x120.png?v=6">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180x180.png?v=UZITA_STAMP_BUILD">
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167x167.png?v=UZITA_STAMP_BUILD">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152x152.png?v=UZITA_STAMP_BUILD">
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120x120.png?v=UZITA_STAMP_BUILD">
 
-  <!-- Favicon (use generated PWA icon for consistency) -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/logouzita.png?v=4"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/logouzita.png?v=UZITA_STAMP_BUILD"/>
 
   <title>uzita</title>
-  <link rel="manifest" href="manifest.json?v=6">
+  <link rel="manifest" href="manifest.json?v=UZITA_STAMP_BUILD">
 
 </head>
 <body>
@@ -52,10 +49,15 @@
     window.flutterConfiguration = {
       useLocalCanvasKit: true,
     };
+    window.__UZITA_BUILD__ = 'UZITA_STAMP_BUILD';
 
     (function () {
       var VERSION_KEY = 'uzita_pwa_build_id';
       var reloading = sessionStorage.getItem('uzita_pwa_reloading');
+
+      function assetUrl(path) {
+        return new URL(path, document.baseURI).href;
+      }
 
       function clearAppCaches() {
         var tasks = [];
@@ -76,15 +78,8 @@
         return Promise.all(tasks);
       }
 
-      function loadFlutter() {
-        var s = document.createElement('script');
-        s.src = 'flutter_bootstrap.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
-
-      function fetchBuildId() {
-        var url = 'version.json?t=' + Date.now();
+      function fetchServerBuildId() {
+        var url = assetUrl('version.json') + '?t=' + Date.now();
         return fetch(url, { cache: 'no-store' }).then(function (res) {
           if (!res.ok) throw new Error('version.json HTTP ' + res.status);
           return res.json();
@@ -95,22 +90,44 @@
         });
       }
 
+      function hardReload() {
+        var base = location.href.split('?')[0].split('#')[0];
+        location.replace(base + '?cb=' + Date.now() + location.hash);
+      }
+
       function checkForUpdate() {
-        return fetchBuildId().then(function (buildId) {
+        return clearAppCaches().then(fetchServerBuildId).then(function (serverBuildId) {
+          var embedded = (window.__UZITA_BUILD__ || '').toString();
           var stored = localStorage.getItem(VERSION_KEY);
-          if (stored && stored !== buildId && !reloading) {
+
+          if (embedded && serverBuildId && embedded !== serverBuildId && !reloading) {
             sessionStorage.setItem('uzita_pwa_reloading', '1');
-            return clearAppCaches().then(function () {
-              localStorage.setItem(VERSION_KEY, buildId);
-              location.reload();
-            });
+            localStorage.setItem(VERSION_KEY, serverBuildId);
+            hardReload();
+            return;
           }
-          localStorage.setItem(VERSION_KEY, buildId);
+
+          if (stored && stored !== serverBuildId && !reloading) {
+            sessionStorage.setItem('uzita_pwa_reloading', '1');
+            localStorage.setItem(VERSION_KEY, serverBuildId);
+            location.reload();
+            return;
+          }
+
+          localStorage.setItem(VERSION_KEY, serverBuildId);
           sessionStorage.removeItem('uzita_pwa_reloading');
         }).catch(function (err) {
           console.warn('[uzita] PWA version check skipped:', err);
           sessionStorage.removeItem('uzita_pwa_reloading');
         });
+      }
+
+      function loadFlutter() {
+        var build = (window.__UZITA_BUILD__ || Date.now()).toString();
+        var s = document.createElement('script');
+        s.src = assetUrl('flutter_bootstrap.js') + '?v=' + encodeURIComponent(build);
+        s.async = true;
+        document.body.appendChild(s);
       }
 
       if ('serviceWorker' in navigator) {

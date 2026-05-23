@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:uzita/utils/uzita_svg_icon.dart';
 import 'package:flutter/services.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -1589,8 +1589,8 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                       // User list - only for level 1 (not for normal technicians level 2/4)
                                       if (userLevel == 1)
                                         _buildNavigationCard(
-                                          icon: SvgPicture.asset(
-                                            'assets/icons/users.svg',
+                                          icon: UzitaSvgIcon(
+                                            assetPath: 'assets/icons/users.svg',
                                             width: 24,
                                             height: 24,
                                           ),
@@ -1641,8 +1641,8 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                         SizedBox(height: 12),
                                       // Reports card
                                       _buildNavigationCard(
-                                        icon: SvgPicture.asset(
-                                          'assets/icons/report.svg',
+                                        icon: UzitaSvgIcon(
+                                          assetPath: 'assets/icons/report.svg',
                                           width: 24,
                                           height: 24,
                                         ),
@@ -1704,8 +1704,8 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                       ),
                                       SizedBox(height: 12),
                                       _buildNavigationCard(
-                                        icon: SvgPicture.asset(
-                                          'assets/icons/setting.svg',
+                                        icon: UzitaSvgIcon(
+                                          assetPath: 'assets/icons/setting.svg',
                                           width: 24,
                                           height: 24,
                                         ),

@@ -119,11 +119,23 @@ Future<void> showOrganTaskAssignmentDialog({
   );
 
   final List<Map<String, String>> users = await fetchOrganTechnicianUsers();
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final String currentUsername = (prefs.getString('username') ?? '').trim();
+  final String currentLower = currentUsername.toLowerCase();
+
+  final List<Map<String, String>> assignableUsers = currentLower.isEmpty
+      ? users
+      : users
+          .where(
+            (Map<String, String> u) =>
+                u['username']!.trim().toLowerCase() != currentLower,
+          )
+          .toList();
 
   if (!context.mounted) return;
   Navigator.of(context, rootNavigator: true).pop();
 
-  if (users.isEmpty) {
+  if (assignableUsers.isEmpty) {
     await showDialog<void>(
       context: context,
       builder: (BuildContext ctx) {
@@ -144,10 +156,7 @@ Future<void> showOrganTaskAssignmentDialog({
     return;
   }
 
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  final String currentUsername = prefs.getString('username') ?? '';
-  String? selectedUsername =
-      currentUsername.trim().isNotEmpty ? currentUsername.trim() : null;
+  String? selectedUsername;
 
   await showDialog<void>(
     context: context,
@@ -168,9 +177,9 @@ Future<void> showOrganTaskAssignmentDialog({
               width: double.maxFinite,
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: users.length,
+                itemCount: assignableUsers.length,
                 itemBuilder: (BuildContext context, int index) {
-                  final Map<String, String> user = users[index];
+                  final Map<String, String> user = assignableUsers[index];
                   final String username = user['username']!;
                   final String display = user['display']!;
                   final bool isChecked = selectedUsername == username;

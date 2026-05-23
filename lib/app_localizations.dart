@@ -1158,7 +1158,7 @@ class AppLocalizations {
       'tech_download_attachment': 'Download file',
       'tech_attachment_download_failed': 'Could not download attachment',
       'tech_warranty': 'Warranty',
-      'tech_second_visit_date': 'Second Visit Date',
+      'tech_second_visit_date': 'Second visit date (Optional)',
       'tech_second_visit_date_hint': 'Select second visit date if needed',
       'tech_submit_check_task': 'Submit Task Check',
       'tech_check_task_success': 'Task check submitted successfully',
@@ -1172,6 +1172,12 @@ class AppLocalizations {
       'tech_urgency_urgent': 'Urgent',
       'tech_urgency_very_urgent': 'Very Urgent',
       'tech_assigned_to': 'Assigned to',
+      'tech_task_customer_section': 'Customer & manager notes',
+      'tech_customer_name': 'Customer name',
+      'tech_admin_note': 'Manager note',
+      'tech_serial_number_correction': 'Serial number correction (Optional)',
+      'tech_serial_number_hint': 'Enter digits only',
+      'tech_serial_number_digits_error': 'Serial number must contain digits only',
 
       // Driver Screens (driver_)
       'driver_missions': 'Missions',
@@ -2320,7 +2326,7 @@ class AppLocalizations {
       'tech_download_attachment': 'دانلود فایل',
       'tech_attachment_download_failed': 'دانلود پیوست انجام نشد',
       'tech_warranty': 'گارانتی',
-      'tech_second_visit_date': 'زمان مراجعه مجدد',
+      'tech_second_visit_date': 'زمان مراجعه مجدد (اختیاری)',
       'tech_second_visit_date_hint':
           'در صورت نیاز زمان مراجعه مجدد را انتخاب کنید',
       'tech_submit_check_task': 'ثبت بررسی مأموریت',
@@ -2335,6 +2341,12 @@ class AppLocalizations {
       'tech_urgency_urgent': 'فوری',
       'tech_urgency_very_urgent': 'خیلی فوری',
       'tech_assigned_to': 'واگذار شده به',
+      'tech_task_customer_section': 'مشتری و یادداشت مدیر',
+      'tech_customer_name': 'نام مشتری',
+      'tech_admin_note': 'یادداشت مدیر',
+      'tech_serial_number_correction': 'اصلاح شماره سریال (اختیاری)',
+      'tech_serial_number_hint': 'فقط عدد وارد کنید',
+      'tech_serial_number_digits_error': 'شماره سریال فقط باید عدد باشد',
       'tech_confirmation_error': 'خطا در تایید ماموریت',
       'tech_no_completed_tasks': 'ماموریت انجام شده‌ای وجود ندارد',
       'tech_no_completed_tasks_description':
@@ -3331,6 +3343,16 @@ class AppLocalizations {
   String get tech_urgency_very_urgent =>
       _getLocalizedValue('tech_urgency_very_urgent');
   String get tech_assigned_to => _getLocalizedValue('tech_assigned_to');
+  String get tech_task_customer_section =>
+      _getLocalizedValue('tech_task_customer_section');
+  String get tech_customer_name => _getLocalizedValue('tech_customer_name');
+  String get tech_admin_note => _getLocalizedValue('tech_admin_note');
+  String get tech_serial_number_correction =>
+      _getLocalizedValue('tech_serial_number_correction');
+  String get tech_serial_number_hint =>
+      _getLocalizedValue('tech_serial_number_hint');
+  String get tech_serial_number_digits_error =>
+      _getLocalizedValue('tech_serial_number_digits_error');
 
   // Driver Screen getters (driver_*)
   String get driver_missions => _getLocalizedValue('driver_missions');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:uzita/utils/uzita_svg_icon.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/services.dart';
@@ -330,7 +330,8 @@ Widget buildRegisterForm({
                                       padding: EdgeInsets.all(
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
-                                      child: SvgPicture.asset(
+                                      child: UzitaSvgIcon(
+                                  assetPath:
                                         'assets/icons/phone-plus.svg',
                                         colorFilter: ColorFilter.mode(
                                           Theme.of(context).brightness ==
@@ -462,7 +463,8 @@ Widget buildRegisterForm({
                                       padding: EdgeInsets.all(
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
-                                      child: SvgPicture.asset(
+                                      child: UzitaSvgIcon(
+                                  assetPath:
                                         'assets/icons/user.svg',
                                         colorFilter: ColorFilter.mode(
                                           Theme.of(context).brightness ==
@@ -545,7 +547,8 @@ Widget buildRegisterForm({
                                       padding: EdgeInsets.all(
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
-                                      child: SvgPicture.asset(
+                                      child: UzitaSvgIcon(
+                                  assetPath:
                                         'assets/icons/key.svg',
                                         colorFilter: ColorFilter.mode(
                                           Theme.of(context).brightness ==
@@ -631,7 +634,8 @@ Widget buildRegisterForm({
                                       padding: EdgeInsets.all(
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
-                                      child: SvgPicture.asset(
+                                      child: UzitaSvgIcon(
+                                  assetPath:
                                         isAdmin
                                             ? 'assets/icons/admin.svg'
                                             : 'assets/icons/office.svg',

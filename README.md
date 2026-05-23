@@ -135,9 +135,18 @@ cd android
 
 ### Web / PWA
 
+**Liara / دامنهٔ ریشه** (مثلاً `https://ellaro.liara.run/`):
+
 ```bash
-flutter build web --release --base-href /uzita/
-./scripts/stamp_pwa_version.sh
+./scripts/build_pwa_zip.sh
+```
+
+محتوای zip را در **ریشهٔ** static app روی Liara استخراج کنید (نه داخل پوشهٔ `uzita/`).
+
+**GitHub Pages** (`/uzita/`):
+
+```bash
+BASE_HREF=/uzita/ ./scripts/build_pwa_zip.sh
 ```
 
 بعد از هر deploy، `version.json` با شمارهٔ build جدید به‌روز می‌شود؛ مرورگر با مقایسهٔ نسخه، کش و Service Worker قدیمی را پاک کرده و اپ را reload می‌کند.
