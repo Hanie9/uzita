@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/api_config.dart';
@@ -34,6 +35,7 @@ class _TechnicianOrganTasksScreenState
   String username = '';
   String userRoleTitle = '';
   bool userActive = true;
+  DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -784,7 +786,30 @@ class _TechnicianOrganTasksScreenState
     final theme = Theme.of(context);
     final double screenHeight = MediaQuery.of(context).size.height;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) {
+        if (didPop) return;
+        if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+          _scaffoldKey.currentState?.closeDrawer();
+          return;
+        }
+        final DateTime now = DateTime.now();
+        if (_lastBackPressedAt == null ||
+            now.difference(_lastBackPressedAt!) > const Duration(seconds: 2)) {
+          _lastBackPressedAt = now;
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localizations.click_again_to_exit),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: PreferredSize(
@@ -1003,6 +1028,7 @@ class _TechnicianOrganTasksScreenState
         userLevel: userLevel,
         onItemTapped: _onNavItemTapped,
         organType: organType,
+      ),
       ),
     );
   }
