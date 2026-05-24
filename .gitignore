@@ -33,6 +33,17 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Do not commit Flutter web build output under web/ (serve from build/web).
+/web/main.dart.js
+/web/flutter.js
+/web/flutter_bootstrap.js
+/web/flutter_service_worker.js
+/web/version.json
+/web/.last_build_id
+/web/canvaskit/
+/web/assets/
+/web/404.html
+
 # Symbolication related
 app.*.symbols
 
