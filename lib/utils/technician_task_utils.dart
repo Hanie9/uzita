@@ -139,6 +139,93 @@ String taskAttachmentDownloadUrl(Map<String, dynamic> task) {
   return resolveTaskAttachmentUrl(path);
 }
 
+/// GET `/api/technician/{id}/invoice/download` (authenticated).
+String technicianInvoiceDownloadUrl(dynamic taskId) {
+  final String id = taskId?.toString().trim() ?? '';
+  return '$apiBaseUrl/technician/$id/invoice/download';
+}
+
+int? _parsedPositiveCostField(dynamic raw) {
+  if (raw == null) return null;
+  final int? parsed = int.tryParse(raw.toString());
+  if (parsed == null || parsed <= 0) return null;
+  return parsed;
+}
+
+bool _parseBoolField(dynamic value) {
+  if (value is bool) return value;
+  if (value is String) {
+    final String lower = value.trim().toLowerCase();
+    return lower == 'true' || lower == '1';
+  }
+  if (value is num) return value != 0;
+  return false;
+}
+
+/// Technician submitted the check-task form (not only service-request defaults).
+bool technicianSubmittedCheckOnApi(Map<String, dynamic> task) {
+  if (_parsedPositiveCostField(task['hazine']) != null) return true;
+  if (_parsedPositiveCostField(task['time']) != null) return true;
+  if (_parsedPositiveCostField(task['sayer_hazine']) != null) return true;
+  final dynamic second = task['second_visit_date'];
+  if (second != null && second.toString().trim().isNotEmpty) return true;
+  if (_parseBoolField(task['technician_confirm'])) return true;
+  return false;
+}
+
+bool _taskHasPieceOrTariffIds(Map<String, dynamic> task) {
+  for (final String key in <String>['piece_ids', 'tariff_ids']) {
+    final dynamic ids = task[key];
+    if (ids is List && ids.isNotEmpty) return true;
+  }
+  for (final String key in <String>['pieces', 'tariffs']) {
+    final dynamic list = task[key];
+    if (list is List && list.isNotEmpty) return true;
+  }
+  return false;
+}
+
+/// Invoice is available after check-task (pieces/tariffs) was submitted.
+bool taskAllowsInvoiceDownload(Map<String, dynamic> task) {
+  if (!technicianSubmittedCheckOnApi(task)) return false;
+  return _taskHasPieceOrTariffIds(task);
+}
+
+String parseHttpDownloadFileName(
+  Map<String, String> headers, {
+  required String defaultName,
+}) {
+  final String? cd =
+      headers['content-disposition'] ?? headers['Content-Disposition'];
+  if (cd == null || cd.isEmpty) return defaultName;
+
+  final RegExp filenameStar = RegExp(
+    r"filename\*=UTF-8''([^;]+)",
+    caseSensitive: false,
+  );
+  final Match? starMatch = filenameStar.firstMatch(cd);
+  if (starMatch != null) {
+    return Uri.decodeComponent(starMatch.group(1)!.trim());
+  }
+
+  final RegExp filename = RegExp(
+    r'''filename[^;=\n]*=((['"]).*?\2|[^;\n]*)''',
+    caseSensitive: false,
+  );
+  final Match? match = filename.firstMatch(cd);
+  if (match != null) {
+    var name = match.group(1) ?? '';
+    name = name.replaceAll(RegExp(r'''^["']|["']$'''), '').trim();
+    if (name.isNotEmpty) return name;
+  }
+  return defaultName;
+}
+
+String defaultTechnicianInvoiceFileName(dynamic taskId) {
+  final String id = taskId?.toString().trim() ?? 'task';
+  return 'invoice_$id.pdf';
+}
+
 /// Parses list responses from `/technician/tasks` and `/technician-organ/tasks`.
 List<dynamic> extractTechnicianTaskListPayload(dynamic data) {
   if (data is List) return data;

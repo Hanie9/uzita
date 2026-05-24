@@ -41,6 +41,7 @@ class _TechnicianTaskDetailScreenState
   DateTime? secondVisitDate;
   bool checkTaskSubmitted = false;
   bool _isDownloadingAttachment = false;
+  bool _isDownloadingInvoice = false;
   String? _attachmentPath;
   String? _attachmentName;
 
@@ -285,6 +286,149 @@ class _TechnicianTaskDetailScreenState
         return;
       }
     } catch (_) {}
+  }
+
+  bool _canDownloadInvoice(bool readOnly) {
+    final String taskId = widget.task['id']?.toString() ?? '';
+    if (taskId.isEmpty || isTechnicianUnassigned(widget.task)) return false;
+
+    if (readOnly) {
+      return taskAllowsInvoiceDownload(widget.task);
+    }
+    if (!checkTaskSubmitted) return false;
+    return _hasSubmittedCheckSummaryContent();
+  }
+
+  Future<void> _downloadInvoice() async {
+    if (_isDownloadingInvoice) return;
+
+    final String taskId = widget.task['id']?.toString() ?? '';
+    if (taskId.isEmpty) return;
+
+    final AppLocalizations loc = AppLocalizations.of(context)!;
+    setState(() => _isDownloadingInvoice = true);
+
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('token');
+      await SessionManager().onNetworkRequest();
+
+      final http.Response response = await http.get(
+        Uri.parse(technicianInvoiceDownloadUrl(taskId)),
+        headers: <String, String>{
+          if (token != null && token.isNotEmpty)
+            'Authorization': 'Bearer $token',
+          'Accept': '*/*',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.tech_invoice_download_failed)),
+        );
+        return;
+      }
+
+      final String fileName = parseHttpDownloadFileName(
+        response.headers,
+        defaultName: defaultTechnicianInvoiceFileName(taskId),
+      );
+
+      await saveTaskAttachmentFile(
+        bytes: response.bodyBytes,
+        fileName: fileName,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.tech_invoice_download_failed)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloadingInvoice = false);
+      }
+    }
+  }
+
+  Widget? _buildInvoiceDownloadSection(bool readOnly) {
+    if (!_canDownloadInvoice(readOnly)) return null;
+
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : AppColors.lapisLazuli.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.receipt_long,
+                color: AppColors.lapisLazuli,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                localizations.tech_invoice,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: OutlinedButton.icon(
+              onPressed: _isDownloadingInvoice ? null : _downloadInvoice,
+              icon: _isDownloadingInvoice
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download, color: AppColors.lapisLazuli),
+              label: Text(
+                localizations.tech_download_invoice,
+                style: const TextStyle(
+                  color: AppColors.lapisLazuli,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.lapisLazuli),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildAttachmentSection(AppLocalizations localizations) {
@@ -2856,40 +3000,63 @@ class _TechnicianTaskDetailScreenState
                     ),
                   ),
 
-                // Date Information
-                if (createdAt.isNotEmpty)
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    margin: EdgeInsets.only(top: 20),
-                    decoration: BoxDecoration(
-                      color: AppColors.iranianGray.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 20,
-                          color: AppColors.iranianGray,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          '${localizations.sls_date_register} ${formatDate(createdAt, context)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.iranianGray,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                // Footer: invoice → attachment → registration date
+                Builder(
+                  builder: (context) {
+                    final Widget? invoice =
+                        _buildInvoiceDownloadSection(isReadOnlyDetail);
+                    final bool showAttachment = _showsAttachment;
+                    final bool showDate = createdAt.isNotEmpty;
 
-                if (_showsAttachment) ...[
-                  const SizedBox(height: 20),
-                  _buildAttachmentSection(localizations),
-                ],
+                    if (invoice == null && !showAttachment && !showDate) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Column(
+                      children: [
+                        if (invoice != null) ...[
+                          const SizedBox(height: 20),
+                          invoice,
+                        ],
+                        if (showAttachment) ...[
+                          const SizedBox(height: 20),
+                          _buildAttachmentSection(localizations),
+                        ],
+                        if (showDate) ...[
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.iranianGray.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today,
+                                  size: 20,
+                                  color: AppColors.iranianGray,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${localizations.sls_date_register} ${formatDate(createdAt, context)}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.iranianGray,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
