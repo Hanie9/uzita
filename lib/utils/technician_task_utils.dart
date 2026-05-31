@@ -145,6 +145,12 @@ String technicianInvoiceDownloadUrl(dynamic taskId) {
   return '$apiBaseUrl/technician/$id/invoice/download';
 }
 
+/// GET `/api/technician/{id}/attachment/download` (authenticated, CORS-safe on PWA).
+String technicianAttachmentDownloadUrl(dynamic taskId) {
+  final String id = taskId?.toString().trim() ?? '';
+  return '$apiBaseUrl/technician/$id/attachment/download';
+}
+
 int? _parsedPositiveCostField(dynamic raw) {
   if (raw == null) return null;
   final int? parsed = int.tryParse(raw.toString());

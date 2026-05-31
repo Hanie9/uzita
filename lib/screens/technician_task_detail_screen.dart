@@ -12,6 +12,7 @@ import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/technician_org_assignment.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/utils/task_attachment_download.dart';
+import 'package:uzita/utils/file_download_utils.dart';
 import 'package:uzita/api_config.dart';
 import 'dart:convert';
 
@@ -83,8 +84,8 @@ class _TechnicianTaskDetailScreenState
     if (!_showsAttachment || _isDownloadingAttachment) return;
 
     final AppLocalizations loc = AppLocalizations.of(context)!;
-    final String url = resolveTaskAttachmentUrl(_resolvedAttachmentPath!);
     final String fileName = taskAttachmentDisplayName(_taskForAttachment);
+    final String taskId = widget.task['id']?.toString() ?? '';
 
     setState(() => _isDownloadingAttachment = true);
 
@@ -93,26 +94,57 @@ class _TechnicianTaskDetailScreenState
       final String? token = prefs.getString('token');
       await SessionManager().onNetworkRequest();
 
-      final http.Response response = await http.get(
-        Uri.parse(url),
-        headers: <String, String>{
-          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-          'Accept': '*/*',
-        },
-      );
+      final List<Uri> urls = <Uri>[
+        if (taskId.isNotEmpty)
+          Uri.parse(technicianAttachmentDownloadUrl(taskId)),
+        Uri.parse(resolveTaskAttachmentUrl(_resolvedAttachmentPath!)),
+      ];
+
+      http.Response? response;
+      for (final Uri url in urls) {
+        final http.Response attempt = await http.get(
+          url,
+          headers: <String, String>{
+            if (token != null && token.isNotEmpty)
+              'Authorization': 'Bearer $token',
+            'Accept': '*/*',
+          },
+        );
+        if (attempt.statusCode == 200 && attempt.bodyBytes.isNotEmpty) {
+          response = attempt;
+          break;
+        }
+      }
 
       if (!mounted) return;
 
-      if (response.statusCode != 200) {
+      if (response == null) {
+        await openDownloadUrlInBrowser(
+          resolveTaskAttachmentUrl(_resolvedAttachmentPath!),
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.tech_attachment_opened_in_browser)),
+        );
+        return;
+      }
+
+      if (looksLikeJsonError(response.bodyBytes)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(loc.tech_attachment_download_failed)),
         );
         return;
       }
 
+      final String resolvedName = parseHttpDownloadFileName(
+        response.headers,
+        defaultName: fileName,
+      );
+
       await saveTaskAttachmentFile(
         bytes: response.bodyBytes,
-        fileName: fileName,
+        fileName: resolvedName,
+        contentType: contentTypeFromHeaders(response.headers),
       );
     } catch (_) {
       if (!mounted) return;
@@ -331,14 +363,27 @@ class _TechnicianTaskDetailScreenState
         return;
       }
 
-      final String fileName = parseHttpDownloadFileName(
-        response.headers,
-        defaultName: defaultTechnicianInvoiceFileName(taskId),
+      if (looksLikeJsonError(response.bodyBytes) ||
+          !looksLikePdf(response.bodyBytes)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.tech_invoice_download_failed)),
+        );
+        return;
+      }
+
+      final String fileName = ensureDownloadExtension(
+        parseHttpDownloadFileName(
+          response.headers,
+          defaultName: defaultTechnicianInvoiceFileName(taskId),
+        ),
+        'application/pdf',
       );
 
       await saveTaskAttachmentFile(
         bytes: response.bodyBytes,
         fileName: fileName,
+        contentType: contentTypeFromHeaders(response.headers) ??
+            'application/pdf',
       );
     } catch (_) {
       if (!mounted) return;

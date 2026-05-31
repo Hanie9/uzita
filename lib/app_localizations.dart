@@ -1157,6 +1157,7 @@ class AppLocalizations {
       'tech_attachment': 'Attachment',
       'tech_download_attachment': 'Download file',
       'tech_attachment_download_failed': 'Could not download attachment',
+      'tech_attachment_opened_in_browser': 'File opened in a new browser tab',
       'tech_invoice': 'Invoice',
       'tech_download_invoice': 'Download invoice',
       'tech_invoice_download_failed': 'Could not download invoice',
@@ -2328,6 +2329,7 @@ class AppLocalizations {
       'tech_attachment': 'پیوست',
       'tech_download_attachment': 'دانلود فایل',
       'tech_attachment_download_failed': 'دانلود پیوست انجام نشد',
+      'tech_attachment_opened_in_browser': 'فایل در تب جدید مرورگر باز شد',
       'tech_invoice': 'فاکتور',
       'tech_download_invoice': 'دانلود فاکتور',
       'tech_invoice_download_failed': 'دانلود فاکتور انجام نشد',
@@ -3328,6 +3330,8 @@ class AppLocalizations {
       _getLocalizedValue('tech_download_attachment');
   String get tech_attachment_download_failed =>
       _getLocalizedValue('tech_attachment_download_failed');
+  String get tech_attachment_opened_in_browser =>
+      _getLocalizedValue('tech_attachment_opened_in_browser');
   String get tech_invoice => _getLocalizedValue('tech_invoice');
   String get tech_download_invoice =>
       _getLocalizedValue('tech_download_invoice');
