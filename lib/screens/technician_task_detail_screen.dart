@@ -111,7 +111,9 @@ class _TechnicianTaskDetailScreenState
             'Accept': '*/*',
           },
         );
-        if (attempt.statusCode == 200 && attempt.bodyBytes.isNotEmpty) {
+        if (attempt.statusCode == 200 &&
+            attempt.bodyBytes.isNotEmpty &&
+            !looksLikeJsonError(attempt.bodyBytes)) {
           response = attempt;
           break;
         }
@@ -378,16 +380,20 @@ class _TechnicianTaskDetailScreenState
       if (!mounted) return;
 
       if (response.statusCode != 200) {
+        await openDownloadUrlInBrowser(technicianInvoiceDownloadUrl(taskId));
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.tech_invoice_download_failed)),
+          SnackBar(content: Text(loc.tech_attachment_opened_in_browser)),
         );
         return;
       }
 
       if (looksLikeJsonError(response.bodyBytes) ||
           !looksLikePdf(response.bodyBytes)) {
+        await openDownloadUrlInBrowser(technicianInvoiceDownloadUrl(taskId));
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.tech_invoice_download_failed)),
+          SnackBar(content: Text(loc.tech_attachment_opened_in_browser)),
         );
         return;
       }

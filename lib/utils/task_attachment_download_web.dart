@@ -23,15 +23,7 @@ Future<void> saveTaskAttachmentFile({
     mimeType,
   );
   final String url = html.Url.createObjectUrlFromBlob(blob);
-
-  if (mimeType == 'application/pdf') {
-    final html.WindowBase? opened = html.window.open(url, '_blank');
-    if (opened == null) {
-      _triggerAnchorDownload(url, safeName);
-    }
-  } else {
-    _triggerAnchorDownload(url, safeName);
-  }
+  _triggerAnchorDownload(url, safeName);
 
   Future<void>.delayed(const Duration(seconds: 15), () {
     html.Url.revokeObjectUrl(url);

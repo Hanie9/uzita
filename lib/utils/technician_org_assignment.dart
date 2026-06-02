@@ -167,45 +167,160 @@ Future<void> showOrganTaskAssignmentDialog({
           void Function(void Function()) setStateDialog,
         ) {
           final AppLocalizations dialogLoc = AppLocalizations.of(ctx)!;
+          final ThemeData theme = Theme.of(ctx);
           return AlertDialog(
-            backgroundColor: Theme.of(ctx).cardTheme.color,
-            title: Text(
-              dialogLoc.tech_assign_dialog_title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            backgroundColor: theme.cardTheme.color,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
+            titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            title: Row(
+              children: <Widget>[
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF007BA7).withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_ind_outlined,
+                    color: Color(0xFF007BA7),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    dialogLoc.tech_assign_dialog_title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 17,
+                      color: theme.textTheme.titleLarge?.color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
             content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: assignableUsers.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final Map<String, String> user = assignableUsers[index];
-                  final String username = user['username']!;
-                  final String display = user['display']!;
-                  final bool isChecked = selectedUsername == username;
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    '${assignableUsers.length} ${dialogLoc.tech_assign_dialog_assign}',
+                    style: TextStyle(
+                      color: theme.textTheme.bodyMedium?.color?.withValues(
+                        alpha: 0.7,
+                      ),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: assignableUsers.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (BuildContext context, int index) {
+                        final Map<String, String> user = assignableUsers[index];
+                        final String username = user['username']!;
+                        final String display = user['display']!;
+                        final bool isChecked = selectedUsername == username;
 
-                  return CheckboxListTile(
-                    value: isChecked,
-                    onChanged: (bool? checked) {
-                      setStateDialog(() {
-                        if (checked == true) {
-                          selectedUsername = username;
-                        } else if (selectedUsername == username) {
-                          selectedUsername = null;
-                        }
-                      });
-                    },
-                    title: Text(display),
-                  );
-                },
+                        return Material(
+                          color: isChecked
+                              ? const Color(0xFF007BA7).withValues(alpha: 0.09)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              setStateDialog(() {
+                                selectedUsername = isChecked ? null : username;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isChecked
+                                      ? const Color(0xFF007BA7)
+                                      : theme.dividerColor.withValues(
+                                          alpha: 0.45,
+                                        ),
+                                  width: isChecked ? 1.4 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: <Widget>[
+                                  Icon(
+                                    isChecked
+                                        ? Icons.radio_button_checked
+                                        : Icons.radio_button_off,
+                                    size: 20,
+                                    color: isChecked
+                                        ? const Color(0xFF007BA7)
+                                        : theme.textTheme.bodyMedium?.color
+                                              ?.withValues(alpha: 0.55),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      display,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isChecked
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
+                                        color: theme.textTheme.bodyLarge?.color,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(dialogLoc.tech_assign_dialog_cancel),
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.textTheme.bodyMedium?.color,
+                ),
+                child: Text(
+                  dialogLoc.tech_assign_dialog_cancel,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007BA7),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(
+                    0xFF007BA7,
+                  ).withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                ),
                 onPressed: selectedUsername == null
                     ? null
                     : () async {

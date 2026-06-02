@@ -1594,7 +1594,7 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                             width: 24,
                                             height: 24,
                                           ),
-                                          iconColor: Colors.transparent,
+                                          iconColor: AppColors.lapisLazuli,
                                           title: AppLocalizations.of(
                                             context,
                                           )!.home_user_list,
@@ -1646,7 +1646,7 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                           width: 24,
                                           height: 24,
                                         ),
-                                        iconColor: Colors.transparent,
+                                        iconColor: AppColors.lapisLazuli,
                                         title: AppLocalizations.of(
                                           context,
                                         )!.home_reports,
@@ -1709,7 +1709,7 @@ int missionCount = 0; // For technicians (level 2) and drivers (level 3)
                                           width: 24,
                                           height: 24,
                                         ),
-                                        iconColor: Colors.transparent,
+                                        iconColor: AppColors.lapisLazuli,
                                         title: AppLocalizations.of(
                                           context,
                                         )!.home_settings,
