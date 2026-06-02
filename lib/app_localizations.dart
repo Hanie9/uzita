@@ -1178,6 +1178,9 @@ class AppLocalizations {
       'tech_assigned_to': 'Assigned to',
       'tech_task_customer_section': 'Customer & manager notes',
       'tech_customer_name': 'Customer name',
+      'tech_assigned_org_date': 'Assigned to organization',
+      'tech_assigned_technician_date': 'Assigned to technician',
+      'tech_mission_search_hint': 'Search by customer name, phone, or serial',
       'tech_admin_note': 'Manager note',
       'tech_serial_number_correction': 'Serial number correction (Optional)',
       'tech_serial_number_hint': 'Enter digits only',
@@ -2351,6 +2354,9 @@ class AppLocalizations {
       'tech_assigned_to': 'واگذار شده به',
       'tech_task_customer_section': 'مشتری و یادداشت مدیر',
       'tech_customer_name': 'نام مشتری',
+      'tech_assigned_org_date': 'تاریخ واگذاری به سازمان',
+      'tech_assigned_technician_date': 'تاریخ واگذاری به سرویس‌کار',
+      'tech_mission_search_hint': 'جستجو بر اساس نام مشتری، شماره تماس یا سریال',
       'tech_admin_note': 'یادداشت مدیر',
       'tech_serial_number_correction': 'اصلاح شماره سریال (اختیاری)',
       'tech_serial_number_hint': 'فقط عدد وارد کنید',
@@ -3361,6 +3367,11 @@ class AppLocalizations {
   String get tech_task_customer_section =>
       _getLocalizedValue('tech_task_customer_section');
   String get tech_customer_name => _getLocalizedValue('tech_customer_name');
+  String get tech_assigned_org_date => _getLocalizedValue('tech_assigned_org_date');
+  String get tech_assigned_technician_date =>
+      _getLocalizedValue('tech_assigned_technician_date');
+  String get tech_mission_search_hint =>
+      _getLocalizedValue('tech_mission_search_hint');
   String get tech_admin_note => _getLocalizedValue('tech_admin_note');
   String get tech_serial_number_correction =>
       _getLocalizedValue('tech_serial_number_correction');

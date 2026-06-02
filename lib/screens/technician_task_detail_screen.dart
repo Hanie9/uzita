@@ -43,6 +43,7 @@ class _TechnicianTaskDetailScreenState
   bool checkTaskSubmitted = false;
   bool _isDownloadingAttachment = false;
   bool _isDownloadingInvoice = false;
+  bool _isTechnicianOrgManager = false;
   String? _attachmentPath;
   String? _attachmentName;
 
@@ -254,6 +255,7 @@ class _TechnicianTaskDetailScreenState
   @override
   void initState() {
     super.initState();
+    _loadViewerRole();
     _applyAttachmentFromTask(widget.task);
     isConfirmed = _parseApiBool(widget.task['technician_confirm']);
     firstVisitDateSet = widget.task['first_visit_date'] != null;
@@ -274,6 +276,25 @@ class _TechnicianTaskDetailScreenState
     if (taskSerial != null && taskSerial.isNotEmpty) {
       _serialNumberController.text = taskSerial;
     }
+  }
+
+  Future<void> _loadViewerRole() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int level = prefs.getInt('level') ?? 2;
+    final String organType = (prefs.getString('organ_type') ?? '').toLowerCase();
+    final bool isOrgManager = getLogicalUserLevel(level) == 1 &&
+        organType == 'technician';
+    if (!mounted) return;
+    setState(() {
+      _isTechnicianOrgManager = isOrgManager;
+    });
+  }
+
+  String _assignedToTechnicianRaw() {
+    return (widget.task['date_assigned_to_technician'] ??
+            widget.task['data_assigned_to_technician'] ??
+            '')
+        .toString();
   }
 
   Future<void> _syncAttachmentFromTaskLists() async {
@@ -1989,10 +2010,12 @@ class _TechnicianTaskDetailScreenState
 
     final title = widget.task['title'] ?? '---';
     final description = widget.task['description'] ?? '---';
-    final createdAt = widget.task['created_at'] ?? '';
+    final String createdAt = (widget.task['created_at'] ?? '').toString();
+    final String assignedToTechnicianAt = _assignedToTechnicianRaw();
     final status = widget.task['status']?.toString() ?? 'open';
     final address = widget.task['address'] ?? '---';
     final phone = widget.task['phone'] ?? '---';
+    final String serialNumber = _submittedSerialNumber() ?? '---';
     final urgency = widget.task['urgency']?.toString();
     final String? assignedUsername = resolvedTechnicianUsername(widget.task);
     final bool showOrgAssignAction =
@@ -2363,6 +2386,12 @@ class _TechnicianTaskDetailScreenState
                         localizations.tech_phone,
                         phone,
                         Icons.phone,
+                      ),
+                      SizedBox(height: 12),
+                      _buildInfoRow(
+                        localizations.dls_serial_number,
+                        serialNumber,
+                        Icons.confirmation_number_outlined,
                       ),
                       if (assignedUsername != null &&
                           assignedUsername.isNotEmpty) ...[
@@ -3045,16 +3074,51 @@ class _TechnicianTaskDetailScreenState
                     ),
                   ),
 
-                // Footer: invoice → attachment → registration date
+                // Footer: invoice → attachment → assignment dates
                 Builder(
                   builder: (context) {
                     final Widget? invoice =
                         _buildInvoiceDownloadSection(isReadOnlyDetail);
                     final bool showAttachment = _showsAttachment;
-                    final bool showDate = createdAt.isNotEmpty;
+                    final bool showOrgAssignedDate =
+                        _isTechnicianOrgManager && createdAt.isNotEmpty;
+                    final bool showTechnicianAssignedDate =
+                        assignedToTechnicianAt.trim().isNotEmpty;
 
-                    if (invoice == null && !showAttachment && !showDate) {
+                    if (invoice == null &&
+                        !showAttachment &&
+                        !showOrgAssignedDate &&
+                        !showTechnicianAssignedDate) {
                       return const SizedBox.shrink();
+                    }
+
+                    Widget buildDateCard(String label, String rawDate) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.iranianGray.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 20,
+                              color: AppColors.iranianGray,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$label ${formatDate(rawDate, context)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.iranianGray,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
                     }
 
                     return Column(
@@ -3067,35 +3131,18 @@ class _TechnicianTaskDetailScreenState
                           const SizedBox(height: 20),
                           _buildAttachmentSection(localizations),
                         ],
-                        if (showDate) ...[
+                        if (showOrgAssignedDate) ...[
                           const SizedBox(height: 20),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.iranianGray.withValues(
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.calendar_today,
-                                  size: 20,
-                                  color: AppColors.iranianGray,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${localizations.sls_date_register} ${formatDate(createdAt, context)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.iranianGray,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          buildDateCard(
+                            localizations.tech_assigned_org_date,
+                            createdAt,
+                          ),
+                        ],
+                        if (showTechnicianAssignedDate) ...[
+                          const SizedBox(height: 20),
+                          buildDateCard(
+                            localizations.tech_assigned_technician_date,
+                            assignedToTechnicianAt,
                           ),
                         ],
                       ],

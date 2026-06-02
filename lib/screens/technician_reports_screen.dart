@@ -13,7 +13,6 @@ import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/screens/login_screen.dart';
-import 'package:shamsi_date/shamsi_date.dart';
 
 class TechnicianReportsScreen extends StatefulWidget {
   const TechnicianReportsScreen({super.key});
@@ -34,6 +33,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   bool userActive = true;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchController = TextEditingController();
+  String _reportSearchQuery = '';
 
   @override
   void initState() {
@@ -108,8 +109,17 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
           // Handle paginated response
           final results = data['results'];
           if (results is List) {
+            final List<Map<String, dynamic>> normalized = results
+                .whereType<Map>()
+                .map(
+                  (dynamic item) =>
+                      normalizeTechnicianTask(Map<String, dynamic>.from(item)),
+                )
+                .toList();
+            final List<Map<String, dynamic>> sorted =
+                _sortReportsForRole(normalized);
             setState(() {
-              tasks = results;
+              tasks = sorted;
               isLoading = false;
             });
           } else {
@@ -136,6 +146,88 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         tasks = [];
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _buildTaskSearchHaystack(Map<String, dynamic> task) {
+    final String customerFirst =
+        task['customer_first_name']?.toString().trim() ?? '';
+    final String customerLast =
+        task['customer_last_name']?.toString().trim() ?? '';
+    final String customerName =
+        task['customer_name']?.toString().trim() ?? '';
+    final String phone = task['phone']?.toString().trim() ?? '';
+    final String customerPhone =
+        task['customer_phone']?.toString().trim() ?? '';
+    final String serial = task['serial_number']?.toString().trim() ?? '';
+    final String altSerial = task['serial']?.toString().trim() ?? '';
+    final String deviceSerial =
+        task['device_serial_number']?.toString().trim() ?? '';
+
+    return <String>[
+      '$customerFirst $customerLast',
+      customerName,
+      phone,
+      customerPhone,
+      serial,
+      altSerial,
+      deviceSerial,
+    ].join(' ').toLowerCase();
+  }
+
+  List<Map<String, dynamic>> _filteredReportsForSearch() {
+    final List<Map<String, dynamic>> allReports = tasks
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    final String query = _reportSearchQuery.trim().toLowerCase();
+    if (query.isEmpty) return allReports;
+
+    return allReports
+        .where((task) => !isTechnicianUnassigned(task))
+        .where((task) => _buildTaskSearchHaystack(task).contains(query))
+        .toList();
+  }
+
+  bool get _isTechnicianOrgManager =>
+      userLevel == 1 && organType == 'technician';
+
+  String _assignedToTechnicianRaw(Map<String, dynamic> task) {
+    return (task['date_assigned_to_technician'] ??
+            task['data_assigned_to_technician'] ??
+            '')
+        .toString();
+  }
+
+  DateTime _parseSortableDate(String raw) {
+    final DateTime? parsed = DateTime.tryParse(raw);
+    return parsed ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  List<Map<String, dynamic>> _sortReportsForRole(
+    List<Map<String, dynamic>> source,
+  ) {
+    final List<Map<String, dynamic>> sorted = List<Map<String, dynamic>>.from(
+      source,
+    );
+    sorted.sort((a, b) {
+      final String ra = _isTechnicianOrgManager
+          ? (a['created_at'] ?? '').toString()
+          : _assignedToTechnicianRaw(a);
+      final String rb = _isTechnicianOrgManager
+          ? (b['created_at'] ?? '').toString()
+          : _assignedToTechnicianRaw(b);
+      final DateTime da = _parseSortableDate(ra);
+      final DateTime db = _parseSortableDate(rb);
+      return db.compareTo(da);
+    });
+    return sorted;
   }
 
   void _onNavItemTapped(int index) {
@@ -203,6 +295,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
+    final List<Map<String, dynamic>> visibleReports = _filteredReportsForSearch();
 
     return PopScope(
       canPop: false,
@@ -436,6 +529,105 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                       ),
                     ),
                     // Content
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.black.withValues(alpha: 0.2)
+                                  : AppColors.lapisLazuli.withValues(
+                                      alpha: 0.06,
+                                    ),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                          border: Border.all(
+                            color:
+                                Theme.of(context).brightness ==
+                                    Brightness.dark
+                                ? Colors.grey[700]!
+                                : AppColors.lapisLazuli.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() => _reportSearchQuery = value);
+                          },
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            hintText: localizations.tech_mission_search_hint,
+                            hintStyle: TextStyle(
+                              color: Theme.of(context).textTheme.bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.6),
+                              fontSize: 13,
+                            ),
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.lapisLazuli.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.search,
+                                color: AppColors.lapisLazuli,
+                                size: 20,
+                              ),
+                            ),
+                            suffixIcon: _reportSearchQuery.trim().isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: Icon(
+                                      Icons.close_rounded,
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color,
+                                    ),
+                                    tooltip: localizations.cls_filtering_search,
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _reportSearchQuery = '');
+                                    },
+                                  ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: AppColors.lapisLazuli,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Expanded(
                       child: isLoading
                           ? Center(
@@ -476,7 +668,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                 ],
                               ),
                             )
-                          : tasks.isEmpty
+                          : visibleReports.isEmpty
                           ? _buildEmptyState()
                           : RefreshIndicator(
                               onRefresh: fetchTasks,
@@ -491,35 +683,79 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                       MediaQuery.of(context).padding.bottom +
                                       20,
                                 ),
-                                itemCount: tasks.length,
+                                itemCount: visibleReports.length,
                                 itemBuilder: (context, index) {
-                                  final task = tasks[index];
+                                  final task = visibleReports[index];
                                   final title =
                                       task['title']?.toString() ?? '---';
-                                  final address =
-                                      task['address']?.toString() ?? '---';
                                   final status =
                                       task['status']?.toString() ?? 'open';
-                                  final createdAt =
-                                      task['created_at']?.toString() ?? '';
-                                  // Get price - could be 'hazine', 'sayer_hazine', or 'price'
-                                  final dynamic priceValue =
-                                      task['hazine'] ??
-                                      task['sayer_hazine'] ??
-                                      task['price'];
-                                  final String price = priceValue == null
-                                      ? '---'
-                                      : priceValue.toString();
+                                  final dynamic subjectsRaw = task['subjects'];
+                                  final String subjectsText = subjectsRaw is List
+                                      ? subjectsRaw
+                                          .map((e) => e.toString())
+                                          .where((s) => s.isNotEmpty)
+                                          .join('، ')
+                                      : '';
+                                  final String customerFirstName =
+                                      task['customer_first_name']
+                                              ?.toString()
+                                              .trim() ??
+                                          '';
+                                  final String customerLastName =
+                                      task['customer_last_name']
+                                              ?.toString()
+                                              .trim() ??
+                                          '';
+                                  final String customerName =
+                                      ('$customerFirstName $customerLastName')
+                                              .trim()
+                                              .isEmpty
+                                          ? ((task['customer_name']
+                                                          ?.toString()
+                                                          .trim()
+                                                          .isNotEmpty ??
+                                                      false)
+                                                  ? task['customer_name']
+                                                      .toString()
+                                                      .trim()
+                                                  : '---')
+                                          : ('$customerFirstName $customerLastName')
+                                              .trim();
+                                  final String customerPhone =
+                                      (task['phone']
+                                                  ?.toString()
+                                                  .trim()
+                                                  .isNotEmpty ??
+                                              false)
+                                          ? task['phone'].toString().trim()
+                                          : ((task['customer_phone']
+                                                          ?.toString()
+                                                          .trim()
+                                                          .isNotEmpty ??
+                                                      false)
+                                                  ? task['customer_phone']
+                                                      .toString()
+                                                      .trim()
+                                                  : '---');
+                                  final String customerAddress =
+                                      (task['address']
+                                                  ?.toString()
+                                                  .trim()
+                                                  .isNotEmpty ??
+                                              false)
+                                          ? task['address'].toString().trim()
+                                          : '---';
+                                  final String subjectText =
+                                      subjectsText.isNotEmpty
+                                      ? subjectsText
+                                      : title;
 
                                   return GestureDetector(
                                     onTap: () {
                                       final Map<String, dynamic> taskToSend =
                                           normalizeTechnicianTask(
-                                        task is Map<String, dynamic>
-                                            ? Map<String, dynamic>.from(task)
-                                            : Map<String, dynamic>.from(
-                                                task as Map,
-                                              ),
+                                        Map<String, dynamic>.from(task),
                                       );
                                       taskToSend['from_reports_list'] = true;
                                       Navigator.pushNamed(
@@ -607,160 +843,41 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                                  // Title
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    textDirection:
-                                                        Directionality.of(
-                                                          context,
-                                                        ),
-                                                    children: [
-                                                      Icon(
-                                                        Icons.title,
-                                                        size: 14,
-                                                        color: AppColors
-                                                            .lapisLazuli,
-                                                      ),
-                                                      SizedBox(width: 4),
-                                                      Flexible(
-                                                        child: Text(
-                                                          title,
-                                                          style: TextStyle(
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color:
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .textTheme
-                                                                    .bodyMedium
-                                                                    ?.color,
-                                                          ),
-                                                          textDirection:
-                                                              Directionality.of(
-                                                                context,
-                                                              ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
+                                                  _buildReportInfoRow(
+                                                    context: context,
+                                                    icon: Icons.person_outline,
+                                                    label: localizations
+                                                        .tech_customer_name,
+                                                    value: customerName,
                                                   ),
-                                                  SizedBox(height: 4),
-                                                  // Price
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    textDirection:
-                                                        Directionality.of(
-                                                          context,
-                                                        ),
-                                                    children: [
-                                                      Icon(
-                                                        Icons.attach_money,
-                                                        size: 14,
-                                                        color: AppColors
-                                                            .iranianGray,
-                                                      ),
-                                                      SizedBox(width: 4),
-                                                      Flexible(
-                                                        child: Text(
-                                                          price == '---'
-                                                              ? '---'
-                                                              : '$price ${localizations.sls_tooman}',
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            color: AppColors
-                                                                .iranianGray,
-                                                          ),
-                                                          textDirection:
-                                                              Directionality.of(
-                                                                context,
-                                                              ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
+                                                  const SizedBox(height: 6),
+                                                  _buildReportInfoRow(
+                                                    context: context,
+                                                    icon: Icons.phone_outlined,
+                                                    label:
+                                                        localizations.tech_phone,
+                                                    value: customerPhone,
                                                   ),
-                                                  SizedBox(height: 4),
-                                                  // Address
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    textDirection:
-                                                        Directionality.of(
-                                                          context,
-                                                        ),
-                                                    children: [
-                                                      Icon(
-                                                        Icons.location_on,
-                                                        size: 14,
-                                                        color: AppColors
-                                                            .iranianGray,
-                                                      ),
-                                                      SizedBox(width: 4),
-                                                      Flexible(
-                                                        child: Text(
-                                                          address,
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: AppColors
-                                                                .iranianGray,
-                                                          ),
-                                                          textDirection:
-                                                              Directionality.of(
-                                                                context,
-                                                              ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
+                                                  const SizedBox(height: 6),
+                                                  _buildReportInfoRow(
+                                                    context: context,
+                                                    icon: Icons
+                                                        .location_on_outlined,
+                                                    label: localizations
+                                                        .tech_address,
+                                                    value: customerAddress,
                                                   ),
-                                                  SizedBox(height: 4),
-                                                  // Date
-                                                  if (createdAt.isNotEmpty)
-                                                    Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      textDirection:
-                                                          Directionality.of(
-                                                            context,
-                                                          ),
-                                                      children: [
-                                                        Icon(
-                                                          Icons.calendar_today,
-                                                          size: 14,
-                                                          color: AppColors
-                                                              .iranianGray,
-                                                        ),
-                                                        SizedBox(width: 4),
-                                                        Flexible(
-                                                          child: Text(
-                                                            _formatDate(
-                                                              createdAt,
-                                                            ),
-                                                            style: TextStyle(
-                                                              fontSize: 12,
-                                                              color: AppColors
-                                                                  .iranianGray,
-                                                            ),
-                                                            textDirection:
-                                                                Directionality.of(
-                                                                  context,
-                                                                ),
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
+                                                  const SizedBox(height: 6),
+                                                  _buildReportInfoRow(
+                                                    context: context,
+                                                    icon: Icons.label_outline,
+                                                    label:
+                                                        localizations.sss_subject,
+                                                    value: subjectText.isEmpty
+                                                        ? '---'
+                                                        : subjectText,
+                                                    maxLines: 2,
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -933,20 +1050,6 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     );
   }
 
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      if (Localizations.localeOf(context).languageCode == 'en') {
-        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-      } else {
-        final j = Jalali.fromDateTime(date);
-        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
-      }
-    } catch (_) {
-      return dateString;
-    }
-  }
-
   String _getStatusText(String status, AppLocalizations localizations) {
     switch (status) {
       case 'open':
@@ -975,6 +1078,35 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
       default:
         return Colors.orange;
     }
+  }
+
+  Widget _buildReportInfoRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+    int maxLines = 1,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      textDirection: Directionality.of(context),
+      children: [
+        Icon(icon, size: 14, color: AppColors.iranianGray),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            '$label: $value',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+            textDirection: Directionality.of(context),
+            overflow: TextOverflow.ellipsis,
+            maxLines: maxLines,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildEmptyState() {

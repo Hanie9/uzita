@@ -11,7 +11,6 @@ import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
-import 'package:shamsi_date/shamsi_date.dart';
 import 'package:uzita/utils/technician_org_assignment.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 
@@ -37,6 +36,8 @@ class _TechnicianOrganTasksScreenState
   bool userActive = true;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchController = TextEditingController();
+  String _missionSearchQuery = '';
 
   @override
   void initState() {
@@ -82,22 +83,23 @@ class _TechnicianOrganTasksScreenState
   Map<String, dynamic> _normalizeOrgTask(Map<String, dynamic> raw) =>
       normalizeTechnicianTask(raw);
 
-  /// Unassigned org missions first (assign button), then the rest.
-  List<Map<String, dynamic>> _sortOrgTasksNeedingAssignmentFirst(
-    List<Map<String, dynamic>> tasks,
+  DateTime _parseSortableDate(String raw) {
+    final DateTime? parsed = DateTime.tryParse(raw);
+    return parsed ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  List<Map<String, dynamic>> _sortByCreatedAtDesc(
+    List<Map<String, dynamic>> source,
   ) {
-    final List<Map<String, dynamic>> needsAssign = <Map<String, dynamic>>[];
-    final List<Map<String, dynamic>> others = <Map<String, dynamic>>[];
-
-    for (final Map<String, dynamic> task in tasks) {
-      if (canAssignOrgTask(task)) {
-        needsAssign.add(task);
-      } else {
-        others.add(task);
-      }
-    }
-
-    return <Map<String, dynamic>>[...needsAssign, ...others];
+    final List<Map<String, dynamic>> sorted = List<Map<String, dynamic>>.from(
+      source,
+    );
+    sorted.sort((a, b) {
+      final DateTime da = _parseSortableDate((a['created_at'] ?? '').toString());
+      final DateTime db = _parseSortableDate((b['created_at'] ?? '').toString());
+      return db.compareTo(da);
+    });
+    return sorted;
   }
 
   Future<void> _fetchTasks() async {
@@ -194,9 +196,13 @@ class _TechnicianOrganTasksScreenState
       }
 
       if (mounted) {
+        final List<Map<String, dynamic>> sortedOrg =
+            _sortByCreatedAtDesc(parsedOrgTasks);
+        final List<Map<String, dynamic>> sortedPersonal =
+            _sortByCreatedAtDesc(parsedPersonalTasks);
         setState(() {
-          orgTasks = _sortOrgTasksNeedingAssignmentFirst(parsedOrgTasks);
-          personalTasks = parsedPersonalTasks;
+          orgTasks = sortedOrg;
+          personalTasks = sortedPersonal;
         });
       }
     } catch (_) {
@@ -212,6 +218,80 @@ class _TechnicianOrganTasksScreenState
         });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _buildTaskSearchHaystack(Map<String, dynamic> task) {
+    final String customerFirst =
+        task['customer_first_name']?.toString().trim() ?? '';
+    final String customerLast =
+        task['customer_last_name']?.toString().trim() ?? '';
+    final String customerName =
+        task['customer_name']?.toString().trim() ?? '';
+    final String phone = task['phone']?.toString().trim() ?? '';
+    final String customerPhone =
+        task['customer_phone']?.toString().trim() ?? '';
+    final String serial = task['serial_number']?.toString().trim() ?? '';
+    final String altSerial = task['serial']?.toString().trim() ?? '';
+    final String deviceSerial =
+        task['device_serial_number']?.toString().trim() ?? '';
+
+    return <String>[
+      '$customerFirst $customerLast',
+      customerName,
+      phone,
+      customerPhone,
+      serial,
+      altSerial,
+      deviceSerial,
+    ].join(' ').toLowerCase();
+  }
+
+  List<Map<String, dynamic>> _applyMissionSearch(
+    List<Map<String, dynamic>> source,
+  ) {
+    final String query = _missionSearchQuery.trim().toLowerCase();
+    if (query.isEmpty) return source;
+
+    return source
+        .where((task) => !isTechnicianUnassigned(task))
+        .where((task) => _buildTaskSearchHaystack(task).contains(query))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _buildListEntries(
+    List<Map<String, dynamic>> filteredOrgTasks,
+    List<Map<String, dynamic>> filteredPersonalTasks,
+  ) {
+    final List<Map<String, dynamic>> entries = <Map<String, dynamic>>[];
+    if (filteredOrgTasks.isNotEmpty) {
+      entries.add(<String, dynamic>{'type': 'header', 'section': 'org'});
+      for (final Map<String, dynamic> task in filteredOrgTasks) {
+        entries.add(<String, dynamic>{
+          'type': 'task',
+          'section': 'org',
+          'task': task,
+          'canAssign': canAssignOrgTask(task),
+        });
+      }
+    }
+    if (filteredPersonalTasks.isNotEmpty) {
+      entries.add(<String, dynamic>{'type': 'header', 'section': 'personal'});
+      for (final Map<String, dynamic> task in filteredPersonalTasks) {
+        entries.add(<String, dynamic>{
+          'type': 'task',
+          'section': 'personal',
+          'task': task,
+          'canAssign': false,
+        });
+      }
+    }
+    return entries;
   }
 
   void _onNavItemTapped(int index) {
@@ -263,7 +343,7 @@ class _TechnicianOrganTasksScreenState
       onAssigned: (String username, Map<String, dynamic> updated) {
         if (!mounted) return;
         setState(() {
-          orgTasks = _sortOrgTasksNeedingAssignmentFirst(
+          orgTasks = _sortByCreatedAtDesc(
             orgTasks.map((Map<String, dynamic> t) {
               if ((t['id'] ?? '').toString() == (task['id'] ?? '').toString()) {
                 final Map<String, dynamic> merged =
@@ -288,13 +368,8 @@ class _TechnicianOrganTasksScreenState
     final localizations = AppLocalizations.of(context)!;
     final String taskId = (task['id'] ?? '').toString();
     final String title = (task['title'] ?? '---').toString();
-    final String? urgency = task['urgency']?.toString();
     final String status =
         (task['status'] ?? 'open').toString().toLowerCase();
-    final String createdAt = task['created_at']?.toString() ?? '';
-    final dynamic priceValue =
-        task['hazine'] ?? task['sayer_hazine'] ?? task['price'];
-    final String price = priceValue == null ? '---' : priceValue.toString();
     final dynamic subjectsRaw = task['subjects'];
     final String subjectsText = subjectsRaw is List
         ? subjectsRaw
@@ -302,6 +377,28 @@ class _TechnicianOrganTasksScreenState
             .where((s) => s.isNotEmpty)
             .join('، ')
         : '';
+    final String customerFirstName =
+        task['customer_first_name']?.toString().trim() ?? '';
+    final String customerLastName =
+        task['customer_last_name']?.toString().trim() ?? '';
+    final String customerName = ('$customerFirstName $customerLastName')
+            .trim()
+            .isEmpty
+        ? ((task['customer_name']?.toString().trim().isNotEmpty ?? false)
+              ? task['customer_name'].toString().trim()
+              : '---')
+        : ('$customerFirstName $customerLastName').trim();
+    final String customerPhone =
+        (task['phone']?.toString().trim().isNotEmpty ?? false)
+        ? task['phone'].toString().trim()
+        : ((task['customer_phone']?.toString().trim().isNotEmpty ?? false)
+              ? task['customer_phone'].toString().trim()
+              : '---');
+    final String customerAddress =
+        (task['address']?.toString().trim().isNotEmpty ?? false)
+        ? task['address'].toString().trim()
+        : '---';
+    final String subjectText = subjectsText.isNotEmpty ? subjectsText : title;
 
     void openTaskDetail() {
       final Map<String, dynamic> taskToSend =
@@ -379,141 +476,34 @@ class _TechnicianOrganTasksScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      textDirection: Directionality.of(context),
-                      children: [
-                        const Icon(
-                          Icons.title,
-                          size: 14,
-                          color: AppColors.lapisLazuli,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color,
-                            ),
-                            textDirection: Directionality.of(context),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    _buildMissionInfoRow(
+                      context: context,
+                      icon: Icons.person_outline,
+                      label: localizations.tech_customer_name,
+                      value: customerName,
                     ),
-                    if (subjectsText.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        textDirection: Directionality.of(context),
-                        children: [
-                          const Icon(
-                            Icons.label_outline,
-                            size: 14,
-                            color: AppColors.iranianGray,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              subjectsText,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.iranianGray,
-                              ),
-                              textDirection: Directionality.of(context),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    // Urgency
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      textDirection: Directionality.of(context),
-                      children: [
-                        const Icon(
-                          Icons.priority_high,
-                          size: 14,
-                          color: AppColors.iranianGray,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            urgency != null
-                                ? _getUrgencyText(urgency, localizations)
-                                : '---',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.iranianGray,
-                            ),
-                            textDirection: Directionality.of(context),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    _buildMissionInfoRow(
+                      context: context,
+                      icon: Icons.phone_outlined,
+                      label: localizations.tech_phone,
+                      value: customerPhone,
                     ),
-                    const SizedBox(height: 4),
-                    // Price
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      textDirection: Directionality.of(context),
-                      children: [
-                        const Icon(
-                          Icons.attach_money,
-                          size: 14,
-                          color: AppColors.iranianGray,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            price == '---'
-                                ? '---'
-                                : '$price ${localizations.sls_tooman}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.iranianGray,
-                            ),
-                            textDirection: Directionality.of(context),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    _buildMissionInfoRow(
+                      context: context,
+                      icon: Icons.location_on_outlined,
+                      label: localizations.tech_address,
+                      value: customerAddress,
                     ),
-                    const SizedBox(height: 4),
-                    // Date
-                    if (createdAt.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        textDirection: Directionality.of(context),
-                        children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: AppColors.iranianGray,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              _formatDate(createdAt),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.iranianGray,
-                              ),
-                              textDirection: Directionality.of(context),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 6),
+                    _buildMissionInfoRow(
+                      context: context,
+                      icon: Icons.label_outline,
+                      label: localizations.sss_subject,
+                      value: subjectText.isEmpty ? '---' : subjectText,
+                      maxLines: 2,
+                    ),
                   ],
                 ),
               ),
@@ -553,33 +543,6 @@ class _TechnicianOrganTasksScreenState
     );
   }
 
-  String _getUrgencyText(String? urgency, AppLocalizations localizations) {
-    switch (urgency) {
-      case 'normal':
-        return localizations.tech_urgency_normal;
-      case 'urgent':
-        return localizations.tech_urgency_urgent;
-      case 'very_urgent':
-        return localizations.tech_urgency_very_urgent;
-      default:
-        return urgency ?? '---';
-    }
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final DateTime date = DateTime.parse(dateString);
-      if (Localizations.localeOf(context).languageCode == 'en') {
-        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-      } else {
-        final Jalali j = Jalali.fromDateTime(date);
-        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
-      }
-    } catch (_) {
-      return dateString;
-    }
-  }
-
   String _getStatusText(String status, AppLocalizations localizations) {
     switch (status) {
       case 'open':
@@ -608,6 +571,39 @@ class _TechnicianOrganTasksScreenState
       default:
         return Colors.orange;
     }
+  }
+
+  Widget _buildMissionInfoRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+    int maxLines = 1,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      textDirection: Directionality.of(context),
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: AppColors.iranianGray,
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            '$label: $value',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+            textDirection: Directionality.of(context),
+            overflow: TextOverflow.ellipsis,
+            maxLines: maxLines,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildEmptyState() {
@@ -785,6 +781,16 @@ class _TechnicianOrganTasksScreenState
     final ui = UiScale(context);
     final theme = Theme.of(context);
     final double screenHeight = MediaQuery.of(context).size.height;
+    final List<Map<String, dynamic>> filteredOrgTasks =
+        _applyMissionSearch(orgTasks);
+    final List<Map<String, dynamic>> filteredPersonalTasks =
+        _applyMissionSearch(personalTasks);
+    final List<Map<String, dynamic>> listEntries = _buildListEntries(
+      filteredOrgTasks,
+      filteredPersonalTasks,
+    );
+    final bool hasAnyFiltered =
+        filteredOrgTasks.isNotEmpty || filteredPersonalTasks.isNotEmpty;
 
     return PopScope(
       canPop: false,
@@ -891,66 +897,131 @@ class _TechnicianOrganTasksScreenState
           : Column(
               children: [
                 _buildHeader(ui, localizations),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ui.scale(base: 16, min: 12, max: 20),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.1),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        setState(() => _missionSearchQuery = value);
+                      },
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: localizations.tech_mission_search_hint,
+                        hintStyle: TextStyle(
+                          color: theme.textTheme.bodyMedium?.color?.withValues(
+                            alpha: 0.6,
+                          ),
+                          fontSize: 13,
+                        ),
+                        prefixIcon: Container(
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.search,
+                            color: AppColors.lapisLazuli,
+                            size: 20,
+                          ),
+                        ),
+                        suffixIcon: _missionSearchQuery.trim().isEmpty
+                            ? null
+                            : IconButton(
+                                icon: Icon(
+                                  Icons.close_rounded,
+                                  color: theme.textTheme.bodyMedium?.color,
+                                ),
+                                tooltip: localizations.cls_filtering_search,
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _missionSearchQuery = '');
+                                },
+                              ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: AppColors.lapisLazuli,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : orgTasks.isEmpty && personalTasks.isEmpty
+                      : !hasAnyFiltered
                       ? _buildEmptyState()
                       : RefreshIndicator(
                           onRefresh: _fetchTasks,
                           color: AppColors.lapisLazuli,
-                          child: ListView(
+                          child: ListView.builder(
                             padding: EdgeInsets.only(
                               left: ui.scale(base: 16, min: 12, max: 20),
                               right: ui.scale(base: 16, min: 12, max: 20),
                               bottom: 12,
                             ),
-                            children: [
-                              if (orgTasks.isNotEmpty) ...[
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: ui.scale(base: 4, min: 2, max: 6),
+                            itemCount: listEntries.length,
+                            itemBuilder: (context, index) {
+                              final Map<String, dynamic> entry =
+                                  listEntries[index];
+                              if (entry['type'] == 'header') {
+                                final bool isOrg = entry['section'] == 'org';
+                                return Padding(
+                                  key: ValueKey(
+                                    'header_${isOrg ? 'org' : 'personal'}_$index',
                                   ),
-                                  child: Text(
-                                    localizations
-                                        .organ_missions_need_assignment,
-                                    style:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ) ??
-                                        TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.color,
-                                        ),
-                                  ),
-                            ),
-                                ...orgTasks.map(
-                                  (Map<String, dynamic> task) {
-                                    final bool canAssign = canAssignOrgTask(task);
-
-                                    return _buildTaskCard(
-                                      task,
-                                      isOrgTask: true,
-                                      canAssign: canAssign,
-                                    );
-                                  },
-                                ),
-                              ],
-                              if (personalTasks.isNotEmpty) ...[
-                                Padding(
                                   padding: EdgeInsets.symmetric(
                                     vertical: ui.scale(
-                                      base: 8,
-                                      min: 6,
-                                      max: 10,
+                                      base: isOrg ? 4 : 8,
+                                      min: isOrg ? 2 : 6,
+                                      max: isOrg ? 6 : 10,
                                     ),
                                   ),
                                   child: Text(
-                                    localizations.my_missions,
+                                    isOrg
+                                        ? localizations
+                                              .organ_missions_need_assignment
+                                        : localizations.my_missions,
                                     style:
                                         Theme.of(
                                           context,
@@ -964,17 +1035,29 @@ class _TechnicianOrganTasksScreenState
                                           ).textTheme.bodyLarge?.color,
                                         ),
                                   ),
+                                );
+                              }
+
+                              final Map<String, dynamic> task =
+                                  Map<String, dynamic>.from(
+                                    entry['task'] as Map<String, dynamic>,
+                                  );
+                              final bool isOrg = entry['section'] == 'org';
+                              final bool canAssign =
+                                  (entry['canAssign'] as bool?) ?? false;
+                              final String id =
+                                  (task['id'] ?? 'noid').toString();
+                              return KeyedSubtree(
+                                key: ValueKey(
+                                  '${isOrg ? 'org' : 'personal'}_task_${id}_$index',
                                 ),
-                                ...personalTasks.map(
-                                  (Map<String, dynamic> task) =>
-                                      _buildTaskCard(
-                                    task,
-                                    isOrgTask: false,
-                                    canAssign: false,
-                                  ),
+                                child: _buildTaskCard(
+                                  task,
+                                  isOrgTask: isOrg,
+                                  canAssign: canAssign,
                                 ),
-                              ],
-                            ],
+                              );
+                            },
                           ),
                         ),
                 ),
