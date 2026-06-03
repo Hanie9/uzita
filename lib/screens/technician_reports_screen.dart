@@ -45,6 +45,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final bool isModir = prefs.getBool('modir') ?? false;
+    if (!mounted) return;
     setState(() {
       userLevel = prefs.getInt('level') ?? 2;
       organType = (prefs.getString('organ_type') ?? '').toLowerCase();
@@ -69,6 +70,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   }
 
   Future<void> fetchTasks() async {
+    if (!mounted) return;
     setState(() {
       isLoading = true;
     });
@@ -78,6 +80,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
+        if (!mounted) return;
         setState(() {
           isLoading = false;
         });
@@ -85,6 +88,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
       }
 
       await SessionManager().onNetworkRequest();
+      if (!mounted) return;
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
@@ -96,6 +100,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
           'Connection': 'close',
         },
       );
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final body = utf8.decode(response.bodyBytes);
@@ -141,6 +146,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
         tasks = [];

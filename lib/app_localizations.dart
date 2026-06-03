@@ -1181,6 +1181,12 @@ class AppLocalizations {
       'tech_assigned_org_date': 'Assigned to organization',
       'tech_assigned_technician_date': 'Assigned to technician',
       'tech_mission_search_hint': 'Search by customer name, phone, or serial',
+      'tech_customer_service_history': 'Customer service history',
+      'tech_customer_history_empty': 'No service history for this customer',
+      'tech_customer_history_error': 'Could not load service history',
+      'tech_customer_history_retry': 'Try again',
+      'tech_customer_history_current': 'Current mission',
+      'tech_customer_history_no_phone': 'Customer phone number is not available',
       'tech_admin_note': 'Manager note',
       'tech_serial_number_correction': 'Serial number correction (Optional)',
       'tech_serial_number_hint': 'Enter digits only',
@@ -2357,6 +2363,12 @@ class AppLocalizations {
       'tech_assigned_org_date': 'تاریخ واگذاری به سازمان',
       'tech_assigned_technician_date': 'تاریخ واگذاری به سرویس‌کار',
       'tech_mission_search_hint': 'جستجو بر اساس نام مشتری، شماره تماس یا سریال',
+      'tech_customer_service_history': 'تاریخچه سرویس مشتری',
+      'tech_customer_history_empty': 'تاریخچه سرویسی برای این مشتری یافت نشد',
+      'tech_customer_history_error': 'بارگذاری تاریخچه سرویس انجام نشد',
+      'tech_customer_history_retry': 'تلاش مجدد',
+      'tech_customer_history_current': 'ماموریت فعلی',
+      'tech_customer_history_no_phone': 'شماره تماس مشتری موجود نیست',
       'tech_admin_note': 'یادداشت مدیر',
       'tech_serial_number_correction': 'اصلاح شماره سریال (اختیاری)',
       'tech_serial_number_hint': 'فقط عدد وارد کنید',
@@ -3372,6 +3384,18 @@ class AppLocalizations {
       _getLocalizedValue('tech_assigned_technician_date');
   String get tech_mission_search_hint =>
       _getLocalizedValue('tech_mission_search_hint');
+  String get tech_customer_service_history =>
+      _getLocalizedValue('tech_customer_service_history');
+  String get tech_customer_history_empty =>
+      _getLocalizedValue('tech_customer_history_empty');
+  String get tech_customer_history_error =>
+      _getLocalizedValue('tech_customer_history_error');
+  String get tech_customer_history_retry =>
+      _getLocalizedValue('tech_customer_history_retry');
+  String get tech_customer_history_current =>
+      _getLocalizedValue('tech_customer_history_current');
+  String get tech_customer_history_no_phone =>
+      _getLocalizedValue('tech_customer_history_no_phone');
   String get tech_admin_note => _getLocalizedValue('tech_admin_note');
   String get tech_serial_number_correction =>
       _getLocalizedValue('tech_serial_number_correction');

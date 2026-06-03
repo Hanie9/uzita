@@ -102,6 +102,26 @@ class _TechnicianOrganTasksScreenState
     return sorted;
   }
 
+  /// Org missions: unassigned first, then assigned by [created_at] descending.
+  List<Map<String, dynamic>> _sortOrgTasksForManager(
+    List<Map<String, dynamic>> source,
+  ) {
+    final List<Map<String, dynamic>> sorted = List<Map<String, dynamic>>.from(
+      source,
+    );
+    sorted.sort((Map<String, dynamic> a, Map<String, dynamic> b) {
+      final bool aUnassigned = isTechnicianUnassigned(a);
+      final bool bUnassigned = isTechnicianUnassigned(b);
+      if (aUnassigned != bUnassigned) {
+        return aUnassigned ? -1 : 1;
+      }
+      final DateTime da = _parseSortableDate((a['created_at'] ?? '').toString());
+      final DateTime db = _parseSortableDate((b['created_at'] ?? '').toString());
+      return db.compareTo(da);
+    });
+    return sorted;
+  }
+
   Future<void> _fetchTasks() async {
     setState(() {
       isLoading = true;
@@ -197,7 +217,7 @@ class _TechnicianOrganTasksScreenState
 
       if (mounted) {
         final List<Map<String, dynamic>> sortedOrg =
-            _sortByCreatedAtDesc(parsedOrgTasks);
+            _sortOrgTasksForManager(parsedOrgTasks);
         final List<Map<String, dynamic>> sortedPersonal =
             _sortByCreatedAtDesc(parsedPersonalTasks);
         setState(() {
@@ -343,7 +363,7 @@ class _TechnicianOrganTasksScreenState
       onAssigned: (String username, Map<String, dynamic> updated) {
         if (!mounted) return;
         setState(() {
-          orgTasks = _sortByCreatedAtDesc(
+          orgTasks = _sortOrgTasksForManager(
             orgTasks.map((Map<String, dynamic> t) {
               if ((t['id'] ?? '').toString() == (task['id'] ?? '').toString()) {
                 final Map<String, dynamic> merged =

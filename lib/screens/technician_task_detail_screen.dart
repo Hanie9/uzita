@@ -10,6 +10,7 @@ import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/technician_org_assignment.dart';
+import 'package:uzita/utils/technician_customer_history.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/utils/task_attachment_download.dart';
 import 'package:uzita/utils/file_download_utils.dart';
@@ -658,6 +659,37 @@ class _TechnicianTaskDetailScreenState
         widget.task['customer_last_name']?.toString().trim() ?? '';
     if (first.isEmpty && last.isEmpty) return null;
     return [first, last].where((String s) => s.isNotEmpty).join(' ');
+  }
+
+  String? _customerPhoneForHistory() {
+    final String raw = (widget.task['phone'] ??
+            widget.task['customer_phone'] ??
+            '')
+        .toString()
+        .trim();
+    if (raw.isEmpty || raw == '---') return null;
+    final String digits = normalizeCustomerPhoneForHistory(raw);
+    return digits.isEmpty ? null : digits;
+  }
+
+  void _openCustomerServiceHistory() {
+    final String? phone = _customerPhoneForHistory();
+    if (phone == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.tech_customer_history_no_phone,
+          ),
+        ),
+      );
+      return;
+    }
+    showCustomerServiceHistorySheet(
+      context: context,
+      customerPhone: phone,
+      customerName: _customerFullName(),
+      currentTaskId: widget.task['id']?.toString(),
+    );
   }
 
   String? _adminNoteText() {
@@ -1514,16 +1546,27 @@ class _TechnicianTaskDetailScreenState
     super.dispose();
   }
 
-  String formatDate(String? dateString, BuildContext context) {
+  String formatDate(
+    String? dateString,
+    BuildContext context, {
+    bool includeTime = false,
+  }) {
     if (dateString == null || dateString.isEmpty) return '---';
     try {
-      DateTime date = DateTime.parse(dateString);
+      final DateTime date = DateTime.parse(dateString).toLocal();
+      final String datePart;
       if (Localizations.localeOf(context).languageCode == 'en') {
-        return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+        datePart =
+            '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
       } else {
-        final j = Jalali.fromDateTime(date);
-        return '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
+        final Jalali j = Jalali.fromDateTime(date);
+        datePart =
+            '${j.year}/${j.month.toString().padLeft(2, '0')}/${j.day.toString().padLeft(2, '0')}';
       }
+      if (!includeTime) return datePart;
+      final String timePart =
+          '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      return '$datePart $timePart';
     } catch (e) {
       return dateString;
     }
@@ -2393,6 +2436,41 @@ class _TechnicianTaskDetailScreenState
                         phone,
                         Icons.phone,
                       ),
+                      if (_isTechnicianOrgManager) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _openCustomerServiceHistory,
+                            icon: const Icon(
+                              Icons.history,
+                              size: 20,
+                              color: AppColors.lapisLazuli,
+                            ),
+                            label: Text(
+                              localizations.tech_customer_service_history,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: AppColors.lapisLazuli.withValues(
+                                  alpha: 0.45,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 12),
                       _buildInfoRow(
                         localizations.dls_serial_number,
@@ -3115,7 +3193,7 @@ class _TechnicianTaskDetailScreenState
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '$label ${formatDate(rawDate, context)}',
+                              '$label ${formatDate(rawDate, context, includeTime: true)}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.iranianGray,
