@@ -151,6 +151,36 @@ String technicianAttachmentDownloadUrl(dynamic taskId) {
   return '$apiBaseUrl/technician/$id/attachment/download';
 }
 
+/// Ordered fetch URLs for attachment download (PWA-safe `/api/...` first).
+List<String> technicianAttachmentFetchUrls(Map<String, dynamic> task) {
+  final String? path = taskAttachmentPath(task);
+  final String id = (task['id'] ?? '').toString().trim();
+  final List<String> urls = <String>[];
+  final Set<String> seen = <String>{};
+
+  void add(String url) {
+    final String trimmed = url.trim();
+    if (trimmed.isEmpty || !seen.add(trimmed)) return;
+    urls.add(trimmed);
+  }
+
+  if (path != null && path.isNotEmpty) {
+    add(resolveTaskAttachmentUrl(path));
+    add('$apiBaseUrl/technician-organ/tasks$path');
+    add('$apiBaseUrl/technician/tasks$path');
+    if (path.startsWith('/')) {
+      add('$apiOrigin$path');
+    }
+  }
+
+  if (id.isNotEmpty) {
+    add(technicianAttachmentDownloadUrl(id));
+    add('$apiBaseUrl/technician-organ/tasks/$id/attachment/download');
+  }
+
+  return urls;
+}
+
 int? _parsedPositiveCostField(dynamic raw) {
   if (raw == null) return null;
   final int? parsed = int.tryParse(raw.toString());

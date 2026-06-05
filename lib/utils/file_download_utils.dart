@@ -71,6 +71,20 @@ bool looksLikeJsonError(List<int> bytes) {
   return first == 0x7b || first == 0x5b; // { or [
 }
 
+bool looksLikeHtmlError(List<int> bytes) {
+  if (bytes.isEmpty) return false;
+  final String head = String.fromCharCodes(
+    bytes.take(32),
+  ).toLowerCase();
+  return head.contains('<!doctype') ||
+      head.contains('<html') ||
+      head.trimLeft().startsWith('<');
+}
+
+bool looksLikeDownloadErrorBody(List<int> bytes) {
+  return looksLikeJsonError(bytes) || looksLikeHtmlError(bytes);
+}
+
 String resolveDownloadMimeType({
   required String fileName,
   required List<int> bytes,

@@ -15,6 +15,7 @@ import 'package:uzita/screens/user_register_screen.dart';
 import 'package:uzita/screens/admin_register_screen.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/utils/responsive_layout.dart';
 import 'package:uzita/api_config.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -543,17 +544,14 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         body: SafeArea(
           child: SingleChildScrollView(
-            // Add this wrapper
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 520),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: horizontalPadding,
-                    right: horizontalPadding,
-                    bottom: screenHeight * 0.06,
-                  ),
-                  child: Column(
+            child: ResponsiveAuthBody(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: horizontalPadding,
+                  right: horizontalPadding,
+                  bottom: screenHeight * 0.06,
+                ),
+                child: Column(
                     children: [
                       Column(
                         children: [
@@ -1311,7 +1309,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 }

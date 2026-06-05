@@ -23,7 +23,15 @@ Future<void> saveTaskAttachmentFile({
     mimeType,
   );
   final String url = html.Url.createObjectUrlFromBlob(blob);
-  _triggerAnchorDownload(url, safeName);
+
+  final bool viewInBrowser = mimeType == 'application/pdf' ||
+      mimeType.startsWith('image/');
+
+  if (viewInBrowser) {
+    html.window.open(url, '_blank');
+  } else {
+    _triggerAnchorDownload(url, safeName);
+  }
 
   Future<void>.delayed(const Duration(seconds: 15), () {
     html.Url.revokeObjectUrl(url);
@@ -39,7 +47,7 @@ void _triggerAnchorDownload(String blobUrl, String fileName) {
   anchor.remove();
 }
 
-/// Last resort on PWA when authenticated fetch is blocked (e.g. CORS on /media/).
+/// Last resort on PWA when authenticated fetch is blocked.
 Future<void> openDownloadUrlInBrowser(String url) async {
   final String trimmed = url.trim();
   if (trimmed.isEmpty) return;

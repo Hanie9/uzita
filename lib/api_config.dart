@@ -36,6 +36,11 @@ String resolveTaskAttachmentUrl(String attachment) {
     ).toString();
   }
 
+  // PWA needs `/api/media/...` (CORS on ellaro); bare `/media/...` on origin is blocked.
+  if (trimmed.startsWith('/media/')) {
+    return '$apiBaseUrl$trimmed';
+  }
+
   if (trimmed.startsWith('/')) {
     return '$apiOrigin$trimmed';
   }

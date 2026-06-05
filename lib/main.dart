@@ -28,8 +28,12 @@ import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/api_config.dart';
+import 'package:uzita/utils/responsive_layout.dart';
 
 final String baseUrl = apiBaseUrl;
+
+/// Root navigator for actions outside the route tree (e.g. session timeout).
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -101,6 +105,7 @@ class _MyAppState extends State<MyApp> {
 ''');
 
         return MaterialApp(
+          navigatorKey: rootNavigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'Uzita',
           theme: settings.currentTheme,
@@ -152,7 +157,9 @@ class _MyAppState extends State<MyApp> {
               ),
               child: Directionality(
                 textDirection: textDirection,
-                child: SessionTimeoutWrapper(child: child!),
+                child: PwaResponsiveShell(
+                  child: SessionTimeoutWrapper(child: child!),
+                ),
               ),
             );
           },
@@ -244,10 +251,15 @@ class _SessionTimeoutWrapperState extends State<SessionTimeoutWrapper>
   }
 
   void _navigateToLogin() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final NavigatorState? navigator = rootNavigatorKey.currentState;
+      if (navigator == null) return;
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    });
   }
 
   @override

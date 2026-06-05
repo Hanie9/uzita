@@ -5,6 +5,7 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/utils/responsive_layout.dart';
 
 Widget buildRegisterForm({
   required String title,
@@ -107,20 +108,18 @@ Widget buildRegisterForm({
           resizeToAvoidBottomInset: true, // Make sure this is true
           body: SafeArea(
             child: SingleChildScrollView(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 520),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: horizontalPadding,
-                      right: horizontalPadding,
-                      bottom: ui.scale(
-                        base: screenHeight * 0.04, // Reduced from 0.06
-                        min: 16.0,
-                        max: 32.0,
-                      ),
+              child: ResponsiveAuthBody(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: horizontalPadding,
+                    right: horizontalPadding,
+                    bottom: ui.scale(
+                      base: screenHeight * 0.04, // Reduced from 0.06
+                      min: 16.0,
+                      max: 32.0,
                     ),
-                    child: Column(
+                  ),
+                  child: Column(
                       children: [
                         Stack(
                           children: [
@@ -983,8 +982,7 @@ Widget buildRegisterForm({
               ),
             ),
           ),
-        ),
-      );
+        );
     },
   );
 }

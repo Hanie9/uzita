@@ -87,7 +87,6 @@ class _TechnicianTaskDetailScreenState
 
     final AppLocalizations loc = AppLocalizations.of(context)!;
     final String fileName = taskAttachmentDisplayName(_taskForAttachment);
-    final String taskId = widget.task['id']?.toString() ?? '';
 
     setState(() => _isDownloadingAttachment = true);
 
@@ -96,44 +95,34 @@ class _TechnicianTaskDetailScreenState
       final String? token = prefs.getString('token');
       await SessionManager().onNetworkRequest();
 
-      final List<Uri> urls = <Uri>[
-        if (taskId.isNotEmpty)
-          Uri.parse(technicianAttachmentDownloadUrl(taskId)),
-        Uri.parse(resolveTaskAttachmentUrl(_resolvedAttachmentPath!)),
-      ];
+      final List<String> fetchUrls =
+          technicianAttachmentFetchUrls(_taskForAttachment);
 
       http.Response? response;
-      for (final Uri url in urls) {
-        final http.Response attempt = await http.get(
-          url,
-          headers: <String, String>{
-            if (token != null && token.isNotEmpty)
-              'Authorization': 'Bearer $token',
-            'Accept': '*/*',
-          },
-        );
-        if (attempt.statusCode == 200 &&
-            attempt.bodyBytes.isNotEmpty &&
-            !looksLikeJsonError(attempt.bodyBytes)) {
-          response = attempt;
-          break;
+      for (final String url in fetchUrls) {
+        try {
+          final http.Response attempt = await http.get(
+            Uri.parse(url),
+            headers: <String, String>{
+              if (token != null && token.isNotEmpty)
+                'Authorization': 'Bearer $token',
+              'Accept': '*/*',
+            },
+          );
+          if (attempt.statusCode == 200 &&
+              attempt.bodyBytes.isNotEmpty &&
+              !looksLikeDownloadErrorBody(attempt.bodyBytes)) {
+            response = attempt;
+            break;
+          }
+        } catch (_) {
+          continue;
         }
       }
 
       if (!mounted) return;
 
       if (response == null) {
-        await openDownloadUrlInBrowser(
-          resolveTaskAttachmentUrl(_resolvedAttachmentPath!),
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(loc.tech_attachment_opened_in_browser)),
-        );
-        return;
-      }
-
-      if (looksLikeJsonError(response.bodyBytes)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(loc.tech_attachment_download_failed)),
         );
@@ -389,7 +378,7 @@ class _TechnicianTaskDetailScreenState
         return;
       }
 
-      if (looksLikeJsonError(response.bodyBytes) ||
+      if (looksLikeDownloadErrorBody(response.bodyBytes) ||
           !looksLikePdf(response.bodyBytes)) {
         await openDownloadUrlInBrowser(technicianInvoiceDownloadUrl(taskId));
         if (!mounted) return;
