@@ -53,5 +53,7 @@
 	<string>برای انتخاب تصویر از گالری نیاز به دسترسی به عکس‌ها است.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>برای ذخیره‌سازی تصویر نیاز به اجازه افزودن به گالری است.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>برای نمایش موقعیت شما روی مسیر و مسیریابی مرحله‌به‌مرحله به موقعیت‌یاب نیاز داریم.</string>
 </dict>
 </plist>

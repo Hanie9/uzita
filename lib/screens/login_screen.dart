@@ -26,6 +26,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  /// Prevents overlapping [LocalAuthentication.authenticate] calls (Android: auth_in_progress).
+  static bool _biometricAuthInProgress = false;
+
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
@@ -41,12 +44,39 @@ class _LoginScreenState extends State<LoginScreen> {
   bool authAvailable = false; // biometrics or device credentials (PIN/Pattern)
   bool _autoPrompted =
       false; // ensure auto biometric prompt happens once per visit
+  bool _handledLoginRouteArgs = false;
 
   @override
   void initState() {
     super.initState();
     _loadRememberedUsername();
     _initializeBiometricsState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _handleLoginRouteArgsOnce();
+  }
+
+  void _handleLoginRouteArgsOnce() {
+    if (_handledLoginRouteArgs) return;
+    final routeArgs = ModalRoute.of(context)?.settings.arguments;
+    if (routeArgs is! Map) return;
+    _handledLoginRouteArgs = true;
+
+    final prefillUsername = (routeArgs['prefill_username'] ?? '').toString();
+    final prefillPassword = (routeArgs['prefill_password'] ?? '').toString();
+    final autoLogin = routeArgs['auto_login'] == true;
+    if (prefillUsername.isEmpty || prefillPassword.isEmpty) return;
+
+    usernameController.text = prefillUsername;
+    passwordController.text = prefillPassword;
+    if (autoLogin && !loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !loading) login();
+      });
+    }
   }
 
   Future<void> _loadRememberedUsername() async {
@@ -114,10 +144,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!authAvailable) return;
     if (!hasStoredCredentials) return;
     _autoPrompted = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !biometricLoading) {
-        _tryBiometricLogin();
-      }
+    // Delay so the activity is fully ready and we don't race with a manual tap.
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
+      if (biometricLoading || _biometricAuthInProgress) return;
+      if (!authAvailable || !hasStoredCredentials) return;
+      _tryBiometricLogin();
     });
   }
 
@@ -335,6 +367,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _tryBiometricLogin() async {
+    if (biometricLoading || _biometricAuthInProgress) return;
+
     final isSupported = await _localAuth.isDeviceSupported();
     if (!isSupported) {
       setState(
@@ -355,6 +389,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+
+    _biometricAuthInProgress = true;
     setState(() {
       biometricLoading = true;
       error = '';
@@ -405,6 +441,10 @@ class _LoginScreenState extends State<LoginScreen> {
         await login();
       }
     } on PlatformException catch (e) {
+      // Another authenticate() is already active — not a user-facing error.
+      if (e.code == 'auth_in_progress') {
+        return;
+      }
       String message = AppLocalizations.of(context)!.login_error_fingerprint;
       switch (e.code) {
         case 'NotAvailable':
@@ -437,8 +477,10 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(
         () => error = AppLocalizations.of(context)!.login_fingerprint_error,
       );
+    } finally {
+      _biometricAuthInProgress = false;
+      if (mounted) setState(() => biometricLoading = false);
     }
-    if (mounted) setState(() => biometricLoading = false);
   }
 
   @override
@@ -518,24 +560,6 @@ class _LoginScreenState extends State<LoginScreen> {
       min: 12.0,
       max: 24.0,
     );
-
-    // Handle optional prefill from splash biometric flow
-    final routeArgs = ModalRoute.of(context)?.settings.arguments;
-    if (routeArgs is Map) {
-      final prefillUsername = (routeArgs['prefill_username'] ?? '').toString();
-      final prefillPassword = (routeArgs['prefill_password'] ?? '').toString();
-      final autoLogin = routeArgs['auto_login'] == true;
-      if (prefillUsername.isNotEmpty && prefillPassword.isNotEmpty) {
-        usernameController.text = prefillUsername;
-        passwordController.text = prefillPassword;
-        if (autoLogin && !loading) {
-          // trigger login once per open
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !loading) login();
-          });
-        }
-      }
-    }
 
     return Directionality(
       textDirection: TextDirection.ltr,
@@ -957,6 +981,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onTap:
                                       (loading ||
                                           biometricLoading ||
+                                          _biometricAuthInProgress ||
                                           !hasStoredCredentials)
                                       ? null
                                       : _tryBiometricLogin,
@@ -964,6 +989,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     opacity:
                                         (loading ||
                                             biometricLoading ||
+                                            _biometricAuthInProgress ||
                                             !hasStoredCredentials)
                                         ? 0.5
                                         : 1.0,

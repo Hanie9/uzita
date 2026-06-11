@@ -54,3 +54,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local API keys (copy from secrets.local.sh.example)
+secrets.local.sh
+lib/generated/neshan_secrets.g.dart
+android/app/src/main/res/raw/neshan.license

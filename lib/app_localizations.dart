@@ -1229,6 +1229,54 @@ class AppLocalizations {
       'driver_select_load': 'Select Load',
       'driver_select_load_success': 'Load selected successfully',
       'driver_select_load_error': 'Error selecting load',
+      'driver_navigate': 'Navigation',
+      'driver_route_loading': 'Finding route...',
+      'driver_route_error': 'Could not get route',
+      'driver_geocode_origin_error': 'Origin address not found',
+      'driver_geocode_destination_error': 'Destination address not found',
+      'driver_route_distance': 'Distance',
+      'driver_route_duration': 'Estimated time',
+      'driver_route_steps': 'Route steps',
+      'driver_route_open_map': 'Open in Neshan Maps',
+      'driver_route_open_map_error': 'Could not open map app',
+      'driver_route_invalid_address': 'Origin or destination address is missing',
+      'driver_route_map_error': 'Could not load map',
+      'driver_route_map_key_missing':
+          'Map key is not configured. Set NESHAN_MAP_KEY at build time.',
+      'driver_route_arrival': 'Arrival time',
+      'driver_route_remaining': 'Remaining',
+      'driver_route_your_location': 'Your location',
+      'driver_route_follow_driver': 'Follow me',
+      'driver_route_following': 'Following',
+      'driver_route_location_off':
+          'Enable location to see your position on the route step by step.',
+      'driver_route_location_denied': 'Location permission denied',
+      'driver_route_location_disabled': 'Location services are turned off',
+      'driver_route_enable_location': 'Enable location',
+      'driver_route_step_completed': 'Completed',
+      'driver_route_step_current': 'Current step',
+      'driver_route_osm_fallback':
+          'Neshan unavailable — showing route via OpenStreetMap (no live traffic).',
+      'driver_route_start_navigation': 'Start driving',
+      'driver_route_stop_navigation': 'End navigation',
+      'driver_route_navigation_hint':
+          'When ready, tap Start driving above. Turn-by-turn guidance will appear on the map.',
+      'driver_route_then': 'Then',
+      'driver_neshan_error_service_list':
+          'Enable these services on your service key in Neshan panel: Geocoding Plus, Routing with traffic, and Static arc map.',
+      'driver_neshan_error_key_type':
+          'Wrong key type for this API. Use your service key (service.xxx) with Geocoding Plus, Routing, and Static arc map enabled.',
+      'driver_neshan_error_whitelist':
+          'Neshan key scope mismatch. On Android use the server proxy: deploy deploy/backend_neshan_proxy/ on device-control.liara.run, set NESHAN_API_KEY there, and whitelist device-control.liara.run in Neshan panel. Also fix package to com.example.uzita (not uzha).',
+      'driver_neshan_error_key_not_found': 'Invalid or missing Neshan API key.',
+      'driver_neshan_error_limit': 'Neshan API usage limit exceeded.',
+      'driver_neshan_error_rate': 'Too many Neshan API requests. Please wait.',
+      'driver_neshan_need_web_map_key':
+          'A separate Web map key (web.xxx) is required. Create it in the Neshan panel and set NESHAN_MAP_KEY at build time.',
+      'driver_neshan_key_missing':
+          'Neshan API key is missing. Run ./scripts/build_apk.sh or ./scripts/sync_neshan_secrets.sh before building.',
+      'driver_neshan_error_backend_proxy':
+          'Neshan server proxy is not active. Deploy deploy/backend_neshan_proxy/ on device-control.liara.run and set NESHAN_API_KEY in Liara.',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
@@ -2415,6 +2463,54 @@ class AppLocalizations {
       'driver_select_load': 'انتخاب بار',
       'driver_select_load_success': 'بار با موفقیت انتخاب شد',
       'driver_select_load_error': 'خطا در انتخاب بار',
+      'driver_navigate': 'مسیریابی',
+      'driver_route_loading': 'در حال دریافت مسیر...',
+      'driver_route_error': 'خطا در دریافت مسیر',
+      'driver_geocode_origin_error': 'آدرس مبدا یافت نشد',
+      'driver_geocode_destination_error': 'آدرس مقصد یافت نشد',
+      'driver_route_distance': 'مسافت',
+      'driver_route_duration': 'زمان تقریبی',
+      'driver_route_steps': 'مراحل مسیر',
+      'driver_route_open_map': 'باز کردن در نقشه نشان',
+      'driver_route_open_map_error': 'امکان باز کردن نقشه وجود ندارد',
+      'driver_route_invalid_address': 'آدرس مبدا یا مقصد وارد نشده است',
+      'driver_route_map_error': 'خطا در بارگذاری نقشه',
+      'driver_route_map_key_missing':
+          'کلید نقشه تنظیم نشده است. NESHAN_MAP_KEY را هنگام بیلد وارد کنید.',
+      'driver_route_arrival': 'زمان رسیدن',
+      'driver_route_remaining': 'باقی‌مانده',
+      'driver_route_your_location': 'موقعیت شما',
+      'driver_route_follow_driver': 'دنبال‌کردن',
+      'driver_route_following': 'در حال دنبال‌کردن',
+      'driver_route_location_off':
+          'برای نمایش موقعیت شما روی مسیر مرحله‌به‌مرحله، موقعیت‌یاب را روشن کنید.',
+      'driver_route_location_denied': 'دسترسی موقعیت رد شد',
+      'driver_route_location_disabled': 'موقعیت‌یاب دستگاه خاموش است',
+      'driver_route_enable_location': 'فعال‌سازی موقعیت',
+      'driver_route_step_completed': 'انجام‌شده',
+      'driver_route_step_current': 'مرحله فعلی',
+      'driver_route_osm_fallback':
+          'نشان در دسترس نبود — مسیر از OpenStreetMap نمایش داده می‌شود (بدون ترافیک زنده).',
+      'driver_route_start_navigation': 'شروع رانندگی',
+      'driver_route_stop_navigation': 'پایان مسیریابی',
+      'driver_route_navigation_hint':
+          'وقتی آمادهٔ حرکت شدید «شروع رانندگی» را بالا بزنید. راهنمای گام‌به‌گام روی نقشه نمایش داده می‌شود.',
+      'driver_route_then': 'سپس',
+      'driver_neshan_error_service_list':
+          'در پنل نشان برای کلید service این سرویس‌ها را فعال کنید: تبدیل آدرس به نقطه پلاس، مسیریابی با ترافیک، نقشه استاتیک منحنی‌دار.',
+      'driver_neshan_error_key_type':
+          'نوع کلید با API هم‌خوانی ندارد. از کلید service با سرویس‌های پلاس، مسیریابی و نقشه استاتیک منحنی استفاده کنید.',
+      'driver_neshan_error_whitelist':
+          'محدودیت کلید نشان. روی اندروید از پراکسی سرور استفاده کنید: deploy/backend_neshan_proxy/ را روی device-control.liara.run نصب کنید، NESHAN_API_KEY را در Liara بگذارید و device-control.liara.run را در پنل نشان مجاز کنید. پکیج را هم com.example.uzita (نه uzha) بگذارید.',
+      'driver_neshan_error_key_not_found': 'کلید API نشان نامعتبر یا وارد نشده است.',
+      'driver_neshan_error_limit': 'سقف استفاده از API نشان پر شده است.',
+      'driver_neshan_error_rate': 'درخواست‌های زیاد به API نشان. کمی صبر کنید.',
+      'driver_neshan_need_web_map_key':
+          'برای نمایش نقشه کلید Web جداگانه (web.xxx) لازم است. از پنل نشان بگیرید و NESHAN_MAP_KEY را هنگام بیلد تنظیم کنید.',
+      'driver_neshan_key_missing':
+          'کلید API نشان تنظیم نشده. قبل از بیلد ./scripts/build_apk.sh یا ./scripts/sync_neshan_secrets.sh را اجرا کنید.',
+      'driver_neshan_error_backend_proxy':
+          'پراکسی سرور نشان فعال نیست. deploy/backend_neshan_proxy/ را روی device-control.liara.run نصب کنید و NESHAN_API_KEY را در Liara تنظیم کنید.',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
@@ -3453,6 +3549,77 @@ class AppLocalizations {
       _getLocalizedValue('driver_select_load_success');
   String get driver_select_load_error =>
       _getLocalizedValue('driver_select_load_error');
+  String get driver_navigate => _getLocalizedValue('driver_navigate');
+  String get driver_route_loading =>
+      _getLocalizedValue('driver_route_loading');
+  String get driver_route_error => _getLocalizedValue('driver_route_error');
+  String get driver_geocode_origin_error =>
+      _getLocalizedValue('driver_geocode_origin_error');
+  String get driver_geocode_destination_error =>
+      _getLocalizedValue('driver_geocode_destination_error');
+  String get driver_route_distance =>
+      _getLocalizedValue('driver_route_distance');
+  String get driver_route_duration =>
+      _getLocalizedValue('driver_route_duration');
+  String get driver_route_steps => _getLocalizedValue('driver_route_steps');
+  String get driver_route_open_map =>
+      _getLocalizedValue('driver_route_open_map');
+  String get driver_route_open_map_error =>
+      _getLocalizedValue('driver_route_open_map_error');
+  String get driver_route_invalid_address =>
+      _getLocalizedValue('driver_route_invalid_address');
+  String get driver_route_map_error =>
+      _getLocalizedValue('driver_route_map_error');
+  String get driver_route_map_key_missing =>
+      _getLocalizedValue('driver_route_map_key_missing');
+  String get driver_route_arrival => _getLocalizedValue('driver_route_arrival');
+  String get driver_route_remaining =>
+      _getLocalizedValue('driver_route_remaining');
+  String get driver_route_your_location =>
+      _getLocalizedValue('driver_route_your_location');
+  String get driver_route_follow_driver =>
+      _getLocalizedValue('driver_route_follow_driver');
+  String get driver_route_following =>
+      _getLocalizedValue('driver_route_following');
+  String get driver_route_location_off =>
+      _getLocalizedValue('driver_route_location_off');
+  String get driver_route_location_denied =>
+      _getLocalizedValue('driver_route_location_denied');
+  String get driver_route_location_disabled =>
+      _getLocalizedValue('driver_route_location_disabled');
+  String get driver_route_enable_location =>
+      _getLocalizedValue('driver_route_enable_location');
+  String get driver_route_step_completed =>
+      _getLocalizedValue('driver_route_step_completed');
+  String get driver_route_step_current =>
+      _getLocalizedValue('driver_route_step_current');
+  String get driver_route_osm_fallback =>
+      _getLocalizedValue('driver_route_osm_fallback');
+  String get driver_route_start_navigation =>
+      _getLocalizedValue('driver_route_start_navigation');
+  String get driver_route_stop_navigation =>
+      _getLocalizedValue('driver_route_stop_navigation');
+  String get driver_route_navigation_hint =>
+      _getLocalizedValue('driver_route_navigation_hint');
+  String get driver_route_then => _getLocalizedValue('driver_route_then');
+  String get driver_neshan_error_service_list =>
+      _getLocalizedValue('driver_neshan_error_service_list');
+  String get driver_neshan_error_key_type =>
+      _getLocalizedValue('driver_neshan_error_key_type');
+  String get driver_neshan_error_whitelist =>
+      _getLocalizedValue('driver_neshan_error_whitelist');
+  String get driver_neshan_error_key_not_found =>
+      _getLocalizedValue('driver_neshan_error_key_not_found');
+  String get driver_neshan_error_limit =>
+      _getLocalizedValue('driver_neshan_error_limit');
+  String get driver_neshan_error_rate =>
+      _getLocalizedValue('driver_neshan_error_rate');
+  String get driver_neshan_need_web_map_key =>
+      _getLocalizedValue('driver_neshan_need_web_map_key');
+  String get driver_neshan_key_missing =>
+      _getLocalizedValue('driver_neshan_key_missing');
+  String get driver_neshan_error_backend_proxy =>
+      _getLocalizedValue('driver_neshan_error_backend_proxy');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

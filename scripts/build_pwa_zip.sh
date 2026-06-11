@@ -14,12 +14,31 @@ ZIP="$ROOT/uzita-pwa-build.zip"
 BUILD="${BUILD_NUMBER:-$(date +%s)}"
 
 cd "$ROOT"
+
+./scripts/sync_neshan_secrets.sh
+
+if [[ -f "$ROOT/secrets.local.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$ROOT/secrets.local.sh"
+fi
+
+DART_DEFINES=()
+if [[ -n "${NESHAN_API_KEY:-}" ]]; then
+  DART_DEFINES+=(--dart-define="NESHAN_API_KEY=${NESHAN_API_KEY}")
+else
+  echo "Warning: NESHAN_API_KEY not set (create secrets.local.sh from secrets.local.sh.example)"
+fi
+if [[ -n "${NESHAN_MAP_KEY:-}" ]]; then
+  DART_DEFINES+=(--dart-define="NESHAN_MAP_KEY=${NESHAN_MAP_KEY}")
+fi
+
 echo "Building web with base-href: ${BASE_HREF}, build: ${BUILD}"
 
 flutter build web --release \
   --base-href "$BASE_HREF" \
   --build-name="$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//')" \
-  --build-number="$BUILD"
+  --build-number="$BUILD" \
+  "${DART_DEFINES[@]}"
 
 export BUILD_NUMBER="$BUILD"
 ./scripts/stamp_pwa_version.sh

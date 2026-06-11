@@ -21,3 +21,6 @@
 # Keep Flutter deferred components references
 -keep class io.flutter.embedding.engine.deferredcomponents.** { *; }
 -keep class io.flutter.embedding.android.FlutterPlayStoreSplitApplication { *; }
+
+# Neshan Android SDK
+-keep class org.neshan.** { *; }

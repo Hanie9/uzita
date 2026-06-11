@@ -4,13 +4,20 @@ allprojects {
     if (offlineRepo.exists()) {
       maven(url = offlineRepo.toURI())
     }
+    maven {
+      url = uri("https://maven.neshan.org/artifactory/public-maven")
+      content {
+        includeGroup("neshan-android-sdk")
+      }
+    }
     maven(url = "https://maven.myket.ir")
     maven(url = "https://maven.tarazerp.ir")
     maven(url = "https://maven.aliyun.com/repository/google")
     maven(url = "https://maven.aliyun.com/repository/gradle-plugin")
     maven(url = "https://maven.aliyun.com/repository/public")
-    google()
-    mavenCentral()
+        maven(url = "https://maven.neshan.org/artifactory/public-maven")
+        google()
+        mavenCentral()
   }
 }
 

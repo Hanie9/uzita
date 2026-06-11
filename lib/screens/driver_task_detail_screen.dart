@@ -5,8 +5,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/screens/driver_route_screen.dart';
 import 'package:uzita/services.dart';
+import 'package:uzita/services/driver_routing_service.dart';
+import 'package:uzita/services/neshan_models.dart';
+import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/neshan_degraded_route.dart';
+import 'package:uzita/utils/neshan_errors.dart';
 import 'package:uzita/utils/ui_scale.dart';
 
 class DriverTaskDetailScreen extends StatefulWidget {
@@ -25,6 +31,7 @@ class DriverTaskDetailScreen extends StatefulWidget {
 
 class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
   bool isLoading = false;
+  bool isRouting = false;
   late Map<String, dynamic> taskData;
 
   @override
@@ -162,6 +169,100 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     if (value == null) return false;
     final text = value.toString().trim();
     return text.isNotEmpty && text.toLowerCase() != 'null';
+  }
+
+  bool _isValidAddress(String value) {
+    final trimmed = value.trim();
+    return trimmed.isNotEmpty && trimmed != '---';
+  }
+
+  Future<void> _startNavigation() async {
+    final localizations = AppLocalizations.of(context)!;
+    final mabda = (taskData['mabda'] ?? '---').toString();
+    final maghsad = (taskData['maghsad'] ?? '---').toString();
+
+    if (!_isValidAddress(mabda) || !_isValidAddress(maghsad)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.driver_route_invalid_address),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    const routingService = DriverRoutingService();
+
+    setState(() => isRouting = true);
+
+    try {
+      final originResult = await routingService.geocodeAddress(mabda);
+      final destinationResult = await routingService.geocodeAddress(
+        maghsad,
+        city: originResult.city,
+        province: originResult.province,
+        searchCenter: originResult.location,
+      );
+      NeshanRoute route;
+      String? routeWarning;
+
+      try {
+        route = await routingService.getRoute(
+          origin: originResult.location,
+          destination: destinationResult.location,
+        );
+      } on NeshanApiException catch (e) {
+        route = buildDegradedDirectRoute(
+          origin: originResult.location,
+          destination: destinationResult.location,
+        );
+        routeWarning = localizeNeshanError(localizations, e);
+      }
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DriverRouteScreen(
+            originAddress: mabda,
+            destinationAddress: maghsad,
+            origin: originResult.location,
+            destination: destinationResult.location,
+            route: route,
+          ),
+        ),
+      );
+
+      if (!mounted || routeWarning == null) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(routeWarning),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    } on NeshanApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizeNeshanError(localizations, e)),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localizations.driver_route_error),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isRouting = false);
+      }
+    }
   }
 
   Future<void> _completeTask() async {
@@ -481,6 +582,46 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   title: localizations.driver_maghsad,
                   value: maghsad,
                 ),
+                if (_isValidAddress(mabda) && _isValidAddress(maghsad)) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: isRouting ? null : _startNavigation,
+                      icon: isRouting
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            )
+                          : const Icon(Icons.directions, size: 20),
+                      label: Text(
+                        isRouting
+                            ? localizations.driver_route_loading
+                            : localizations.driver_navigate,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.lapisLazuli,
+                        side: BorderSide(
+                          color: AppColors.lapisLazuli.withValues(alpha: 0.5),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: ui.scale(base: 14, min: 12, max: 16),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(
                   context,

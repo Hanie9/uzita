@@ -19,6 +19,7 @@ pluginManagement {
         maven(url = "https://maven.aliyun.com/repository/google")
         maven(url = "https://maven.aliyun.com/repository/gradle-plugin")
         maven(url = "https://maven.aliyun.com/repository/public")
+        maven(url = "https://maven.neshan.org/artifactory/public-maven")
         // Avoid gradlePluginPortal(): it still resolves artifacts via plugins-artifacts.gradle.org.
         google()
         mavenCentral()
