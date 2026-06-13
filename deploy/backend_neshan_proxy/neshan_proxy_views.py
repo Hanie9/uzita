@@ -23,6 +23,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
 NESHAN_API_KEY = os.environ.get("NESHAN_API_KEY", "").strip()
+# Neshan service keys validate whitelisted domain via Referer on server-side calls.
+NESHAN_REFERER = os.environ.get(
+    "NESHAN_REFERER", "https://device-control.liara.run/"
+).strip()
 GEOCODING_URL = "https://api.neshan.org/geocoding/v1/plus"
 DIRECTION_URL = "https://api.neshan.org/v4/direction"
 STATIC_ARC_URL = "https://api.neshan.org/v4/static/arc"
@@ -30,10 +34,13 @@ TIMEOUT = 30
 
 
 def _neshan_headers() -> dict[str, str]:
-    return {
+    headers = {
         "Api-Key": NESHAN_API_KEY,
         "Content-Type": "application/json",
     }
+    if NESHAN_REFERER:
+        headers["Referer"] = NESHAN_REFERER
+    return headers
 
 
 def _proxy_response(upstream: requests.Response) -> HttpResponse:

@@ -14,6 +14,7 @@
    - `device-control.liara.run`
    - `ellaro.liara.run`
    - **نه** `com.example.uzita` (این نام پکیج است، نه دامنه)
+5. پراکسی هنگام فراخوانی نشان باید `Referer: https://device-control.liara.run/` بفرستد (بدون آن خطای 484 می‌گیرید). نسخه فعلی `neshan_proxy_views.py` این هدر را دارد.
 
 ## تست
 
