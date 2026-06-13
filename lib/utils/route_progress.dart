@@ -129,6 +129,26 @@ List<LatLng> polylineFromIndex(List<LatLng> polyline, int startIndex) {
   return polyline.sublist(index);
 }
 
+/// True when [point] is plausibly on/near the planned route (not emulator default GPS).
+bool isNearRoutePolyline({
+  required LatLng point,
+  required List<LatLng> polyline,
+  required LatLng origin,
+  required LatLng destination,
+  double maxMeters = 25000,
+}) {
+  if (distanceMeters(point, origin) <= maxMeters) return true;
+  if (distanceMeters(point, destination) <= maxMeters) return true;
+  if (polyline.isEmpty) return false;
+
+  var closest = double.infinity;
+  for (final routePoint in polyline) {
+    final d = distanceMeters(point, routePoint);
+    if (d < closest) closest = d;
+  }
+  return closest <= maxMeters;
+}
+
 /// Bearing along the route polyline at the closest point to [point].
 double? bearingAlongPolyline(List<LatLng> polyline, LatLng point) {
   if (polyline.length < 2) return null;

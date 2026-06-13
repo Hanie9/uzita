@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/neshan_android_channel.dart';
 import 'package:uzita/services/neshan_backend_client.dart';
@@ -9,8 +8,8 @@ import 'package:uzita/utils/neshan_config.dart';
 
 /// Geocoding + routing with live traffic — Neshan only.
 ///
-/// Geocoding: Android SDK search → backend proxy → Geocoding Plus REST.
-/// Routing: Android SDK → backend proxy → v4/direction REST.
+/// Geocoding: backend Geocoding Plus → REST Geocoding Plus (no Android search).
+/// Routing: backend proxy → Android SDK → v4/direction REST.
 class DriverRoutingService {
   const DriverRoutingService();
 
@@ -27,19 +26,6 @@ class DriverRoutingService {
     NeshanLatLng? searchCenter,
     NeshanGeocodingExtent? searchExtent,
   }) async {
-    if (_android.isAvailable) {
-      try {
-        return await _android.geocodeAddress(
-          address,
-          searchCenter: searchCenter,
-        );
-      } on PlatformException {
-        // Fall through to backend / REST.
-      } on NeshanApiException {
-        // Fall through to backend / REST.
-      }
-    }
-
     final fromBackend = await _tryBackend(
       (token) => _backend.geocodeAddress(
         address,
@@ -78,24 +64,6 @@ class DriverRoutingService {
     bool avoidOddEvenZone = false,
     double? bearing,
   }) async {
-    if (_android.isAvailable) {
-      try {
-        return await _android.getRoute(
-          origin: origin,
-          destination: destination,
-          vehicleType: vehicleType,
-          alternative: alternative,
-          waypoints: waypoints,
-          avoidTrafficZone: avoidTrafficZone,
-          avoidOddEvenZone: avoidOddEvenZone,
-        );
-      } on PlatformException {
-        // Fall through to backend / REST.
-      } on NeshanApiException {
-        // Fall through to backend / REST.
-      }
-    }
-
     final fromBackend = await _tryBackend(
       (token) => _backend.getRoute(
         authToken: token,
@@ -110,6 +78,22 @@ class DriverRoutingService {
       ),
     );
     if (fromBackend != null) return fromBackend;
+
+    if (_android.isAvailable) {
+      try {
+        return await _android.getRoute(
+          origin: origin,
+          destination: destination,
+          vehicleType: vehicleType,
+          alternative: alternative,
+          waypoints: waypoints,
+          avoidTrafficZone: avoidTrafficZone,
+          avoidOddEvenZone: avoidOddEvenZone,
+        );
+      } on NeshanApiException {
+        // Fall through to direct REST.
+      }
+    }
 
     if (hasDirectNeshanKey) {
       return _neshan.getRoute(

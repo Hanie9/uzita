@@ -16,29 +16,58 @@ enum DriverLocationStatus {
 
 class DriverLocationTracker {
   StreamSubscription<Position>? _subscription;
+  DriverLocationStatus _lastStatus = DriverLocationStatus.unavailable;
+
+  DriverLocationStatus get lastStatus => _lastStatus;
 
   Future<bool> requestPermission() async {
-    var status = await Permission.locationWhenInUse.status;
-    if (status.isGranted) return true;
-    status = await Permission.locationWhenInUse.request();
-    return status.isGranted;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    return permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse;
   }
 
   Future<bool> isLocationServiceEnabled() =>
       Geolocator.isLocationServiceEnabled();
 
+  /// Requests permission and opens system settings when needed.
+  Future<bool> ensureAccess() async {
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.denied) {
+      _lastStatus = DriverLocationStatus.permissionDenied;
+      final handlerStatus = await Permission.locationWhenInUse.status;
+      if (handlerStatus.isPermanentlyDenied) {
+        await openAppSettings();
+      }
+      return false;
+    }
+
+    var enabled = await isLocationServiceEnabled();
+    if (!enabled) {
+      _lastStatus = DriverLocationStatus.serviceDisabled;
+      await Geolocator.openLocationSettings();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      enabled = await isLocationServiceEnabled();
+      if (!enabled) return false;
+    }
+
+    return true;
+  }
+
   Future<DriverLocationStatus> start({
     required void Function(DriverLocationSnapshot update) onUpdate,
     void Function(Object error)? onError,
   }) async {
-    final granted = await requestPermission();
-    if (!granted) {
-      return DriverLocationStatus.permissionDenied;
-    }
-
-    final enabled = await isLocationServiceEnabled();
-    if (!enabled) {
-      return DriverLocationStatus.serviceDisabled;
+    final ready = await ensureAccess();
+    if (!ready) {
+      return _lastStatus;
     }
 
     _subscription?.cancel();
@@ -52,6 +81,7 @@ class DriverLocationTracker {
       onError: onError,
     );
 
+    _lastStatus = DriverLocationStatus.tracking;
     return DriverLocationStatus.tracking;
   }
 

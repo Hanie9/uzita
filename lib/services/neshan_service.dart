@@ -151,7 +151,7 @@ class NeshanService {
       throw NeshanApiException('No location found for address: $address');
     }
 
-    final best = candidates.first;
+    final best = _pickBestGeocodingCandidate(candidates);
     return NeshanGeocodingResult(
       location: best.location,
       province: best.province,
@@ -160,6 +160,18 @@ class NeshanService {
       unMatchedTerm: best.unMatchedTerm,
       candidates: candidates,
     );
+  }
+
+  NeshanGeocodingCandidate _pickBestGeocodingCandidate(
+    List<NeshanGeocodingCandidate> candidates,
+  ) {
+    return candidates.reduce((current, next) {
+      final currentUnmatched = (current.unMatchedTerm ?? '').trim().length;
+      final nextUnmatched = (next.unMatchedTerm ?? '').trim().length;
+      if (nextUnmatched < currentUnmatched) return next;
+      if (nextUnmatched > currentUnmatched) return current;
+      return current;
+    });
   }
 
   NeshanGeocodingCandidate _parseGeocodingItem(Map<String, dynamic> item) {

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:uzita/services.dart';
 import 'package:uzita/utils/map_tile_config.dart';
-import 'package:uzita/utils/validated_network_tile_provider.dart';
+import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
+import 'package:uzita/utils/validated_network_tile_provider.dart';
 import 'package:uzita/widgets/driver_heading_arrow.dart';
 import 'package:uzita/widgets/neshan_driver_map.dart';
 
 /// Route map: Neshan [MapView] on Android, [FlutterMap] elsewhere.
 class DriverNavigationMap extends StatelessWidget {
   final List<LatLng> routeCoordinates;
+  final List<RouteMapSegment> routeSegments;
   final LatLng origin;
   final LatLng destination;
   final LatLng? driverPosition;
@@ -22,6 +23,7 @@ class DriverNavigationMap extends StatelessWidget {
   const DriverNavigationMap({
     super.key,
     required this.routeCoordinates,
+    this.routeSegments = const [],
     required this.origin,
     required this.destination,
     this.driverPosition,
@@ -34,8 +36,9 @@ class DriverNavigationMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (NeshanDriverMap.isSupported) {
-      return NeshanDriverMap(
+      final map = NeshanDriverMap(
         routeCoordinates: routeCoordinates,
+        routeSegments: routeSegments,
         origin: origin,
         destination: destination,
         driverPosition: driverPosition,
@@ -43,11 +46,35 @@ class DriverNavigationMap extends StatelessWidget {
         followDriver: followDriver,
         isDark: isDark,
         traveledFromIndex: traveledFromIndex,
+        showDriverMarker: !followDriver,
       );
+
+      // Navigation mode: large center arrow; map rotates with bearing underneath.
+      if (followDriver && driverPosition != null) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            map,
+            const IgnorePointer(
+              child: Align(
+                alignment: Alignment(0, 0.22),
+                child: DriverHeadingArrow(
+                  headingDegrees: 0,
+                  size: 72,
+                  pulse: true,
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+
+      return map;
     }
 
     return _FlutterDriverNavigationMap(
       routeCoordinates: routeCoordinates,
+      routeSegments: routeSegments,
       origin: origin,
       destination: destination,
       driverPosition: driverPosition,
@@ -61,6 +88,7 @@ class DriverNavigationMap extends StatelessWidget {
 
 class _FlutterDriverNavigationMap extends StatefulWidget {
   final List<LatLng> routeCoordinates;
+  final List<RouteMapSegment> routeSegments;
   final LatLng origin;
   final LatLng destination;
   final LatLng? driverPosition;
@@ -71,6 +99,7 @@ class _FlutterDriverNavigationMap extends StatefulWidget {
 
   const _FlutterDriverNavigationMap({
     required this.routeCoordinates,
+    required this.routeSegments,
     required this.origin,
     required this.destination,
     this.driverPosition,
@@ -91,6 +120,9 @@ class _FlutterDriverNavigationMapState
   final Distance _distance = const Distance();
   LatLng? _previousDriverPosition;
   bool _fittedInitialBounds = false;
+
+  static const _routeBlue = Color(0xFF2563EB);
+  static const _trafficRed = Color(0xFFDC2626);
 
   @override
   void dispose() {
@@ -169,13 +201,19 @@ class _FlutterDriverNavigationMapState
       ? widget.routeCoordinates
       : [widget.origin, widget.destination];
 
+  List<RouteMapSegment> get _drawSegments {
+    if (_route.length >= 2) {
+      return [RouteMapSegment(points: _route, congested: false)];
+    }
+    return const [];
+  }
+
   @override
   Widget build(BuildContext context) {
     final traveledIndex = widget.traveledFromIndex ?? 0;
     final traveled = traveledIndex > 0
         ? _route.sublist(0, traveledIndex.clamp(1, _route.length))
         : <LatLng>[];
-    final remaining = polylineFromIndex(_route, traveledIndex);
 
     return FlutterMap(
       mapController: _mapController,
@@ -208,19 +246,21 @@ class _FlutterDriverNavigationMapState
               Polyline(
                 points: traveled,
                 color: Colors.grey.withValues(alpha: 0.55),
-                strokeWidth: 5,
+                strokeWidth: 7,
               ),
             ],
           ),
         PolylineLayer(
           polylines: [
-            Polyline(
-              points: remaining,
-              color: AppColors.lapisLazuli,
-              strokeWidth: 6,
-              borderColor: Colors.white,
-              borderStrokeWidth: 2,
-            ),
+            for (final segment in _drawSegments)
+              if (segment.points.length >= 2)
+                Polyline(
+                  points: segment.points,
+                  color: segment.congested ? _trafficRed : _routeBlue,
+                  strokeWidth: 8,
+                  borderColor: Colors.white,
+                  borderStrokeWidth: 2,
+                ),
           ],
         ),
         MarkerLayer(
@@ -236,11 +276,11 @@ class _FlutterDriverNavigationMapState
               width: 36,
               height: 36,
               child: const _MapPin(
-                color: Colors.red,
+                color: Color(0xFFEA580C),
                 icon: Icons.location_on,
               ),
             ),
-            if (widget.driverPosition != null)
+            if (widget.driverPosition != null && !widget.followDriver)
               Marker(
                 point: widget.driverPosition!,
                 width: 56,
@@ -249,11 +289,27 @@ class _FlutterDriverNavigationMapState
                 child: DriverHeadingArrow(
                   headingDegrees: _resolvedHeading,
                   size: 52,
-                  pulse: widget.followDriver,
+                  pulse: false,
                 ),
               ),
           ],
         ),
+        if (widget.followDriver && widget.driverPosition != null)
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: widget.driverPosition!,
+                width: 80,
+                height: 80,
+                alignment: Alignment.center,
+                child: const DriverHeadingArrow(
+                  headingDegrees: 0,
+                  size: 72,
+                  pulse: true,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }

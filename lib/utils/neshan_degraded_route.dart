@@ -29,25 +29,27 @@ NeshanRoute buildDegradedDirectRoute({
   return NeshanRoute(
     legs: [
       NeshanRouteLeg(
-        summary: 'مسیر مستقیم (تقریبی)',
+        summary: 'مسیر مستقیم به مبدا (تقریبی)',
         distanceText: distanceText,
         distanceMeters: meters,
         durationText: durationText,
         durationSeconds: durationSeconds,
         steps: [
-          const NeshanRouteStep(
+          NeshanRouteStep(
             instruction: 'حرکت به سمت مقصد',
             name: '',
             distanceText: '',
             durationText: '',
             stepType: 'depart',
+            startLocation: origin,
           ),
-          const NeshanRouteStep(
+          NeshanRouteStep(
             instruction: 'رسیدن به مقصد',
             name: '',
             distanceText: '',
             durationText: '',
             stepType: 'arrive',
+            startLocation: destination,
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,7 @@ import 'package:uzita/services/driver_routing_service.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_degraded_route.dart';
 import 'package:uzita/utils/neshan_errors.dart';
 import 'package:uzita/utils/ui_scale.dart';
@@ -196,13 +198,33 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     setState(() => isRouting = true);
 
     try {
-      final originResult = await routingService.geocodeAddress(mabda);
+      final originHints = extractGeocodeHints(mabda);
+      final originResult = await routingService.geocodeAddress(
+        mabda,
+        city: originHints.city,
+        province: originHints.province,
+      );
+
+      if (!isPlausibleIranCoordinate(originResult.location)) {
+        throw NeshanApiException(
+          localizations.driver_route_invalid_address,
+        );
+      }
+
+      final destinationHints = extractGeocodeHints(maghsad);
       final destinationResult = await routingService.geocodeAddress(
         maghsad,
-        city: originResult.city,
-        province: originResult.province,
+        city: destinationHints.city ?? originResult.city,
+        province: destinationHints.province ?? originResult.province,
         searchCenter: originResult.location,
+        searchExtent: geocodeExtentAround(originResult.location),
       );
+
+      if (!isPlausibleIranCoordinate(destinationResult.location)) {
+        throw NeshanApiException(
+          localizations.driver_route_invalid_address,
+        );
+      }
       NeshanRoute route;
       String? routeWarning;
 
@@ -220,6 +242,19 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       }
 
       if (!mounted) return;
+
+      if (kDebugMode) {
+        debugPrint(
+          'Geocode origin: ${originResult.location.latitude},'
+          ' ${originResult.location.longitude}'
+          ' city=${originResult.city}',
+        );
+        debugPrint(
+          'Geocode destination: ${destinationResult.location.latitude},'
+          ' ${destinationResult.location.longitude}'
+          ' city=${destinationResult.city}',
+        );
+      }
 
       await Navigator.push(
         context,

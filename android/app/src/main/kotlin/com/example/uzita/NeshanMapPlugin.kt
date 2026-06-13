@@ -1,7 +1,6 @@
 package com.example.uzita
 
 import android.content.Context
-import android.graphics.Color as AndroidColor
 import android.view.View
 import android.widget.FrameLayout
 import com.carto.styles.LineStyleBuilder
@@ -13,12 +12,18 @@ import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 import org.neshan.common.model.LatLng
-import org.neshan.common.model.LatLngBounds
 import org.neshan.mapsdk.MapView
 import org.neshan.mapsdk.model.Marker
 import org.neshan.mapsdk.model.Polyline
 import org.neshan.mapsdk.style.NeshanMapStyle
 import java.util.concurrent.ConcurrentHashMap
+
+private const val ROUTE_BLUE = 0xFF2563EB.toInt()
+private const val TRAFFIC_RED = 0xFFDC2626.toInt()
+private const val TRAVELED_GREY = 0xFF9CA3AF.toInt()
+private const val ORIGIN_GREEN = 0xFF16A34A.toInt()
+private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
+private const val DRIVER_BLUE = 0xFF2563EB.toInt()
 
 /// Neshan [MapView] per [platform.neshan.org SDK docs](https://platform.neshan.org/docs/sdk/android/installation).
 class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
@@ -69,18 +74,23 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     val ln = p["lng"] ?: return@mapNotNull null
                     LatLng(la, ln)
                 }
-                mapView.fitBounds(points)
-                result.success(null)
+                try {
+                    mapView.fitBounds(points)
+                    result.success(null)
+                } catch (_: Throwable) {
+                    // Never crash the Flutter channel; manual fallback runs inside fitBounds.
+                    result.success(null)
+                }
             }
             "updateRoute" -> {
                 @Suppress("UNCHECKED_CAST")
-                val remaining = call.argument<List<Map<String, Double>>>("remaining") ?: emptyList()
+                val segments = call.argument<List<Map<String, Any>>>("segments") ?: emptyList()
                 @Suppress("UNCHECKED_CAST")
                 val traveled = call.argument<List<Map<String, Double>>>("traveled") ?: emptyList()
                 val origin = call.argument<Map<String, Double>>("origin")
                 val destination = call.argument<Map<String, Double>>("destination")
                 val driver = call.argument<Map<String, Double>>("driver")
-                mapView.updateRouteOverlay(remaining, traveled, origin, destination, driver)
+                mapView.updateRouteOverlay(segments, traveled, origin, destination, driver)
                 result.success(null)
             }
             else -> result.notImplemented()
@@ -125,15 +135,16 @@ private class NeshanMapPlatformView(
 ) : PlatformView {
     private val container = FrameLayout(context)
     private val mapView = MapView(context)
-    private var routePolyline: Polyline? = null
+    private val routePolylines = mutableListOf<Polyline>()
     private var traveledPolyline: Polyline? = null
     private var originMarker: Marker? = null
     private var destinationMarker: Marker? = null
     private var driverMarker: Marker? = null
 
     init {
-        val style = if (isDark) NeshanMapStyle.NESHAN_NIGHT else NeshanMapStyle.STANDARD_DAY
+        val style = if (isDark) NeshanMapStyle.NESHAN_NIGHT else NeshanMapStyle.NESHAN
         mapView.setMapStyle(style)
+        mapView.setTrafficEnabled(true)
         container.addView(
             mapView,
             FrameLayout.LayoutParams(
@@ -153,59 +164,91 @@ private class NeshanMapPlatformView(
     }
 
     fun fitBounds(points: List<LatLng>) {
-        if (points.size < 2) {
-            if (points.size == 1) {
-                mapView.moveCamera(points.first(), 14f)
-            }
+        if (points.isEmpty()) return
+
+        val minLat = points.minOf { it.latitude }
+        val maxLat = points.maxOf { it.latitude }
+        val minLng = points.minOf { it.longitude }
+        val maxLng = points.maxOf { it.longitude }
+        val latPad = maxOf((maxLat - minLat) * 0.15, 0.003)
+        val lngPad = maxOf((maxLng - minLng) * 0.15, 0.003)
+
+        if (points.size == 1) {
+            mapView.post { mapView.moveCamera(points.first(), 14f) }
             return
         }
-        var minLat = points.first().latitude
-        var maxLat = minLat
-        var minLng = points.first().longitude
-        var maxLng = minLng
-        for (p in points.drop(1)) {
-            minLat = minOf(minLat, p.latitude)
-            maxLat = maxOf(maxLat, p.latitude)
-            minLng = minOf(minLng, p.longitude)
-            maxLng = maxOf(maxLng, p.longitude)
+
+        // SDK moveToCameraBounds crashes on some devices (null ScreenBounds in native JNI).
+        mapView.post {
+            moveCameraToSpan(minLat, maxLat, minLng, maxLng, latPad, lngPad)
         }
-        val bounds = LatLngBounds(
-            LatLng(maxLat, maxLng),
-            LatLng(minLat, minLng),
+    }
+
+    private fun moveCameraToSpan(
+        minLat: Double,
+        maxLat: Double,
+        minLng: Double,
+        maxLng: Double,
+        latPad: Double,
+        lngPad: Double,
+    ) {
+        val centerLat = (minLat + maxLat) / 2.0
+        val centerLng = (minLng + maxLng) / 2.0
+        val span = maxOf(
+            maxLat - minLat + latPad * 2,
+            maxLng - minLng + lngPad * 2,
         )
-        mapView.moveToCameraBounds(bounds, null, true, 0.4f)
+        mapView.moveCamera(LatLng(centerLat, centerLng), zoomForSpan(span))
+    }
+
+    private fun zoomForSpan(span: Double): Float = when {
+        span > 10.0 -> 6f
+        span > 5.0 -> 8f
+        span > 2.0 -> 10f
+        span > 1.0 -> 11f
+        span > 0.5 -> 12f
+        span > 0.2 -> 13f
+        span > 0.08 -> 14f
+        span > 0.03 -> 15f
+        else -> 16f
     }
 
     fun updateRouteOverlay(
-        remaining: List<Map<String, Double>>,
+        segments: List<Map<String, Any>>,
         traveled: List<Map<String, Double>>,
         origin: Map<String, Double>?,
         destination: Map<String, Double>?,
         driver: Map<String, Double>?,
     ) {
-        routePolyline?.let { mapView.removePolyline(it) }
+        routePolylines.forEach { mapView.removePolyline(it) }
+        routePolylines.clear()
         traveledPolyline?.let { mapView.removePolyline(it) }
         originMarker?.let { mapView.removeMarker(it) }
         destinationMarker?.let { mapView.removeMarker(it) }
         driverMarker?.let { mapView.removeMarker(it) }
 
-        val remainingPoints = toLatLngList(remaining)
-        if (remainingPoints.size >= 2) {
+        for (segment in segments) {
+            @Suppress("UNCHECKED_CAST")
+            val rawPoints = segment["points"] as? List<Map<String, Double>> ?: continue
+            val congested = segment["congested"] as? Boolean ?: false
+            val points = toLatLngList(rawPoints)
+            if (points.size < 2) continue
+
+            val color = if (congested) TRAFFIC_RED else ROUTE_BLUE
             val style = LineStyleBuilder().apply {
-                setColor(com.carto.graphics.Color(0xFF1E3A8A.toInt()))
-                setWidth(8f)
+                setColor(com.carto.graphics.Color(color))
+                setWidth(10f)
             }.buildStyle()
-            routePolyline = Polyline(remainingPoints, style)
-            mapView.addPolyline(routePolyline!!)
-        } else {
-            routePolyline = null
+            val polyline = Polyline(points, style)
+            routePolylines.add(polyline)
+            mapView.addPolyline(polyline)
         }
 
         val traveledPoints = toLatLngList(traveled)
         if (traveledPoints.size >= 2) {
             val style = LineStyleBuilder().apply {
-                setColor(com.carto.graphics.Color(0xFF9CA3AF.toInt()))
-                setWidth(6f)
+                setColor(com.carto.graphics.Color(TRAVELED_GREY))
+                setWidth(7f)
             }.buildStyle()
             traveledPolyline = Polyline(traveledPoints, style)
             mapView.addPolyline(traveledPolyline!!)
@@ -216,29 +259,29 @@ private class NeshanMapPlatformView(
         origin?.let {
             val lat = it["lat"] ?: return@let
             val lng = it["lng"] ?: return@let
-            originMarker = createMarker(lat, lng, AndroidColor.GREEN)
+            originMarker = createMarker(lat, lng, ORIGIN_GREEN, 34f)
             mapView.addMarker(originMarker!!)
         }
 
         destination?.let {
             val lat = it["lat"] ?: return@let
             val lng = it["lng"] ?: return@let
-            destinationMarker = createMarker(lat, lng, AndroidColor.RED)
+            destinationMarker = createMarker(lat, lng, DESTINATION_ORANGE, 38f)
             mapView.addMarker(destinationMarker!!)
         }
 
         driver?.let {
             val lat = it["lat"] ?: return@let
             val lng = it["lng"] ?: return@let
-            driverMarker = createMarker(lat, lng, AndroidColor.BLUE)
+            driverMarker = createMarker(lat, lng, DRIVER_BLUE, 30f)
             mapView.addMarker(driverMarker!!)
         }
     }
 
-    private fun createMarker(lat: Double, lng: Double, color: Int): Marker {
+    private fun createMarker(lat: Double, lng: Double, color: Int, size: Float): Marker {
         val style = MarkerStyleBuilder().apply {
             setColor(com.carto.graphics.Color(color))
-            setSize(28f)
+            setSize(size)
         }.buildStyle()
         return Marker(LatLng(lat, lng), style)
     }

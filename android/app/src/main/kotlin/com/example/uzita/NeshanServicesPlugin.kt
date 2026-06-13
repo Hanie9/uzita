@@ -46,14 +46,13 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             return
         }
 
-        val centerLat = call.argument<Double>("centerLat")
-        val centerLng = call.argument<Double>("centerLng")
+        // NeshanSearch requires a non-null location (SDK NPE otherwise).
+        val centerLat = call.argument<Double>("centerLat") ?: 35.6892
+        val centerLng = call.argument<Double>("centerLng") ?: 51.3890
 
-        val builder = NeshanSearch.Builder(address)
-        if (centerLat != null && centerLng != null) {
-            builder.setLocation(LatLng(centerLat, centerLng))
-        }
-        val search = builder.build()
+        val search = NeshanSearch.Builder(address)
+            .setLocation(LatLng(centerLat, centerLng))
+            .build()
         search.call(object : Callback<NeshanSearchResult> {
             override fun onResponse(
                 call: Call<NeshanSearchResult>,
@@ -205,6 +204,7 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
             "distanceMeters" to (step.distance?.value ?: 0),
             "durationSeconds" to (step.duration?.value ?: 0),
             "type" to (maneuver?.name ?: ""),
+            "polyline" to (step.encodedPolyline ?: ""),
             "startLat" to step.startLocation?.latitude,
             "startLng" to step.startLocation?.longitude,
         )

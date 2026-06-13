@@ -1,10 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/models/driver_trip_phase.dart';
 import 'package:uzita/services.dart';
+import 'package:uzita/services/driver_routing_service.dart';
 import 'package:uzita/services/neshan_models.dart';
+import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/utils/driver_location_tracker.dart';
-import 'package:uzita/utils/polyline_decoder.dart';
+import 'package:uzita/utils/neshan_degraded_route.dart';
+import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_maneuver.dart';
 import 'package:uzita/utils/route_progress.dart';
 import 'package:uzita/utils/ui_scale.dart';
@@ -15,7 +20,8 @@ class DriverRouteScreen extends StatefulWidget {
   final String destinationAddress;
   final NeshanLatLng origin;
   final NeshanLatLng destination;
-  final NeshanRoute route;
+  /// Cargo route: pickup (mabda) → delivery (maghsad).
+  final NeshanRoute deliveryRoute;
 
   const DriverRouteScreen({
     super.key,
@@ -23,14 +29,16 @@ class DriverRouteScreen extends StatefulWidget {
     required this.destinationAddress,
     required this.origin,
     required this.destination,
-    required this.route,
-  });
+    required NeshanRoute route,
+  }) : deliveryRoute = route;
 
   @override
   State<DriverRouteScreen> createState() => _DriverRouteScreenState();
 }
 
 class _DriverRouteScreenState extends State<DriverRouteScreen> {
+  static const _routingService = DriverRoutingService();
+
   final DriverLocationTracker _locationTracker = DriverLocationTracker();
   final ScrollController _stepsScrollController = ScrollController();
   final List<GlobalKey> _stepKeys = [];
@@ -40,6 +48,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   DriverLocationStatus? _locationStatus;
   int _activeStepIndex = 0;
   bool _navigationActive = false;
+  DriverTripPhase _phase = DriverTripPhase.toPickup;
+  NeshanRoute? _pickupRoute;
+  bool _pickupRouteLoading = false;
 
   LatLng get _originLatLng =>
       LatLng(widget.origin.latitude, widget.origin.longitude);
@@ -47,18 +58,58 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   LatLng get _destinationLatLng =>
       LatLng(widget.destination.latitude, widget.destination.longitude);
 
-  NeshanRouteLeg? get _leg => widget.route.primaryLeg;
+  late final RouteMapGeometry _deliveryGeometry = RouteMapGeometry.fromRoute(
+    widget.deliveryRoute,
+    origin: _originLatLng,
+    destination: _destinationLatLng,
+  );
+
+  NeshanRoute? get _effectivePickupRoute {
+    if (_pickupRoute != null) return _pickupRoute;
+    final driver = _driverPosition;
+    if (driver == null) return null;
+    return buildDegradedDirectRoute(
+      origin: NeshanLatLng(
+        latitude: driver.latitude,
+        longitude: driver.longitude,
+      ),
+      destination: widget.origin,
+    );
+  }
+
+  RouteMapGeometry get _activeGeometry {
+    if (_phase == DriverTripPhase.toPickup) {
+      final route = _effectivePickupRoute;
+      final driver = _driverPosition;
+      if (route == null || driver == null) {
+        return RouteMapGeometry(
+          fullPolyline: driver != null
+              ? [driver, _originLatLng]
+              : [_originLatLng, _destinationLatLng],
+          segments: const [],
+        );
+      }
+      return RouteMapGeometry.fromRoute(
+        route,
+        origin: driver,
+        destination: _originLatLng,
+      );
+    }
+    return _deliveryGeometry;
+  }
+
+  NeshanRoute get _activeRoute =>
+      _phase == DriverTripPhase.toPickup
+      ? (_effectivePickupRoute ?? widget.deliveryRoute)
+      : widget.deliveryRoute;
+
+  NeshanRouteLeg? get _leg => _activeRoute.primaryLeg;
 
   List<NeshanRouteStep> get _steps => _leg?.steps ?? const [];
 
-  List<LatLng> get _routeCoordinates {
-    final encoded = widget.route.overviewPolyline;
-    if (encoded != null && encoded.isNotEmpty) {
-      final decoded = decodePolyline(encoded);
-      if (decoded.isNotEmpty) return decoded;
-    }
-    return [_originLatLng, _destinationLatLng];
-  }
+  List<LatLng> get _routeCoordinates => _activeGeometry.fullPolyline;
+
+  List<RouteMapSegment> get _routeSegments => _activeGeometry.segments;
 
   double get _totalDistanceMeters =>
       _leg?.distanceMeters ?? polylineLengthMeters(_routeCoordinates);
@@ -66,6 +117,16 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   double get _totalDurationSeconds => _leg?.durationSeconds ?? 0;
 
   bool get _isTracking => _locationStatus == DriverLocationStatus.tracking;
+
+  bool get _canConfirmCargoPickup =>
+      _phase == DriverTripPhase.toPickup &&
+      (_navigationActive || _isNearPickup);
+
+  bool get _isNearPickup {
+    final driver = _driverPosition;
+    if (driver == null) return false;
+    return distanceMeters(driver, _originLatLng) <= 120;
+  }
 
   NeshanRouteStep? get _activeStep =>
       _steps.isEmpty ? null : _steps[_activeStepIndex.clamp(0, _steps.length - 1)];
@@ -83,8 +144,72 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   @override
   void initState() {
     super.initState();
-    _stepKeys.addAll(List.generate(_steps.length, (_) => GlobalKey()));
+    _resetStepKeys();
     _startLocationTracking();
+  }
+
+  void _syncStepKeys() {
+    final count = _steps.length;
+    if (_stepKeys.length == count) return;
+    _stepKeys
+      ..clear()
+      ..addAll(List.generate(count, (_) => GlobalKey()));
+    if (count == 0) {
+      _activeStepIndex = 0;
+    } else {
+      _activeStepIndex = _activeStepIndex.clamp(0, count - 1);
+    }
+  }
+
+  void _resetStepKeys() {
+    _stepKeys
+      ..clear()
+      ..addAll(List.generate(_steps.length, (_) => GlobalKey()));
+    _activeStepIndex = 0;
+  }
+
+  Future<void> _loadPickupRoute(LatLng driver) async {
+    if (_pickupRoute != null || _pickupRouteLoading) return;
+    _pickupRouteLoading = true;
+
+    final driverPoint = NeshanLatLng(
+      latitude: driver.latitude,
+      longitude: driver.longitude,
+    );
+
+    try {
+      final route = await _routingService.getRoute(
+        origin: driverPoint,
+        destination: widget.origin,
+      );
+      if (!mounted) return;
+      setState(() {
+        _pickupRoute = route;
+        _syncStepKeys();
+      });
+    } on NeshanApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pickupRoute = buildDegradedDirectRoute(
+          origin: driverPoint,
+          destination: widget.origin,
+        );
+        _syncStepKeys();
+      });
+      if (kDebugMode) {
+        debugPrint('Pickup route fallback: $e');
+      }
+    } finally {
+      _pickupRouteLoading = false;
+    }
+  }
+
+  void _confirmCargoPickedUp() {
+    setState(() {
+      _phase = DriverTripPhase.toDelivery;
+      _resetStepKeys();
+    });
+    _scrollToActiveStep();
   }
 
   @override
@@ -111,6 +236,14 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   }
 
   Future<void> _requestLocationAgain() async {
+    final ready = await _locationTracker.ensureAccess();
+    if (!mounted) return;
+
+    if (!ready) {
+      setState(() => _locationStatus = _locationTracker.lastStatus);
+      return;
+    }
+
     await _startLocationTracking();
   }
 
@@ -148,6 +281,11 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       _locationStatus = DriverLocationStatus.tracking;
       _activeStepIndex = newActiveStep;
     });
+
+    if (_phase == DriverTripPhase.toPickup) {
+      _loadPickupRoute(position);
+    }
+    _syncStepKeys();
 
     if (stepChanged) {
       _scrollToActiveStep();
@@ -235,6 +373,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _syncStepKeys();
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -250,6 +389,23 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         actions: [
+          if (_canConfirmCargoPickup)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: FilledButton.icon(
+                onPressed: _confirmCargoPickedUp,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                label: Text(
+                  localizations.driver_route_cargo_picked_up,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ),
           if (!_navigationActive)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
@@ -262,7 +418,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
                 ),
                 icon: const Icon(Icons.navigation, size: 18),
                 label: Text(
-                  localizations.driver_route_start_navigation,
+                  _phase == DriverTripPhase.toPickup
+                      ? localizations.driver_route_start_to_pickup
+                      : localizations.driver_route_start_navigation,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -280,6 +438,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
                   Positioned.fill(
                     child: DriverNavigationMap(
                       routeCoordinates: _routeCoordinates,
+                      routeSegments: _routeSegments,
                       origin: _originLatLng,
                       destination: _destinationLatLng,
                       driverPosition: _isTracking ? _driverPosition : null,
@@ -296,12 +455,34 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
                       top: 0,
                       left: 0,
                       right: 0,
-                      child: _NavigationGuidanceCard(
-                        step: _activeStep!,
-                        nextStep: _nextStep,
-                        distanceMeters: _distanceToActiveStepMeters(),
-                        persian: persian,
-                        thenLabel: localizations.driver_route_then,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _TripPhaseBanner(
+                            phase: _phase,
+                            pickupLabel: localizations.driver_route_phase_pickup,
+                            deliveryLabel:
+                                localizations.driver_route_phase_delivery,
+                          ),
+                          _NavigationGuidanceCard(
+                            step: _activeStep!,
+                            nextStep: _nextStep,
+                            distanceMeters: _distanceToActiveStepMeters(),
+                            persian: persian,
+                            thenLabel: localizations.driver_route_then,
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (!_navigationActive)
+                    Positioned(
+                      top: ui.scale(base: 12, min: 8, max: 16),
+                      left: ui.scale(base: 12, min: 8, max: 16),
+                      right: ui.scale(base: 12, min: 8, max: 16),
+                      child: _TripPhaseBanner(
+                        phase: _phase,
+                        pickupLabel: localizations.driver_route_phase_pickup,
+                        deliveryLabel: localizations.driver_route_phase_delivery,
                       ),
                     ),
                   if (!_isTracking) _buildLocationBanner(localizations, ui),
@@ -311,7 +492,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
                       right: ui.scale(base: 16, min: 12, max: 20),
                       bottom: ui.scale(base: 14, min: 10, max: 18),
                       child: _NavigationHintBanner(
-                        hint: localizations.driver_route_navigation_hint,
+                        hint: _phase == DriverTripPhase.toPickup
+                            ? localizations.driver_route_pickup_hint
+                            : localizations.driver_route_delivery_hint,
                       ),
                     ),
                 ],
@@ -532,6 +715,53 @@ class _NavigationGuidanceCard extends StatelessWidget {
                     ),
                   ],
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripPhaseBanner extends StatelessWidget {
+  final DriverTripPhase phase;
+  final String pickupLabel;
+  final String deliveryLabel;
+
+  const _TripPhaseBanner({
+    required this.phase,
+    required this.pickupLabel,
+    required this.deliveryLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isPickup = phase == DriverTripPhase.toPickup;
+    return Material(
+      elevation: 3,
+      borderRadius: BorderRadius.circular(10),
+      color: isPickup
+          ? const Color(0xFF16A34A).withValues(alpha: 0.92)
+          : const Color(0xFFEA580C).withValues(alpha: 0.92),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              isPickup ? Icons.local_shipping_outlined : Icons.flag_outlined,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                isPickup ? pickupLabel : deliveryLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],

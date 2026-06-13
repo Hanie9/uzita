@@ -130,6 +130,7 @@ class NeshanAndroidChannel {
             distanceMeters: _asDouble(step['distanceMeters']) ?? 0,
             durationSeconds: _asDouble(step['durationSeconds']) ?? 0,
             stepType: step['type']?.toString(),
+            polyline: step['polyline']?.toString(),
             modifier: step['modifier']?.toString(),
             bearingAfter: _asDouble(step['bearingAfter']),
             startLocation: _parseLocation(step['startLat'], step['startLng']),

@@ -1258,9 +1258,17 @@ class AppLocalizations {
       'driver_route_osm_fallback':
           'Neshan unavailable — showing route via OpenStreetMap (no live traffic).',
       'driver_route_start_navigation': 'Start driving',
+      'driver_route_start_to_pickup': 'Drive to pickup',
       'driver_route_stop_navigation': 'End navigation',
       'driver_route_navigation_hint':
           'When ready, tap Start driving above. Turn-by-turn guidance will appear on the map.',
+      'driver_route_pickup_hint':
+          'Your GPS location is the starting point. First drive to the pickup (origin), then tap "Cargo picked up" to navigate to the delivery address.',
+      'driver_route_delivery_hint':
+          'Cargo is loaded. Follow turn-by-turn guidance to the delivery destination.',
+      'driver_route_phase_pickup': 'Phase 1: Drive to pickup (origin)',
+      'driver_route_phase_delivery': 'Phase 2: Drive to delivery (destination)',
+      'driver_route_cargo_picked_up': 'Cargo picked up',
       'driver_route_then': 'Then',
       'driver_neshan_error_service_list':
           'Enable these services on your service key in Neshan panel: Geocoding Plus, Routing with traffic, and Static arc map.',
@@ -2492,9 +2500,17 @@ class AppLocalizations {
       'driver_route_osm_fallback':
           'نشان در دسترس نبود — مسیر از OpenStreetMap نمایش داده می‌شود (بدون ترافیک زنده).',
       'driver_route_start_navigation': 'شروع رانندگی',
+      'driver_route_start_to_pickup': 'رفتن به مبدا',
       'driver_route_stop_navigation': 'پایان مسیریابی',
       'driver_route_navigation_hint':
           'وقتی آمادهٔ حرکت شدید «شروع رانندگی» را بالا بزنید. راهنمای گام‌به‌گام روی نقشه نمایش داده می‌شود.',
+      'driver_route_pickup_hint':
+          'موقعیت فعلی شما (GPS) نقطه شروع است. ابتدا به مبدا (بارگیری) بروید، سپس «بار تحویل گرفتم» را بزنید تا به مقصد هدایت شوید.',
+      'driver_route_delivery_hint':
+          'بار بارگیری شد. طبق راهنمای نقشه به سمت مقصد (تحویل) حرکت کنید.',
+      'driver_route_phase_pickup': 'مرحله ۱: رفتن به مبدا (بارگیری)',
+      'driver_route_phase_delivery': 'مرحله ۲: رفتن به مقصد (تحویل)',
+      'driver_route_cargo_picked_up': 'بار تحویل گرفتم',
       'driver_route_then': 'سپس',
       'driver_neshan_error_service_list':
           'در پنل نشان برای کلید service این سرویس‌ها را فعال کنید: تبدیل آدرس به نقطه پلاس، مسیریابی با ترافیک، نقشه استاتیک منحنی‌دار.',
@@ -3597,10 +3613,22 @@ class AppLocalizations {
       _getLocalizedValue('driver_route_osm_fallback');
   String get driver_route_start_navigation =>
       _getLocalizedValue('driver_route_start_navigation');
+  String get driver_route_start_to_pickup =>
+      _getLocalizedValue('driver_route_start_to_pickup');
   String get driver_route_stop_navigation =>
       _getLocalizedValue('driver_route_stop_navigation');
   String get driver_route_navigation_hint =>
       _getLocalizedValue('driver_route_navigation_hint');
+  String get driver_route_pickup_hint =>
+      _getLocalizedValue('driver_route_pickup_hint');
+  String get driver_route_delivery_hint =>
+      _getLocalizedValue('driver_route_delivery_hint');
+  String get driver_route_phase_pickup =>
+      _getLocalizedValue('driver_route_phase_pickup');
+  String get driver_route_phase_delivery =>
+      _getLocalizedValue('driver_route_phase_delivery');
+  String get driver_route_cargo_picked_up =>
+      _getLocalizedValue('driver_route_cargo_picked_up');
   String get driver_route_then => _getLocalizedValue('driver_route_then');
   String get driver_neshan_error_service_list =>
       _getLocalizedValue('driver_neshan_error_service_list');
