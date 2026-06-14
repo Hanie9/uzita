@@ -199,11 +199,18 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
     try {
       final originHints = extractGeocodeHints(mabda);
-      final originResult = await routingService.geocodeAddress(
-        mabda,
-        city: originHints.city,
-        province: originHints.province,
+      final originParams = buildGeocodeParams(
+        address: mabda,
+        hints: originHints,
       );
+      var originResult = await routingService.geocodeAddress(
+        mabda,
+        city: originParams.city,
+        province: originParams.province,
+        searchCenter: originParams.searchCenter,
+        searchExtent: originParams.searchExtent,
+      );
+      originResult = refineGeocodingResult(originResult, address: mabda);
 
       if (!isPlausibleIranCoordinate(originResult.location)) {
         throw NeshanApiException(
@@ -212,13 +219,31 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       }
 
       final destinationHints = extractGeocodeHints(maghsad);
-      final destinationResult = await routingService.geocodeAddress(
-        maghsad,
-        city: destinationHints.city ?? originResult.city,
-        province: destinationHints.province ?? originResult.province,
-        searchCenter: originResult.location,
-        searchExtent: geocodeExtentAround(originResult.location),
+      final destinationParams = buildGeocodeParams(
+        address: maghsad,
+        hints: destinationHints,
+        originResult: originResult,
       );
+      var destinationResult = await routingService.geocodeAddress(
+        maghsad,
+        city: destinationParams.city,
+        province: destinationParams.province,
+        searchCenter: destinationParams.searchCenter,
+        searchExtent: destinationParams.searchExtent,
+      );
+      destinationResult = refineGeocodingResult(
+        destinationResult,
+        address: maghsad,
+      );
+
+      if (!geocodedCityMatchesAddress(
+        result: destinationResult,
+        address: maghsad,
+      )) {
+        throw NeshanApiException(
+          localizations.driver_route_geocode_city_mismatch,
+        );
+      }
 
       if (!isPlausibleIranCoordinate(destinationResult.location)) {
         throw NeshanApiException(

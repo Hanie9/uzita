@@ -18,8 +18,6 @@ class NeshanDriverMap extends StatefulWidget {
   final bool followDriver;
   final bool isDark;
   final int? traveledFromIndex;
-  /// When false, native map hides the blue dot (navigation arrow overlay is used).
-  final bool showDriverMarker;
 
   const NeshanDriverMap({
     super.key,
@@ -32,7 +30,6 @@ class NeshanDriverMap extends StatefulWidget {
     this.followDriver = false,
     this.isDark = false,
     this.traveledFromIndex,
-    this.showDriverMarker = true,
   });
 
   static bool get isSupported => !kIsWeb && Platform.isAndroid;
@@ -79,7 +76,6 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       }
     }
 
-    // Single blue polyline — per-step red traffic was confusing on the map.
     if (_route.length >= 2) {
       return [RouteMapSegment(points: _route, congested: false)];
     }
@@ -123,7 +119,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       if (_shouldFollowDriver) {
         await _moveCamera(
           widget.driverPosition!,
-          zoom: 16.5,
+          zoom: 17,
           bearing: widget.driverHeading,
         );
       } else if (refit || !_fitted) {
@@ -198,8 +194,12 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         'traveled': traveled.map(_point).toList(),
         'origin': _point(widget.origin),
         'destination': _point(widget.destination),
-        if (widget.showDriverMarker && widget.driverPosition != null)
-          'driver': _point(widget.driverPosition!),
+        if (widget.driverPosition != null)
+          'driver': {
+            ..._point(widget.driverPosition!),
+            if (widget.driverHeading != null) 'bearing': widget.driverHeading,
+            'navigationMode': widget.followDriver,
+          },
       });
     } catch (_) {
       // Map surface may not be ready yet.

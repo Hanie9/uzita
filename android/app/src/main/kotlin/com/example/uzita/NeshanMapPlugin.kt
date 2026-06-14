@@ -3,8 +3,10 @@ package com.example.uzita
 import android.content.Context
 import android.view.View
 import android.widget.FrameLayout
+import com.carto.styles.BillboardOrientation
 import com.carto.styles.LineStyleBuilder
 import com.carto.styles.MarkerStyleBuilder
+import com.carto.utils.BitmapUtils
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -23,7 +25,6 @@ private const val TRAFFIC_RED = 0xFFDC2626.toInt()
 private const val TRAVELED_GREY = 0xFF9CA3AF.toInt()
 private const val ORIGIN_GREEN = 0xFF16A34A.toInt()
 private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
-private const val DRIVER_BLUE = 0xFF2563EB.toInt()
 
 /// Neshan [MapView] per [platform.neshan.org SDK docs](https://platform.neshan.org/docs/sdk/android/installation).
 class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
@@ -89,7 +90,7 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 val traveled = call.argument<List<Map<String, Double>>>("traveled") ?: emptyList()
                 val origin = call.argument<Map<String, Double>>("origin")
                 val destination = call.argument<Map<String, Double>>("destination")
-                val driver = call.argument<Map<String, Double>>("driver")
+                val driver = call.argument<Map<String, Any>>("driver")
                 mapView.updateRouteOverlay(segments, traveled, origin, destination, driver)
                 result.success(null)
             }
@@ -218,7 +219,7 @@ private class NeshanMapPlatformView(
         traveled: List<Map<String, Double>>,
         origin: Map<String, Double>?,
         destination: Map<String, Double>?,
-        driver: Map<String, Double>?,
+        driver: Map<String, Any>?,
     ) {
         routePolylines.forEach { mapView.removePolyline(it) }
         routePolylines.clear()
@@ -271,11 +272,41 @@ private class NeshanMapPlatformView(
         }
 
         driver?.let {
-            val lat = it["lat"] ?: return@let
-            val lng = it["lng"] ?: return@let
-            driverMarker = createMarker(lat, lng, DRIVER_BLUE, 30f)
+            val lat = (it["lat"] as? Number)?.toDouble() ?: return@let
+            val lng = (it["lng"] as? Number)?.toDouble() ?: return@let
+            val bearing = (it["bearing"] as? Number)?.toFloat()
+            val navigationMode = it["navigationMode"] as? Boolean ?: false
+            driverMarker = createDriverArrowMarker(
+                lat = lat,
+                lng = lng,
+                bearing = bearing,
+                navigationMode = navigationMode,
+            )
             mapView.addMarker(driverMarker!!)
         }
+    }
+
+    private fun createDriverArrowMarker(
+        lat: Double,
+        lng: Double,
+        bearing: Float?,
+        navigationMode: Boolean,
+    ): Marker {
+        // When map camera rotates with bearing, puck points up (0°). Otherwise rotate puck.
+        val bitmapBearing = if (navigationMode) 0f else (bearing ?: 0f)
+        val androidBitmap = NavArrowBitmap.create(bitmapBearing)
+        val cartoBitmap = BitmapUtils.createBitmapFromAndroidBitmap(androidBitmap)
+        val markerSize = if (navigationMode) 58f else 48f
+
+        val style = MarkerStyleBuilder().apply {
+            setBitmap(cartoBitmap)
+            setSize(markerSize)
+            setAnchorPointX(0.5f)
+            setAnchorPointY(0.82f)
+            setOrientationMode(BillboardOrientation.BILLBOARD_ORIENTATION_GROUND)
+        }.buildStyle()
+
+        return Marker(LatLng(lat, lng), style)
     }
 
     private fun createMarker(lat: Double, lng: Double, color: Int, size: Float): Marker {

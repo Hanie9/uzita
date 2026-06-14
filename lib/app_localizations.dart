@@ -1240,6 +1240,8 @@ class AppLocalizations {
       'driver_route_open_map': 'Open in Neshan Maps',
       'driver_route_open_map_error': 'Could not open map app',
       'driver_route_invalid_address': 'Origin or destination address is missing',
+      'driver_route_geocode_city_mismatch':
+          'Destination city does not match the address. Include the city name (e.g. Isfahan) in the address.',
       'driver_route_map_error': 'Could not load map',
       'driver_route_map_key_missing':
           'Map key is not configured. Set NESHAN_MAP_KEY at build time.',
@@ -2482,6 +2484,8 @@ class AppLocalizations {
       'driver_route_open_map': 'باز کردن در نقشه نشان',
       'driver_route_open_map_error': 'امکان باز کردن نقشه وجود ندارد',
       'driver_route_invalid_address': 'آدرس مبدا یا مقصد وارد نشده است',
+      'driver_route_geocode_city_mismatch':
+          'شهر مقصد با آدرس هم‌خوانی ندارد. نام شهر (مثلاً اصفهان) را در آدرس مقصد بنویسید.',
       'driver_route_map_error': 'خطا در بارگذاری نقشه',
       'driver_route_map_key_missing':
           'کلید نقشه تنظیم نشده است. NESHAN_MAP_KEY را هنگام بیلد وارد کنید.',
@@ -3584,6 +3588,8 @@ class AppLocalizations {
       _getLocalizedValue('driver_route_open_map_error');
   String get driver_route_invalid_address =>
       _getLocalizedValue('driver_route_invalid_address');
+  String get driver_route_geocode_city_mismatch =>
+      _getLocalizedValue('driver_route_geocode_city_mismatch');
   String get driver_route_map_error =>
       _getLocalizedValue('driver_route_map_error');
   String get driver_route_map_key_missing =>

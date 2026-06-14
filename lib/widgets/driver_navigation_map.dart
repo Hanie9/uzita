@@ -36,7 +36,7 @@ class DriverNavigationMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (NeshanDriverMap.isSupported) {
-      final map = NeshanDriverMap(
+      return NeshanDriverMap(
         routeCoordinates: routeCoordinates,
         routeSegments: routeSegments,
         origin: origin,
@@ -46,30 +46,7 @@ class DriverNavigationMap extends StatelessWidget {
         followDriver: followDriver,
         isDark: isDark,
         traveledFromIndex: traveledFromIndex,
-        showDriverMarker: !followDriver,
       );
-
-      // Navigation mode: large center arrow; map rotates with bearing underneath.
-      if (followDriver && driverPosition != null) {
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            map,
-            const IgnorePointer(
-              child: Align(
-                alignment: Alignment(0, 0.22),
-                child: DriverHeadingArrow(
-                  headingDegrees: 0,
-                  size: 72,
-                  pulse: true,
-                ),
-              ),
-            ),
-          ],
-        );
-      }
-
-      return map;
     }
 
     return _FlutterDriverNavigationMap(
@@ -280,36 +257,21 @@ class _FlutterDriverNavigationMapState
                 icon: Icons.location_on,
               ),
             ),
-            if (widget.driverPosition != null && !widget.followDriver)
+            if (widget.driverPosition != null)
               Marker(
                 point: widget.driverPosition!,
-                width: 56,
-                height: 56,
-                rotate: true,
+                width: 72,
+                height: 80,
+                alignment: const Alignment(0, 0.82),
+                rotate: !widget.followDriver,
                 child: DriverHeadingArrow(
-                  headingDegrees: _resolvedHeading,
-                  size: 52,
-                  pulse: false,
+                  headingDegrees: widget.followDriver ? 0 : _resolvedHeading,
+                  size: 72,
+                  pulse: widget.followDriver,
                 ),
               ),
           ],
         ),
-        if (widget.followDriver && widget.driverPosition != null)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: widget.driverPosition!,
-                width: 80,
-                height: 80,
-                alignment: Alignment.center,
-                child: const DriverHeadingArrow(
-                  headingDegrees: 0,
-                  size: 72,
-                  pulse: true,
-                ),
-              ),
-            ],
-          ),
       ],
     );
   }
