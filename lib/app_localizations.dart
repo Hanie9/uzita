@@ -1255,6 +1255,9 @@ class AppLocalizations {
       'driver_route_location_denied': 'Location permission denied',
       'driver_route_location_disabled': 'Location services are turned off',
       'driver_route_enable_location': 'Enable location',
+      'driver_route_searching_location': 'Searching for your location…',
+      'driver_route_gps_too_far':
+          'GPS is too far from this trip. In the emulator set Location near the route.',
       'driver_route_step_completed': 'Completed',
       'driver_route_step_current': 'Current step',
       'driver_route_osm_fallback':
@@ -1272,6 +1275,7 @@ class AppLocalizations {
       'driver_route_phase_delivery': 'Phase 2: Drive to delivery (destination)',
       'driver_route_cargo_picked_up': 'Cargo picked up',
       'driver_route_then': 'Then',
+      'driver_route_return_to_route': 'Return to route',
       'driver_neshan_error_service_list':
           'Enable these services on your service key in Neshan panel: Geocoding Plus, Routing with traffic, and Static arc map.',
       'driver_neshan_error_key_type':
@@ -2499,6 +2503,9 @@ class AppLocalizations {
       'driver_route_location_denied': 'دسترسی موقعیت رد شد',
       'driver_route_location_disabled': 'موقعیت‌یاب دستگاه خاموش است',
       'driver_route_enable_location': 'فعال‌سازی موقعیت',
+      'driver_route_searching_location': 'در حال جستجوی موقعیت شما',
+      'driver_route_gps_too_far':
+          'موقعیت GPS خیلی دور از این سفر است. در امولاتور از Location موقعیت نزدیک مسیر را تنظیم کنید.',
       'driver_route_step_completed': 'انجام‌شده',
       'driver_route_step_current': 'مرحله فعلی',
       'driver_route_osm_fallback':
@@ -2516,6 +2523,7 @@ class AppLocalizations {
       'driver_route_phase_delivery': 'مرحله ۲: رفتن به مقصد (تحویل)',
       'driver_route_cargo_picked_up': 'بار تحویل گرفتم',
       'driver_route_then': 'سپس',
+      'driver_route_return_to_route': 'برگرد به مسیر',
       'driver_neshan_error_service_list':
           'در پنل نشان برای کلید service این سرویس‌ها را فعال کنید: تبدیل آدرس به نقطه پلاس، مسیریابی با ترافیک، نقشه استاتیک منحنی‌دار.',
       'driver_neshan_error_key_type':
@@ -3611,6 +3619,10 @@ class AppLocalizations {
       _getLocalizedValue('driver_route_location_disabled');
   String get driver_route_enable_location =>
       _getLocalizedValue('driver_route_enable_location');
+  String get driver_route_searching_location =>
+      _getLocalizedValue('driver_route_searching_location');
+  String get driver_route_gps_too_far =>
+      _getLocalizedValue('driver_route_gps_too_far');
   String get driver_route_step_completed =>
       _getLocalizedValue('driver_route_step_completed');
   String get driver_route_step_current =>
@@ -3636,6 +3648,8 @@ class AppLocalizations {
   String get driver_route_cargo_picked_up =>
       _getLocalizedValue('driver_route_cargo_picked_up');
   String get driver_route_then => _getLocalizedValue('driver_route_then');
+  String get driver_route_return_to_route =>
+      _getLocalizedValue('driver_route_return_to_route');
   String get driver_neshan_error_service_list =>
       _getLocalizedValue('driver_neshan_error_service_list');
   String get driver_neshan_error_key_type =>

@@ -6,11 +6,12 @@ import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RadialGradient
 import android.graphics.Shader
 
-/// Cyan navigation puck bitmap (Neshan-style), tip points to top of image.
+/// Compact Neshan navigation puck for map markers (bitmap is small; marker size ~30).
 internal object NavArrowBitmap {
-    private const val SIZE_PX = 112
+    private const val SIZE_PX = 72
 
     private var baseArrow: Bitmap? = null
 
@@ -31,42 +32,62 @@ internal object NavArrowBitmap {
         val h = size.toFloat()
         val w = size.toFloat()
 
-        // Ground shadow
-        val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0x47000000
-            style = Paint.Style.FILL
-        }
-        canvas.drawOval(cx - w * 0.28f, h * 0.86f, cx + w * 0.28f, h * 0.96f, shadow)
+        canvas.drawOval(
+            cx - w * 0.30f,
+            h * 0.88f,
+            cx + w * 0.30f,
+            h * 0.98f,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x44000000
+                style = Paint.Style.FILL
+            },
+        )
+
+        canvas.drawOval(
+            cx - w * 0.26f,
+            h * 0.70f,
+            cx + w * 0.26f,
+            h * 0.86f,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = RadialGradient(
+                    cx, h * 0.76f,
+                    w * 0.26f,
+                    intArrayOf(0xFFFFFFFF.toInt(), 0xFFE8EDF2.toInt()),
+                    floatArrayOf(0f, 1f),
+                    Shader.TileMode.CLAMP,
+                )
+            },
+        )
 
         val body = Path().apply {
             moveTo(cx, h * 0.06f)
-            lineTo(cx + w * 0.40f, h * 0.70f)
-            lineTo(cx + w * 0.12f, h * 0.64f)
-            lineTo(cx + w * 0.12f, h * 0.84f)
-            lineTo(cx - w * 0.12f, h * 0.84f)
-            lineTo(cx - w * 0.12f, h * 0.64f)
-            lineTo(cx - w * 0.40f, h * 0.70f)
+            lineTo(cx + w * 0.30f, h * 0.68f)
+            lineTo(cx - w * 0.30f, h * 0.68f)
             close()
         }
 
-        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = LinearGradient(
-                cx, h * 0.06f, cx, h * 0.86f,
-                intArrayOf(0xFF7DD3FC.toInt(), 0xFF38BDF8.toInt(), 0xFF0284C7.toInt()),
-                floatArrayOf(0f, 0.45f, 1f),
-                Shader.TileMode.CLAMP,
-            )
-            style = Paint.Style.FILL
-        }
-        canvas.drawPath(body, fill)
+        canvas.drawPath(
+            body,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = LinearGradient(
+                    cx, h * 0.06f, cx, h * 0.70f,
+                    intArrayOf(0xFF80F0FF.toInt(), 0xFF00D4FF.toInt(), 0xFF0096D6.toInt()),
+                    floatArrayOf(0f, 0.5f, 1f),
+                    Shader.TileMode.CLAMP,
+                )
+                style = Paint.Style.FILL
+            },
+        )
 
-        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt()
-            style = Paint.Style.STROKE
-            strokeWidth = 3f
-            strokeJoin = Paint.Join.ROUND
-        }
-        canvas.drawPath(body, stroke)
+        canvas.drawPath(
+            body,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0xFFFFFFFF.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 2f
+                strokeJoin = Paint.Join.ROUND
+            },
+        )
 
         return bitmap
     }

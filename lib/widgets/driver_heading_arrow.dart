@@ -13,7 +13,7 @@ class DriverHeadingArrow extends StatelessWidget {
     super.key,
     required this.headingDegrees,
     this.size = 48,
-    this.pulse = true,
+    this.pulse = false,
   });
 
   @override
@@ -85,7 +85,7 @@ class _PulseRingState extends State<_PulseRing>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: const Color(0xFF38BDF8).withValues(alpha: 0.45 * (1 - t)),
+              color: const Color(0xFF00D4FF).withValues(alpha: 0.45 * (1 - t)),
               width: 2.5,
             ),
           ),
@@ -95,7 +95,7 @@ class _PulseRingState extends State<_PulseRing>
   }
 }
 
-/// 3D wedge arrow similar to Neshan turn-by-turn navigation puck.
+/// Tall cyan triangle on white disc — matches Neshan navigation puck.
 class _NeshanNavArrowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -103,73 +103,57 @@ class _NeshanNavArrowPainter extends CustomPainter {
     final h = size.height;
     final cx = w / 2;
 
-    // Ground shadow (ellipse under puck)
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(cx, h * 0.94),
-        width: w * 0.72,
+        center: Offset(cx, h * 0.97),
+        width: w * 0.82,
         height: h * 0.14,
       ),
-      Paint()..color = Colors.black.withValues(alpha: 0.28),
+      Paint()..color = Colors.black.withValues(alpha: 0.30),
     );
 
-    // Main arrow body — wide base, sharp tip (3D navigation chevron)
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx, h * 0.82),
+        width: w * 0.72,
+        height: h * 0.22,
+      ),
+      Paint()
+        ..shader = ui.Gradient.radial(
+          Offset(cx, h * 0.80),
+          w * 0.36,
+          [const Color(0xFFFFFFFF), const Color(0xFFE2E8F0)],
+        ),
+    );
+
     final body = ui.Path()
-      ..moveTo(cx, h * 0.04)
-      ..lineTo(cx + w * 0.46, h * 0.72)
-      ..lineTo(cx + w * 0.14, h * 0.66)
-      ..lineTo(cx + w * 0.14, h * 0.88)
-      ..lineTo(cx - w * 0.14, h * 0.88)
-      ..lineTo(cx - w * 0.14, h * 0.66)
-      ..lineTo(cx - w * 0.46, h * 0.72)
+      ..moveTo(cx, h * 0.02)
+      ..lineTo(cx + w * 0.48, h * 0.72)
+      ..lineTo(cx - w * 0.48, h * 0.72)
       ..close();
 
-    final gradient = ui.Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(cx, h * 0.04),
-        Offset(cx, h * 0.9),
-        [
-          const Color(0xFF7DD3FC),
-          const Color(0xFF38BDF8),
-          const Color(0xFF0284C7),
-        ],
-        [0.0, 0.45, 1.0],
-      )
-      ..style = PaintingStyle.fill;
-
-    canvas.drawPath(body, gradient);
-
-    // White highlight stripe (3D effect)
-    final highlight = ui.Path()
-      ..moveTo(cx, h * 0.10)
-      ..lineTo(cx + w * 0.06, h * 0.58)
-      ..lineTo(cx - w * 0.02, h * 0.55)
-      ..close();
     canvas.drawPath(
-      highlight,
-      Paint()..color = Colors.white.withValues(alpha: 0.45),
+      body,
+      ui.Paint()
+        ..shader = ui.Gradient.linear(
+          Offset(cx, h * 0.02),
+          Offset(cx, h * 0.74),
+          [
+            const Color(0xFF7DF9FF),
+            const Color(0xFF00D4FF),
+            const Color(0xFF00A8E8),
+            const Color(0xFF0077B6),
+          ],
+          [0.0, 0.25, 0.65, 1.0],
+        ),
     );
 
-    // White outline
     canvas.drawPath(
       body,
       Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // Dark edge for depth
-    canvas.drawPath(
-      ui.Path()
-        ..moveTo(cx - w * 0.46, h * 0.72)
-        ..lineTo(cx - w * 0.14, h * 0.66)
-        ..lineTo(cx - w * 0.14, h * 0.88),
-      Paint()
-        ..color = const Color(0xFF0369A1).withValues(alpha: 0.55)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
+        ..strokeWidth = 2.8
         ..strokeJoin = StrokeJoin.round,
     );
   }

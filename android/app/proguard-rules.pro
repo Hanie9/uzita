@@ -24,3 +24,11 @@
 
 # Neshan Android SDK
 -keep class org.neshan.** { *; }
+-keep class com.carto.** { *; }
+-keep interface com.carto.** { *; }
+-dontwarn com.carto.**
+-dontwarn org.neshan.**
+
+-keepclasseswithmembernames class * {
+    native <methods>;
+}

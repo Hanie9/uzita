@@ -42,11 +42,20 @@ LatLng _projectPointOnSegment(LatLng start, LatLng end, LatLng point) {
   );
 }
 
-double polylineLengthMeters(List<LatLng> polyline, {int startIndex = 0}) {
+double polylineLengthMeters(
+  List<LatLng> polyline, {
+  int startIndex = 0,
+  int? endIndex,
+}) {
   if (polyline.length < 2 || startIndex >= polyline.length - 1) return 0;
 
+  final lastIndex = (endIndex ?? polyline.length - 1).clamp(
+    startIndex,
+    polyline.length - 1,
+  );
+
   var total = 0.0;
-  for (var i = startIndex; i < polyline.length - 1; i++) {
+  for (var i = startIndex; i < lastIndex; i++) {
     total += distanceMeters(polyline[i], polyline[i + 1]);
   }
   return total;
@@ -182,17 +191,33 @@ double? resolveDriverHeading({
   return bearingAlongPolyline(routePolyline, position);
 }
 
-/// Distance from [driver] to the start of [step], or along route if no step location.
+/// Distance from [driver] to the start of [step] along the route when possible.
 double distanceToStepMeters({
   required LatLng driver,
   required NeshanRouteStep step,
   required List<LatLng> routePolyline,
 }) {
+  if (routePolyline.length >= 2) {
+    final driverIndex = findClosestPolylineIndex(routePolyline, driver);
+    final loc = step.startLocation;
+    if (loc != null) {
+      final stepPoint = LatLng(loc.latitude, loc.longitude);
+      final stepIndex = findClosestPolylineIndex(routePolyline, stepPoint);
+      if (stepIndex > driverIndex) {
+        return polylineLengthMeters(
+          routePolyline,
+          startIndex: driverIndex,
+          endIndex: stepIndex + 1,
+        );
+      }
+      return distanceMeters(driver, stepPoint);
+    }
+    return polylineLengthMeters(routePolyline, startIndex: driverIndex);
+  }
+
   final loc = step.startLocation;
   if (loc != null) {
     return distanceMeters(driver, LatLng(loc.latitude, loc.longitude));
   }
-  if (routePolyline.isEmpty) return 0;
-  final index = findClosestPolylineIndex(routePolyline, driver);
-  return polylineLengthMeters(routePolyline, startIndex: index);
+  return 0;
 }

@@ -6,6 +6,7 @@ import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
 import 'package:uzita/utils/validated_network_tile_provider.dart';
 import 'package:uzita/widgets/driver_heading_arrow.dart';
+import 'package:uzita/widgets/driver_map_controller.dart';
 import 'package:uzita/widgets/neshan_driver_map.dart';
 
 /// Route map: Neshan [MapView] on Android, [FlutterMap] elsewhere.
@@ -18,7 +19,12 @@ class DriverNavigationMap extends StatelessWidget {
   final double? driverHeading;
   final bool followDriver;
   final bool isDark;
+  final bool overviewMode;
+  final bool pickupLeg;
   final int? traveledFromIndex;
+  final String returnToRouteLabel;
+  final DriverMapController? controller;
+  final ValueChanged<bool>? onCameraDetached;
 
   const DriverNavigationMap({
     super.key,
@@ -30,7 +36,12 @@ class DriverNavigationMap extends StatelessWidget {
     this.driverHeading,
     this.followDriver = false,
     this.isDark = false,
+    this.overviewMode = false,
+    this.pickupLeg = false,
     this.traveledFromIndex,
+    this.returnToRouteLabel = 'Return to route',
+    this.controller,
+    this.onCameraDetached,
   });
 
   @override
@@ -45,7 +56,12 @@ class DriverNavigationMap extends StatelessWidget {
         driverHeading: driverHeading,
         followDriver: followDriver,
         isDark: isDark,
+        overviewMode: overviewMode,
+        pickupLeg: pickupLeg,
         traveledFromIndex: traveledFromIndex,
+        returnToRouteLabel: returnToRouteLabel,
+        controller: controller,
+        onCameraDetached: onCameraDetached,
       );
     }
 
@@ -58,7 +74,12 @@ class DriverNavigationMap extends StatelessWidget {
       driverHeading: driverHeading,
       followDriver: followDriver,
       isDark: isDark,
+      overviewMode: overviewMode,
+      pickupLeg: pickupLeg,
       traveledFromIndex: traveledFromIndex,
+      returnToRouteLabel: returnToRouteLabel,
+      controller: controller,
+      onCameraDetached: onCameraDetached,
     );
   }
 }
@@ -72,7 +93,12 @@ class _FlutterDriverNavigationMap extends StatefulWidget {
   final double? driverHeading;
   final bool followDriver;
   final bool isDark;
+  final bool overviewMode;
+  final bool pickupLeg;
   final int? traveledFromIndex;
+  final String returnToRouteLabel;
+  final DriverMapController? controller;
+  final ValueChanged<bool>? onCameraDetached;
 
   const _FlutterDriverNavigationMap({
     required this.routeCoordinates,
@@ -83,7 +109,12 @@ class _FlutterDriverNavigationMap extends StatefulWidget {
     this.driverHeading,
     this.followDriver = false,
     this.isDark = false,
+    this.overviewMode = false,
+    this.pickupLeg = false,
     this.traveledFromIndex,
+    required this.returnToRouteLabel,
+    this.controller,
+    this.onCameraDetached,
   });
 
   @override
@@ -97,12 +128,24 @@ class _FlutterDriverNavigationMapState
   final Distance _distance = const Distance();
   LatLng? _previousDriverPosition;
   bool _fittedInitialBounds = false;
+  bool _autoFollow = true;
+  bool _mapReady = false;
 
-  static const _routeBlue = Color(0xFF2563EB);
+  static const _routeCyan = Color(0xFF00D4FF);
   static const _trafficRed = Color(0xFFDC2626);
 
   @override
+  void initState() {
+    super.initState();
+    widget.controller?.bind(
+      refitOverview: _refitOverview,
+      resumeNavigation: _resumeNavigationAt,
+    );
+  }
+
+  @override
   void dispose() {
+    widget.controller?.unbind();
     _mapController.dispose();
     super.dispose();
   }
@@ -110,45 +153,102 @@ class _FlutterDriverNavigationMapState
   @override
   void didUpdateWidget(covariant _FlutterDriverNavigationMap oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?.unbind();
+      widget.controller?.bind(
+        refitOverview: _refitOverview,
+        resumeNavigation: _resumeNavigationAt,
+      );
+    }
+
+    if (!oldWidget.followDriver && widget.followDriver) {
+      _autoFollow = true;
+    }
+
+    final routeChanged =
+        widget.routeCoordinates.length != oldWidget.routeCoordinates.length ||
+        widget.origin != oldWidget.origin ||
+        widget.destination != oldWidget.destination;
+
+    if (routeChanged) {
+      _fittedInitialBounds = false;
+    }
+
     if (widget.driverPosition != null &&
         widget.driverPosition != oldWidget.driverPosition) {
       _previousDriverPosition = oldWidget.driverPosition;
-      if (widget.followDriver) {
+      if (widget.followDriver && _autoFollow) {
         _followDriver(widget.driverPosition!);
       }
-    } else if (!widget.followDriver && !_fittedInitialBounds) {
+    } else if (!widget.followDriver && (!_fittedInitialBounds || routeChanged)) {
       _fitRouteBounds();
     }
   }
 
   void _onMapReady() {
-    if (widget.followDriver && widget.driverPosition != null) {
+    _mapReady = true;
+    if (widget.followDriver && widget.driverPosition != null && _autoFollow) {
       _followDriver(widget.driverPosition!);
     } else {
       _fitRouteBounds();
     }
   }
 
+  void _onUserMapInteraction() {
+    if (!widget.followDriver) return;
+    if (!_autoFollow) return;
+    setState(() => _autoFollow = false);
+    widget.onCameraDetached?.call(true);
+  }
+
+  Future<void> _resumeNavigationAt(LatLng position, double? heading) async {
+    if (!_mapReady) return;
+    setState(() => _autoFollow = true);
+    widget.onCameraDetached?.call(false);
+    _followDriverAt(position, heading);
+  }
+
+  Future<void> _refitOverview() async {
+    setState(() => _fittedInitialBounds = false);
+    widget.onCameraDetached?.call(false);
+    _fitRouteBounds();
+  }
+
   void _fitRouteBounds() {
+    if (!_mapReady) return;
     final points = <LatLng>[
       widget.origin,
       widget.destination,
+      if (widget.driverPosition != null) widget.driverPosition!,
       ...widget.routeCoordinates,
     ];
     if (points.isEmpty) return;
 
+    final padding = widget.overviewMode
+        ? const EdgeInsets.fromLTRB(48, 120, 48, 280)
+        : const EdgeInsets.fromLTRB(40, 40, 40, 40);
+
     _mapController.fitCamera(
       CameraFit.bounds(
         bounds: LatLngBounds.fromPoints(points),
-        padding: const EdgeInsets.all(40),
+        padding: padding,
       ),
     );
     _fittedInitialBounds = true;
   }
 
-  void _followDriver(LatLng position) {
-    final zoom = _mapController.camera.zoom.clamp(15.5, 18.0);
-    final bearing = widget.driverHeading ?? _movementBearing(position);
+  void _followDriverAt(LatLng position, double? heading) {
+    const zoom = NeshanDriverMap.navZoom;
+    final bearing =
+        heading ??
+        resolveDriverHeading(
+          position: position,
+          deviceHeading: widget.driverHeading,
+          previousPosition: _previousDriverPosition,
+          routePolyline: _route,
+        ) ??
+        _movementBearing(position);
     if (bearing != null) {
       _mapController.moveAndRotate(position, zoom, bearing);
     } else {
@@ -156,21 +256,15 @@ class _FlutterDriverNavigationMapState
     }
   }
 
+  void _followDriver(LatLng position) {
+    _followDriverAt(position, widget.driverHeading);
+  }
+
   double? _movementBearing(LatLng current) {
     final prev = _previousDriverPosition;
     if (prev == null) return null;
     if (_distance(prev, current) < 3) return null;
     return _distance.bearing(prev, current);
-  }
-
-  double? get _resolvedHeading {
-    if (widget.driverPosition == null) return null;
-    return resolveDriverHeading(
-      position: widget.driverPosition!,
-      deviceHeading: widget.driverHeading,
-      previousPosition: _previousDriverPosition,
-      routePolyline: _route,
-    );
   }
 
   List<LatLng> get _route =>
@@ -187,92 +281,118 @@ class _FlutterDriverNavigationMapState
 
   @override
   Widget build(BuildContext context) {
+    final routeColor = _routeCyan;
     final traveledIndex = widget.traveledFromIndex ?? 0;
     final traveled = traveledIndex > 0
         ? _route.sublist(0, traveledIndex.clamp(1, _route.length))
         : <LatLng>[];
 
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: widget.origin,
-        initialZoom: 13,
-        minZoom: 5,
-        maxZoom: 19,
-        interactionOptions: InteractionOptions(
-          flags: widget.followDriver
-              ? InteractiveFlag.pinchZoom | InteractiveFlag.drag
-              : InteractiveFlag.all,
-        ),
-        onMapReady: _onMapReady,
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: MapTileConfig.urlFor(isDark: widget.isDark),
-          fallbackUrl: MapTileConfig.fallbackFor(isDark: widget.isDark),
-          subdomains: MapTileConfig.cartoSubdomains,
-          userAgentPackageName: MapTileConfig.userAgentPackageName,
-          maxNativeZoom: 19,
-          retinaMode: false,
-          tileProvider: ValidatedNetworkTileProvider(),
-          evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
-        ),
-        if (traveled.length >= 2)
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: traveled,
-                color: Colors.grey.withValues(alpha: 0.55),
-                strokeWidth: 7,
-              ),
-            ],
+    return ColoredBox(
+      color: widget.isDark
+          ? const Color(0xFF1A2332)
+          : const Color(0xFFE8EEF4),
+      child: FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: widget.origin,
+            initialZoom: 13,
+            minZoom: 5,
+            maxZoom: 19,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all,
+            ),
+            onMapReady: _onMapReady,
+            onPositionChanged: (position, hasGesture) {
+              if (hasGesture) _onUserMapInteraction();
+            },
           ),
-        PolylineLayer(
-          polylines: [
-            for (final segment in _drawSegments)
-              if (segment.points.length >= 2)
-                Polyline(
-                  points: segment.points,
-                  color: segment.congested ? _trafficRed : _routeBlue,
-                  strokeWidth: 8,
-                  borderColor: Colors.white,
-                  borderStrokeWidth: 2,
-                ),
-          ],
-        ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: widget.origin,
-              width: 36,
-              height: 36,
-              child: const _MapPin(color: Colors.green, icon: Icons.trip_origin),
+          children: [
+            TileLayer(
+              key: ValueKey(widget.isDark),
+              urlTemplate: MapTileConfig.urlFor(isDark: widget.isDark),
+              fallbackUrl: MapTileConfig.fallbackFor(isDark: widget.isDark),
+              subdomains: MapTileConfig.cartoSubdomains,
+              userAgentPackageName: MapTileConfig.userAgentPackageName,
+              maxNativeZoom: 19,
+              retinaMode: false,
+              tileProvider: ValidatedNetworkTileProvider(),
+              evictErrorTileStrategy: EvictErrorTileStrategy.dispose,
             ),
-            Marker(
-              point: widget.destination,
-              width: 36,
-              height: 36,
-              child: const _MapPin(
-                color: Color(0xFFEA580C),
-                icon: Icons.location_on,
+            if (traveled.length >= 2)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: traveled,
+                    color: Colors.grey.withValues(alpha: 0.55),
+                    strokeWidth: 7,
+                  ),
+                ],
               ),
+            PolylineLayer(
+              polylines: [
+                for (final segment in _drawSegments)
+                  if (segment.points.length >= 2)
+                    Polyline(
+                      points: segment.points,
+                      color: segment.congested ? _trafficRed : routeColor,
+                      strokeWidth: 10,
+                      borderColor: Colors.white,
+                      borderStrokeWidth: 2,
+                    ),
+              ],
             ),
+            MarkerLayer(
+              markers: [
+                if (!widget.followDriver) ...[
+                  if (!widget.pickupLeg)
+                    Marker(
+                      point: widget.origin,
+                      width: 36,
+                      height: 36,
+                      child: const _MapPin(
+                        color: Colors.green,
+                        icon: Icons.trip_origin,
+                      ),
+                    ),
+                  Marker(
+                    point: widget.destination,
+                    width: 36,
+                    height: 36,
+                    child: _MapPin(
+                      color: widget.pickupLeg
+                          ? Colors.green
+                          : const Color(0xFFEA580C),
+                      icon: widget.pickupLeg
+                          ? Icons.trip_origin
+                          : Icons.location_on,
+                    ),
+                  ),
+                ],
             if (widget.driverPosition != null)
               Marker(
                 point: widget.driverPosition!,
-                width: 72,
-                height: 80,
-                alignment: const Alignment(0, 0.82),
+                width: widget.followDriver ? 44 : 20,
+                height: widget.followDriver ? 48 : 20,
+                alignment: Alignment.center,
                 rotate: !widget.followDriver,
-                child: DriverHeadingArrow(
-                  headingDegrees: widget.followDriver ? 0 : _resolvedHeading,
-                  size: 72,
-                  pulse: widget.followDriver,
-                ),
+                child: widget.followDriver
+                    ? const DriverHeadingArrow(
+                        headingDegrees: 0,
+                        size: 44,
+                        pulse: false,
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                      ),
               ),
+              ],
+            ),
           ],
-        ),
-      ],
+      ),
     );
   }
 }
