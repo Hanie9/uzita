@@ -1,16 +1,38 @@
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/services/neshan_models.dart';
+import 'package:uzita/utils/neshan_traffic_levels.dart';
 import 'package:uzita/utils/polyline_decoder.dart';
+import 'package:uzita/utils/route_progress.dart';
 
-/// A drawable slice of the route (blue = clear, red = congested).
+/// Traffic density along a route segment.
+enum RouteTrafficLevel {
+  clear,
+  moderate,
+  heavy;
+
+  static RouteTrafficLevel fromName(String? name) {
+    switch (name) {
+      case 'heavy':
+        return RouteTrafficLevel.heavy;
+      case 'moderate':
+        return RouteTrafficLevel.moderate;
+      default:
+        return RouteTrafficLevel.clear;
+    }
+  }
+}
+
+/// A drawable slice of the route (blue = clear, orange = moderate, red = heavy).
 class RouteMapSegment {
   final List<LatLng> points;
-  final bool congested;
+  final RouteTrafficLevel trafficLevel;
 
   const RouteMapSegment({
     required this.points,
-    required this.congested,
+    this.trafficLevel = RouteTrafficLevel.clear,
   });
+
+  bool get congested => trafficLevel == RouteTrafficLevel.heavy;
 }
 
 class RouteMapGeometry {
@@ -44,7 +66,7 @@ class RouteMapGeometry {
       return RouteMapGeometry(
         fullPolyline: full,
         segments: [
-          RouteMapSegment(points: full, congested: false),
+          RouteMapSegment(points: full),
         ],
       );
     }
@@ -53,7 +75,7 @@ class RouteMapGeometry {
 
     final drawSegments = segments.isNotEmpty
         ? segments
-        : [RouteMapSegment(points: full, congested: false)];
+        : [RouteMapSegment(points: full)];
 
     return RouteMapGeometry(fullPolyline: full, segments: drawSegments);
   }
@@ -67,18 +89,35 @@ class RouteMapGeometry {
     final leg = route.primaryLeg;
     if (leg == null || leg.steps.isEmpty) return const [];
 
+    final baselineLeg = route.baselineRoute?.primaryLeg;
+    final overview = _decodeOverview(route.overviewPolyline);
     final segments = <RouteMapSegment>[];
+    var distanceCursor = 0.0;
 
     for (final step in leg.steps) {
       if (step.isArrival) continue;
+      if (step.distanceMeters <= 0 && step.durationSeconds <= 0) continue;
 
-      final stepPoints = _pointsForStep(step);
+      var stepPoints = _pointsForStep(step);
+      if (stepPoints.length < 2 && overview.length >= 2 && step.distanceMeters > 0) {
+        stepPoints = slicePolylineByDistance(
+          overview,
+          distanceCursor,
+          step.distanceMeters,
+        );
+      }
+      distanceCursor += step.distanceMeters;
+
       if (stepPoints.length < 2) continue;
 
       segments.add(
         RouteMapSegment(
           points: stepPoints,
-          congested: isStepCongested(step),
+          trafficLevel: trafficLevelForStep(
+            step,
+            liveLeg: leg,
+            baselineLeg: baselineLeg,
+          ),
         ),
       );
     }
@@ -87,7 +126,7 @@ class RouteMapGeometry {
 
     final linked = _polylineFromStepLocations(route);
     if (linked.length >= 2) {
-      return [RouteMapSegment(points: linked, congested: false)];
+      return [RouteMapSegment(points: linked)];
     }
 
     return const [];
@@ -157,16 +196,51 @@ class RouteMapGeometry {
       target.addAll(chunk);
     }
   }
-}
 
-/// Heuristic: only mark clearly jammed segments (not normal urban slowdown).
-bool isStepCongested(NeshanRouteStep step) {
-  if (step.distanceMeters < 100 || step.durationSeconds <= 0) return false;
+  /// Keeps only the route ahead of the driver while preserving per-segment traffic.
+  static List<RouteMapSegment> trimSegmentsFromDriver({
+    required List<RouteMapSegment> segments,
+    required List<LatLng> fullPolyline,
+    required LatLng driver,
+  }) {
+    if (segments.isEmpty || fullPolyline.length < 2) return segments;
 
-  final speedKmh = (step.distanceMeters / step.durationSeconds) * 3.6;
-  if (speedKmh < 10) return true;
+    final startIndex = findClosestPolylineIndex(fullPolyline, driver)
+        .clamp(0, fullPolyline.length - 2);
 
-  const freeFlowMps = 13.9; // ~50 km/h
-  final expectedSeconds = step.distanceMeters / freeFlowMps;
-  return step.durationSeconds > expectedSeconds * 2.5;
+    final merged = <LatLng>[];
+    final ranges = <({int start, int end, RouteMapSegment segment})>[];
+
+    for (final segment in segments) {
+      if (segment.points.length < 2) continue;
+      final start = merged.isEmpty ? 0 : merged.length - 1;
+      _appendPolyline(merged, segment.points);
+      ranges.add((start: start, end: merged.length - 1, segment: segment));
+    }
+
+    if (merged.isEmpty) return segments;
+
+    final trimmed = <RouteMapSegment>[];
+    for (final range in ranges) {
+      if (range.end < startIndex) continue;
+
+      var localStart = 0;
+      if (range.start < startIndex) {
+        localStart =
+            (startIndex - range.start).clamp(0, range.segment.points.length - 2);
+      }
+
+      final points = range.segment.points.sublist(localStart);
+      if (points.length >= 2) {
+        trimmed.add(
+          RouteMapSegment(
+            points: points,
+            trafficLevel: range.segment.trafficLevel,
+          ),
+        );
+      }
+    }
+
+    return trimmed.isNotEmpty ? trimmed : segments;
+  }
 }

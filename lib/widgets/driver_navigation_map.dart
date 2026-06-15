@@ -18,6 +18,7 @@ class DriverNavigationMap extends StatelessWidget {
   final LatLng? driverPosition;
   final double? driverHeading;
   final bool followDriver;
+  final bool navigationMode;
   final bool isDark;
   final bool overviewMode;
   final bool pickupLeg;
@@ -35,6 +36,7 @@ class DriverNavigationMap extends StatelessWidget {
     this.driverPosition,
     this.driverHeading,
     this.followDriver = false,
+    this.navigationMode = false,
     this.isDark = false,
     this.overviewMode = false,
     this.pickupLeg = false,
@@ -55,6 +57,7 @@ class DriverNavigationMap extends StatelessWidget {
         driverPosition: driverPosition,
         driverHeading: driverHeading,
         followDriver: followDriver,
+        navigationMode: navigationMode,
         isDark: isDark,
         overviewMode: overviewMode,
         pickupLeg: pickupLeg,
@@ -131,8 +134,20 @@ class _FlutterDriverNavigationMapState
   bool _autoFollow = true;
   bool _mapReady = false;
 
-  static const _routeCyan = Color(0xFF00D4FF);
+  static const _routePurple = Color(0xFF7C3AED);
+  static const _trafficOrange = Color(0xFFEA580C);
   static const _trafficRed = Color(0xFFDC2626);
+
+  static Color _colorForTrafficLevel(RouteTrafficLevel level) {
+    switch (level) {
+      case RouteTrafficLevel.heavy:
+        return _trafficRed;
+      case RouteTrafficLevel.moderate:
+        return _trafficOrange;
+      case RouteTrafficLevel.clear:
+        return _routePurple;
+    }
+  }
 
   @override
   void initState() {
@@ -140,6 +155,7 @@ class _FlutterDriverNavigationMapState
     widget.controller?.bind(
       refitOverview: _refitOverview,
       resumeNavigation: _resumeNavigationAt,
+      tickNavigation: _tickNavigationAt,
     );
   }
 
@@ -159,6 +175,7 @@ class _FlutterDriverNavigationMapState
       widget.controller?.bind(
         refitOverview: _refitOverview,
         resumeNavigation: _resumeNavigationAt,
+        tickNavigation: _tickNavigationAt,
       );
     }
 
@@ -209,6 +226,11 @@ class _FlutterDriverNavigationMapState
     _followDriverAt(position, heading);
   }
 
+  Future<void> _tickNavigationAt(LatLng position, double? heading) async {
+    if (!_mapReady || !_autoFollow || !widget.followDriver) return;
+    _followDriverAt(position, heading);
+  }
+
   Future<void> _refitOverview() async {
     setState(() => _fittedInitialBounds = false);
     widget.onCameraDetached?.call(false);
@@ -226,7 +248,7 @@ class _FlutterDriverNavigationMapState
     if (points.isEmpty) return;
 
     final padding = widget.overviewMode
-        ? const EdgeInsets.fromLTRB(48, 120, 48, 280)
+        ? const EdgeInsets.fromLTRB(48, 100, 48, 340)
         : const EdgeInsets.fromLTRB(40, 40, 40, 40);
 
     _mapController.fitCamera(
@@ -273,15 +295,41 @@ class _FlutterDriverNavigationMapState
       : [widget.origin, widget.destination];
 
   List<RouteMapSegment> get _drawSegments {
+    final segments = widget.routeSegments;
+    if (segments.isNotEmpty) {
+      if (widget.followDriver &&
+          widget.driverPosition != null &&
+          _route.length >= 2) {
+        return RouteMapGeometry.trimSegmentsFromDriver(
+          segments: segments,
+          fullPolyline: _route,
+          driver: widget.driverPosition!,
+        );
+      }
+      return segments;
+    }
+
+    if (widget.followDriver &&
+        widget.driverPosition != null &&
+        _route.length >= 2) {
+      final startIndex = findClosestPolylineIndex(
+        _route,
+        widget.driverPosition!,
+      ).clamp(0, _route.length - 2);
+      final remaining = _route.sublist(startIndex);
+      if (remaining.length >= 2) {
+        return [RouteMapSegment(points: remaining)];
+      }
+    }
+
     if (_route.length >= 2) {
-      return [RouteMapSegment(points: _route, congested: false)];
+      return [RouteMapSegment(points: _route)];
     }
     return const [];
   }
 
   @override
   Widget build(BuildContext context) {
-    final routeColor = _routeCyan;
     final traveledIndex = widget.traveledFromIndex ?? 0;
     final traveled = traveledIndex > 0
         ? _route.sublist(0, traveledIndex.clamp(1, _route.length))
@@ -324,7 +372,7 @@ class _FlutterDriverNavigationMapState
                   Polyline(
                     points: traveled,
                     color: Colors.grey.withValues(alpha: 0.55),
-                    strokeWidth: 7,
+                    strokeWidth: 5,
                   ),
                 ],
               ),
@@ -334,10 +382,10 @@ class _FlutterDriverNavigationMapState
                   if (segment.points.length >= 2)
                     Polyline(
                       points: segment.points,
-                      color: segment.congested ? _trafficRed : routeColor,
-                      strokeWidth: 10,
+                      color: _colorForTrafficLevel(segment.trafficLevel),
+                      strokeWidth: 6,
                       borderColor: Colors.white,
-                      borderStrokeWidth: 2,
+                      borderStrokeWidth: 1.5,
                     ),
               ],
             ),

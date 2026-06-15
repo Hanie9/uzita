@@ -8,6 +8,8 @@ import android.view.View
 import android.widget.FrameLayout
 import com.carto.core.ScreenPos
 import com.carto.styles.BillboardOrientation
+import com.carto.styles.LineEndType
+import com.carto.styles.LineJoinType
 import com.carto.styles.LineStyleBuilder
 import com.carto.styles.MarkerStyleBuilder
 import com.carto.utils.BitmapUtils
@@ -24,16 +26,20 @@ import org.neshan.mapsdk.model.Marker
 import org.neshan.mapsdk.model.Polyline
 import org.neshan.mapsdk.style.NeshanMapStyle
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.ln
 
 private const val ROUTE_CYAN = 0xFF00D4FF.toInt()
 private const val ROUTE_PURPLE = 0xFF7C3AED.toInt()
 private const val TRAFFIC_RED = 0xFFDC2626.toInt()
+private const val TRAFFIC_ORANGE = 0xFFEA580C.toInt()
 private const val TRAVELED_GREY = 0xFF9CA3AF.toInt()
 private const val ORIGIN_GREEN = 0xFF16A34A.toInt()
 private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
 
-private const val NAV_ZOOM = 19f
-private const val NAV_TILT = 62f
+private const val NAV_ZOOM = 18f
+private const val NAV_TILT = 58f
+/// 3D perspective for route overview (Neshan-style before navigation).
+private const val OVERVIEW_TILT = 52f
 private const val NAV_MARKER_SIZE = 34f
 private const val OVERVIEW_MARKER_SIZE = 34f
 private const val DRIVER_DOT_SIZE = 22f
@@ -95,6 +101,21 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 )
                 result.success(null)
             }
+            "beginNavigationCamera" -> {
+                val lat = call.argument<Double>("lat") ?: 0.0
+                val lng = call.argument<Double>("lng") ?: 0.0
+                val bearing = call.argument<Double>("bearing")?.toFloat() ?: 0f
+                val mapDark = call.argument<Boolean>("mapDark") ?: false
+                mapView.beginNavigationCamera(LatLng(lat, lng), bearing, mapDark)
+                result.success(null)
+            }
+            "updateNavigationCamera" -> {
+                val lat = call.argument<Double>("lat") ?: 0.0
+                val lng = call.argument<Double>("lng") ?: 0.0
+                val bearing = call.argument<Double>("bearing")?.toFloat() ?: 0f
+                mapView.updateNavigationCamera(LatLng(lat, lng), bearing)
+                result.success(null)
+            }
             "setNavigationFollow" -> {
                 val enabled = call.argument<Boolean>("enabled") ?: false
                 mapView.setNavigationFollowEnabled(enabled)
@@ -109,13 +130,15 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 @Suppress("UNCHECKED_CAST")
                 val raw = call.argument<List<Map<String, Double>>>("points") ?: emptyList()
                 val overview = call.argument<Boolean>("overview") ?: false
+                val bottomInsetRatio =
+                    call.argument<Double>("bottomInsetRatio")?.toFloat() ?: 0.20f
                 val points = raw.mapNotNull { p ->
                     val la = p["lat"] ?: return@mapNotNull null
                     val ln = p["lng"] ?: return@mapNotNull null
                     LatLng(la, ln)
                 }
                 try {
-                    mapView.fitBounds(points, overview)
+                    mapView.fitBounds(points, overview, bottomInsetRatio)
                     result.success(null)
                 } catch (_: Throwable) {
                     result.success(null)
@@ -218,32 +241,79 @@ private class NeshanMapPlatformView(
             ),
         )
         setupCameraListeners()
+        applyOverviewCameraSettings()
         NeshanMapRegistry.put(viewId, this)
         mapView.post {
             mapView.moveCamera(LatLng(35.6892, 51.3890), 0f)
             mapView.setZoom(11f, 0f)
+            mapView.setBearing(0f, 0f)
+            mapView.setTilt(OVERVIEW_TILT, 0f)
             mapView.invalidate()
         }
     }
 
+    private fun applyOverviewCameraSettings() {
+        mapView.getSettings().setMapRotationEnabled(false)
+        mapView.getSettings().setMinTiltAngle(40f)
+        mapView.getSettings().setMaxTiltAngle(58f)
+    }
+
+    private fun applyNavigationCameraSettings() {
+        mapView.getSettings().setMapRotationEnabled(true)
+        mapView.getSettings().setMinTiltAngle(30f)
+        mapView.getSettings().setMaxTiltAngle(90f)
+    }
+
+    private fun enforceOverviewCamera() {
+        if (suppressGestureEvents || navigationFollowEnabled) return
+        val bearing = mapView.getBearing()
+        val tilt = mapView.getTilt()
+        if (kotlin.math.abs(bearing) > 0.5f || kotlin.math.abs(tilt - OVERVIEW_TILT) > 2f) {
+            suppressGestureEvents = true
+            mapView.setBearing(0f, 0f)
+            mapView.setTilt(OVERVIEW_TILT, 0f)
+            mapView.postDelayed({ suppressGestureEvents = false }, 120)
+        }
+    }
+
+    // True while the user's finger is on the map (incl. a short tail to catch
+    // fling-driven camera moves). Lets us distinguish user pans from our own
+    // programmatic follow moves.
+    private var userIsTouching = false
+
     private fun setupCameraListeners() {
+        mapView.setOnCameraMoveListener {
+            if (!navigationFollowEnabled && overviewGesturesEnabled) {
+                enforceOverviewCamera()
+            }
+        }
+
+        // Camera moved: only treat it as a user gesture when the user is
+        // actually touching the map. Programmatic follow moves happen without a
+        // touch, so they never detach the camera.
         mapView.setOnCameraMoveStartListener { _ ->
-            if (suppressGestureEvents) return@setOnCameraMoveStartListener
-            when {
-                navigationFollowEnabled -> notifyUserDetachedFromRoute()
-                overviewGesturesEnabled -> notifyOverviewGesture()
+            if (!userIsTouching) return@setOnCameraMoveStartListener
+            if (navigationFollowEnabled) {
+                notifyUserDetachedFromRoute()
+                navigationFollowEnabled = false
+            } else if (overviewGesturesEnabled) {
+                notifyOverviewGesture()
             }
         }
 
         mapView.setOnTouchListener { _, event ->
-            if (suppressGestureEvents) return@setOnTouchListener false
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN,
-                MotionEvent.ACTION_MOVE,
                 MotionEvent.ACTION_POINTER_DOWN,
-                -> when {
-                    navigationFollowEnabled -> notifyUserDetachedFromRoute()
-                    overviewGesturesEnabled -> notifyOverviewGesture()
+                -> {
+                    userIsTouching = true
+                }
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL,
+                -> {
+                    // Keep the flag briefly so a fling's trailing camera move
+                    // still counts as a user gesture.
+                    mapView.postDelayed({ userIsTouching = false }, 350)
                 }
             }
             false
@@ -262,9 +332,8 @@ private class NeshanMapPlatformView(
     }
 
     private fun notifyUserDetachedFromRoute() {
-        if (userGestureNotified || !navigationFollowEnabled) return
+        if (userGestureNotified) return
         userGestureNotified = true
-        navigationFollowEnabled = false
         NeshanMapRegistry.emitEvent(
             mapOf(
                 "type" to "userCameraGesture",
@@ -273,15 +342,72 @@ private class NeshanMapPlatformView(
         )
     }
 
+    fun updateNavigationCamera(position: LatLng, bearing: Float) {
+        if (!navigationFollowEnabled) return
+
+        val apply = {
+            suppressGestureEvents = true
+            mapView.moveCamera(position, 0.12f)
+            mapView.setBearing(bearing, 0.12f)
+            mapView.setTilt(NAV_TILT, 0.12f)
+            mapView.invalidate()
+            mapView.postDelayed({ suppressGestureEvents = false }, 250)
+        }
+
+        if (mapView.height <= 0) {
+            mapView.post { apply() }
+        } else {
+            apply()
+        }
+    }
+
+    fun beginNavigationCamera(position: LatLng, bearing: Float, mapDark: Boolean = false) {
+        navigationFollowEnabled = true
+        overviewGesturesEnabled = false
+        userGestureNotified = false
+        userIsTouching = false
+        if (mapDark && !this.mapDark) {
+            applyMapStyle(true)
+        }
+        applyNavigationCameraSettings()
+        suppressGestureEvents = true
+
+        val apply = {
+            val viewHeight = mapView.height.coerceAtLeast(1)
+            mapView.setMapFocusPointOffset(ScreenPos(0f, viewHeight * 0.40f))
+            mapView.moveCamera(position, 0.3f)
+            mapView.setZoom(NAV_ZOOM, 0.3f)
+            mapView.setBearing(bearing, 0.3f)
+            mapView.setTilt(NAV_TILT, 0.3f)
+            mapView.invalidate()
+            mapView.postDelayed({ suppressGestureEvents = false }, 900)
+        }
+
+        if (mapView.height <= 0) {
+            mapView.post { apply() }
+        } else {
+            apply()
+        }
+    }
+
     fun setNavigationFollowEnabled(enabled: Boolean) {
+        if (enabled == navigationFollowEnabled) return
         navigationFollowEnabled = enabled
         if (enabled) {
             userGestureNotified = false
+            applyNavigationCameraSettings()
+        } else if (!overviewGesturesEnabled) {
+            applyOverviewCameraSettings()
         }
     }
 
     fun setOverviewGesturesEnabled(enabled: Boolean) {
         overviewGesturesEnabled = enabled
+        if (enabled) {
+            applyOverviewCameraSettings()
+            mapView.setBearing(0f, 0f)
+            mapView.setTilt(OVERVIEW_TILT, 0f)
+        }
         if (!enabled) {
             userGestureNotified = false
         }
@@ -303,58 +429,94 @@ private class NeshanMapPlatformView(
         navigation: Boolean,
         tilt: Float?,
     ) {
-        suppressGestureEvents = true
-        if (navigation) {
-            val focusOffsetY = mapView.height * 0.38f
-            mapView.setMapFocusPointOffset(ScreenPos(0f, focusOffsetY))
-            mapView.moveCamera(position, 0.18f)
-            mapView.setZoom(zoom, 0.18f)
-            bearing?.let { mapView.setBearing(it, 0.18f) }
-            mapView.setTilt(tilt ?: NAV_TILT, 0.18f)
-        } else {
-            mapView.setMapFocusPointOffset(ScreenPos(0f, 0f))
-            mapView.moveCamera(position, 0.22f)
-            mapView.setZoom(zoom, 0.22f)
-            bearing?.let { mapView.setBearing(it, 0.22f) }
-            mapView.setTilt(0f, 0.22f)
+        val applyMove = {
+            suppressGestureEvents = true
+            if (navigation) {
+                val viewHeight = mapView.height.coerceAtLeast(1)
+                val focusOffsetY = viewHeight * 0.40f
+                mapView.setMapFocusPointOffset(ScreenPos(0f, focusOffsetY))
+                mapView.moveCamera(position, 0.25f)
+                mapView.setZoom(zoom, 0.25f)
+                mapView.setBearing(bearing ?: 0f, 0.25f)
+                mapView.setTilt(tilt ?: NAV_TILT, 0.25f)
+            } else {
+                mapView.setMapFocusPointOffset(ScreenPos(0f, 0f))
+                mapView.moveCamera(position, 0.22f)
+                mapView.setZoom(zoom, 0.22f)
+                mapView.setBearing(0f, 0.22f)
+                mapView.setTilt(OVERVIEW_TILT, 0.22f)
+            }
+            mapView.invalidate()
+            mapView.postDelayed({ suppressGestureEvents = false }, 900)
         }
-        mapView.postDelayed({ suppressGestureEvents = false }, 350)
+
+        if (mapView.height <= 0) {
+            mapView.post { applyMove() }
+        } else {
+            applyMove()
+        }
     }
 
-    fun fitBounds(points: List<LatLng>, overview: Boolean = false) {
-        if (points.isEmpty()) return
+    fun fitBounds(
+        points: List<LatLng>,
+        overview: Boolean = false,
+        bottomInsetRatio: Float = 0.20f,
+    ) {
+        if (points.isEmpty() || navigationFollowEnabled) return
 
         val minLat = points.minOf { it.latitude }
         val maxLat = points.maxOf { it.latitude }
         val minLng = points.minOf { it.longitude }
         val maxLng = points.maxOf { it.longitude }
-        val padFactor = if (overview) 0.45 else 0.18
+        val padFactor = if (overview) 0.30 else 0.18
         val minPad = if (overview) 0.012 else 0.004
         val latPad = maxOf((maxLat - minLat) * padFactor, minPad)
         val lngPad = maxOf((maxLng - minLng) * padFactor, minPad)
 
         suppressGestureEvents = true
-        mapView.setBearing(0f, 0.15f)
-        mapView.setTilt(0f, 0.2f)
+        if (overview) {
+            applyOverviewCameraSettings()
+        }
+        mapView.setBearing(0f, 0f)
+        mapView.setTilt(OVERVIEW_TILT, 0f)
 
         if (overview && mapView.height > 0) {
-            // Shift visible area above the bottom overview panel.
-            mapView.setMapFocusPointOffset(ScreenPos(0f, mapView.height * 0.20f))
+            val inset = bottomInsetRatio.coerceIn(0.12f, 0.48f)
+            mapView.setMapFocusPointOffset(ScreenPos(0f, mapView.height * inset))
         } else {
             mapView.setMapFocusPointOffset(ScreenPos(0f, 0f))
         }
 
         if (points.size == 1) {
             mapView.post {
+                if (navigationFollowEnabled) {
+                    suppressGestureEvents = false
+                    return@post
+                }
                 mapView.moveCamera(points.first(), 0.22f)
-                mapView.setZoom(if (overview) 13f else 14f, 0.22f)
+                mapView.setZoom(if (overview) 10.2f else 14f, 0.22f)
+                mapView.setBearing(0f, 0f)
+                mapView.setTilt(OVERVIEW_TILT, 0f)
                 mapView.postDelayed({ suppressGestureEvents = false }, 350)
             }
             return
         }
 
         mapView.post {
-            moveCameraToSpan(minLat, maxLat, minLng, maxLng, latPad, lngPad, overview)
+            if (navigationFollowEnabled) {
+                suppressGestureEvents = false
+                return@post
+            }
+            moveCameraToSpan(
+                minLat,
+                maxLat,
+                minLng,
+                maxLng,
+                latPad,
+                lngPad,
+                overview,
+                bottomInsetRatio,
+            )
             resetCameraGestureState()
             mapView.postDelayed({ suppressGestureEvents = false }, 350)
         }
@@ -368,31 +530,63 @@ private class NeshanMapPlatformView(
         latPad: Double,
         lngPad: Double,
         overview: Boolean = false,
+        bottomInsetRatio: Float = 0.20f,
     ) {
         val centerLat = (minLat + maxLat) / 2.0
         val centerLng = (minLng + maxLng) / 2.0
-        val latSpan = maxLat - minLat + latPad * 2
-        val lngSpan = maxLng - minLng + lngPad * 2
-        val span = maxOf(latSpan, lngSpan)
-        val zoom = zoomForSpan(span, overview)
-        val adjustedZoom = if (overview) (zoom - 0.6f).coerceAtLeast(5f) else zoom
+        val zoom = fitZoomForBounds(
+            minLat,
+            maxLat,
+            minLng,
+            maxLng,
+            overview,
+            bottomInsetRatio,
+        )
         mapView.moveCamera(LatLng(centerLat, centerLng), 0.22f)
-        mapView.setZoom(adjustedZoom, 0.22f)
+        mapView.setZoom(zoom, 0.22f)
+        if (overview) {
+            mapView.setBearing(0f, 0f)
+            mapView.setTilt(OVERVIEW_TILT, 0f)
+        }
     }
 
-    private fun zoomForSpan(span: Double, overview: Boolean = false): Float {
-        val base = when {
-            span > 10.0 -> 6f
-            span > 5.0 -> 8f
-            span > 2.0 -> 10f
-            span > 1.0 -> 11f
-            span > 0.5 -> 12f
-            span > 0.2 -> 13f
-            span > 0.08 -> 14f
-            span > 0.03 -> 15f
-            else -> 16f
+    /// Exact web-mercator zoom that fits the bounds to the viewport, leaving a
+    /// margin around the route. Replaces the coarse span→zoom lookup table.
+    private fun fitZoomForBounds(
+        minLat: Double,
+        maxLat: Double,
+        minLng: Double,
+        maxLng: Double,
+        overview: Boolean,
+        bottomInsetRatio: Float,
+    ): Float {
+        val widthPx = mapView.width.coerceAtLeast(1).toDouble()
+        val heightPx = mapView.height.coerceAtLeast(1).toDouble()
+
+        // Fraction of the world covered by the bounds (normalized 0..1).
+        val dxWorld = ((maxLng - minLng) / 360.0).coerceAtLeast(1e-7)
+        val dyWorld =
+            kotlin.math.abs(latToMercatorY(minLat) - latToMercatorY(maxLat))
+                .coerceAtLeast(1e-7)
+
+        // Extra room so the route doesn't touch the screen edges.
+        val marginFactor = if (overview) 1.32 else 1.12
+        // Overview keeps the route in the upper part; reserve some bottom space.
+        val usableHeight = if (overview) {
+            heightPx * (1.0 - bottomInsetRatio.coerceIn(0.0f, 0.4f).toDouble())
+        } else {
+            heightPx
         }
-        return if (overview) (base - 1.5f).coerceAtLeast(5f) else base
+
+        val zoomX = ln(widthPx / (256.0 * dxWorld * marginFactor)) / ln(2.0)
+        val zoomY = ln(usableHeight / (256.0 * dyWorld * marginFactor)) / ln(2.0)
+        val zoom = minOf(zoomX, zoomY)
+        return zoom.toFloat().coerceIn(5f, 17f)
+    }
+
+    private fun latToMercatorY(lat: Double): Double {
+        val s = kotlin.math.sin(lat * Math.PI / 180.0).coerceIn(-0.9999, 0.9999)
+        return 0.5 - ln((1.0 + s) / (1.0 - s)) / (4.0 * Math.PI)
     }
 
     fun updateRouteOverlay(
@@ -416,25 +610,30 @@ private class NeshanMapPlatformView(
         driverMarker?.let { mapView.removeMarker(it) }
 
         val navigationMode = driver?.get("navigationMode") as? Boolean ?: false
-        val isOverview = overviewMode ||
-            (driver?.get("overviewMode") as? Boolean ?: !navigationMode)
+        val isOverview = !navigationMode && (
+            overviewMode || (driver?.get("overviewMode") as? Boolean ?: true)
+        )
 
         for (segment in segments) {
             @Suppress("UNCHECKED_CAST")
             val rawPoints = segment["points"] as? List<Map<String, Double>> ?: continue
+            val trafficLevel = segment["trafficLevel"] as? String
             val congested = segment["congested"] as? Boolean ?: false
             val points = toLatLngList(rawPoints)
             if (points.size < 2) continue
 
-            val color = when {
-                congested -> TRAFFIC_RED
-                navigationMode -> ROUTE_CYAN
-                else -> ROUTE_CYAN
+            val color = when (trafficLevel) {
+                "heavy" -> TRAFFIC_RED
+                "moderate" -> TRAFFIC_ORANGE
+                "clear" -> ROUTE_PURPLE
+                else -> if (congested) TRAFFIC_RED else ROUTE_PURPLE
             }
-            val lineWidth = if (navigationMode) 10f else 8f
+            val lineWidth = if (navigationMode) 7f else 5f
             val style = LineStyleBuilder().apply {
                 setColor(com.carto.graphics.Color(color))
                 setWidth(lineWidth)
+                setLineJoinType(LineJoinType.LINE_JOIN_TYPE_ROUND)
+                setLineEndType(LineEndType.LINE_END_TYPE_ROUND)
             }.buildStyle()
             val polyline = Polyline(points, style)
             routePolylines.add(polyline)
@@ -445,7 +644,9 @@ private class NeshanMapPlatformView(
         if (traveledPoints.size >= 2) {
             val style = LineStyleBuilder().apply {
                 setColor(com.carto.graphics.Color(TRAVELED_GREY))
-                setWidth(8f)
+                setWidth(5f)
+                setLineJoinType(LineJoinType.LINE_JOIN_TYPE_ROUND)
+                setLineEndType(LineEndType.LINE_END_TYPE_ROUND)
             }.buildStyle()
             traveledPolyline = Polyline(traveledPoints, style)
             mapView.addPolyline(traveledPolyline!!)
@@ -497,8 +698,10 @@ private class NeshanMapPlatformView(
             setBitmap(cartoBitmap)
             setSize(NAV_MARKER_SIZE)
             setAnchorPointX(0.5f)
-            setAnchorPointY(0.78f)
-            setOrientationMode(BillboardOrientation.BILLBOARD_ORIENTATION_GROUND)
+            setAnchorPointY(0.5f)
+            // Screen-facing so the chevron always points "up" = travel
+            // direction (the map itself is rotated heading-up).
+            setOrientationMode(BillboardOrientation.BILLBOARD_ORIENTATION_FACE_CAMERA)
         }.buildStyle()
 
         return Marker(LatLng(lat, lng), style)

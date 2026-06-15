@@ -119,10 +119,23 @@ class NeshanRoute {
   final List<NeshanRouteLeg> legs;
   final String? overviewPolyline;
 
+  /// Parallel no-traffic route from Neshan [v4/direction/no-traffic].
+  final NeshanRoute? baselineRoute;
+
   const NeshanRoute({
     required this.legs,
     this.overviewPolyline,
+    this.baselineRoute,
   });
 
   NeshanRouteLeg? get primaryLeg => legs.isEmpty ? null : legs.first;
+
+  NeshanRoute withBaseline(NeshanRoute? baseline) {
+    if (baseline == null) return this;
+    return NeshanRoute(
+      legs: legs,
+      overviewPolyline: overviewPolyline,
+      baselineRoute: baseline,
+    );
+  }
 }

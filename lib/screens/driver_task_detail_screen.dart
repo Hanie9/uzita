@@ -42,6 +42,13 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     taskData = Map<String, dynamic>.from(widget.task);
   }
 
+  /// Cargo assignment id (واگذاری بار) for live location reporting.
+  int? get _assignmentId {
+    final raw = taskData['id'];
+    if (raw is int) return raw;
+    return int.tryParse(raw?.toString() ?? '');
+  }
+
   String getpaymentLabel(String value) {
     final localizations = AppLocalizations.of(context)!;
 
@@ -290,6 +297,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
             origin: originResult.location,
             destination: destinationResult.location,
             route: route,
+            assignmentId: _assignmentId,
           ),
         ),
       );

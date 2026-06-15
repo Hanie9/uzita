@@ -61,6 +61,64 @@ double polylineLengthMeters(
   return total;
 }
 
+/// Extracts a polyline slice between [startMeters] and [startMeters + lengthMeters].
+List<LatLng> slicePolylineByDistance(
+  List<LatLng> polyline,
+  double startMeters,
+  double lengthMeters,
+) {
+  if (polyline.length < 2 || lengthMeters <= 0) return const [];
+
+  final total = polylineLengthMeters(polyline);
+  if (total <= 0) return const [];
+
+  final start = startMeters.clamp(0.0, total);
+  final end = (startMeters + lengthMeters).clamp(0.0, total);
+  if (end <= start + 1) return const [];
+
+  final startPoint = _pointAtDistance(polyline, start);
+  final endPoint = _pointAtDistance(polyline, end);
+  if (startPoint == null || endPoint == null) return const [];
+
+  final startIndex = findClosestPolylineIndex(polyline, startPoint);
+  final endIndex = findClosestPolylineIndex(polyline, endPoint).clamp(
+    startIndex,
+    polyline.length - 1,
+  );
+
+  final slice = <LatLng>[startPoint];
+  if (endIndex > startIndex) {
+    slice.addAll(polyline.sublist(startIndex + 1, endIndex + 1));
+  }
+  if (slice.isEmpty || slice.last != endPoint) {
+    slice.add(endPoint);
+  }
+
+  return slice.length >= 2 ? slice : const [];
+}
+
+LatLng? _pointAtDistance(List<LatLng> polyline, double targetMeters) {
+  if (polyline.isEmpty) return null;
+  if (targetMeters <= 0) return polyline.first;
+
+  var walked = 0.0;
+  for (var i = 0; i < polyline.length - 1; i++) {
+    final segmentLength = distanceMeters(polyline[i], polyline[i + 1]);
+    if (walked + segmentLength >= targetMeters) {
+      final remaining = targetMeters - walked;
+      final t = segmentLength <= 0 ? 0.0 : (remaining / segmentLength).clamp(0.0, 1.0);
+      return LatLng(
+        polyline[i].latitude +
+            (polyline[i + 1].latitude - polyline[i].latitude) * t,
+        polyline[i].longitude +
+            (polyline[i + 1].longitude - polyline[i].longitude) * t,
+      );
+    }
+    walked += segmentLength;
+  }
+  return polyline.last;
+}
+
 double estimateRemainingSeconds({
   required double totalSeconds,
   required double totalMeters,

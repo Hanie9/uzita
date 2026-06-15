@@ -95,6 +95,78 @@ class NeshanService {
     bool avoidTrafficZone = false,
     bool avoidOddEvenZone = false,
     double? bearing,
+  }) {
+    return _getRoute(
+      baseUrl: neshanDirectionBaseUrl,
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+  }
+
+  /// Baseline routing without live traffic for segment delay comparison.
+  Future<NeshanRoute> getNoTrafficRoute({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) {
+    return _getRoute(
+      baseUrl: neshanNoTrafficDirectionBaseUrl,
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+  }
+
+  /// Typical traffic pattern routing — fallback baseline.
+  Future<NeshanRoute> getTypicalRoute({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) {
+    return _getRoute(
+      baseUrl: neshanTypicalDirectionBaseUrl,
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+  }
+
+  Future<NeshanRoute> _getRoute({
+    required String baseUrl,
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
   }) async {
     _ensureDirectApiKey();
 
@@ -114,7 +186,7 @@ class NeshanService {
       params['bearing'] = bearing.clamp(0, 360).round().toString();
     }
 
-    final uri = Uri.parse(neshanDirectionBaseUrl).replace(
+    final uri = Uri.parse(baseUrl).replace(
       queryParameters: params,
     );
 

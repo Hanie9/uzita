@@ -29,6 +29,14 @@ const String neshanGeocodingBaseUrl = 'https://api.neshan.org/geocoding/v1/plus'
 /// Routing with live traffic — matches «مسیریابی با ترافیک» in panel.
 const String neshanDirectionBaseUrl = 'https://api.neshan.org/v4/direction';
 
+/// Routing without live traffic — baseline for segment traffic coloring.
+const String neshanNoTrafficDirectionBaseUrl =
+    'https://api.neshan.org/v4/direction/no-traffic';
+
+/// Typical traffic pattern routing — fallback baseline when no-traffic fails.
+const String neshanTypicalDirectionBaseUrl =
+    'https://api.neshan.org/v4/direction/typical';
+
 /// Static arc map — matches «نقشه استاتیک منحنی‌دار» in panel.
 const String neshanStaticArcUrl = 'https://api.neshan.org/v4/static/arc';
 

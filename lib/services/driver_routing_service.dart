@@ -64,6 +64,41 @@ class DriverRoutingService {
     bool avoidOddEvenZone = false,
     double? bearing,
   }) async {
+    final live = await _fetchLiveRoute(
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+
+    final baseline = await _tryFetchNoTrafficRoute(
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+
+    return live.withBaseline(baseline);
+  }
+
+  Future<NeshanRoute> _fetchLiveRoute({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) async {
     final fromBackend = await _tryBackend(
       (token) => _backend.getRoute(
         authToken: token,
@@ -75,6 +110,7 @@ class DriverRoutingService {
         avoidTrafficZone: avoidTrafficZone,
         avoidOddEvenZone: avoidOddEvenZone,
         bearing: bearing,
+        liveTraffic: true,
       ),
     );
     if (fromBackend != null) return fromBackend;
@@ -111,6 +147,77 @@ class DriverRoutingService {
     throw const NeshanApiException(
       'Neshan API key is not configured',
       neshanStatus: 'KeyNotFound',
+    );
+  }
+
+  Future<NeshanRoute?> _tryFetchNoTrafficRoute({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) async {
+    final attempts = <Future<NeshanRoute?> Function()>[
+      () => _tryBackendNoTraffic(
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+        bearing: bearing,
+      ),
+      if (hasDirectNeshanKey)
+        () => _neshan.getNoTrafficRoute(
+          origin: origin,
+          destination: destination,
+          vehicleType: vehicleType,
+          alternative: alternative,
+          waypoints: waypoints,
+          avoidTrafficZone: avoidTrafficZone,
+          avoidOddEvenZone: avoidOddEvenZone,
+          bearing: bearing,
+        ),
+    ];
+
+    for (final attempt in attempts) {
+      try {
+        final route = await attempt();
+        if (route != null) return route;
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  Future<NeshanRoute?> _tryBackendNoTraffic({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) async {
+    return _tryBackend(
+      (token) => _backend.getRoute(
+        authToken: token,
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+        bearing: bearing,
+        liveTraffic: false,
+      ),
     );
   }
 

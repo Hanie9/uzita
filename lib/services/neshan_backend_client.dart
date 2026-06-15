@@ -56,6 +56,7 @@ class NeshanBackendClient {
     bool avoidTrafficZone = false,
     bool avoidOddEvenZone = false,
     double? bearing,
+    bool liveTraffic = true,
   }) async {
     final params = <String, String>{
       'type': vehicleType,
@@ -64,6 +65,7 @@ class NeshanBackendClient {
       'alternative': alternative.toString(),
       'avoidTrafficZone': avoidTrafficZone.toString(),
       'avoidOddEvenZone': avoidOddEvenZone.toString(),
+      if (!liveTraffic) 'traffic': 'none',
     };
 
     if (waypoints != null && waypoints.isNotEmpty) {

@@ -2,19 +2,137 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
+import 'package:uzita/utils/neshan_traffic_levels.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
+import 'package:uzita/utils/route_progress.dart';
 
 void main() {
-  test('marks slow steps as congested', () {
+  const liveLeg = NeshanRouteLeg(
+    summary: 'test',
+    distanceText: '2 km',
+    durationText: '5 min',
+    distanceMeters: 2000,
+    durationSeconds: 300,
+    steps: [],
+  );
+
+  const baselineLeg = NeshanRouteLeg(
+    summary: 'test',
+    distanceText: '2 km',
+    durationText: '3 min',
+    distanceMeters: 2000,
+    durationSeconds: 180,
+    steps: [],
+  );
+
+  test('marks heavily delayed steps using Neshan leg baseline', () {
     const step = NeshanRouteStep(
       instruction: 'ادامه دهید',
       name: 'ولیعصر',
       distanceText: '500 متر',
       durationText: '3 دقیقه',
       distanceMeters: 500,
-      durationSeconds: 180,
+      durationSeconds: 120,
     );
-    expect(isStepCongested(step), isTrue);
+    expect(
+      trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      RouteTrafficLevel.heavy,
+    );
+    expect(
+      isStepCongested(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      isTrue,
+    );
+  });
+
+  test('marks moderately delayed steps as orange traffic', () {
+    const step = NeshanRouteStep(
+      instruction: 'ادامه دهید',
+      name: 'ولیعصر',
+      distanceText: '800 متر',
+      durationText: '2 دقیقه',
+      distanceMeters: 800,
+      durationSeconds: 90,
+    );
+    expect(
+      trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      RouteTrafficLevel.moderate,
+    );
+    expect(
+      isStepCongested(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      isFalse,
+    );
+  });
+
+  test('marks similar durations as clear traffic', () {
+    const step = NeshanRouteStep(
+      instruction: 'ادامه دهید',
+      name: 'اتوبان',
+      distanceText: '2 کیلومتر',
+      durationText: '2 دقیقه',
+      distanceMeters: 2000,
+      durationSeconds: 120,
+    );
+    expect(
+      trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      RouteTrafficLevel.clear,
+    );
+  });
+
+  test('builds colored segments from overview polyline when step polyline missing', () {
+    const route = NeshanRoute(
+      overviewPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@',
+      legs: [
+        NeshanRouteLeg(
+          summary: 'test',
+          distanceText: '1 km',
+          durationText: '2 min',
+          distanceMeters: 1000,
+          durationSeconds: 120,
+          steps: [
+            NeshanRouteStep(
+              instruction: 'شروع',
+              name: 'خیابان',
+              distanceText: '500 m',
+              durationText: '1 min',
+              distanceMeters: 500,
+              durationSeconds: 90,
+              stepType: 'depart',
+            ),
+            NeshanRouteStep(
+              instruction: 'رسیدن',
+              name: '',
+              distanceText: '',
+              durationText: '',
+              stepType: 'arrive',
+            ),
+          ],
+        ),
+      ],
+      baselineRoute: NeshanRoute(
+        legs: [
+          NeshanRouteLeg(
+            summary: 'test',
+            distanceText: '1 km',
+            durationText: '1 min',
+            distanceMeters: 1000,
+            durationSeconds: 60,
+            steps: const [],
+          ),
+        ],
+      ),
+    );
+
+    final geometry = RouteMapGeometry.fromRoute(
+      route,
+      origin: const LatLng(38.5, -120.2),
+      destination: const LatLng(40.7, -120.95),
+    );
+
+    expect(geometry.segments, isNotEmpty);
+    expect(
+      geometry.segments.any((s) => s.trafficLevel != RouteTrafficLevel.clear),
+      isTrue,
+    );
   });
 
   test('builds geometry from overview polyline', () {

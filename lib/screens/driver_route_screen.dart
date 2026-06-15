@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/models/driver_trip_phase.dart';
 import 'package:uzita/services.dart';
+import 'package:uzita/services/driver_location_reporter.dart';
 import 'package:uzita/services/driver_routing_service.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
@@ -24,6 +27,9 @@ class DriverRouteScreen extends StatefulWidget {
   final NeshanLatLng origin;
   final NeshanLatLng destination;
 
+  /// Cargo assignment id (واگذاری بار) — used to report live driver location.
+  final int? assignmentId;
+
   /// Cargo route: pickup (mabda) → delivery (maghsad).
   final NeshanRoute deliveryRoute;
 
@@ -34,6 +40,7 @@ class DriverRouteScreen extends StatefulWidget {
     required this.origin,
     required this.destination,
     required NeshanRoute route,
+    this.assignmentId,
   }) : deliveryRoute = route;
 
   @override
@@ -44,6 +51,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   static const _routingService = DriverRoutingService();
 
   final DriverLocationTracker _locationTracker = DriverLocationTracker();
+  final DriverLocationReporter _locationReporter = DriverLocationReporter();
   final ScrollController _stepsScrollController = ScrollController();
   final List<GlobalKey> _stepKeys = [];
 
@@ -189,6 +197,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
     _resetStepKeys();
     _loadSavedMapTheme();
     _startLocationTracking();
+    if (widget.assignmentId != null) {
+      _locationReporter.start(widget.assignmentId!);
+    }
   }
 
   Future<void> _loadSavedMapTheme() async {
@@ -250,6 +261,13 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
           );
         }
       });
+      if (!_navigationActive) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_navigationActive) {
+            unawaited(_mapController.refitOverview());
+          }
+        });
+      }
     } on NeshanApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -259,6 +277,13 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
         );
         _syncStepKeys();
       });
+      if (!_navigationActive) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_navigationActive) {
+            unawaited(_mapController.refitOverview());
+          }
+        });
+      }
       if (kDebugMode) {
         debugPrint('Pickup route fallback: $e');
       }
@@ -268,6 +293,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   }
 
   bool _isDriverPlausibleForTrip(LatLng driver) {
+    if (_phase == DriverTripPhase.toPickup) {
+      return distanceMeters(driver, _originLatLng) <= 120000;
+    }
     final toOrigin = distanceMeters(driver, _originLatLng);
     final toDestination = distanceMeters(driver, _destinationLatLng);
     return toOrigin <= 200000 || toDestination <= 200000;
@@ -277,10 +305,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
     if (_pickupRoute == null) return true;
     final first = _pickupRoute!.primaryLeg?.steps.firstOrNull?.startLocation;
     if (first == null) return true;
-    return distanceMeters(
-          position,
-          LatLng(first.latitude, first.longitude),
-        ) >
+    return distanceMeters(position, LatLng(first.latitude, first.longitude)) >
         1500;
   }
 
@@ -297,6 +322,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   void dispose() {
     _mapDarkMode.dispose();
     _locationTracker.dispose();
+    _locationReporter.stop();
     _stepsScrollController.dispose();
     super.dispose();
   }
@@ -347,7 +373,11 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
     }
 
     if (_phase == DriverTripPhase.toPickup) {
-      await _loadPickupRoute(driver, force: true);
+      if (_pickupRoute == null) {
+        await _loadPickupRoute(driver);
+      } else if (_shouldReloadPickupRoute(driver)) {
+        await _loadPickupRoute(driver, force: true);
+      }
       if (!mounted) return;
     }
 
@@ -364,6 +394,18 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
     });
     _syncStepKeys();
 
+    // Wait one frame so followDriver propagates before moving the camera.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+
+    await _mapController.resumeNavigation(
+      position: driver,
+      heading: _driverHeading,
+    );
+
+    // Ensure navigation camera wins over any pending overview refit.
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    if (!mounted || !_navigationActive) return;
     await _mapController.resumeNavigation(
       position: driver,
       heading: _driverHeading,
@@ -392,6 +434,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       routePolyline: _routeCoordinates,
     );
 
+    _locationReporter.updatePosition(position.latitude, position.longitude);
+
     setState(() {
       _driverPosition = position;
       _driverHeading = resolvedHeading;
@@ -407,6 +451,15 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       }
     }
     _syncStepKeys();
+
+    if (_navigationActive && _isTracking && !_mapCameraDetached) {
+      unawaited(
+        _mapController.tickNavigation(
+          position: position,
+          heading: resolvedHeading,
+        ),
+      );
+    }
 
     if (stepChanged) {
       _scrollToActiveStep();
@@ -439,15 +492,32 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
     return _leg?.summary ?? '';
   }
 
-  String _remainingDistanceText(AppLocalizations localizations) {
-    if (_isAwaitingGpsLocation) {
-      return _searchingLocationText(localizations);
-    }
+  int _remainingMetersValue() {
+    if (_isAwaitingGpsLocation) return 0;
 
     final remainingMeters = polylineLengthMeters(
       _routeCoordinates,
       startIndex: _traveledPolylineIndex,
     );
+
+    if (_phase == DriverTripPhase.toPickup && _driverPosition != null) {
+      final legMeters = _leg?.distanceMeters;
+      final directToOrigin = distanceMeters(_driverPosition!, _originLatLng);
+      if (remainingMeters > 100000 ||
+          (legMeters != null && remainingMeters > legMeters * 4)) {
+        return directToOrigin.round();
+      }
+    }
+
+    return remainingMeters.round();
+  }
+
+  String _remainingDistanceText(AppLocalizations localizations) {
+    if (_isAwaitingGpsLocation) {
+      return _searchingLocationText(localizations);
+    }
+
+    final remainingMeters = _remainingMetersValue();
 
     if (remainingMeters >= 1000) {
       final km = (remainingMeters / 1000).toStringAsFixed(1);
@@ -483,10 +553,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       return _totalDurationSeconds.round();
     }
 
-    final remainingMeters = polylineLengthMeters(
-      _routeCoordinates,
-      startIndex: _traveledPolylineIndex,
-    );
+    final remainingMeters = _remainingMetersValue().toDouble();
     return estimateRemainingSeconds(
       totalSeconds: _totalDurationSeconds,
       totalMeters: _totalDistanceMeters,
@@ -511,7 +578,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   }
 
   void _onMapCameraDetached(bool detached) {
-    if (!mounted || !_navigationActive) return;
+    if (!mounted) return;
+    if (detached && !_navigationActive) return;
     if (_mapCameraDetached == detached) return;
     setState(() => _mapCameraDetached = detached);
   }
@@ -664,6 +732,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
         driverPosition: _isTracking ? _driverPosition : null,
         driverHeading: _isTracking ? _driverHeading : null,
         followDriver: _navigationActive && _isTracking,
+        navigationMode: _navigationActive,
         isDark: isDark,
         overviewMode: !_navigationActive,
         pickupLeg: _isPickupLeg,
@@ -712,27 +781,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
                     ),
                 ],
               ),
-              if (!_navigationActive && _leg != null)
-                Positioned(
-                  left: 24,
-                  right: 24,
-                  top: MediaQuery.of(context).size.height * 0.18,
-                  child: _RouteOverviewBubble(
-                    summary: _routeSummaryText(),
-                    distanceText: _remainingDistanceText(localizations),
-                    durationText: _remainingDurationText(localizations),
-                    awaitingGpsLocation: _isAwaitingGpsLocation,
-                    searchingLocationText: _searchingLocationText(localizations),
-                  ),
-                ),
-              if (!_navigationActive && !_isTracking)
-                Positioned(
-                  left: ui.scale(base: 12, min: 10, max: 16),
-                  right: ui.scale(base: 12, min: 10, max: 16),
-                  bottom: ui.scale(base: 12, min: 10, max: 16),
-                  child: _buildLocationBanner(localizations, ui),
-                ),
-              _returnToRouteButton(localizations, bottom: 88),
+              _returnToRouteButton(localizations, bottom: 20),
             ],
           ),
         ),
@@ -770,37 +819,6 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
     );
   }
 
-  Widget _buildLocationBanner(AppLocalizations localizations, UiScale ui) {
-    final message = switch (_locationStatus) {
-      DriverLocationStatus.permissionDenied =>
-        localizations.driver_route_location_denied,
-      DriverLocationStatus.serviceDisabled =>
-        localizations.driver_route_location_disabled,
-      _ => localizations.driver_route_location_off,
-    };
-
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(12),
-      color: Theme.of(context).cardTheme.color,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            const Icon(Icons.location_disabled, color: AppColors.iranianGray),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 12)),
-            ),
-            TextButton(
-              onPressed: _requestLocationAgain,
-              child: Text(localizations.driver_route_enable_location),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _MapThemeToggleButton extends StatelessWidget {
@@ -826,98 +844,6 @@ class _MapThemeToggleButton extends StatelessWidget {
             color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF334155),
             size: 24,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RouteOverviewBubble extends StatelessWidget {
-  final String summary;
-  final String distanceText;
-  final String durationText;
-  final bool awaitingGpsLocation;
-  final String searchingLocationText;
-
-  const _RouteOverviewBubble({
-    required this.summary,
-    required this.distanceText,
-    required this.durationText,
-    this.awaitingGpsLocation = false,
-    this.searchingLocationText = '',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 6,
-      borderRadius: BorderRadius.circular(14),
-      color: const Color(0xFF00B4D8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (summary.isNotEmpty && !awaitingGpsLocation)
-              Text(
-                summary,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            if (summary.isNotEmpty && !awaitingGpsLocation)
-              const SizedBox(height: 6),
-            if (awaitingGpsLocation)
-              Row(
-                children: [
-                  const Icon(Icons.gps_not_fixed, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      searchingLocationText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            else
-              Row(
-              children: [
-                const Icon(Icons.schedule, color: Colors.white, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  durationText,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Icon(Icons.straighten, color: Colors.white, size: 16),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    distanceText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
@@ -1285,44 +1211,6 @@ class _TripPhaseBanner extends StatelessWidget {
   }
 }
 
-class _NavigationHintBanner extends StatelessWidget {
-  final String hint;
-
-  const _NavigationHintBanner({required this.hint});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(12),
-      color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.95),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.info_outline,
-              size: 18,
-              color: AppColors.lapisLazuli,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                hint,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.iranianGray,
-                  height: 1.35,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _NavigationBottomBar extends StatelessWidget {
   final String remainingDistance;
   final String remainingDuration;
@@ -1464,391 +1352,6 @@ class _BottomMetric extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AddressCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final Color iconColor;
-
-  const _AddressCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey[700]!
-              : AppColors.lapisLazuli.withValues(alpha: 0.08),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: iconColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.iranianGray,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RouteSummaryCard extends StatelessWidget {
-  final String summary;
-  final String distanceText;
-  final String durationText;
-  final String arrivalText;
-  final String distanceLabel;
-  final String durationLabel;
-  final String arrivalLabel;
-
-  const _RouteSummaryCard({
-    required this.summary,
-    required this.distanceText,
-    required this.durationText,
-    required this.arrivalText,
-    required this.distanceLabel,
-    required this.durationLabel,
-    required this.arrivalLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.lapisLazuli.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lapisLazuli.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (summary.isNotEmpty) ...[
-            Row(
-              children: [
-                const Icon(Icons.route, size: 18, color: AppColors.lapisLazuli),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    summary,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.lapisLazuli,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
-          Row(
-            children: [
-              Expanded(
-                child: _MetricChip(
-                  icon: Icons.straighten,
-                  label: distanceLabel,
-                  value: distanceText,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MetricChip(
-                  icon: Icons.schedule,
-                  label: durationLabel,
-                  value: durationText,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MetricChip(
-                  icon: Icons.flag,
-                  label: arrivalLabel,
-                  value: arrivalText,
-                  highlight: true,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool highlight;
-
-  const _MetricChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: highlight
-            ? AppColors.lapisLazuli.withValues(alpha: 0.12)
-            : Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                size: 14,
-                color: highlight
-                    ? AppColors.lapisLazuli
-                    : AppColors.iranianGray,
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: highlight
-                        ? AppColors.lapisLazuli
-                        : AppColors.iranianGray,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value.isEmpty ? '---' : value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: highlight ? AppColors.lapisLazuli : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepTile extends StatelessWidget {
-  final int index;
-  final NeshanRouteStep step;
-  final bool isLast;
-  final bool isActive;
-  final bool isCompleted;
-  final String completedLabel;
-  final String currentLabel;
-
-  const _StepTile({
-    super.key,
-    required this.index,
-    required this.step,
-    required this.isLast,
-    required this.isActive,
-    required this.isCompleted,
-    required this.completedLabel,
-    required this.currentLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = isActive
-        ? AppColors.lapisLazuli
-        : Theme.of(context).brightness == Brightness.dark
-        ? Colors.grey[700]!
-        : AppColors.lapisLazuli.withValues(alpha: 0.08);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.lapisLazuli
-                      : isCompleted
-                      ? AppColors.iranianGray.withValues(alpha: 0.2)
-                      : AppColors.lapisLazuli.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: isCompleted
-                    ? const Icon(
-                        Icons.check,
-                        size: 14,
-                        color: AppColors.iranianGray,
-                      )
-                    : Text(
-                        '$index',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isActive
-                              ? Colors.white
-                              : AppColors.lapisLazuli,
-                        ),
-                      ),
-              ),
-              if (!isLast)
-                Container(
-                  width: 2,
-                  height: 20,
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  color: isCompleted
-                      ? AppColors.iranianGray.withValues(alpha: 0.35)
-                      : AppColors.lapisLazuli.withValues(alpha: 0.15),
-                ),
-            ],
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.lapisLazuli.withValues(alpha: 0.08)
-                    : Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: borderColor,
-                  width: isActive ? 1.5 : 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isActive || isCompleted)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        isActive ? currentLabel : completedLabel,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: isActive
-                              ? AppColors.lapisLazuli
-                              : AppColors.iranianGray,
-                        ),
-                      ),
-                    ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        maneuverIcon(step),
-                        size: 18,
-                        color: isActive
-                            ? AppColors.lapisLazuli
-                            : AppColors.iranianGray,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          step.instruction,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isActive
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            color: isCompleted
-                                ? AppColors.iranianGray
-                                : Theme.of(context).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (step.name.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 26),
-                      child: Text(
-                        step.name,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.iranianGray,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (step.distanceText.isNotEmpty ||
-                      step.durationText.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 26),
-                      child: Text(
-                        [
-                          if (step.distanceText.isNotEmpty) step.distanceText,
-                          if (step.durationText.isNotEmpty) step.durationText,
-                        ].join(' • '),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.iranianGray,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
