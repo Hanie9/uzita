@@ -37,15 +37,22 @@ private const val TRAVELED_GREY = 0xFF9CA3AF.toInt()
 private const val ORIGIN_GREEN = 0xFF16A34A.toInt()
 private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
 
-private const val NAV_ZOOM = 18.8f
+// Matches the Neshan Navigator framing: zoomed in close enough to read street
+// names and see a few blocks of the road ahead, with the puck in the lower third.
+private const val NAV_ZOOM = 17.5f
 // Carto/Neshan tilt: 0 = horizon (strong 3D), 90 = top-down (flat).
-// A low value gives the 3D "chase" view behind the driver arrow.
-private const val NAV_TILT = 35f
+// A low value gives the immersive 3D "chase" view behind the driver arrow,
+// like the Neshan Navigator (the road ahead recedes toward the horizon).
+private const val NAV_TILT = 32f
+// Fraction of the view height to drop the driver puck below centre so the road
+// ahead fills the upper screen. A negative ScreenPos Y keeps the focus point
+// (and the driver puck) inside the lower portion of the screen on this SDK.
+private const val NAV_FOCUS_OFFSET = 0.22f
 /// Top-down (tilt 90) overview so the Mercator fit reliably frames the WHOLE
 /// route on any screen size and route length (perspective would clip long
 /// routes off the top of the screen).
 private const val OVERVIEW_TILT = 90f
-private const val NAV_MARKER_SIZE = 34f
+private const val NAV_MARKER_SIZE = 42f
 private const val OVERVIEW_MARKER_SIZE = 34f
 private const val DRIVER_DOT_SIZE = 22f
 private const val NAV_TOUCH_SLOP_SQ = 64f
@@ -372,11 +379,14 @@ private class NeshanMapPlatformView(
         val apply = {
             suppressGestureEvents = true
             val viewHeight = mapView.height.coerceAtLeast(1)
-            mapView.setMapFocusPointOffset(ScreenPos(0f, viewHeight * 0.36f))
-            mapView.moveCamera(position, 0.12f)
-            mapView.setZoom(NAV_ZOOM, 0.12f)
-            mapView.setBearing(bearing, 0.12f)
-            mapView.setTilt(NAV_TILT, 0.12f)
+            // Drop the driver into the lower third of the screen so the road
+            // ahead fills the view (Neshan-style). Bearing + tilt are applied
+            // instantly (duration 0) so concurrent animations never drop them.
+            mapView.setMapFocusPointOffset(ScreenPos(0f, -viewHeight * NAV_FOCUS_OFFSET))
+            mapView.setTilt(NAV_TILT, 0f)
+            mapView.setBearing(bearing, 0f)
+            mapView.setZoom(NAV_ZOOM, 0f)
+            mapView.moveCamera(position, 0.25f)
             mapView.invalidate()
             mapView.postDelayed({ suppressGestureEvents = false }, 250)
         }
@@ -402,13 +412,15 @@ private class NeshanMapPlatformView(
 
         val apply = {
             val viewHeight = mapView.height.coerceAtLeast(1)
-            mapView.setMapFocusPointOffset(ScreenPos(0f, viewHeight * 0.36f))
-            mapView.moveCamera(position, 0.3f)
-            mapView.setZoom(NAV_ZOOM, 0.3f)
-            mapView.setBearing(bearing, 0.3f)
-            mapView.setTilt(NAV_TILT, 0.3f)
+            // Establish the 3D follow camera instantly so tilt/bearing reliably
+            // stick (animated multi-property camera moves can drop tilt/bearing).
+            mapView.setMapFocusPointOffset(ScreenPos(0f, -viewHeight * NAV_FOCUS_OFFSET))
+            mapView.setTilt(NAV_TILT, 0f)
+            mapView.setBearing(bearing, 0f)
+            mapView.setZoom(NAV_ZOOM, 0f)
+            mapView.moveCamera(position, 0f)
             mapView.invalidate()
-            mapView.postDelayed({ suppressGestureEvents = false }, 900)
+            mapView.postDelayed({ suppressGestureEvents = false }, 600)
         }
 
         if (mapView.height <= 0) {
@@ -461,12 +473,11 @@ private class NeshanMapPlatformView(
             suppressGestureEvents = true
             if (navigation) {
                 val viewHeight = mapView.height.coerceAtLeast(1)
-                val focusOffsetY = viewHeight * 0.36f
-                mapView.setMapFocusPointOffset(ScreenPos(0f, focusOffsetY))
+                mapView.setMapFocusPointOffset(ScreenPos(0f, -viewHeight * NAV_FOCUS_OFFSET))
+                mapView.setTilt(tilt ?: NAV_TILT, 0f)
+                mapView.setBearing(bearing ?: 0f, 0f)
+                mapView.setZoom(zoom, 0f)
                 mapView.moveCamera(position, 0.25f)
-                mapView.setZoom(zoom, 0.25f)
-                mapView.setBearing(bearing ?: 0f, 0.25f)
-                mapView.setTilt(tilt ?: NAV_TILT, 0.25f)
             } else {
                 mapView.setMapFocusPointOffset(ScreenPos(0f, 0f))
                 mapView.moveCamera(position, 0.22f)
@@ -744,8 +755,10 @@ private class NeshanMapPlatformView(
         val style = MarkerStyleBuilder().apply {
             setBitmap(cartoBitmap)
             setSize(NAV_MARKER_SIZE)
-            setAnchorPointX(0.5f)
-            setAnchorPointY(0.5f)
+            // Carto anchor range is [-1, 1]; (0, 0) centres the arrow exactly on
+            // the GPS coordinate (default (0, -1) would place it above the point).
+            setAnchorPointX(0f)
+            setAnchorPointY(0f)
             // Screen-facing so the chevron always points "up" = travel
             // direction (the map itself is rotated heading-up).
             setOrientationMode(BillboardOrientation.BILLBOARD_ORIENTATION_FACE_CAMERA)
@@ -758,6 +771,11 @@ private class NeshanMapPlatformView(
         val style = MarkerStyleBuilder().apply {
             setColor(com.carto.graphics.Color(color))
             setSize(size)
+            // Carto anchor range is [-1, 1]; (0, 0) centres the dot exactly on
+            // the GPS coordinate (default is (0, -1) = bottom centre, which
+            // makes the marker sit above its real position).
+            setAnchorPointX(0f)
+            setAnchorPointY(0f)
         }.buildStyle()
         return Marker(LatLng(lat, lng), style)
     }

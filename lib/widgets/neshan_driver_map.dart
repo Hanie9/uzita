@@ -49,8 +49,8 @@ class NeshanDriverMap extends StatefulWidget {
 
   static bool get isSupported => !kIsWeb && Platform.isAndroid;
 
-  static const navZoom = 18.8;
-  static const navTilt = 35.0;
+  static const navZoom = 17.5;
+  static const navTilt = 32.0;
 
   @override
   State<NeshanDriverMap> createState() => _NeshanDriverMapState();
@@ -408,7 +408,8 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   }
 
   Future<void> _followNavigationCamera(LatLng position, double? heading) async {
-    final resolvedHeading = heading ?? _bearingForNavigation(position, heading) ?? 0.0;
+    final resolvedHeading =
+        heading ?? _bearingForNavigation(position, heading) ?? 0.0;
     if (_navigationCameraReady) {
       await _updateNavigationCamera(position, resolvedHeading);
     } else {
@@ -590,7 +591,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         'destination': _point(widget.destination),
         if (widget.driverPosition != null)
           'driver': () {
-            final navPos = _snapNavPosition(widget.driverPosition!);
+            final navPos = _isNavigationMode
+                ? _snapNavPosition(widget.driverPosition!)
+                : widget.driverPosition!;
             final bearing = _isNavigationMode
                 ? _navHeading(navPos, widget.driverHeading)
                 : widget.driverHeading;

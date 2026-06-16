@@ -1,17 +1,19 @@
 package com.example.uzita
 
 import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
+import android.graphics.CornerPathEffect
 import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.RadialGradient
 import android.graphics.Shader
 
-/// Compact Neshan navigation puck for map markers (bitmap is small; marker size ~30).
+/// Neshan-style navigation puck: a rounded blue arrowhead with a white border
+/// and a soft drop shadow, matching the Neshan Navigator driver marker.
 internal object NavArrowBitmap {
-    private const val SIZE_PX = 72
+    private const val SIZE_PX = 120
 
     private var baseArrow: Bitmap? = null
 
@@ -29,53 +31,41 @@ internal object NavArrowBitmap {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val cx = size / 2f
-        val h = size.toFloat()
         val w = size.toFloat()
+        val h = size.toFloat()
 
+        // Soft drop shadow beneath the arrow.
         canvas.drawOval(
-            cx - w * 0.30f,
-            h * 0.88f,
-            cx + w * 0.30f,
-            h * 0.98f,
+            cx - w * 0.24f,
+            h * 0.80f,
+            cx + w * 0.24f,
+            h * 0.95f,
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = 0x44000000
-                style = Paint.Style.FILL
+                color = 0x40000000
+                maskFilter = BlurMaskFilter(8f, BlurMaskFilter.Blur.NORMAL)
             },
         )
 
-        canvas.drawOval(
-            cx - w * 0.26f,
-            h * 0.70f,
-            cx + w * 0.26f,
-            h * 0.86f,
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                shader = RadialGradient(
-                    cx, h * 0.76f,
-                    w * 0.26f,
-                    intArrayOf(0xFFFFFFFF.toInt(), 0xFFE8EDF2.toInt()),
-                    floatArrayOf(0f, 1f),
-                    Shader.TileMode.CLAMP,
-                )
-            },
-        )
-
+        // Rounded triangle pointing up (Neshan-style puck).
         val body = Path().apply {
-            moveTo(cx, h * 0.06f)
-            lineTo(cx + w * 0.30f, h * 0.68f)
-            lineTo(cx - w * 0.30f, h * 0.68f)
+            moveTo(cx, h * 0.14f)
+            lineTo(cx + w * 0.28f, h * 0.76f)
+            lineTo(cx - w * 0.28f, h * 0.76f)
             close()
         }
+        val rounded = CornerPathEffect(16f)
 
         canvas.drawPath(
             body,
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 shader = LinearGradient(
-                    cx, h * 0.06f, cx, h * 0.70f,
-                    intArrayOf(0xFF80F0FF.toInt(), 0xFF00D4FF.toInt(), 0xFF0096D6.toInt()),
-                    floatArrayOf(0f, 0.5f, 1f),
+                    cx, h * 0.12f, cx, h * 0.78f,
+                    intArrayOf(0xFF5AB0F7.toInt(), 0xFF2F86EE.toInt(), 0xFF1E68D8.toInt()),
+                    floatArrayOf(0f, 0.55f, 1f),
                     Shader.TileMode.CLAMP,
                 )
                 style = Paint.Style.FILL
+                pathEffect = rounded
             },
         )
 
@@ -84,8 +74,9 @@ internal object NavArrowBitmap {
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = 0xFFFFFFFF.toInt()
                 style = Paint.Style.STROKE
-                strokeWidth = 2f
+                strokeWidth = 6f
                 strokeJoin = Paint.Join.ROUND
+                pathEffect = rounded
             },
         )
 
