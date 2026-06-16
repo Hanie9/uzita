@@ -49,8 +49,8 @@ class NeshanDriverMap extends StatefulWidget {
 
   static bool get isSupported => !kIsWeb && Platform.isAndroid;
 
-  static const navZoom = 18.0;
-  static const navTilt = 58.0;
+  static const navZoom = 18.8;
+  static const navTilt = 35.0;
 
   @override
   State<NeshanDriverMap> createState() => _NeshanDriverMapState();
@@ -60,15 +60,22 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   static const _channel = MethodChannel('com.example.uzita/neshan_map');
   static const _events = EventChannel('com.example.uzita/neshan_map_events');
 
+  /// Max distance (m) the driver can be from the route and still be snapped
+  /// onto it. Larger deviations are treated as off-route (handled by reroute).
+  static const double _maxSnapMeters = 45;
+
   int? _viewId;
   bool _fitted = false;
   bool _mapUpdatePending = false;
   bool _mapUpdateQueued = false;
+  bool _pendingRefit = false;
   LatLng? _pendingNavPosition;
   double? _pendingNavHeading;
   bool _autoFollow = true;
   bool _navigationCameraReady = false;
   LatLng? _previousDriverPosition;
+  Offset? _navPointerStart;
+  bool _navPointerDetached = false;
   StreamSubscription<dynamic>? _mapEventSub;
 
   List<LatLng> get _route => widget.routeCoordinates.isNotEmpty
@@ -179,6 +186,29 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       if (!widget.overviewMode) return;
       widget.onCameraDetached?.call(true);
     }
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (!widget.navigationMode) return;
+    _navPointerStart = event.localPosition;
+    _navPointerDetached = false;
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (!widget.navigationMode || !_autoFollow || _navPointerDetached) return;
+    final start = _navPointerStart;
+    if (start == null) return;
+    if ((event.localPosition - start).distance < 8) return;
+
+    _navPointerDetached = true;
+    setState(() => _autoFollow = false);
+    widget.onCameraDetached?.call(true);
+    unawaited(_setNavigationFollow(false));
+  }
+
+  void _onPointerEnd(PointerEvent event) {
+    _navPointerStart = null;
+    _navPointerDetached = false;
   }
 
   @override
@@ -303,23 +333,45 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     });
     widget.onCameraDetached?.call(false);
 
-    final resolvedHeading = _bearingForNavigation(position, heading) ?? 0.0;
+    final navPos = _snapNavPosition(position);
+    final resolvedHeading = _navHeading(navPos, heading) ?? 0.0;
 
     await _setNavigationFollow(true);
     await _setOverviewGestures(false);
-    await _beginNavigationCamera(position, resolvedHeading);
+    await _beginNavigationCamera(navPos, resolvedHeading);
     await _syncOverlays();
-    await _beginNavigationCamera(position, resolvedHeading);
+    await _beginNavigationCamera(navPos, resolvedHeading);
     _navigationCameraReady = true;
   }
 
   Future<void> _tickNavigationAt(LatLng position, double? heading) async {
     if (_viewId == null || !_autoFollow || !widget.followDriver) return;
 
-    final resolvedHeading = _bearingForNavigation(position, heading) ?? 0.0;
+    final navPos = _snapNavPosition(position);
+    final resolvedHeading = _navHeading(navPos, heading) ?? 0.0;
 
     await _syncOverlays();
-    await _followNavigationCamera(position, resolvedHeading);
+    await _followNavigationCamera(navPos, resolvedHeading);
+  }
+
+  /// Snaps the raw GPS position onto the planned route so the driver arrow
+  /// always sits exactly on the displayed line (like a navigation app). Only
+  /// snaps when reasonably close; large deviations are left to the re-router.
+  LatLng _snapNavPosition(LatLng raw) {
+    if (!_isNavigationMode || _route.length < 2) return raw;
+    final snapped = snapPointToPolyline(_route, raw);
+    return distanceMeters(raw, snapped) <= _maxSnapMeters ? snapped : raw;
+  }
+
+  /// In navigation mode the camera bearing follows the route direction so the
+  /// path ahead always points "up" and the arrow stays behind it. Falls back
+  /// to the device/movement heading when off-route.
+  double? _navHeading(LatLng navPos, double? heading) {
+    if (_isNavigationMode && _route.length >= 2) {
+      final routeBearing = bearingAlongPolyline(_route, navPos);
+      if (routeBearing != null) return routeBearing;
+    }
+    return heading ?? _bearingForNavigation(navPos, heading);
   }
 
   Future<void> _beginNavigationCamera(LatLng position, double bearing) async {
@@ -356,7 +408,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   }
 
   Future<void> _followNavigationCamera(LatLng position, double? heading) async {
-    final resolvedHeading = _bearingForNavigation(position, heading) ?? 0.0;
+    final resolvedHeading = heading ?? _bearingForNavigation(position, heading) ?? 0.0;
     if (_navigationCameraReady) {
       await _updateNavigationCamera(position, resolvedHeading);
     } else {
@@ -421,11 +473,16 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
   Future<void> _scheduleMapUpdate({required bool refit}) async {
     if (_viewId == null) return;
+    // Accumulate refit requests so a queued update never loses the refit
+    // intent (otherwise a freshly-loaded route may never be re-framed).
+    if (refit) _pendingRefit = true;
     if (_mapUpdatePending) {
       _mapUpdateQueued = true;
       return;
     }
     _mapUpdatePending = true;
+    final doRefit = _pendingRefit;
+    _pendingRefit = false;
 
     try {
       await _syncOverlays();
@@ -433,9 +490,10 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
       if (widget.navigationMode || widget.followDriver) {
         if (_shouldFollowDriver && widget.driverPosition != null) {
+          final navPos = _snapNavPosition(widget.driverPosition!);
           await _followNavigationCamera(
-            widget.driverPosition!,
-            widget.driverHeading,
+            navPos,
+            _navHeading(navPos, widget.driverHeading),
           );
         } else if (widget.navigationMode) {
           await _setOverviewGestures(false);
@@ -443,7 +501,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         return;
       }
 
-      if ((refit || !_fitted) && widget.overviewMode) {
+      if ((doRefit || !_fitted) && widget.overviewMode) {
         await _setNavigationFollow(false);
         await _setOverviewGestures(true);
         await _fitBounds();
@@ -455,7 +513,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       _mapUpdatePending = false;
       if (_mapUpdateQueued) {
         _mapUpdateQueued = false;
-        await _scheduleMapUpdate(refit: false);
+        await _scheduleMapUpdate(refit: _pendingRefit);
       }
     }
   }
@@ -531,12 +589,18 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         'origin': _point(widget.origin),
         'destination': _point(widget.destination),
         if (widget.driverPosition != null)
-          'driver': {
-            ..._point(widget.driverPosition!),
-            if (widget.driverHeading != null) 'bearing': widget.driverHeading,
-            'navigationMode': _isNavigationMode,
-            'overviewMode': !_isNavigationMode,
-          },
+          'driver': () {
+            final navPos = _snapNavPosition(widget.driverPosition!);
+            final bearing = _isNavigationMode
+                ? _navHeading(navPos, widget.driverHeading)
+                : widget.driverHeading;
+            return {
+              ..._point(navPos),
+              if (bearing != null) 'bearing': bearing,
+              'navigationMode': _isNavigationMode,
+              'overviewMode': !_isNavigationMode,
+            };
+          }(),
       });
     } catch (_) {}
   }
@@ -549,14 +613,23 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   @override
   Widget build(BuildContext context) {
     return SizedBox.expand(
-      child: AndroidView(
-        viewType: 'com.example.uzita/neshan_map_view',
-        creationParams: {'isDark': widget.isDark},
-        creationParamsCodec: const StandardMessageCodec(),
-        onPlatformViewCreated: _onPlatformViewCreated,
-        gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-          Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
-        },
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _onPointerDown,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerEnd,
+        onPointerCancel: _onPointerEnd,
+        child: AndroidView(
+          viewType: 'com.example.uzita/neshan_map_view',
+          creationParams: {'isDark': widget.isDark},
+          creationParamsCodec: const StandardMessageCodec(),
+          onPlatformViewCreated: _onPlatformViewCreated,
+          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+            Factory<OneSequenceGestureRecognizer>(
+              () => EagerGestureRecognizer(),
+            ),
+          },
+        ),
       ),
     );
   }

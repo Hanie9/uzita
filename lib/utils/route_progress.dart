@@ -24,6 +24,38 @@ int findClosestPolylineIndex(List<LatLng> polyline, LatLng point) {
   return closestIndex;
 }
 
+/// Closest point lying exactly on [polyline] to [point] (map-matching/snap).
+LatLng snapPointToPolyline(List<LatLng> polyline, LatLng point) {
+  if (polyline.isEmpty) return point;
+  if (polyline.length == 1) return polyline.first;
+
+  var best = polyline.first;
+  var bestDistance = double.infinity;
+  for (var i = 0; i < polyline.length - 1; i++) {
+    final projection = _projectPointOnSegment(polyline[i], polyline[i + 1], point);
+    final d = distanceMeters(point, projection);
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = projection;
+    }
+  }
+  return best;
+}
+
+/// Shortest distance (meters) from [point] to the [polyline] (point→segment).
+double distanceToPolylineMeters(List<LatLng> polyline, LatLng point) {
+  if (polyline.isEmpty) return double.infinity;
+  if (polyline.length == 1) return distanceMeters(point, polyline.first);
+
+  var closest = double.infinity;
+  for (var i = 0; i < polyline.length - 1; i++) {
+    final projection = _projectPointOnSegment(polyline[i], polyline[i + 1], point);
+    final d = distanceMeters(point, projection);
+    if (d < closest) closest = d;
+  }
+  return closest;
+}
+
 LatLng _projectPointOnSegment(LatLng start, LatLng end, LatLng point) {
   final dx = end.longitude - start.longitude;
   final dy = end.latitude - start.latitude;

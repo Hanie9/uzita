@@ -9,10 +9,14 @@ class DriverLocationSnapshot {
 
   final double speedMps;
 
+  /// Horizontal accuracy radius in meters (lower is better). Null when unknown.
+  final double? accuracyMeters;
+
   const DriverLocationSnapshot({
     required this.position,
     this.heading,
     this.speedMps = 0,
+    this.accuracyMeters,
   });
 
   bool get hasHeading => heading != null;

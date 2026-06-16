@@ -28,6 +28,27 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+    }
+
+    // Real phones are ARM only. Drop the x86_64 (emulator-only) native libs,
+    // including the prebuilt ones inside the Neshan/Carto AARs, to shrink the
+    // universal APK. Combine with `--target-platform android-arm,android-arm64`
+    // to also drop the Flutter engine's x86_64 library.
+    packaging {
+        jniLibs {
+            excludes += listOf("lib/x86_64/**")
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            // MIUI / older Android reject v2-only APKs with "package appears to
+            // be invalid". Keep the legacy JAR (v1) signature alongside v2/v3.
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+        }
     }
 
     buildTypes {
@@ -51,7 +72,7 @@ android {
         abi {
             isEnable = isSplitPerAbiRequested
             reset()
-            include("armeabi-v7a", "arm64-v8a", "x86_64")
+            include("armeabi-v7a", "arm64-v8a")
             // When building with --split-per-abi, do NOT create a universal APK to avoid plugin NPE
             // When building without the flag, create only a universal APK
             isUniversalApk = !isSplitPerAbiRequested

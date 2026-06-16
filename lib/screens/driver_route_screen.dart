@@ -47,7 +47,8 @@ class DriverRouteScreen extends StatefulWidget {
   State<DriverRouteScreen> createState() => _DriverRouteScreenState();
 }
 
-class _DriverRouteScreenState extends State<DriverRouteScreen> {
+class _DriverRouteScreenState extends State<DriverRouteScreen>
+    with WidgetsBindingObserver {
   static const _routingService = DriverRoutingService();
 
   final DriverLocationTracker _locationTracker = DriverLocationTracker();
@@ -66,6 +67,17 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   DriverTripPhase _phase = DriverTripPhase.toPickup;
   NeshanRoute? _pickupRoute;
   bool _pickupRouteLoading = false;
+
+  /// Recomputed delivery route (driver → destination) after the driver goes
+  /// off-route during the delivery leg. Null = use the original delivery route.
+  NeshanRoute? _deliveryReroute;
+  RouteMapGeometry? _deliveryRerouteGeometry;
+
+  /// Off-route detection state for automatic re-routing.
+  bool _rerouting = false;
+  int _offRouteHits = 0;
+  DateTime? _lastRerouteAt;
+  static const double _offRouteThresholdMeters = 55;
 
   LatLng get _originLatLng =>
       LatLng(widget.origin.latitude, widget.origin.longitude);
@@ -108,12 +120,12 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
         destination: _originLatLng,
       );
     }
-    return _deliveryGeometry;
+    return _deliveryRerouteGeometry ?? _deliveryGeometry;
   }
 
   NeshanRoute get _activeRoute {
     if (_phase == DriverTripPhase.toDelivery) {
-      return widget.deliveryRoute;
+      return _deliveryReroute ?? widget.deliveryRoute;
     }
     final pickup = _effectivePickupRoute;
     if (pickup != null) return pickup;
@@ -194,11 +206,24 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _resetStepKeys();
     _loadSavedMapTheme();
     _startLocationTracking();
     if (widget.assignmentId != null) {
       _locationReporter.start(widget.assignmentId!);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // The driver may have just enabled location services / granted permission
+    // from the system settings screen. Re-attempt tracking when we come back so
+    // the driver position (and the route to the pickup) finally appears.
+    if (state == AppLifecycleState.resumed &&
+        (!_isTracking || _driverPosition == null)) {
+      _startLocationTracking();
     }
   }
 
@@ -312,6 +337,10 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
   void _confirmCargoPickedUp() {
     setState(() {
       _phase = DriverTripPhase.toDelivery;
+      _deliveryReroute = null;
+      _deliveryRerouteGeometry = null;
+      _offRouteHits = 0;
+      _lastRerouteAt = null;
       _resetStepKeys();
       _mapCameraDetached = false;
     });
@@ -320,6 +349,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _mapDarkMode.dispose();
     _locationTracker.dispose();
     _locationReporter.stop();
@@ -411,6 +441,16 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       heading: _driverHeading,
     );
 
+    // Some Neshan platform-view camera commands can arrive out of order during
+    // the overview->navigation transition. Apply one last follow move after the
+    // native view has had time to redraw the route overlay.
+    await Future<void>.delayed(const Duration(milliseconds: 380));
+    if (!mounted || !_navigationActive || _mapCameraDetached) return;
+    await _mapController.resumeNavigation(
+      position: _driverPosition ?? driver,
+      heading: _driverHeading,
+    );
+
     if (!mounted) return;
     _scrollToActiveStep();
   }
@@ -461,8 +501,81 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       );
     }
 
+    if (_navigationActive && _isTracking) {
+      _maybeRerouteOffRoute(position);
+    }
+
     if (stepChanged) {
       _scrollToActiveStep();
+    }
+  }
+
+  /// Detects when the driver has left the planned route and triggers a new
+  /// route (and ETA) from the current position. Requires several consecutive
+  /// off-route fixes and a cooldown so GPS noise / brief detours don't spam it.
+  void _maybeRerouteOffRoute(LatLng driver) {
+    if (_rerouting) return;
+    final route = _routeCoordinates;
+    if (route.length < 2) return;
+
+    final offBy = distanceToPolylineMeters(route, driver);
+    if (offBy <= _offRouteThresholdMeters) {
+      _offRouteHits = 0;
+      return;
+    }
+
+    _offRouteHits++;
+    if (_offRouteHits < 3) return;
+
+    final now = DateTime.now();
+    if (_lastRerouteAt != null &&
+        now.difference(_lastRerouteAt!) < const Duration(seconds: 15)) {
+      return;
+    }
+    _offRouteHits = 0;
+    _lastRerouteAt = now;
+    unawaited(_rerouteFromDriver(driver));
+  }
+
+  Future<void> _rerouteFromDriver(LatLng driver) async {
+    if (_rerouting) return;
+    _rerouting = true;
+    try {
+      if (_phase == DriverTripPhase.toPickup) {
+        await _loadPickupRoute(driver, force: true);
+      } else {
+        final route = await _routingService.getRoute(
+          origin: NeshanLatLng(
+            latitude: driver.latitude,
+            longitude: driver.longitude,
+          ),
+          destination: widget.destination,
+        );
+        if (!mounted) return;
+        setState(() {
+          _deliveryReroute = route;
+          _deliveryRerouteGeometry = RouteMapGeometry.fromRoute(
+            route,
+            origin: driver,
+            destination: _destinationLatLng,
+          );
+          _activeStepIndex = 0;
+          _syncStepKeys();
+        });
+      }
+
+      if (mounted && _navigationActive && !_mapCameraDetached) {
+        await _mapController.resumeNavigation(
+          position: _driverPosition ?? driver,
+          heading: _driverHeading,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Reroute failed: $e');
+      }
+    } finally {
+      _rerouting = false;
     }
   }
 
@@ -818,7 +931,6 @@ class _DriverRouteScreenState extends State<DriverRouteScreen> {
       ],
     );
   }
-
 }
 
 class _MapThemeToggleButton extends StatelessWidget {

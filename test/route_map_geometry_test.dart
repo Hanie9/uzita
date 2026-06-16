@@ -4,7 +4,6 @@ import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_traffic_levels.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
-import 'package:uzita/utils/route_progress.dart';
 
 void main() {
   const liveLeg = NeshanRouteLeg(
@@ -78,62 +77,65 @@ void main() {
     );
   });
 
-  test('builds colored segments from overview polyline when step polyline missing', () {
-    const route = NeshanRoute(
-      overviewPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@',
-      legs: [
-        NeshanRouteLeg(
-          summary: 'test',
-          distanceText: '1 km',
-          durationText: '2 min',
-          distanceMeters: 1000,
-          durationSeconds: 120,
-          steps: [
-            NeshanRouteStep(
-              instruction: 'شروع',
-              name: 'خیابان',
-              distanceText: '500 m',
-              durationText: '1 min',
-              distanceMeters: 500,
-              durationSeconds: 90,
-              stepType: 'depart',
-            ),
-            NeshanRouteStep(
-              instruction: 'رسیدن',
-              name: '',
-              distanceText: '',
-              durationText: '',
-              stepType: 'arrive',
-            ),
-          ],
-        ),
-      ],
-      baselineRoute: NeshanRoute(
+  test(
+    'builds colored segments from overview polyline when step polyline missing',
+    () {
+      const route = NeshanRoute(
+        overviewPolyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@',
         legs: [
           NeshanRouteLeg(
             summary: 'test',
             distanceText: '1 km',
-            durationText: '1 min',
+            durationText: '2 min',
             distanceMeters: 1000,
-            durationSeconds: 60,
-            steps: const [],
+            durationSeconds: 120,
+            steps: [
+              NeshanRouteStep(
+                instruction: 'شروع',
+                name: 'خیابان',
+                distanceText: '500 m',
+                durationText: '1 min',
+                distanceMeters: 500,
+                durationSeconds: 90,
+                stepType: 'depart',
+              ),
+              NeshanRouteStep(
+                instruction: 'رسیدن',
+                name: '',
+                distanceText: '',
+                durationText: '',
+                stepType: 'arrive',
+              ),
+            ],
           ),
         ],
-      ),
-    );
+        baselineRoute: NeshanRoute(
+          legs: [
+            NeshanRouteLeg(
+              summary: 'test',
+              distanceText: '1 km',
+              durationText: '1 min',
+              distanceMeters: 1000,
+              durationSeconds: 60,
+              steps: const [],
+            ),
+          ],
+        ),
+      );
 
-    final geometry = RouteMapGeometry.fromRoute(
-      route,
-      origin: const LatLng(38.5, -120.2),
-      destination: const LatLng(40.7, -120.95),
-    );
+      final geometry = RouteMapGeometry.fromRoute(
+        route,
+        origin: const LatLng(38.5, -120.2),
+        destination: const LatLng(40.7, -120.95),
+      );
 
-    expect(geometry.segments, isNotEmpty);
-    expect(
-      geometry.segments.any((s) => s.trafficLevel != RouteTrafficLevel.clear),
-      isTrue,
-    );
-  });
+      expect(geometry.segments, isNotEmpty);
+      expect(
+        geometry.segments.any((s) => s.trafficLevel != RouteTrafficLevel.clear),
+        isTrue,
+      );
+    },
+  );
 
   test('builds geometry from overview polyline', () {
     const route = NeshanRoute(
@@ -183,20 +185,23 @@ void main() {
     expect(refined.location.latitude, closeTo(32.65, 0.01));
   });
 
-  test('buildGeocodeParams uses city centroid not origin for different city', () {
-    final params = buildGeocodeParams(
-      address: 'خیابان نظر شرقی',
-      hints: const AddressGeocodeHints(city: 'اصفهان', province: 'اصفهان'),
-      originResult: const NeshanGeocodingResult(
-        location: NeshanLatLng(latitude: 35.6892, longitude: 51.3890),
-        city: 'تهران',
-      ),
-    );
+  test(
+    'buildGeocodeParams uses city centroid not origin for different city',
+    () {
+      final params = buildGeocodeParams(
+        address: 'خیابان نظر شرقی',
+        hints: const AddressGeocodeHints(city: 'اصفهان', province: 'اصفهان'),
+        originResult: const NeshanGeocodingResult(
+          location: NeshanLatLng(latitude: 35.6892, longitude: 51.3890),
+          city: 'تهران',
+        ),
+      );
 
-    expect(params.city, 'اصفهان');
-    expect(params.searchCenter?.latitude, closeTo(32.6539, 0.01));
-    expect(params.searchExtent, isNotNull);
-  });
+      expect(params.city, 'اصفهان');
+      expect(params.searchCenter?.latitude, closeTo(32.6539, 0.01));
+      expect(params.searchExtent, isNotNull);
+    },
+  );
 
   test('rejects implausible coordinates outside Iran', () {
     expect(

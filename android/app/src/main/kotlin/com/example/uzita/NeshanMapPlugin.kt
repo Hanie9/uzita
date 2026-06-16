@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
+import com.carto.core.ScreenBounds
 import com.carto.core.ScreenPos
 import com.carto.styles.BillboardOrientation
 import com.carto.styles.LineEndType
@@ -21,12 +22,12 @@ import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
 import org.neshan.common.model.LatLng
+import org.neshan.common.model.LatLngBounds
 import org.neshan.mapsdk.MapView
 import org.neshan.mapsdk.model.Marker
 import org.neshan.mapsdk.model.Polyline
 import org.neshan.mapsdk.style.NeshanMapStyle
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.ln
 
 private const val ROUTE_CYAN = 0xFF00D4FF.toInt()
 private const val ROUTE_PURPLE = 0xFF7C3AED.toInt()
@@ -36,13 +37,18 @@ private const val TRAVELED_GREY = 0xFF9CA3AF.toInt()
 private const val ORIGIN_GREEN = 0xFF16A34A.toInt()
 private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
 
-private const val NAV_ZOOM = 18f
-private const val NAV_TILT = 58f
-/// 3D perspective for route overview (Neshan-style before navigation).
-private const val OVERVIEW_TILT = 52f
+private const val NAV_ZOOM = 18.8f
+// Carto/Neshan tilt: 0 = horizon (strong 3D), 90 = top-down (flat).
+// A low value gives the 3D "chase" view behind the driver arrow.
+private const val NAV_TILT = 35f
+/// Top-down (tilt 90) overview so the Mercator fit reliably frames the WHOLE
+/// route on any screen size and route length (perspective would clip long
+/// routes off the top of the screen).
+private const val OVERVIEW_TILT = 90f
 private const val NAV_MARKER_SIZE = 34f
 private const val OVERVIEW_MARKER_SIZE = 34f
 private const val DRIVER_DOT_SIZE = 22f
+private const val NAV_TOUCH_SLOP_SQ = 64f
 
 /// Neshan [MapView] per [platform.neshan.org SDK docs](https://platform.neshan.org/docs/sdk/android/installation).
 class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
@@ -254,8 +260,8 @@ private class NeshanMapPlatformView(
 
     private fun applyOverviewCameraSettings() {
         mapView.getSettings().setMapRotationEnabled(false)
-        mapView.getSettings().setMinTiltAngle(40f)
-        mapView.getSettings().setMaxTiltAngle(58f)
+        mapView.getSettings().setMinTiltAngle(30f)
+        mapView.getSettings().setMaxTiltAngle(90f)
     }
 
     private fun applyNavigationCameraSettings() {
@@ -280,6 +286,9 @@ private class NeshanMapPlatformView(
     // fling-driven camera moves). Lets us distinguish user pans from our own
     // programmatic follow moves.
     private var userIsTouching = false
+    private var navTouchStartX = 0f
+    private var navTouchStartY = 0f
+    private var navTouchDetached = false
 
     private fun setupCameraListeners() {
         mapView.setOnCameraMoveListener {
@@ -307,6 +316,21 @@ private class NeshanMapPlatformView(
                 MotionEvent.ACTION_POINTER_DOWN,
                 -> {
                     userIsTouching = true
+                    navTouchDetached = false
+                    navTouchStartX = event.x
+                    navTouchStartY = event.y
+                }
+                MotionEvent.ACTION_MOVE,
+                -> {
+                    if (navigationFollowEnabled && !navTouchDetached) {
+                        val dx = event.x - navTouchStartX
+                        val dy = event.y - navTouchStartY
+                        if ((dx * dx + dy * dy) >= NAV_TOUCH_SLOP_SQ) {
+                            navTouchDetached = true
+                            notifyUserDetachedFromRoute()
+                            navigationFollowEnabled = false
+                        }
+                    }
                 }
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_CANCEL,
@@ -347,7 +371,10 @@ private class NeshanMapPlatformView(
 
         val apply = {
             suppressGestureEvents = true
+            val viewHeight = mapView.height.coerceAtLeast(1)
+            mapView.setMapFocusPointOffset(ScreenPos(0f, viewHeight * 0.36f))
             mapView.moveCamera(position, 0.12f)
+            mapView.setZoom(NAV_ZOOM, 0.12f)
             mapView.setBearing(bearing, 0.12f)
             mapView.setTilt(NAV_TILT, 0.12f)
             mapView.invalidate()
@@ -366,6 +393,7 @@ private class NeshanMapPlatformView(
         overviewGesturesEnabled = false
         userGestureNotified = false
         userIsTouching = false
+        navTouchDetached = false
         if (mapDark && !this.mapDark) {
             applyMapStyle(true)
         }
@@ -374,7 +402,7 @@ private class NeshanMapPlatformView(
 
         val apply = {
             val viewHeight = mapView.height.coerceAtLeast(1)
-            mapView.setMapFocusPointOffset(ScreenPos(0f, viewHeight * 0.40f))
+            mapView.setMapFocusPointOffset(ScreenPos(0f, viewHeight * 0.36f))
             mapView.moveCamera(position, 0.3f)
             mapView.setZoom(NAV_ZOOM, 0.3f)
             mapView.setBearing(bearing, 0.3f)
@@ -433,7 +461,7 @@ private class NeshanMapPlatformView(
             suppressGestureEvents = true
             if (navigation) {
                 val viewHeight = mapView.height.coerceAtLeast(1)
-                val focusOffsetY = viewHeight * 0.40f
+                val focusOffsetY = viewHeight * 0.36f
                 mapView.setMapFocusPointOffset(ScreenPos(0f, focusOffsetY))
                 mapView.moveCamera(position, 0.25f)
                 mapView.setZoom(zoom, 0.25f)
@@ -480,12 +508,10 @@ private class NeshanMapPlatformView(
         mapView.setBearing(0f, 0f)
         mapView.setTilt(OVERVIEW_TILT, 0f)
 
-        if (overview && mapView.height > 0) {
-            val inset = bottomInsetRatio.coerceIn(0.12f, 0.48f)
-            mapView.setMapFocusPointOffset(ScreenPos(0f, mapView.height * inset))
-        } else {
-            mapView.setMapFocusPointOffset(ScreenPos(0f, 0f))
-        }
+        // Centre the route (no focus offset) so it is framed with an even margin
+        // on every screen size; the bottom panel is already excluded from the
+        // native map height, so we must not reserve extra bottom space here.
+        mapView.setMapFocusPointOffset(ScreenPos(0f, 0f))
 
         if (points.size == 1) {
             mapView.post {
@@ -503,11 +529,7 @@ private class NeshanMapPlatformView(
         }
 
         mapView.post {
-            if (navigationFollowEnabled) {
-                suppressGestureEvents = false
-                return@post
-            }
-            moveCameraToSpan(
+            fitBoundsWhenReady(
                 minLat,
                 maxLat,
                 minLng,
@@ -516,10 +538,58 @@ private class NeshanMapPlatformView(
                 lngPad,
                 overview,
                 bottomInsetRatio,
+                attempt = 0,
             )
-            resetCameraGestureState()
-            mapView.postDelayed({ suppressGestureEvents = false }, 350)
         }
+    }
+
+    /// Fits the camera to bounds, but waits for the map to be laid out first.
+    /// Before the MapView is measured its width/height are 0, which would make
+    /// the bounds-fit collapse to a tiny area instead of the whole route. We
+    /// retry until the view dimensions are valid.
+    private fun fitBoundsWhenReady(
+        minLat: Double,
+        maxLat: Double,
+        minLng: Double,
+        maxLng: Double,
+        latPad: Double,
+        lngPad: Double,
+        overview: Boolean,
+        bottomInsetRatio: Float,
+        attempt: Int,
+    ) {
+        if (navigationFollowEnabled) {
+            suppressGestureEvents = false
+            return
+        }
+        if ((mapView.width <= 0 || mapView.height <= 0) && attempt < 10) {
+            mapView.postDelayed({
+                fitBoundsWhenReady(
+                    minLat,
+                    maxLat,
+                    minLng,
+                    maxLng,
+                    latPad,
+                    lngPad,
+                    overview,
+                    bottomInsetRatio,
+                    attempt + 1,
+                )
+            }, 120)
+            return
+        }
+        moveCameraToSpan(
+            minLat,
+            maxLat,
+            minLng,
+            maxLng,
+            latPad,
+            lngPad,
+            overview,
+            bottomInsetRatio,
+        )
+        resetCameraGestureState()
+        mapView.postDelayed({ suppressGestureEvents = false }, 350)
     }
 
     private fun moveCameraToSpan(
@@ -532,61 +602,38 @@ private class NeshanMapPlatformView(
         overview: Boolean = false,
         bottomInsetRatio: Float = 0.20f,
     ) {
-        val centerLat = (minLat + maxLat) / 2.0
-        val centerLng = (minLng + maxLng) / 2.0
-        val zoom = fitZoomForBounds(
-            minLat,
-            maxLat,
-            minLng,
-            maxLng,
-            overview,
-            bottomInsetRatio,
-        )
-        mapView.moveCamera(LatLng(centerLat, centerLng), 0.22f)
-        mapView.setZoom(zoom, 0.22f)
+        // Use Neshan's native bounds-fit, which frames the geographic box inside
+        // a screen rectangle using the real map projection. This guarantees the
+        // entire route fits on any screen size, regardless of zoom convention.
         if (overview) {
             mapView.setBearing(0f, 0f)
             mapView.setTilt(OVERVIEW_TILT, 0f)
         }
-    }
 
-    /// Exact web-mercator zoom that fits the bounds to the viewport, leaving a
-    /// margin around the route. Replaces the coarse span→zoom lookup table.
-    private fun fitZoomForBounds(
-        minLat: Double,
-        maxLat: Double,
-        minLng: Double,
-        maxLng: Double,
-        overview: Boolean,
-        bottomInsetRatio: Float,
-    ): Float {
-        val widthPx = mapView.width.coerceAtLeast(1).toDouble()
-        val heightPx = mapView.height.coerceAtLeast(1).toDouble()
+        val ne = LatLng(maxLat + latPad, maxLng + lngPad)
+        val sw = LatLng(minLat - latPad, minLng - lngPad)
+        val bounds = LatLngBounds(ne, sw)
 
-        // Fraction of the world covered by the bounds (normalized 0..1).
-        val dxWorld = ((maxLng - minLng) / 360.0).coerceAtLeast(1e-7)
-        val dyWorld =
-            kotlin.math.abs(latToMercatorY(minLat) - latToMercatorY(maxLat))
-                .coerceAtLeast(1e-7)
+        val w = mapView.width.coerceAtLeast(1).toFloat()
+        val h = mapView.height.coerceAtLeast(1).toFloat()
 
-        // Extra room so the route doesn't touch the screen edges.
-        val marginFactor = if (overview) 1.32 else 1.12
-        // Overview keeps the route in the upper part; reserve some bottom space.
-        val usableHeight = if (overview) {
-            heightPx * (1.0 - bottomInsetRatio.coerceIn(0.0f, 0.4f).toDouble())
-        } else {
-            heightPx
+        // Side/top/bottom insets so the route never touches the edges and clears
+        // the floating header card at the top of the map area.
+        val sideInset = w * 0.07f
+        val topInset = if (overview) h * 0.14f else h * 0.10f
+        val bottomInset = h * (bottomInsetRatio.coerceIn(0.04f, 0.45f))
+
+        val screenBounds = ScreenBounds(
+            ScreenPos(sideInset, topInset),
+            ScreenPos(w - sideInset, h - bottomInset),
+        )
+
+        mapView.moveToCameraBounds(bounds, screenBounds, false, 0.4f)
+
+        if (overview) {
+            mapView.setBearing(0f, 0f)
+            mapView.setTilt(OVERVIEW_TILT, 0f)
         }
-
-        val zoomX = ln(widthPx / (256.0 * dxWorld * marginFactor)) / ln(2.0)
-        val zoomY = ln(usableHeight / (256.0 * dyWorld * marginFactor)) / ln(2.0)
-        val zoom = minOf(zoomX, zoomY)
-        return zoom.toFloat().coerceIn(5f, 17f)
-    }
-
-    private fun latToMercatorY(lat: Double): Double {
-        val s = kotlin.math.sin(lat * Math.PI / 180.0).coerceIn(-0.9999, 0.9999)
-        return 0.5 - ln((1.0 + s) / (1.0 - s)) / (4.0 * Math.PI)
     }
 
     fun updateRouteOverlay(
