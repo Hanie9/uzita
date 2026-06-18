@@ -11,6 +11,10 @@ String? neshanStatusFromResponse(Map<String, dynamic> data) {
   final code = data['code'];
   if (code is num) {
     switch (code.toInt()) {
+      case 400:
+        return 'INVALID_ARGUMENT';
+      case 470:
+        return 'CoordinateParseError';
       case 480:
         return 'KeyNotFound';
       case 483:

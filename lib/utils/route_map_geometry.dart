@@ -94,7 +94,8 @@ class RouteMapGeometry {
     final segments = <RouteMapSegment>[];
     var distanceCursor = 0.0;
 
-    for (final step in leg.steps) {
+    for (var stepIndex = 0; stepIndex < leg.steps.length; stepIndex++) {
+      final step = leg.steps[stepIndex];
       if (step.isArrival) continue;
       if (step.distanceMeters <= 0 && step.durationSeconds <= 0) continue;
 
@@ -117,6 +118,7 @@ class RouteMapGeometry {
             step,
             liveLeg: leg,
             baselineLeg: baselineLeg,
+            stepIndex: stepIndex,
           ),
         ),
       );

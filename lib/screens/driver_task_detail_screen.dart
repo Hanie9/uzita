@@ -15,6 +15,7 @@ import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_degraded_route.dart';
 import 'package:uzita/utils/neshan_errors.dart';
+import 'package:uzita/utils/user_error_message.dart';
 import 'package:uzita/utils/ui_scale.dart';
 
 class DriverTaskDetailScreen extends StatefulWidget {
@@ -477,13 +478,10 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => isLoading = false);
-        final errorMessage = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              errorMessage.isEmpty
-                  ? AppLocalizations.of(context)!.error_unknown
-                  : errorMessage,
+              userFacingErrorMessage(e, localizations),
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),

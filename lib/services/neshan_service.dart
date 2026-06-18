@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/utils/neshan_api_codes.dart';
 import 'package:uzita/utils/neshan_config.dart';
+import 'package:uzita/utils/neshan_error_codes.dart';
 
 class NeshanApiException implements Exception {
   final String message;
@@ -50,7 +51,10 @@ class NeshanService {
 
     final trimmed = address.trim();
     if (trimmed.isEmpty || trimmed == '---') {
-      throw const NeshanApiException('Address is empty');
+      throw const NeshanApiException(
+        'Address is empty',
+        neshanStatus: NeshanErrorCodes.addressEmpty,
+      );
     }
 
     final requestBody = <String, dynamic>{
@@ -79,6 +83,7 @@ class NeshanService {
         body,
         fallback: 'Geocoding request failed',
         httpStatus: response.statusCode,
+        fallbackStatus: NeshanErrorCodes.geocodingRequestFailed,
       );
     }
 
@@ -201,6 +206,7 @@ class NeshanService {
         body,
         fallback: 'Routing request failed',
         httpStatus: response.statusCode,
+        fallbackStatus: NeshanErrorCodes.routingRequestFailed,
       );
     }
 
@@ -211,7 +217,10 @@ class NeshanService {
     final data = json.decode(body) as Map<String, dynamic>;
     final items = data['items'];
     if (items is! List || items.isEmpty) {
-      throw NeshanApiException('No location found for address: $address');
+      throw const NeshanApiException(
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
+      );
     }
 
     final candidates = items
@@ -220,7 +229,10 @@ class NeshanService {
         .toList(growable: false);
 
     if (candidates.isEmpty) {
-      throw NeshanApiException('No location found for address: $address');
+      throw const NeshanApiException(
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
+      );
     }
 
     final best = _pickBestGeocodingCandidate(candidates);
@@ -249,13 +261,19 @@ class NeshanService {
   NeshanGeocodingCandidate _parseGeocodingItem(Map<String, dynamic> item) {
     final location = item['location'];
     if (location is! Map<String, dynamic>) {
-      throw const NeshanApiException('Invalid geocoding location');
+      throw const NeshanApiException(
+        'Invalid geocoding location',
+        neshanStatus: NeshanErrorCodes.invalidGeocodingLocation,
+      );
     }
 
     final lat = _asDouble(location['latitude']);
     final lng = _asDouble(location['longitude']);
     if (lat == null || lng == null) {
-      throw const NeshanApiException('Invalid geocoding coordinates');
+      throw const NeshanApiException(
+        'Invalid geocoding coordinates',
+        neshanStatus: NeshanErrorCodes.invalidGeocodingCoordinates,
+      );
     }
 
     return NeshanGeocodingCandidate(
@@ -273,17 +291,24 @@ class NeshanService {
     if (routes is! List || routes.isEmpty) {
       throw const NeshanApiException(
         'No route found between origin and destination',
+        neshanStatus: NeshanErrorCodes.routingNotFound,
       );
     }
 
     final firstRoute = routes.first;
     if (firstRoute is! Map<String, dynamic>) {
-      throw const NeshanApiException('Invalid routing response');
+      throw const NeshanApiException(
+        'Invalid routing response',
+        neshanStatus: NeshanErrorCodes.invalidRoutingResponse,
+      );
     }
 
     final legsRaw = firstRoute['legs'];
     if (legsRaw is! List || legsRaw.isEmpty) {
-      throw const NeshanApiException('Route has no legs');
+      throw const NeshanApiException(
+        'Route has no legs',
+        neshanStatus: NeshanErrorCodes.routingNoLegs,
+      );
     }
 
     final legs = legsRaw
@@ -292,7 +317,10 @@ class NeshanService {
         .toList(growable: false);
 
     if (legs.isEmpty) {
-      throw const NeshanApiException('Route has no valid legs');
+      throw const NeshanApiException(
+        'Route has no valid legs',
+        neshanStatus: NeshanErrorCodes.routingNoValidLegs,
+      );
     }
 
     final overview = firstRoute['overview_polyline'];
@@ -363,11 +391,12 @@ class NeshanService {
     String body, {
     required String fallback,
     required int httpStatus,
+    String? fallbackStatus,
   }) {
     try {
       final data = json.decode(body);
       if (data is Map<String, dynamic>) {
-        final neshanStatus = neshanStatusFromResponse(data);
+        final neshanStatus = neshanStatusFromResponse(data) ?? fallbackStatus;
         final message = data['message']?.toString() ?? '';
         final error = data['error']?.toString() ?? '';
         final text = message.isNotEmpty
@@ -380,7 +409,11 @@ class NeshanService {
         );
       }
     } catch (_) {}
-    return NeshanApiException(fallback, statusCode: httpStatus);
+    return NeshanApiException(
+      fallback,
+      statusCode: httpStatus,
+      neshanStatus: fallbackStatus,
+    );
   }
 
   double? _asDouble(dynamic value) {

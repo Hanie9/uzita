@@ -1291,6 +1291,19 @@ class AppLocalizations {
           'Neshan API key is missing. Run ./scripts/build_apk.sh or ./scripts/sync_neshan_secrets.sh before building.',
       'driver_neshan_error_backend_proxy':
           'Neshan server proxy is not active. Deploy deploy/backend_neshan_proxy/ on device-control.liara.run and set NESHAN_API_KEY in Liara.',
+      'driver_neshan_error_address_empty': 'Address is empty.',
+      'driver_neshan_error_geocoding_not_found':
+          'No location found for this address.',
+      'driver_neshan_error_geocoding_invalid':
+          'Invalid location data received from geocoding.',
+      'driver_neshan_error_geocoding_failed': 'Geocoding request failed.',
+      'driver_neshan_error_routing_not_found':
+          'No route found between origin and destination.',
+      'driver_neshan_error_routing_invalid': 'Invalid routing response.',
+      'driver_neshan_error_routing_no_legs': 'Route has no segments.',
+      'driver_neshan_error_routing_failed': 'Routing request failed.',
+      'driver_neshan_error_sdk_response': 'Empty response from Neshan SDK.',
+      'driver_neshan_error_invalid_argument': 'Invalid request parameters.',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'Authenticate quickly for login',
@@ -2539,6 +2552,19 @@ class AppLocalizations {
           'کلید API نشان تنظیم نشده. قبل از بیلد ./scripts/build_apk.sh یا ./scripts/sync_neshan_secrets.sh را اجرا کنید.',
       'driver_neshan_error_backend_proxy':
           'پراکسی سرور نشان فعال نیست. deploy/backend_neshan_proxy/ را روی device-control.liara.run نصب کنید و NESHAN_API_KEY را در Liara تنظیم کنید.',
+      'driver_neshan_error_address_empty': 'آدرس خالی است.',
+      'driver_neshan_error_geocoding_not_found':
+          'مکانی برای این آدرس پیدا نشد.',
+      'driver_neshan_error_geocoding_invalid':
+          'داده موقعیت دریافتی از سرویس آدرس‌یابی نامعتبر است.',
+      'driver_neshan_error_geocoding_failed': 'خطا در درخواست آدرس‌یابی.',
+      'driver_neshan_error_routing_not_found':
+          'مسیری بین مبدا و مقصد پیدا نشد.',
+      'driver_neshan_error_routing_invalid': 'پاسخ مسیریابی نامعتبر است.',
+      'driver_neshan_error_routing_no_legs': 'مسیر بخش معتبری ندارد.',
+      'driver_neshan_error_routing_failed': 'خطا در درخواست مسیریابی.',
+      'driver_neshan_error_sdk_response': 'پاسخ خالی از SDK نشان دریافت شد.',
+      'driver_neshan_error_invalid_argument': 'پارامترهای درخواست نامعتبر است.',
 
       // Splash Screen (splash_)
       'splash_authentication_login': 'برای ورود سریع احراز هویت کنید',
@@ -3668,6 +3694,26 @@ class AppLocalizations {
       _getLocalizedValue('driver_neshan_key_missing');
   String get driver_neshan_error_backend_proxy =>
       _getLocalizedValue('driver_neshan_error_backend_proxy');
+  String get driver_neshan_error_address_empty =>
+      _getLocalizedValue('driver_neshan_error_address_empty');
+  String get driver_neshan_error_geocoding_not_found =>
+      _getLocalizedValue('driver_neshan_error_geocoding_not_found');
+  String get driver_neshan_error_geocoding_invalid =>
+      _getLocalizedValue('driver_neshan_error_geocoding_invalid');
+  String get driver_neshan_error_geocoding_failed =>
+      _getLocalizedValue('driver_neshan_error_geocoding_failed');
+  String get driver_neshan_error_routing_not_found =>
+      _getLocalizedValue('driver_neshan_error_routing_not_found');
+  String get driver_neshan_error_routing_invalid =>
+      _getLocalizedValue('driver_neshan_error_routing_invalid');
+  String get driver_neshan_error_routing_no_legs =>
+      _getLocalizedValue('driver_neshan_error_routing_no_legs');
+  String get driver_neshan_error_routing_failed =>
+      _getLocalizedValue('driver_neshan_error_routing_failed');
+  String get driver_neshan_error_sdk_response =>
+      _getLocalizedValue('driver_neshan_error_sdk_response');
+  String get driver_neshan_error_invalid_argument =>
+      _getLocalizedValue('driver_neshan_error_invalid_argument');
 
   // Splash Screen getters (splash_*)
   String get splash_authentication_login =>

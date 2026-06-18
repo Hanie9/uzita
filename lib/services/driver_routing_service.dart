@@ -170,9 +170,34 @@ class DriverRoutingService {
         avoidTrafficZone: avoidTrafficZone,
         avoidOddEvenZone: avoidOddEvenZone,
         bearing: bearing,
+        trafficMode: 'none',
       ),
       if (hasDirectNeshanKey)
         () => _neshan.getNoTrafficRoute(
+          origin: origin,
+          destination: destination,
+          vehicleType: vehicleType,
+          alternative: alternative,
+          waypoints: waypoints,
+          avoidTrafficZone: avoidTrafficZone,
+          avoidOddEvenZone: avoidOddEvenZone,
+          bearing: bearing,
+        ),
+      () => _tryBackendNoTraffic(
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+        bearing: bearing,
+        trafficMode: 'typical',
+      ),
+      // Typical-pattern routing from Neshan — fallback baseline when the
+      // no-traffic endpoint is not enabled on the API key.
+      if (hasDirectNeshanKey)
+        () => _neshan.getTypicalRoute(
           origin: origin,
           destination: destination,
           vehicleType: vehicleType,
@@ -204,6 +229,7 @@ class DriverRoutingService {
     bool avoidTrafficZone = false,
     bool avoidOddEvenZone = false,
     double? bearing,
+    String trafficMode = 'none',
   }) async {
     return _tryBackend(
       (token) => _backend.getRoute(
@@ -217,6 +243,7 @@ class DriverRoutingService {
         avoidOddEvenZone: avoidOddEvenZone,
         bearing: bearing,
         liveTraffic: false,
+        trafficMode: trafficMode,
       ),
     );
   }

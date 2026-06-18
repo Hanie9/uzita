@@ -24,7 +24,115 @@ void main() {
     steps: [],
   );
 
+  test('uses matching baseline step duration when start locations align', () {
+    const liveLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '1 km',
+      durationText: '4 min',
+      distanceMeters: 1000,
+      durationSeconds: 240,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'ولیعصر',
+          distanceText: '500 متر',
+          durationText: '3 دقیقه',
+          distanceMeters: 500,
+          durationSeconds: 120,
+          startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+        ),
+      ],
+    );
+
+    const baselineLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '1 km',
+      durationText: '2 min',
+      distanceMeters: 1000,
+      durationSeconds: 120,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'ولیعصر',
+          distanceText: '500 متر',
+          durationText: '1 دقیقه',
+          distanceMeters: 500,
+          durationSeconds: 60,
+          startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+        ),
+      ],
+    );
+
+    const step = NeshanRouteStep(
+      instruction: 'ادامه دهید',
+      name: 'ولیعصر',
+      distanceText: '500 متر',
+      durationText: '3 دقیقه',
+      distanceMeters: 500,
+      durationSeconds: 120,
+      startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+    );
+
+    expect(
+      trafficLevelForStep(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: baselineLeg,
+        stepIndex: 0,
+      ),
+      RouteTrafficLevel.heavy,
+    );
+  });
+
   test('marks heavily delayed steps using Neshan leg baseline', () {
+    const step = NeshanRouteStep(
+      instruction: 'ادامه دهید',
+      name: 'ولیعصر',
+      distanceText: '500 متر',
+      durationText: '3 دقیقه',
+      distanceMeters: 500,
+      durationSeconds: 120,
+      startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+    );
+    const matchedBaselineLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '3 min',
+      distanceMeters: 2000,
+      durationSeconds: 180,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'ولیعصر',
+          distanceText: '500 متر',
+          durationText: '1 دقیقه',
+          distanceMeters: 500,
+          durationSeconds: 50,
+          startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+        ),
+      ],
+    );
+    expect(
+      trafficLevelForStep(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
+      RouteTrafficLevel.heavy,
+    );
+    expect(
+      isStepCongested(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
+      isTrue,
+    );
+  });
+
+  test('does not guess traffic from proportional baseline allocation', () {
     const step = NeshanRouteStep(
       instruction: 'ادامه دهید',
       name: 'ولیعصر',
@@ -35,11 +143,7 @@ void main() {
     );
     expect(
       trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
-      RouteTrafficLevel.heavy,
-    );
-    expect(
-      isStepCongested(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
-      isTrue,
+      RouteTrafficLevel.clear,
     );
   });
 
@@ -51,9 +155,33 @@ void main() {
       durationText: '2 دقیقه',
       distanceMeters: 800,
       durationSeconds: 90,
+      startLocation: NeshanLatLng(latitude: 35.702, longitude: 51.392),
+    );
+    const matchedBaselineLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '3 min',
+      distanceMeters: 2000,
+      durationSeconds: 180,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'ولیعصر',
+          distanceText: '800 متر',
+          durationText: '1 دقیقه',
+          distanceMeters: 800,
+          durationSeconds: 60,
+          startLocation: NeshanLatLng(latitude: 35.702, longitude: 51.392),
+        ),
+      ],
     );
     expect(
-      trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      trafficLevelForStep(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
       RouteTrafficLevel.moderate,
     );
     expect(
@@ -70,9 +198,33 @@ void main() {
       durationText: '2 دقیقه',
       distanceMeters: 2000,
       durationSeconds: 120,
+      startLocation: NeshanLatLng(latitude: 35.703, longitude: 51.393),
+    );
+    const matchedBaselineLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '3 min',
+      distanceMeters: 2000,
+      durationSeconds: 180,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'اتوبان',
+          distanceText: '2 کیلومتر',
+          durationText: '2 دقیقه',
+          distanceMeters: 2000,
+          durationSeconds: 110,
+          startLocation: NeshanLatLng(latitude: 35.703, longitude: 51.393),
+        ),
+      ],
     );
     expect(
-      trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      trafficLevelForStep(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
       RouteTrafficLevel.clear,
     );
   });
@@ -131,7 +283,7 @@ void main() {
 
       expect(geometry.segments, isNotEmpty);
       expect(
-        geometry.segments.any((s) => s.trafficLevel != RouteTrafficLevel.clear),
+        geometry.segments.every((s) => s.trafficLevel == RouteTrafficLevel.clear),
         isTrue,
       );
     },

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/utils/neshan_static_map.dart';
@@ -30,7 +31,7 @@ class NeshanStaticRouteMap extends StatefulWidget {
 
 class _NeshanStaticRouteMapState extends State<NeshanStaticRouteMap> {
   Uint8List? _imageBytes;
-  String? _error;
+  bool _loadFailed = false;
   int _lastWidth = 0;
   int _lastHeight = 0;
   String? _authToken;
@@ -73,6 +74,9 @@ class _NeshanStaticRouteMapState extends State<NeshanStaticRouteMap> {
     if (width == _lastWidth && height == _lastHeight && _imageBytes != null) {
       return;
     }
+    if (width == _lastWidth && height == _lastHeight && _loadFailed) {
+      return;
+    }
     _lastWidth = width;
     _lastHeight = height;
 
@@ -88,11 +92,11 @@ class _NeshanStaticRouteMapState extends State<NeshanStaticRouteMap> {
       if (!mounted) return;
       setState(() {
         _imageBytes = bytes;
-        _error = null;
+        _loadFailed = false;
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _loadFailed = true);
     }
   }
 
@@ -101,16 +105,17 @@ class _NeshanStaticRouteMapState extends State<NeshanStaticRouteMap> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(constraints.maxWidth, constraints.maxHeight);
-        if (_imageBytes == null && _error == null) {
+        if (_imageBytes == null && !_loadFailed) {
           _load(size);
         }
 
-        if (_error != null) {
+        if (_loadFailed) {
+          final l = AppLocalizations.of(context);
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                _error!,
+                l?.driver_route_map_error ?? 'Could not load map',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.iranianGray),
               ),

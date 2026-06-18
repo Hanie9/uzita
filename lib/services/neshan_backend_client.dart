@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:uzita/api_config.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
+import 'package:uzita/utils/neshan_error_codes.dart';
 
 /// Calls Neshan via device-control backend (service key stays on server).
 class NeshanBackendClient {
@@ -57,6 +58,7 @@ class NeshanBackendClient {
     bool avoidOddEvenZone = false,
     double? bearing,
     bool liveTraffic = true,
+    String trafficMode = 'live',
   }) async {
     final params = <String, String>{
       'type': vehicleType,
@@ -65,7 +67,7 @@ class NeshanBackendClient {
       'alternative': alternative.toString(),
       'avoidTrafficZone': avoidTrafficZone.toString(),
       'avoidOddEvenZone': avoidOddEvenZone.toString(),
-      if (!liveTraffic) 'traffic': 'none',
+      if (!liveTraffic) 'traffic': trafficMode,
     };
 
     if (waypoints != null && waypoints.isNotEmpty) {
@@ -113,6 +115,7 @@ class NeshanBackendClient {
       throw NeshanApiException(
         'Backend proxy failed ($statusCode)',
         statusCode: statusCode,
+        neshanStatus: NeshanErrorCodes.backendProxyFailed,
       );
     }
   }

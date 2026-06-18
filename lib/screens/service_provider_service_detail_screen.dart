@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/user_error_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'dart:convert';
@@ -1343,15 +1344,12 @@ class _ServiceProviderServiceDetailScreenState
     } catch (e) {
       print('Error in _confirmService: $e');
       if (mounted) {
+        final localizations = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              e.toString().replaceAll('Exception: ', '').isEmpty
-                  ? AppLocalizations.of(context)!.error_unknown
-                  : e.toString().replaceAll('Exception: ', ''),
-            ),
+            content: Text(userFacingErrorMessage(e, localizations)),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
+            duration: const Duration(seconds: 4),
           ),
         );
       }

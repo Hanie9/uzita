@@ -6,6 +6,7 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/user_error_message.dart';
 import 'package:uzita/utils/ui_scale.dart';
 
 class TransportRequestDetailScreen extends StatefulWidget {
@@ -405,7 +406,12 @@ class _TransportRequestDetailScreenState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              userFacingErrorMessage(
+                e,
+                AppLocalizations.of(context)!,
+              ),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -578,9 +584,7 @@ class _TransportRequestDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e.toString().replaceAll('Exception: ', '').isEmpty
-                  ? AppLocalizations.of(context)!.error_unknown
-                  : e.toString().replaceAll('Exception: ', ''),
+              userFacingErrorMessage(e, localizations),
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),

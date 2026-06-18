@@ -41,13 +41,13 @@ private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
 // names and see a few blocks of the road ahead, with the puck in the lower third.
 private const val NAV_ZOOM = 17.5f
 // Carto/Neshan tilt: 0 = horizon (strong 3D), 90 = top-down (flat).
-// A low value gives the immersive 3D "chase" view behind the driver arrow,
-// like the Neshan Navigator (the road ahead recedes toward the horizon).
-private const val NAV_TILT = 32f
+// Keep enough tilt for a chase view, but not so low that the upper screen
+// becomes empty night-sky behind the navigation instruction cards.
+private const val NAV_TILT = 56f
 // Fraction of the view height to drop the driver puck below centre so the road
 // ahead fills the upper screen. A negative ScreenPos Y keeps the focus point
 // (and the driver puck) inside the lower portion of the screen on this SDK.
-private const val NAV_FOCUS_OFFSET = 0.22f
+private const val NAV_FOCUS_OFFSET = 0.16f
 /// Top-down (tilt 90) overview so the Mercator fit reliably frames the WHOLE
 /// route on any screen size and route length (perspective would clip long
 /// routes off the top of the screen).

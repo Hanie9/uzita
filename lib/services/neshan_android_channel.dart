@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/utils/neshan_config.dart';
+import 'package:uzita/utils/neshan_error_codes.dart';
 
 /// Neshan Android services-sdk (search geocoding + v4/direction routing).
 class NeshanAndroidChannel {
@@ -30,13 +31,19 @@ class NeshanAndroidChannel {
     );
 
     if (response == null) {
-      throw const NeshanApiException('Empty geocoding response from Neshan SDK');
+      throw const NeshanApiException(
+        'Empty geocoding response from Neshan SDK',
+        neshanStatus: NeshanErrorCodes.sdkEmptyResponse,
+      );
     }
 
     final lat = _asDouble(response['latitude']);
     final lng = _asDouble(response['longitude']);
     if (lat == null || lng == null) {
-      throw const NeshanApiException('Invalid geocoding coordinates from Neshan SDK');
+      throw const NeshanApiException(
+        'Invalid geocoding coordinates from Neshan SDK',
+        neshanStatus: NeshanErrorCodes.sdkInvalidCoordinates,
+      );
     }
 
     return NeshanGeocodingResult(
@@ -82,12 +89,18 @@ class NeshanAndroidChannel {
     );
 
     if (response == null) {
-      throw const NeshanApiException('Empty routing response from Neshan SDK');
+      throw const NeshanApiException(
+        'Empty routing response from Neshan SDK',
+        neshanStatus: NeshanErrorCodes.sdkEmptyResponse,
+      );
     }
 
     final legsRaw = response['legs'];
     if (legsRaw is! List || legsRaw.isEmpty) {
-      throw const NeshanApiException('Route has no legs');
+      throw const NeshanApiException(
+        'Route has no legs',
+        neshanStatus: NeshanErrorCodes.routingNoLegs,
+      );
     }
 
     final legs = legsRaw
@@ -105,7 +118,10 @@ class NeshanAndroidChannel {
         .toList(growable: false);
 
     if (legs.isEmpty) {
-      throw const NeshanApiException('Route has no valid legs');
+      throw const NeshanApiException(
+        'Route has no valid legs',
+        neshanStatus: NeshanErrorCodes.routingNoValidLegs,
+      );
     }
 
     final polyline = response['overviewPolyline']?.toString();

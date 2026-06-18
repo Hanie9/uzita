@@ -770,7 +770,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     final persian = _isPersian(localizations);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: _navigationActive
+          ? Colors.transparent
+          : Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           localizations.driver_navigate,

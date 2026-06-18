@@ -30,6 +30,7 @@ NESHAN_REFERER = os.environ.get(
 GEOCODING_URL = "https://api.neshan.org/geocoding/v1/plus"
 DIRECTION_URL = "https://api.neshan.org/v4/direction"
 DIRECTION_NO_TRAFFIC_URL = "https://api.neshan.org/v4/direction/no-traffic"
+DIRECTION_TYPICAL_URL = "https://api.neshan.org/v4/direction/typical"
 STATIC_ARC_URL = "https://api.neshan.org/v4/static/arc"
 TIMEOUT = 30
 
@@ -152,9 +153,12 @@ def neshan_route(request) -> HttpResponse:
         params["bearing"] = bearing
 
     traffic = (request.GET.get("traffic") or "live").strip().lower()
-    direction_url = (
-        DIRECTION_NO_TRAFFIC_URL if traffic == "none" else DIRECTION_URL
-    )
+    if traffic == "none":
+        direction_url = DIRECTION_NO_TRAFFIC_URL
+    elif traffic == "typical":
+        direction_url = DIRECTION_TYPICAL_URL
+    else:
+        direction_url = DIRECTION_URL
 
     upstream = requests.get(
         direction_url,
