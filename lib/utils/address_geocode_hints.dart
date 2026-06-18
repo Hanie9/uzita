@@ -42,7 +42,7 @@ const Map<String, NeshanLatLng> iranCityCentroids = {
   'شهرکرد': NeshanLatLng(latitude: 32.3256, longitude: 50.8644),
   'یاسوج': NeshanLatLng(latitude: 30.6682, longitude: 51.5870),
   'سمنان': NeshanLatLng(latitude: 35.5729, longitude: 53.3971),
-  'کاشان': NeshanLatLng(latitude: 33.9850, longitude: 51.4100),
+  'کاشان': NeshanLatLng(latitude: 34.0100, longitude: 51.3650),
 };
 
 /// Major Iranian cities for hint extraction from address text.
@@ -149,40 +149,213 @@ String _normalizeAddress(String address) {
   return (city: null, province: null, searchCenter: null, searchExtent: null);
 }
 
-/// Pick the candidate that best matches the expected city from the address text.
-NeshanGeocodingResult refineGeocodingResult(
-  NeshanGeocodingResult result, {
-  required String address,
+/// Address text sent to geocoding/search APIs — city prefix removed so POI
+/// names such as «دانشگاه کاشان» are resolved instead of the city centre.
+String extractGeocodeQuery(
+  String address, {
+  AddressGeocodeHints? hints,
 }) {
-  final hints = extractGeocodeHints(address);
-  final expectedCity = hints.city;
-  if (expectedCity == null || result.candidates.length <= 1) {
-    return result;
+  final resolvedHints = hints ?? extractGeocodeHints(address);
+  var normalized = _normalizeAddress(address);
+
+  if (resolvedHints.city != null) {
+    final city = RegExp.escape(resolvedHints.city!);
+    normalized = normalized
+        .replaceFirst(RegExp('^$city\\s*[,،\\-–]\\s*'), '')
+        .trim();
   }
 
-  final normalizedExpected = _normalizeCityName(expectedCity);
+  return normalized;
+}
+
+/// True when the address names a landmark POI, not just a street or neighbourhood.
+bool isPoiAddress(String address) {
+  final hints = extractGeocodeHints(address);
+  final query = extractGeocodeQuery(address, hints: hints);
+  if (query.length < 4) return false;
+  if (hints.city != null &&
+      _normalizeCityName(query) == _normalizeCityName(hints.city!)) {
+    return false;
+  }
+
+  const poiKeywords = [
+    'دانشگاه',
+    'بیمارستان',
+    'فرودگاه',
+    'ایستگاه',
+    'پارک علم',
+    'پارک',
+    'مجتمع',
+    'پردیس',
+    'رصدخانه',
+    'مدرسه',
+    'بازار',
+    'پایانه',
+    'ترمینال',
+    'مترو',
+    'مسجد جامع',
+    'حوزه',
+  ];
+
+  final normalized = _normalizeAddress(query);
+  return poiKeywords.any(normalized.contains);
+}
+
+/// How well [result] matches the user-entered [address] (higher is better).
+int geocodingMatchScore(NeshanGeocodingResult result, String address) {
+  final hints = extractGeocodeHints(address);
+  final query = extractGeocodeQuery(address, hints: hints);
+  final terms = _significantTerms(query.isNotEmpty ? query : address);
+  if (terms.isEmpty) return 6;
+
+  final searchable = _normalizeAddress(
+    [
+      result.title,
+      result.formattedAddress,
+      result.neighbourhood,
+      result.city,
+    ].whereType<String>().join(' '),
+  );
+
+  var score = 0;
+  for (final term in terms) {
+    if (searchable.contains(term)) {
+      score += 10;
+    } else if (searchable.split(' ').any(
+      (word) => word.length >= 3 && (word.contains(term) || term.contains(word)),
+    )) {
+      score += 5;
+    }
+  }
+
+  if (hints.city != null) {
+    final expected = _normalizeCityName(hints.city!);
+    final actual = _normalizeCityName(result.city ?? '');
+    if (actual == expected ||
+        actual.contains(expected) ||
+        expected.contains(actual)) {
+      score += 4;
+    } else {
+      score -= 6;
+    }
+  }
+
+  if (terms.isNotEmpty && score < 8) score -= 5;
+  return score;
+}
+
+List<String> _significantTerms(String text) {
+  final normalized = _normalizeAddress(text);
+  final raw = normalized.split(RegExp(r'[,،\-–\s]+'));
+  final terms = <String>[];
+  for (final part in raw) {
+    final term = part.trim();
+    if (term.length < 3) continue;
+    if (_isGenericAddressWord(term)) continue;
+    terms.add(term);
+  }
+  return terms;
+}
+
+bool _isGenericAddressWord(String word) {
+  const generic = {
+    'خیابان',
+    'کوچه',
+    'بلوار',
+    'میدان',
+    'بن بست',
+    'جاده',
+    'اتوبان',
+    'بزرگراه',
+    'پلاک',
+    'واحد',
+    'طبقه',
+    'ایران',
+  };
+  return generic.contains(word);
+}
+
+/// Pick the Geocoding Plus candidate that best matches [address].
+NeshanGeocodingCandidate pickBestGeocodingCandidate(
+  List<NeshanGeocodingCandidate> candidates,
+  String address,
+) {
+  if (candidates.isEmpty) {
+    throw ArgumentError('candidates must not be empty');
+  }
+  if (candidates.length == 1) return candidates.first;
+
+  final hints = extractGeocodeHints(address);
+  final expectedCity = hints.city != null ? _normalizeCityName(hints.city!) : null;
 
   NeshanGeocodingCandidate? best;
-  var bestScore = -1;
+  var bestScore = -1000;
 
-  for (final candidate in result.candidates) {
-    final score = _candidateCityScore(candidate, normalizedExpected);
+  for (final candidate in candidates) {
+    final score = _candidateMatchScore(
+      candidate,
+      address: address,
+      expectedCity: expectedCity,
+    );
     if (score > bestScore) {
       bestScore = score;
       best = candidate;
     }
   }
 
-  if (best == null || bestScore < 1) return result;
+  return best ?? candidates.first;
+}
 
+/// Pick the candidate that best matches the expected city and POI terms.
+NeshanGeocodingResult refineGeocodingResult(
+  NeshanGeocodingResult result, {
+  required String address,
+}) {
+  if (result.candidates.isEmpty) return result;
+
+  final best = pickBestGeocodingCandidate(result.candidates, address);
   return NeshanGeocodingResult(
     location: best.location,
     province: best.province,
     city: best.city,
     neighbourhood: best.neighbourhood,
     unMatchedTerm: best.unMatchedTerm,
+    title: best.title,
+    formattedAddress: best.formattedAddress,
     candidates: result.candidates,
   );
+}
+
+int _candidateMatchScore(
+  NeshanGeocodingCandidate candidate, {
+  required String address,
+  required String? expectedCity,
+}) {
+  final result = NeshanGeocodingResult(
+    location: candidate.location,
+    province: candidate.province,
+    city: candidate.city,
+    neighbourhood: candidate.neighbourhood,
+    unMatchedTerm: candidate.unMatchedTerm,
+    title: candidate.title,
+    formattedAddress: candidate.formattedAddress,
+  );
+  var score = geocodingMatchScore(result, address);
+
+  if (expectedCity != null) {
+    score += _candidateCityScore(candidate, expectedCity) * 2;
+  }
+
+  final unmatched = (candidate.unMatchedTerm ?? '').trim().length;
+  if (isPoiAddress(address)) {
+    // Do not prefer empty unMatchedTerm when a landmark POI was provided — that
+    // often means the API snapped to a generic city-centre point.
+    score -= unmatched == 0 ? 2 : 0;
+  } else {
+    score -= unmatched;
+  }
+
+  return score;
 }
 
 int _candidateCityScore(

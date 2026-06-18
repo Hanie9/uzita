@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:uzita/services/neshan_models.dart';
+import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_api_codes.dart';
 import 'package:uzita/utils/neshan_config.dart';
 import 'package:uzita/utils/neshan_error_codes.dart';
@@ -88,6 +89,125 @@ class NeshanService {
     }
 
     return parseGeocodingBody(body, trimmed);
+  }
+
+  /// Place search — better for named POIs (universities, hospitals, parks).
+  Future<NeshanGeocodingResult> searchAddress(
+    String term, {
+    required NeshanLatLng center,
+    String? scoringAddress,
+  }) async {
+    _ensureDirectApiKey();
+
+    final trimmed = term.trim();
+    if (trimmed.isEmpty || trimmed == '---') {
+      throw const NeshanApiException(
+        'Address is empty',
+        neshanStatus: NeshanErrorCodes.addressEmpty,
+      );
+    }
+
+    final uri = Uri.parse(neshanSearchBaseUrl).replace(
+      queryParameters: {
+        'term': trimmed,
+        'lat': center.latitude.toString(),
+        'lng': center.longitude.toString(),
+      },
+    );
+
+    final response = await http.get(
+      uri,
+      headers: _headersFor(neshanDirectApiKey),
+    );
+    final body = utf8.decode(response.bodyBytes);
+
+    if (response.statusCode != 200) {
+      throw _buildApiException(
+        body,
+        fallback: 'Search request failed',
+        httpStatus: response.statusCode,
+        fallbackStatus: NeshanErrorCodes.geocodingRequestFailed,
+      );
+    }
+
+    return parseSearchBody(body, scoringAddress ?? trimmed);
+  }
+
+  NeshanGeocodingResult parseSearchBody(String body, String scoringAddress) {
+    final data = json.decode(body) as Map<String, dynamic>;
+    final items = data['items'];
+    if (items is! List || items.isEmpty) {
+      throw const NeshanApiException(
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
+      );
+    }
+
+    final candidates = items
+        .whereType<Map<String, dynamic>>()
+        .map(_parseSearchItem)
+        .toList(growable: false);
+
+    if (candidates.isEmpty) {
+      throw const NeshanApiException(
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
+      );
+    }
+
+    final best = pickBestGeocodingCandidate(candidates, scoringAddress);
+
+    return NeshanGeocodingResult(
+      location: best.location,
+      province: best.province,
+      city: best.city,
+      neighbourhood: best.neighbourhood,
+      title: best.title,
+      formattedAddress: best.formattedAddress,
+      candidates: candidates,
+    );
+  }
+
+  NeshanGeocodingCandidate _parseSearchItem(Map<String, dynamic> item) {
+    final location = item['location'];
+    if (location is! Map<String, dynamic>) {
+      throw const NeshanApiException(
+        'Invalid search location',
+        neshanStatus: NeshanErrorCodes.invalidGeocodingLocation,
+      );
+    }
+
+    final lat = _asDouble(location['y'] ?? location['latitude']);
+    final lng = _asDouble(location['x'] ?? location['longitude']);
+    if (lat == null || lng == null) {
+      throw const NeshanApiException(
+        'Invalid search coordinates',
+        neshanStatus: NeshanErrorCodes.invalidGeocodingCoordinates,
+      );
+    }
+
+    final region = item['region']?.toString();
+    return NeshanGeocodingCandidate(
+      location: NeshanLatLng(latitude: lat, longitude: lng),
+      province: _provinceFromSearchRegion(region),
+      city: _cityFromSearchRegion(region),
+      neighbourhood: item['neighbourhood']?.toString(),
+      title: item['title']?.toString(),
+      formattedAddress: item['address']?.toString(),
+    );
+  }
+
+  String? _cityFromSearchRegion(String? region) {
+    if (region == null || region.trim().isEmpty) return null;
+    final parts = region.split('،').map((p) => p.trim()).toList();
+    return parts.isEmpty ? null : parts.first;
+  }
+
+  String? _provinceFromSearchRegion(String? region) {
+    if (region == null || region.trim().isEmpty) return null;
+    final parts = region.split('،').map((p) => p.trim()).toList();
+    if (parts.length < 2) return null;
+    return parts.last.replaceFirst(RegExp(r'^استان\s+'), '');
   }
 
   /// Routing with live traffic — https://platform.neshan.org/docs/api/routing-category/routing/
@@ -235,27 +355,17 @@ class NeshanService {
       );
     }
 
-    final best = _pickBestGeocodingCandidate(candidates);
+    final best = pickBestGeocodingCandidate(candidates, address);
     return NeshanGeocodingResult(
       location: best.location,
       province: best.province,
       city: best.city,
       neighbourhood: best.neighbourhood,
       unMatchedTerm: best.unMatchedTerm,
+      title: best.title,
+      formattedAddress: best.formattedAddress,
       candidates: candidates,
     );
-  }
-
-  NeshanGeocodingCandidate _pickBestGeocodingCandidate(
-    List<NeshanGeocodingCandidate> candidates,
-  ) {
-    return candidates.reduce((current, next) {
-      final currentUnmatched = (current.unMatchedTerm ?? '').trim().length;
-      final nextUnmatched = (next.unMatchedTerm ?? '').trim().length;
-      if (nextUnmatched < currentUnmatched) return next;
-      if (nextUnmatched > currentUnmatched) return current;
-      return current;
-    });
   }
 
   NeshanGeocodingCandidate _parseGeocodingItem(Map<String, dynamic> item) {

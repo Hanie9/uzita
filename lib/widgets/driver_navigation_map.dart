@@ -132,6 +132,7 @@ class _FlutterDriverNavigationMapState
   LatLng? _previousDriverPosition;
   bool _fittedInitialBounds = false;
   bool _autoFollow = true;
+  bool _overviewCameraDetached = false;
   bool _mapReady = false;
 
   static const _routePurple = Color(0xFF7C3AED);
@@ -198,7 +199,9 @@ class _FlutterDriverNavigationMapState
       if (widget.followDriver && _autoFollow) {
         _followDriver(widget.driverPosition!);
       }
-    } else if (!widget.followDriver && (!_fittedInitialBounds || routeChanged)) {
+    } else if (!widget.followDriver &&
+        !_overviewCameraDetached &&
+        (!_fittedInitialBounds || routeChanged)) {
       _fitRouteBounds();
     }
   }
@@ -232,7 +235,10 @@ class _FlutterDriverNavigationMapState
   }
 
   Future<void> _refitOverview() async {
-    setState(() => _fittedInitialBounds = false);
+    setState(() {
+      _fittedInitialBounds = false;
+      _overviewCameraDetached = false;
+    });
     widget.onCameraDetached?.call(false);
     _fitRouteBounds();
   }
@@ -351,7 +357,13 @@ class _FlutterDriverNavigationMapState
             ),
             onMapReady: _onMapReady,
             onPositionChanged: (position, hasGesture) {
-              if (hasGesture) _onUserMapInteraction();
+              if (!hasGesture) return;
+              if (widget.followDriver) {
+                _onUserMapInteraction();
+              } else if (widget.overviewMode && !_overviewCameraDetached) {
+                setState(() => _overviewCameraDetached = true);
+                widget.onCameraDetached?.call(true);
+              }
             },
           ),
           children: [

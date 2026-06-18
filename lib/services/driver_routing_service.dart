@@ -4,12 +4,13 @@ import 'package:uzita/services/neshan_android_channel.dart';
 import 'package:uzita/services/neshan_backend_client.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
+import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_config.dart';
 
 /// Geocoding + routing with live traffic — Neshan only.
 ///
-/// Geocoding: backend Geocoding Plus → REST Geocoding Plus (no Android search).
-/// Routing: backend proxy → Android SDK → v4/direction REST.
+/// Geocoding: backend Geocoding Plus → REST Geocoding Plus → place search
+/// for POIs. Routing: backend proxy → Android SDK → v4/direction REST.
 class DriverRoutingService {
   const DriverRoutingService();
 
@@ -26,9 +27,15 @@ class DriverRoutingService {
     NeshanLatLng? searchCenter,
     NeshanGeocodingExtent? searchExtent,
   }) async {
+    final hints = extractGeocodeHints(address);
+    final query = extractGeocodeQuery(address, hints: hints);
+    final apiText = query.isNotEmpty ? query : address.trim();
+
+    NeshanGeocodingResult? plus;
+
     final fromBackend = await _tryBackend(
       (token) => _backend.geocodeAddress(
-        address,
+        apiText,
         authToken: token,
         city: city,
         province: province,
@@ -36,11 +43,11 @@ class DriverRoutingService {
         searchExtent: searchExtent,
       ),
     );
-    if (fromBackend != null) return fromBackend;
+    plus = fromBackend;
 
-    if (hasDirectNeshanKey) {
-      return _neshan.geocodeAddress(
-        address,
+    if (plus == null && hasDirectNeshanKey) {
+      plus = await _neshan.geocodeAddress(
+        apiText,
         city: city,
         province: province,
         searchCenter: searchCenter,
@@ -48,10 +55,61 @@ class DriverRoutingService {
       );
     }
 
-    throw const NeshanApiException(
-      'Neshan API key is not configured',
-      neshanStatus: 'KeyNotFound',
-    );
+    if (plus == null) {
+      throw const NeshanApiException(
+        'Neshan API key is not configured',
+        neshanStatus: 'KeyNotFound',
+      );
+    }
+
+    var result = refineGeocodingResult(plus, address: address);
+
+    if (isPoiAddress(address) && geocodingMatchScore(result, address) < 10) {
+      final center = searchCenter ??
+          (hints.city != null ? iranCityCentroids[hints.city] : null) ??
+          result.location;
+      final search = await _tryPlaceSearch(
+        apiText,
+        address: address,
+        center: center,
+      );
+      if (search != null &&
+          geocodingMatchScore(search, address) >
+              geocodingMatchScore(result, address)) {
+        result = search;
+      }
+    }
+
+    return result;
+  }
+
+  Future<NeshanGeocodingResult?> _tryPlaceSearch(
+    String term, {
+    required String address,
+    required NeshanLatLng center,
+  }) async {
+    if (_android.isAvailable) {
+      try {
+        final fromAndroid = await _android.searchAddress(
+          term,
+          searchCenter: center,
+          scoringAddress: address,
+        );
+        return fromAndroid;
+      } catch (_) {}
+    }
+
+    if (!hasDirectNeshanKey) return null;
+
+    try {
+      return await _neshan.searchAddress(
+        term,
+        center: center,
+        scoringAddress: address,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<NeshanRoute> getRoute({

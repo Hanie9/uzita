@@ -33,15 +33,19 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "geocodeAddress" -> geocodeAddress(call, result)
+            "geocodeAddress" -> searchAddress(call, result)
+            "searchAddress" -> searchAddress(call, result)
             "getRoute" -> getRoute(call, result)
             else -> result.notImplemented()
         }
     }
 
-    private fun geocodeAddress(call: MethodCall, result: MethodChannel.Result) {
-        val address = call.argument<String>("address")?.trim().orEmpty()
-        if (address.isEmpty()) {
+    private fun searchAddress(call: MethodCall, result: MethodChannel.Result) {
+        val term = (
+            call.argument<String>("term")
+                ?: call.argument<String>("address")
+            )?.trim().orEmpty()
+        if (term.isEmpty()) {
             result.error("invalid_argument", "address is required", null)
             return
         }
@@ -50,7 +54,7 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val centerLat = call.argument<Double>("centerLat") ?: 35.6892
         val centerLng = call.argument<Double>("centerLng") ?: 51.3890
 
-        val search = NeshanSearch.Builder(address)
+        val search = NeshanSearch.Builder(term)
             .setLocation(LatLng(centerLat, centerLng))
             .build()
         search.call(object : Callback<NeshanSearchResult> {
@@ -74,21 +78,24 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         return@post
                     }
 
-                    val first = items.first()
-                    val location = first.location
-                    if (location == null) {
+                    val mapped = items.mapNotNull { item ->
+                        val location = item.location ?: return@mapNotNull null
+                        mapOf(
+                            "latitude" to location.latitude,
+                            "longitude" to location.longitude,
+                            "title" to (item.title ?: ""),
+                            "address" to (item.address ?: ""),
+                            "neighbourhood" to (item.neighbourhood ?: ""),
+                            "city" to cityFromRegion(item.region),
+                        )
+                    }
+
+                    if (mapped.isEmpty()) {
                         result.error("invalid_response", "Invalid geocoding location", null)
                         return@post
                     }
 
-                    result.success(
-                        mapOf(
-                            "latitude" to location.latitude,
-                            "longitude" to location.longitude,
-                            "title" to (first.title ?: ""),
-                            "address" to (first.address ?: ""),
-                        ),
-                    )
+                    result.success(mapOf("items" to mapped))
                 }
             }
 
@@ -98,6 +105,11 @@ class NeshanServicesPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 }
             }
         })
+    }
+
+    private fun cityFromRegion(region: String?): String {
+        if (region.isNullOrBlank()) return ""
+        return region.split("،").firstOrNull()?.trim().orEmpty()
     }
 
     private fun getRoute(call: MethodCall, result: MethodChannel.Result) {

@@ -37,6 +37,8 @@ class NeshanGeocodingResult {
   final String? city;
   final String? neighbourhood;
   final String? unMatchedTerm;
+  final String? title;
+  final String? formattedAddress;
 
   /// Up to 5 candidates from Geocoding Plus (best match first).
   final List<NeshanGeocodingCandidate> candidates;
@@ -47,6 +49,8 @@ class NeshanGeocodingResult {
     this.city,
     this.neighbourhood,
     this.unMatchedTerm,
+    this.title,
+    this.formattedAddress,
     this.candidates = const [],
   });
 }
@@ -57,6 +61,8 @@ class NeshanGeocodingCandidate {
   final String? city;
   final String? neighbourhood;
   final String? unMatchedTerm;
+  final String? title;
+  final String? formattedAddress;
 
   const NeshanGeocodingCandidate({
     required this.location,
@@ -64,6 +70,8 @@ class NeshanGeocodingCandidate {
     this.city,
     this.neighbourhood,
     this.unMatchedTerm,
+    this.title,
+    this.formattedAddress,
   });
 }
 

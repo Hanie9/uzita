@@ -286,9 +286,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
           );
         }
       });
-      if (!_navigationActive) {
+      if (!_navigationActive && !_mapCameraDetached) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_navigationActive) {
+          if (mounted && !_navigationActive && !_mapCameraDetached) {
             unawaited(_mapController.refitOverview());
           }
         });
@@ -302,9 +302,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
         );
         _syncStepKeys();
       });
-      if (!_navigationActive) {
+      if (!_navigationActive && !_mapCameraDetached) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && !_navigationActive) {
+          if (mounted && !_navigationActive && !_mapCameraDetached) {
             unawaited(_mapController.refitOverview());
           }
         });
@@ -752,13 +752,14 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     AppLocalizations localizations, {
     double bottom = 16,
   }) {
-    if (!_navigationActive || !_mapCameraDetached) {
+    if (!_mapCameraDetached) {
       return const SizedBox.shrink();
     }
+    final overviewBottom = MediaQuery.sizeOf(context).height * 0.30;
     return NeshanReturnToRouteButton(
       label: localizations.driver_route_return_to_route,
       onPressed: _returnToRoute,
-      bottom: bottom,
+      bottom: _navigationActive ? bottom : overviewBottom,
     );
   }
 

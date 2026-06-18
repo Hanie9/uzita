@@ -72,6 +72,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   LatLng? _pendingNavPosition;
   double? _pendingNavHeading;
   bool _autoFollow = true;
+  bool _overviewCameraDetached = false;
   bool _navigationCameraReady = false;
   LatLng? _previousDriverPosition;
   Offset? _navPointerStart;
@@ -184,6 +185,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (type == 'overviewCameraGesture') {
       if (widget.navigationMode) return;
       if (!widget.overviewMode) return;
+      setState(() => _overviewCameraDetached = true);
       widget.onCameraDetached?.call(true);
     }
   }
@@ -227,6 +229,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if ((!oldWidget.followDriver && widget.followDriver) ||
         (!oldWidget.navigationMode && widget.navigationMode)) {
       _autoFollow = true;
+      _overviewCameraDetached = false;
       _fitted = true;
       _navigationCameraReady = false;
       if (_viewId != null && widget.driverPosition != null) {
@@ -271,7 +274,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         overviewChanged) {
       _fitted = false;
     }
-    if (widget.overviewMode && driverMoved) {
+    if (widget.overviewMode && driverMoved && !_overviewCameraDetached) {
       final prev = oldWidget.driverPosition;
       final next = widget.driverPosition;
       if (prev != null && next != null && distanceMeters(prev, next) > 800) {
@@ -286,14 +289,15 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         routeChanged ||
         themeChanged ||
         !_fitted) {
-      final overviewNeedsRefit = widget.overviewMode && driverMoved;
+      final overviewNeedsRefit =
+          widget.overviewMode && driverMoved && !_overviewCameraDetached;
       _scheduleMapUpdate(
         refit:
             overviewChanged ||
             routeChanged ||
             followChanged ||
             navigationModeChanged ||
-            !_fitted ||
+            (!_fitted && !_overviewCameraDetached) ||
             overviewNeedsRefit,
       );
     }
@@ -444,6 +448,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (_viewId == null) return;
     setState(() {
       _fitted = false;
+      _overviewCameraDetached = false;
     });
     widget.onCameraDetached?.call(false);
     await _setOverviewGestures(true);
@@ -505,7 +510,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       if ((doRefit || !_fitted) && widget.overviewMode) {
         await _setNavigationFollow(false);
         await _setOverviewGestures(true);
-        await _fitBounds();
+        if (!_overviewCameraDetached) {
+          await _fitBounds();
+        }
       } else if (!widget.navigationMode) {
         await _setNavigationFollow(false);
         await _setOverviewGestures(widget.overviewMode);

@@ -311,6 +311,48 @@ void main() {
     expect(hints.province, 'تهران');
   });
 
+  test('extractGeocodeQuery strips city prefix for POI lookup', () {
+    expect(
+      extractGeocodeQuery('کاشان, دانشگاه کاشان'),
+      'دانشگاه کاشان',
+    );
+    expect(
+      extractGeocodeQuery('تهران، پارک علم و فناوری علم و صنعت'),
+      'پارک علم و فناوری علم و صنعت',
+    );
+  });
+
+  test('prefers university POI over Kashan city centre', () {
+    const result = NeshanGeocodingResult(
+      location: NeshanLatLng(latitude: 33.985, longitude: 51.41),
+      city: 'کاشان',
+      candidates: [
+        NeshanGeocodingCandidate(
+          location: NeshanLatLng(latitude: 33.985, longitude: 51.41),
+          city: 'کاشان',
+          neighbourhood: 'مرکز شهر',
+          unMatchedTerm: '',
+        ),
+        NeshanGeocodingCandidate(
+          location: NeshanLatLng(latitude: 34.014, longitude: 51.364),
+          city: 'کاشان',
+          neighbourhood: 'راوند',
+          title: 'دانشگاه کاشان',
+          formattedAddress: 'کاشان، بلوار قطب راوندی',
+          unMatchedTerm: '',
+        ),
+      ],
+    );
+
+    final refined = refineGeocodingResult(
+      result,
+      address: 'کاشان, دانشگاه کاشان',
+    );
+
+    expect(refined.location.latitude, closeTo(34.014, 0.01));
+    expect(refined.title, 'دانشگاه کاشان');
+  });
+
   test('picks Isfahan candidate when address mentions اصفهان', () {
     const result = NeshanGeocodingResult(
       location: NeshanLatLng(latitude: 35.7, longitude: 51.4),

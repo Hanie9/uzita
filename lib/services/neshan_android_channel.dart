@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
+import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_config.dart';
 import 'package:uzita/utils/neshan_error_codes.dart';
 
@@ -37,6 +38,60 @@ class NeshanAndroidChannel {
       );
     }
 
+    return _parseSearchResponse(response, address);
+  }
+
+  /// Neshan Search API via Android SDK — best for named places (universities).
+  Future<NeshanGeocodingResult> searchAddress(
+    String term, {
+    required NeshanLatLng searchCenter,
+    String? scoringAddress,
+  }) async {
+    final response = await _channel.invokeMapMethod<String, dynamic>(
+      'searchAddress',
+      {
+        'term': term.trim(),
+        'centerLat': searchCenter.latitude,
+        'centerLng': searchCenter.longitude,
+      },
+    );
+
+    if (response == null) {
+      throw const NeshanApiException(
+        'Empty search response from Neshan SDK',
+        neshanStatus: NeshanErrorCodes.sdkEmptyResponse,
+      );
+    }
+
+    return _parseSearchResponse(response, scoringAddress ?? term);
+  }
+
+  NeshanGeocodingResult _parseSearchResponse(
+    Map<String, dynamic> response,
+    String scoringAddress,
+  ) {
+    final itemsRaw = response['items'];
+    if (itemsRaw is List && itemsRaw.isNotEmpty) {
+      final candidates = itemsRaw
+          .whereType<Map>()
+          .map((item) => item.cast<String, dynamic>())
+          .map(_candidateFromSearchItem)
+          .toList(growable: false);
+
+      if (candidates.isNotEmpty) {
+        final best = pickBestGeocodingCandidate(candidates, scoringAddress);
+        return NeshanGeocodingResult(
+          location: best.location,
+          province: best.province,
+          city: best.city,
+          neighbourhood: best.neighbourhood,
+          title: best.title,
+          formattedAddress: best.formattedAddress,
+          candidates: candidates,
+        );
+      }
+    }
+
     final lat = _asDouble(response['latitude']);
     final lng = _asDouble(response['longitude']);
     if (lat == null || lng == null) {
@@ -48,8 +103,29 @@ class NeshanAndroidChannel {
 
     return NeshanGeocodingResult(
       location: NeshanLatLng(latitude: lat, longitude: lng),
-      city: response['title']?.toString(),
+      city: response['city']?.toString(),
       neighbourhood: response['address']?.toString(),
+      title: response['title']?.toString(),
+      formattedAddress: response['address']?.toString(),
+    );
+  }
+
+  NeshanGeocodingCandidate _candidateFromSearchItem(Map<String, dynamic> item) {
+    final lat = _asDouble(item['latitude']);
+    final lng = _asDouble(item['longitude']);
+    if (lat == null || lng == null) {
+      throw const NeshanApiException(
+        'Invalid search coordinates from Neshan SDK',
+        neshanStatus: NeshanErrorCodes.sdkInvalidCoordinates,
+      );
+    }
+
+    return NeshanGeocodingCandidate(
+      location: NeshanLatLng(latitude: lat, longitude: lng),
+      city: item['city']?.toString(),
+      neighbourhood: item['neighbourhood']?.toString(),
+      title: item['title']?.toString(),
+      formattedAddress: item['address']?.toString(),
     );
   }
 
