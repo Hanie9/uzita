@@ -165,8 +165,39 @@ int findActiveStepIndex(
   List<NeshanRouteStep> steps,
   LatLng driver, {
   int previousIndex = 0,
+  List<LatLng> routePolyline = const [],
 }) {
   if (steps.isEmpty) return 0;
+
+  if (routePolyline.length >= 2) {
+    final driverProgress = progressAlongPolyline(routePolyline, driver);
+    var active = previousIndex.clamp(0, steps.length - 1);
+
+    for (var i = steps.length - 1; i >= 0; i--) {
+      final location = steps[i].startLocation;
+      if (location == null) continue;
+      final stepPoint = LatLng(location.latitude, location.longitude);
+      final stepProgress = progressAlongPolyline(routePolyline, stepPoint);
+      if (driverProgress + 40 >= stepProgress) {
+        active = i;
+        break;
+      }
+    }
+
+    if (active < steps.length - 1) {
+      final toManeuver = distanceToManeuverMeters(
+        driver: driver,
+        steps: steps,
+        activeIndex: active,
+        routePolyline: routePolyline,
+      );
+      if (toManeuver < 35) {
+        active += 1;
+      }
+    }
+
+    return active.clamp(0, steps.length - 1);
+  }
 
   var active = previousIndex.clamp(0, steps.length - 1);
 
@@ -194,6 +225,54 @@ int findActiveStepIndex(
   }
 
   return active.clamp(0, steps.length - 1);
+}
+
+/// Cumulative distance (m) from polyline start to the closest point on [polyline].
+double progressAlongPolyline(List<LatLng> polyline, LatLng point) {
+  if (polyline.length < 2) return 0;
+
+  final index = findClosestPolylineIndex(polyline, point);
+  final projection = snapPointToPolyline(polyline, point);
+  var walked = 0.0;
+  for (var i = 0; i < index; i++) {
+    walked += distanceMeters(polyline[i], polyline[i + 1]);
+  }
+  walked += distanceMeters(polyline[index], projection);
+  return walked;
+}
+
+/// Remaining distance along the route until the next maneuver (turn / exit).
+double distanceToManeuverMeters({
+  required LatLng driver,
+  required List<NeshanRouteStep> steps,
+  required int activeIndex,
+  required List<LatLng> routePolyline,
+}) {
+  if (steps.isEmpty) return 0;
+
+  final clamped = activeIndex.clamp(0, steps.length - 1);
+  final maneuverIndex = clamped < steps.length - 1 ? clamped + 1 : clamped;
+  final maneuverStep = steps[maneuverIndex];
+  final loc = maneuverStep.startLocation;
+
+  if (routePolyline.length >= 2 && loc != null) {
+    final maneuverPoint = LatLng(loc.latitude, loc.longitude);
+    final driverProgress = progressAlongPolyline(routePolyline, driver);
+    final maneuverProgress = progressAlongPolyline(routePolyline, maneuverPoint);
+    final remaining = maneuverProgress - driverProgress;
+    if (remaining > 5) return remaining;
+    if (remaining > 0) return remaining;
+    return distanceMeters(driver, maneuverPoint);
+  }
+
+  if (loc != null) {
+    return distanceMeters(
+      driver,
+      LatLng(loc.latitude, loc.longitude),
+    );
+  }
+
+  return maneuverStep.distanceMeters;
 }
 
 String formatClockTime(DateTime time) {
@@ -286,7 +365,18 @@ double distanceToStepMeters({
   required LatLng driver,
   required NeshanRouteStep step,
   required List<LatLng> routePolyline,
+  List<NeshanRouteStep> steps = const [],
+  int? activeIndex,
 }) {
+  if (steps.isNotEmpty && activeIndex != null) {
+    return distanceToManeuverMeters(
+      driver: driver,
+      steps: steps,
+      activeIndex: activeIndex,
+      routePolyline: routePolyline,
+    );
+  }
+
   if (routePolyline.length >= 2) {
     final driverIndex = findClosestPolylineIndex(routePolyline, driver);
     final loc = step.startLocation;

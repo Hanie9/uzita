@@ -47,6 +47,46 @@ class NeshanBackendClient {
     return const NeshanService().parseGeocodingBody(body, trimmed);
   }
 
+  Future<NeshanGeocodingResult> searchAddress(
+    String term, {
+    required String authToken,
+    required NeshanLatLng center,
+    String? scoringAddress,
+  }) async {
+    final trimmed = term.trim();
+    if (trimmed.isEmpty || trimmed == '---') {
+      throw const NeshanApiException(
+        'Address is empty',
+        neshanStatus: NeshanErrorCodes.addressEmpty,
+      );
+    }
+
+    final uri = Uri.parse('$apiBaseUrl/transport/neshan/search').replace(
+      queryParameters: {
+        'term': trimmed,
+        'lat': center.latitude.toString(),
+        'lng': center.longitude.toString(),
+      },
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $authToken',
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+    );
+
+    final body = utf8.decode(response.bodyBytes);
+    _ensureOk(response.statusCode, body);
+
+    return const NeshanService().parseSearchBody(
+      body,
+      scoringAddress ?? trimmed,
+    );
+  }
+
   Future<NeshanRoute> getRoute({
     required String authToken,
     required NeshanLatLng origin,

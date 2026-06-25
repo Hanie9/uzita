@@ -138,7 +138,7 @@ class NeshanAndroidChannel {
     bool avoidTrafficZone = false,
     bool avoidOddEvenZone = false,
   }) async {
-    if (!hasNeshanApiKey) {
+    if (!hasDirectNeshanKey && !hasNeshanApiKey) {
       throw const NeshanApiException(
         'Neshan API key is not configured',
         neshanStatus: 'KeyNotFound',
@@ -148,7 +148,7 @@ class NeshanAndroidChannel {
     final response = await _channel.invokeMapMethod<String, dynamic>(
       'getRoute',
       {
-        'apiKey': neshanApiKey,
+        'apiKey': neshanDirectApiKey,
         'originLat': origin.latitude,
         'originLng': origin.longitude,
         'destinationLat': destination.latitude,

@@ -7,6 +7,7 @@
 1. فایل‌های `neshan_proxy_views.py` و `neshan_proxy_urls.py` را در اپ Django (transport) کپی کنید.
 2. مسیرها را به `urlpatterns` اضافه کنید (زیر `/api/`):
    - `GET /api/transport/neshan/geocode`
+   - `GET /api/transport/neshan/search`
    - `GET /api/transport/neshan/route`
    - `GET /api/transport/neshan/static-arc`
 3. در Liara متغیر محیطی بگذارید: `NESHAN_API_KEY=service.xxx`

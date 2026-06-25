@@ -57,6 +57,12 @@ private const val OVERVIEW_MARKER_SIZE = 34f
 private const val DRIVER_DOT_SIZE = 22f
 private const val NAV_TOUCH_SLOP_SQ = 64f
 
+private fun normalizeBearing(degrees: Float): Float {
+    var value = degrees % 360f
+    if (value < 0f) value += 360f
+    return value
+}
+
 /// Neshan [MapView] per [platform.neshan.org SDK docs](https://platform.neshan.org/docs/sdk/android/installation).
 class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
@@ -749,7 +755,16 @@ private class NeshanMapPlatformView(
         lng: Double,
         bearing: Float?,
     ): Marker {
-        val androidBitmap = NavArrowBitmap.create(0f)
+        // Heading-up follow: map rotates so travel direction is up; arrow stays
+        // screen-up (0°). When the user pans away, rotate the puck relative to
+        // the current map bearing so it still points along the route.
+        val mapBearing = mapView.getBearing()
+        val arrowRotation = if (navigationFollowEnabled) {
+            0f
+        } else {
+            normalizeBearing((bearing ?: 0f) - mapBearing)
+        }
+        val androidBitmap = NavArrowBitmap.create(arrowRotation)
         val cartoBitmap = BitmapUtils.createBitmapFromAndroidBitmap(androidBitmap)
 
         val style = MarkerStyleBuilder().apply {

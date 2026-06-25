@@ -283,6 +283,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
             _steps,
             _driverPosition!,
             previousIndex: _activeStepIndex,
+            routePolyline: _routeCoordinates,
           );
         }
       });
@@ -415,6 +416,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       _steps,
       driver,
       previousIndex: _activeStepIndex,
+      routePolyline: _routeCoordinates,
     );
 
     setState(() {
@@ -463,6 +465,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       _steps,
       position,
       previousIndex: _activeStepIndex,
+      routePolyline: _routeCoordinates,
     );
 
     final stepChanged = newActiveStep != _activeStepIndex;
@@ -492,7 +495,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     }
     _syncStepKeys();
 
-    if (_navigationActive && _isTracking && !_mapCameraDetached) {
+    if (_navigationActive && _isTracking) {
       unawaited(
         _mapController.tickNavigation(
           position: position,
@@ -675,11 +678,12 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
   }
 
   double _distanceToActiveStepMeters() {
-    final step = _activeStep;
-    if (step == null || _driverPosition == null) return 0;
-    return distanceToStepMeters(
-      driver: _driverPosition!,
-      step: step,
+    final driver = _driverPosition;
+    if (driver == null || _steps.isEmpty) return 0;
+    return distanceToManeuverMeters(
+      driver: driver,
+      steps: _steps,
+      activeIndex: _activeStepIndex,
       routePolyline: _routeCoordinates,
     );
   }

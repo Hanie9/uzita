@@ -123,11 +123,11 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (_isNavigationMode &&
         widget.driverPosition != null &&
         _route.length >= 2) {
-      final startIndex = findClosestPolylineIndex(
-        _route,
-        widget.driverPosition!,
-      ).clamp(0, _route.length - 2);
-      final remaining = _route.sublist(startIndex);
+      final snapped = snapPointToPolyline(_route, widget.driverPosition!);
+      final startIndex = findClosestPolylineIndex(_route, snapped)
+          .clamp(0, _route.length - 2);
+      final tail = _route.sublist(startIndex + 1);
+      final remaining = <LatLng>[snapped, ...tail];
       if (remaining.length >= 2) {
         return [RouteMapSegment(points: remaining)];
       }
@@ -145,10 +145,24 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         _route.length < 2) {
       return 0;
     }
-    return findClosestPolylineIndex(
-      _route,
-      widget.driverPosition!,
-    ).clamp(1, _route.length);
+    final snapped = snapPointToPolyline(_route, widget.driverPosition!);
+    final index = findClosestPolylineIndex(_route, snapped);
+    return (index + 1).clamp(1, _route.length);
+  }
+
+  List<LatLng> get _traveledPolyline {
+    if (!_isNavigationMode ||
+        widget.driverPosition == null ||
+        _route.length < 2) {
+      return const [];
+    }
+    final traveledIndex = _traveledSliceEnd;
+    if (traveledIndex <= 1) return const [];
+
+    final snapped = snapPointToPolyline(_route, widget.driverPosition!);
+    final head = _route.sublist(0, traveledIndex);
+    if (head.isEmpty) return const [];
+    return [...head, snapped];
   }
 
   @override
@@ -349,12 +363,16 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   }
 
   Future<void> _tickNavigationAt(LatLng position, double? heading) async {
-    if (_viewId == null || !_autoFollow || !widget.followDriver) return;
+    if (_viewId == null) return;
 
     final navPos = _snapNavPosition(position);
     final resolvedHeading = _navHeading(navPos, heading) ?? 0.0;
 
+    // Always refresh route overlay (trim purple line / grey traveled) on GPS
+    // ticks — even when the user has panned away from follow mode.
     await _syncOverlays();
+
+    if (!_autoFollow || !widget.followDriver) return;
     await _followNavigationCamera(navPos, resolvedHeading);
   }
 
@@ -367,11 +385,13 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     return distanceMeters(raw, snapped) <= _maxSnapMeters ? snapped : raw;
   }
 
-  /// In navigation mode the camera bearing follows the route direction so the
-  /// path ahead always points "up" and the arrow stays behind it. Falls back
-  /// to the device/movement heading when off-route.
+  /// In navigation follow mode the camera bearing follows the route direction.
+  /// When follow is off, keep the resolved device/movement heading for the puck.
   double? _navHeading(LatLng navPos, double? heading) {
-    if (_isNavigationMode && _route.length >= 2) {
+    if (_isNavigationMode &&
+        _route.length >= 2 &&
+        _autoFollow &&
+        widget.followDriver) {
       final routeBearing = bearingAlongPolyline(_route, navPos);
       if (routeBearing != null) return routeBearing;
     }
@@ -573,10 +593,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final id = _viewId;
     if (id == null) return;
 
-    final traveledIndex = _traveledSliceEnd;
-    final traveled = _isNavigationMode && traveledIndex > 1
-        ? _route.sublist(0, traveledIndex.clamp(1, _route.length))
-        : <LatLng>[];
+    final traveled = _traveledPolyline;
 
     try {
       await _channel.invokeMethod('updateRoute', {

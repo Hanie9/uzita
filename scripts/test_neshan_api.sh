@@ -27,6 +27,19 @@ echo "$GEO_BODY" | head -c 400
 echo ""
 echo ""
 
+echo "=== Place search (GET) ==="
+SEARCH=$(curl -sS -w "\n__HTTP__%{http_code}" -G "https://api.neshan.org/v1/search" \
+  --data-urlencode "term=میدان آزادی" \
+  --data-urlencode "lat=35.6892" \
+  --data-urlencode "lng=51.3890" \
+  -H "Api-Key: $KEY")
+SEARCH_BODY="${SEARCH%%__HTTP__*}"
+SEARCH_CODE="${SEARCH##*__HTTP__}"
+echo "HTTP: $SEARCH_CODE"
+echo "$SEARCH_BODY" | head -c 400
+echo ""
+echo ""
+
 echo "=== Routing with traffic (GET) ==="
 ROUTE=$(curl -sS -w "\n__HTTP__%{http_code}" -G "https://api.neshan.org/v4/direction" \
   --data-urlencode "type=car" \
@@ -40,7 +53,7 @@ echo "HTTP: $ROUTE_CODE"
 echo "$ROUTE_BODY" | head -c 400
 echo ""
 
-if [[ "$GEO_CODE" == "484" || "$ROUTE_CODE" == "484" ]]; then
+if [[ "$GEO_CODE" == "484" || "$ROUTE_CODE" == "484" || "$SEARCH_CODE" == "484" ]]; then
   echo ""
   echo "484 ApiWhiteListError: service keys must be called from whitelisted server IP/domain,"
   echo "or Android bundle must exactly match com.example.uzita in Neshan panel."

@@ -10,7 +10,7 @@ import 'package:uzita/utils/neshan_config.dart';
 /// Geocoding + routing with live traffic — Neshan only.
 ///
 /// Geocoding: backend Geocoding Plus → REST Geocoding Plus → place search
-/// for POIs. Routing: backend proxy → Android SDK → v4/direction REST.
+/// (Search API with lat/lng bias). Routing: backend proxy → Android SDK → v4/direction REST.
 class DriverRoutingService {
   const DriverRoutingService();
 
@@ -55,49 +55,76 @@ class DriverRoutingService {
       );
     }
 
-    if (plus == null) {
+    final center = _searchCenterForAddress(
+      hints: hints,
+      searchCenter: searchCenter,
+      plus: plus,
+    );
+
+    final search = await _trySearch(
+      apiText,
+      address: address,
+      center: center,
+    );
+
+    NeshanGeocodingResult? result = plus ?? search;
+
+    if (plus != null && search != null) {
+      final plusScore = geocodingMatchScore(plus, address);
+      final searchScore = geocodingMatchScore(search, address);
+      // Search API is location-biased and usually better for named streets/POIs.
+      result = searchScore >= plusScore ? search : plus;
+    }
+
+    if (result == null) {
       throw const NeshanApiException(
         'Neshan API key is not configured',
         neshanStatus: 'KeyNotFound',
       );
     }
 
-    var result = refineGeocodingResult(plus, address: address);
-
-    if (isPoiAddress(address) && geocodingMatchScore(result, address) < 10) {
-      final center = searchCenter ??
-          (hints.city != null ? iranCityCentroids[hints.city] : null) ??
-          result.location;
-      final search = await _tryPlaceSearch(
-        apiText,
-        address: address,
-        center: center,
-      );
-      if (search != null &&
-          geocodingMatchScore(search, address) >
-              geocodingMatchScore(result, address)) {
-        result = search;
-      }
-    }
-
-    return result;
+    return refineGeocodingResult(result, address: address);
   }
 
-  Future<NeshanGeocodingResult?> _tryPlaceSearch(
+  NeshanLatLng _searchCenterForAddress({
+    required AddressGeocodeHints hints,
+    required NeshanLatLng? searchCenter,
+    required NeshanGeocodingResult? plus,
+  }) {
+    if (searchCenter != null) return searchCenter;
+    final city = hints.city;
+    if (city != null) {
+      final centroid = iranCityCentroids[city];
+      if (centroid != null) return centroid;
+    }
+    if (plus != null) return plus.location;
+    return const NeshanLatLng(latitude: 35.6892, longitude: 51.3890);
+  }
+
+  Future<NeshanGeocodingResult?> _trySearch(
     String term, {
     required String address,
     required NeshanLatLng center,
   }) async {
     if (_android.isAvailable) {
       try {
-        final fromAndroid = await _android.searchAddress(
+        return await _android.searchAddress(
           term,
           searchCenter: center,
           scoringAddress: address,
         );
-        return fromAndroid;
       } catch (_) {}
     }
+
+    final fromBackend = await _tryBackend(
+      (token) => _backend.searchAddress(
+        term,
+        authToken: token,
+        center: center,
+        scoringAddress: address,
+      ),
+    );
+    if (fromBackend != null) return fromBackend;
 
     if (!hasDirectNeshanKey) return null;
 

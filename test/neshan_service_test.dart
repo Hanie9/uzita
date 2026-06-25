@@ -35,6 +35,39 @@ void main() {
     });
   });
 
+  group('parseSearchBody', () {
+    test('parses Search API response and picks best match', () {
+      const body = '''
+{
+  "count": 2,
+  "items": [
+    {
+      "title": "میدان آزادی",
+      "address": "تهران، میدان آزادی",
+      "neighbourhood": "استاد معین",
+      "region": "تهران، استان تهران",
+      "type": "میدان",
+      "category": "municipal",
+      "location": {"x": 51.352, "y": 35.700}
+    },
+    {
+      "title": "آزادی",
+      "address": "تهران، خیابان آزادی",
+      "region": "تهران، استان تهران",
+      "location": {"x": 51.340, "y": 35.710}
+    }
+  ]
+}
+''';
+
+      final result = service.parseSearchBody(body, 'تهران میدان آزادی');
+      expect(result.location.latitude, closeTo(35.700, 0.001));
+      expect(result.location.longitude, closeTo(51.352, 0.001));
+      expect(result.title, 'میدان آزادی');
+      expect(result.candidates.length, 2);
+    });
+  });
+
   group('parseRouteBody', () {
     test('parses routing v4 response with step modifier and polyline', () {
       const body = '''

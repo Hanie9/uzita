@@ -179,6 +179,7 @@ bool isPoiAddress(String address) {
   }
 
   const poiKeywords = [
+    'میدان',
     'دانشگاه',
     'بیمارستان',
     'فرودگاه',

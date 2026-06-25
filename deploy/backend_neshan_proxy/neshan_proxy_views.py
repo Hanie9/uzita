@@ -28,6 +28,7 @@ NESHAN_REFERER = os.environ.get(
     "NESHAN_REFERER", "https://device-control.liara.run/"
 ).strip()
 GEOCODING_URL = "https://api.neshan.org/geocoding/v1/plus"
+SEARCH_URL = "https://api.neshan.org/v1/search"
 DIRECTION_URL = "https://api.neshan.org/v4/direction"
 DIRECTION_NO_TRAFFIC_URL = "https://api.neshan.org/v4/direction/no-traffic"
 DIRECTION_TYPICAL_URL = "https://api.neshan.org/v4/direction/typical"
@@ -112,6 +113,41 @@ def neshan_geocode(request) -> HttpResponse:
     params = {"json": json.dumps(payload, ensure_ascii=False)}
     upstream = requests.get(
         GEOCODING_URL,
+        params=params,
+        headers=_neshan_headers(),
+        timeout=TIMEOUT,
+    )
+    return _proxy_response(upstream)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def neshan_search(request) -> HttpResponse:
+    """Place search — https://platform.neshan.org/docs/api/search-category/search/"""
+    missing = _require_key()
+    if missing is not None:
+        return missing
+
+    term = (request.GET.get("term") or request.GET.get("address") or "").strip()
+    if not term:
+        return HttpResponse(
+            json.dumps({"error": "term is required"}),
+            status=400,
+            content_type="application/json",
+        )
+
+    lat = (request.GET.get("lat") or "").strip()
+    lng = (request.GET.get("lng") or "").strip()
+    if not lat or not lng:
+        return HttpResponse(
+            json.dumps({"error": "lat and lng are required"}),
+            status=400,
+            content_type="application/json",
+        )
+
+    params = {"term": term, "lat": lat, "lng": lng}
+    upstream = requests.get(
+        SEARCH_URL,
         params=params,
         headers=_neshan_headers(),
         timeout=TIMEOUT,
