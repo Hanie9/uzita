@@ -1,6 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:latlong2/latlong.dart';
 import 'package:uzita/services/neshan_models.dart';
+import 'package:uzita/utils/route_progress.dart';
+
+/// Minimum score before treating a Search POI lookup as confidently matched.
+const int kMinGeocodingMatchScore = 4;
 
 /// City/province hints parsed from free-text Persian addresses.
 class AddressGeocodeHints {
@@ -96,7 +101,7 @@ AddressGeocodeHints extractGeocodeHints(String address) {
   return const AddressGeocodeHints();
 }
 
-String _normalizeAddress(String address) {
+String normalizeGeocodeAddress(String address) {
   return address
       .replaceAll('\u200c', ' ')
       .replaceAll('ي', 'ی')
@@ -104,6 +109,8 @@ String _normalizeAddress(String address) {
       .replaceAll('  ', ' ')
       .trim();
 }
+
+String _normalizeAddress(String address) => normalizeGeocodeAddress(address);
 
 /// Build geocoding API parameters — never bias destination to a different city.
 ({
@@ -115,6 +122,7 @@ String _normalizeAddress(String address) {
   required String address,
   required AddressGeocodeHints hints,
   NeshanGeocodingResult? originResult,
+  NeshanLatLng? driverLocation,
 }) {
   final city = hints.city;
   final province = hints.province;
@@ -122,11 +130,16 @@ String _normalizeAddress(String address) {
   if (city != null) {
     final centroid = iranCityCentroids[city];
     if (centroid != null) {
+      final center = driverLocation != null &&
+              _isNearCity(driverLocation, city)
+          ? driverLocation
+          : centroid;
+      final radiusKm = center == driverLocation ? 35.0 : 55.0;
       return (
         city: city,
         province: province,
-        searchCenter: centroid,
-        searchExtent: geocodeExtentAround(centroid, radiusKm: 55),
+        searchCenter: center,
+        searchExtent: geocodeExtentAround(center, radiusKm: radiusKm),
       );
     }
     return (city: city, province: province, searchCenter: null, searchExtent: null);
@@ -146,7 +159,130 @@ String _normalizeAddress(String address) {
     );
   }
 
+  if (driverLocation != null && isPlausibleIranCoordinate(driverLocation)) {
+    return (
+      city: null,
+      province: null,
+      searchCenter: driverLocation,
+      searchExtent: geocodeExtentAround(driverLocation, radiusKm: 80),
+    );
+  }
+
   return (city: null, province: null, searchCenter: null, searchExtent: null);
+}
+
+/// Cargo endpoints (mabda/maghsad): bias to city or sibling origin only — never
+/// driver GPS, which pulls unrelated addresses toward the driver.
+({
+  String? city,
+  String? province,
+  NeshanLatLng? searchCenter,
+  NeshanGeocodingExtent? searchExtent,
+}) buildCargoGeocodeParams({
+  required String address,
+  required AddressGeocodeHints hints,
+  NeshanGeocodingResult? siblingResult,
+}) {
+  final city = hints.city;
+  final province = hints.province;
+
+  if (city != null) {
+    final centroid = iranCityCentroids[city];
+    if (centroid != null) {
+      // Geocoding Plus snaps POIs (metro stations, squares, …) to the city
+      // centre when `location`/`extent` bias is sent — only pass city/province.
+      if (isPoiAddress(address)) {
+        return (
+          city: city,
+          province: province,
+          searchCenter: null,
+          searchExtent: null,
+        );
+      }
+      final radiusKm = hasSpecificLocationTerms(address) ? 42.0 : 65.0;
+      return (
+        city: city,
+        province: province,
+        searchCenter: centroid,
+        searchExtent: geocodeExtentAround(centroid, radiusKm: radiusKm),
+      );
+    }
+    return (city: city, province: province, searchCenter: null, searchExtent: null);
+  }
+
+  final originCity = siblingResult?.city?.trim();
+  if (siblingResult != null &&
+      originCity != null &&
+      originCity.isNotEmpty &&
+      !isPoiAddress(address) &&
+      _normalizeAddress(address).contains(originCity)) {
+    return (
+      city: originCity,
+      province: siblingResult.province,
+      searchCenter: siblingResult.location,
+      searchExtent: geocodeExtentAround(siblingResult.location, radiusKm: 45),
+    );
+  }
+
+  return (city: null, province: null, searchCenter: null, searchExtent: null);
+}
+
+/// True when the address names a street, plate, POI, etc. (not just city).
+bool hasSpecificLocationTerms(String address) {
+  if (isPoiAddress(address)) return true;
+  const markers = [
+    'خیابان',
+    'کوچه',
+    'بلوار',
+    'بزرگراه',
+    'اتوبان',
+    'جاده',
+    'پلاک',
+    'نبش',
+    'روبروی',
+    'جنب',
+    'نرسیده',
+    'بعد از',
+    'پل ',
+  ];
+  final normalized = _normalizeAddress(address);
+  return markers.any(normalized.contains);
+}
+
+/// Geocoding Plus «full match» snapped to the city centre while the address
+/// names a specific place elsewhere in the metro area.
+bool isCityCentreGeocodingSnap(
+  NeshanGeocodingResult result,
+  String address,
+) {
+  if (!hasSpecificLocationTerms(address)) return false;
+  if (!isNearCityCentroid(result, address)) return false;
+
+  final hints = extractGeocodeHints(address);
+  final query = extractGeocodeQuery(address, hints: hints);
+  final terms = _significantTerms(query.isNotEmpty ? query : address);
+  if (_resultOverlapsAddressTerms(result, terms)) return false;
+
+  if (!geocodedCityMatchesAddress(result: result, address: address)) return true;
+  if (isPoiAddress(address)) return true;
+  // Same-city street at centre with no metadata overlap — likely wrong snap.
+  const streetMarkers = ['خیابان', 'کوچه', 'بلوار', 'بزرگراه'];
+  return streetMarkers.any(_normalizeAddress(address).contains);
+}
+
+/// First five digits of a ten-digit Iranian postal code (گشت کدپستی).
+String? extractPostalCodeGush(String address) {
+  final match = RegExp(r'\d{10}').firstMatch(_normalizeAddress(address));
+  if (match == null) return null;
+  return match.group(0)!.substring(0, 5);
+}
+
+/// Address payload for Geocoding Plus — keeps postal gush when present.
+String geocodeApiAddressText(String address) {
+  final normalized = normalizeGeocodeAddress(address);
+  final gush = extractPostalCodeGush(normalized);
+  if (gush == null || normalized.contains(gush)) return normalized;
+  return '$normalized $gush';
 }
 
 /// Address text sent to geocoding/search APIs — city prefix removed so POI
@@ -166,6 +302,94 @@ String extractGeocodeQuery(
   }
 
   return normalized;
+}
+
+/// Search/geocode query variants — mirrors how users type addresses in Neshan.
+List<String> buildGeocodeSearchTerms(
+  String address, {
+  AddressGeocodeHints? hints,
+}) {
+  final resolvedHints = hints ?? extractGeocodeHints(address);
+  final normalized = _normalizeAddress(address);
+  final query = extractGeocodeQuery(address, hints: resolvedHints);
+  final terms = <String>[];
+
+  void add(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty || trimmed == '---') return;
+    if (!terms.contains(trimmed)) terms.add(trimmed);
+  }
+
+  // Geocoding Plus: full text first (province/city also sent as API filters).
+  add(normalized);
+  add(query);
+  if (resolvedHints.city != null && query.isNotEmpty) {
+    add('${resolvedHints.city}، $query');
+  }
+
+  for (final extra in buildGeocodePlusExtraTerms(address, hints: resolvedHints)) {
+    add(extra);
+  }
+
+  return terms;
+}
+
+/// Extra Geocoding Plus queries for POIs when Search API is unavailable.
+List<String> buildGeocodePlusExtraTerms(
+  String address, {
+  AddressGeocodeHints? hints,
+}) {
+  final resolvedHints = hints ?? extractGeocodeHints(address);
+  final query = extractGeocodeQuery(address, hints: resolvedHints);
+  if (query.isEmpty || !isPoiAddress(address)) return const [];
+
+  final extras = <String>[];
+
+  void add(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty || trimmed == '---') return;
+    if (!extras.contains(trimmed)) extras.add(trimmed);
+  }
+
+  for (final match in RegExp(r'میدان\s+\S+').allMatches(query)) {
+    add(match.group(0));
+  }
+
+  final metroMatch = RegExp(r'ایستگاه\s+مترو\s+(.+)$').firstMatch(query);
+  if (metroMatch != null) {
+    final station = metroMatch.group(1)?.trim();
+    if (station != null && station.isNotEmpty) {
+      add(station);
+      add('مترو $station');
+      add('ایستگاه $station');
+    }
+  }
+
+  const prefixes = [
+    'ایستگاه مترو ',
+    'ایستگاه اتوبوس ',
+    'ایستگاه ',
+    'مترو ',
+  ];
+  var stripped = query;
+  for (final prefix in prefixes) {
+    if (stripped.startsWith(prefix)) {
+      add(stripped.substring(prefix.length).trim());
+      stripped = stripped.substring(prefix.length).trim();
+    }
+  }
+
+  for (final term in _significantTerms(query)) {
+    if (term.length >= 4) add(term);
+  }
+
+  if (resolvedHints.city != null) {
+    for (final extra in List<String>.from(extras)) {
+      add('${resolvedHints.city}، $extra');
+    }
+  }
+
+  return extras;
 }
 
 /// True when the address names a landmark POI, not just a street or neighbourhood.
@@ -198,7 +422,17 @@ bool isPoiAddress(String address) {
     'حوزه',
   ];
 
+  const streetMarkers = [
+    'خیابان',
+    'کوچه',
+    'بلوار',
+    'بزرگراه',
+    'اتوبان',
+    'جاده',
+  ];
+
   final normalized = _normalizeAddress(query);
+  if (streetMarkers.any(normalized.contains)) return false;
   return poiKeywords.any(normalized.contains);
 }
 
@@ -229,6 +463,10 @@ int geocodingMatchScore(NeshanGeocodingResult result, String address) {
     }
   }
 
+  if (terms.isNotEmpty && score == 0) {
+    score -= 6;
+  }
+
   if (hints.city != null) {
     final expected = _normalizeCityName(hints.city!);
     final actual = _normalizeCityName(result.city ?? '');
@@ -241,21 +479,143 @@ int geocodingMatchScore(NeshanGeocodingResult result, String address) {
     }
   }
 
-  if (terms.isNotEmpty && score < 8) score -= 5;
+  final unmatched = (result.unMatchedTerm ?? '').trim();
+  if (unmatched.isEmpty) {
+    score += 3;
+  } else if (terms.isNotEmpty && score < 8) {
+    score -= 5;
+  }
+
+  if (result.title != null && result.title!.trim().isNotEmpty) {
+    score += isPoiAddress(address) ? 5 : 2;
+    final title = _normalizeAddress(result.title!);
+    for (final term in terms) {
+      if (title.contains(term)) {
+        score += 6;
+        break;
+      }
+    }
+  }
+
   return score;
 }
 
 List<String> _significantTerms(String text) {
   final normalized = _normalizeAddress(text);
-  final raw = normalized.split(RegExp(r'[,،\-–\s]+'));
   final terms = <String>[];
+
+  // Keep compound POI phrases such as «میدان فردوسی».
+  for (final match in RegExp(r'میدان\s+\S+').allMatches(normalized)) {
+    final phrase = match.group(0)?.trim();
+    if (phrase != null && phrase.length >= 4) terms.add(phrase);
+  }
+
+  final raw = normalized.split(RegExp(r'[,،\-–\s]+'));
   for (final part in raw) {
     final term = part.trim();
     if (term.length < 3) continue;
     if (_isGenericAddressWord(term)) continue;
-    terms.add(term);
+    if (_isCityName(term)) continue;
+    if (!terms.contains(term)) terms.add(term);
   }
   return terms;
+}
+
+bool _isCityName(String word) {
+  return _iranCities.containsKey(word) || iranCityCentroids.containsKey(word);
+}
+
+bool _isNearCity(NeshanLatLng point, String city) {
+  final centroid = iranCityCentroids[city];
+  if (centroid == null) return false;
+  return distanceMeters(
+    LatLng(point.latitude, point.longitude),
+    LatLng(centroid.latitude, centroid.longitude),
+  ) <= 120000;
+}
+
+/// Coordinates where Neshan Geocoding Plus often snaps unrelated queries.
+const List<({NeshanLatLng location, double radiusMeters})>
+    kNeshanFalsePositiveLocations = [
+  // Neshan often snaps unrelated Tehran queries to the defense universities.
+  (
+    location: NeshanLatLng(latitude: 35.7443, longitude: 51.1952),
+    radiusMeters: 3500,
+  ),
+];
+
+/// True when the user address explicitly targets the defense-university POI.
+bool addressMentionsDefenseUniversityPoi(String address) {
+  final normalized = _normalizeAddress(address);
+  const markers = [
+    'دانشگاه علوم و فنون',
+    'علوم و فنون فرماندهی',
+    'دانشگاه فرماندهی',
+    'فرماندهی و ستاد آجا',
+    'علوم دفاعی',
+    'دانشگاه دفاع',
+    'دانشگاه علوم دفاعی',
+  ];
+  return markers.any(normalized.contains);
+}
+
+bool addressMentionsWarUniversityPoi(String address) {
+  return _normalizeAddress(address).contains('دانشگاه جنگ');
+}
+
+/// Neshan often returns this POI for unrelated Tehran addresses (e.g. «ستاد»).
+bool isKnownNeshanFalsePositiveLocation(
+  NeshanGeocodingResult result,
+  String address,
+) {
+  if (addressMentionsDefenseUniversityPoi(address) ||
+      addressMentionsWarUniversityPoi(address)) {
+    return false;
+  }
+
+  final point = LatLng(result.location.latitude, result.location.longitude);
+  for (final spot in kNeshanFalsePositiveLocations) {
+    final dist = distanceMeters(
+      point,
+      LatLng(spot.location.latitude, spot.location.longitude),
+    );
+    if (dist <= spot.radiusMeters) return true;
+  }
+  return false;
+}
+
+/// Known Neshan Search false positives when the query is unrelated.
+bool isSpuriousDefaultSearchPoi(
+  NeshanGeocodingResult result,
+  String address,
+) {
+  if (isKnownNeshanFalsePositiveLocation(result, address)) return true;
+
+  final label = _normalizeAddress(
+    [
+      result.title,
+      result.formattedAddress,
+      result.neighbourhood,
+    ].whereType<String>().join(' '),
+  );
+
+  const spuriousPatterns = [
+    'دانشگاه جنگ',
+    'دانشگاه فرماندهی',
+    'علوم و فنون',
+    'فرماندهی و ستاد',
+    'دانشگاه دفاع',
+    'علوم دفاعی',
+  ];
+  final isSpuriousPlace =
+      spuriousPatterns.any((pattern) => label.contains(pattern));
+  if (!isSpuriousPlace) return false;
+
+  if (addressMentionsDefenseUniversityPoi(address)) return false;
+  if (addressMentionsWarUniversityPoi(address)) return false;
+
+  // Never accept these default POIs unless the address names them explicitly.
+  return true;
 }
 
 bool _isGenericAddressWord(String word) {
@@ -272,6 +632,8 @@ bool _isGenericAddressWord(String word) {
     'واحد',
     'طبقه',
     'ایران',
+    'ایستگاه',
+    'مترو',
   };
   return generic.contains(word);
 }
@@ -279,12 +641,35 @@ bool _isGenericAddressWord(String word) {
 /// Pick the Geocoding Plus candidate that best matches [address].
 NeshanGeocodingCandidate pickBestGeocodingCandidate(
   List<NeshanGeocodingCandidate> candidates,
-  String address,
-) {
+  String address, {
+  NeshanLatLng? searchCenter,
+}) {
   if (candidates.isEmpty) {
     throw ArgumentError('candidates must not be empty');
   }
-  if (candidates.length == 1) return candidates.first;
+
+  final viable = <NeshanGeocodingCandidate>[];
+  for (final candidate in candidates) {
+    final probe = NeshanGeocodingResult(
+      location: candidate.location,
+      province: candidate.province,
+      city: candidate.city,
+      neighbourhood: candidate.neighbourhood,
+      unMatchedTerm: candidate.unMatchedTerm,
+      title: candidate.title,
+      formattedAddress: candidate.formattedAddress,
+    );
+    if (!isHardRejectGeocodingResult(probe, address)) {
+      viable.add(candidate);
+    }
+  }
+
+  if (viable.isEmpty) {
+    throw ArgumentError('No viable geocoding candidates for address');
+  }
+
+  final pool = viable;
+  if (pool.length == 1) return pool.first;
 
   final hints = extractGeocodeHints(address);
   final expectedCity = hints.city != null ? _normalizeCityName(hints.city!) : null;
@@ -292,29 +677,39 @@ NeshanGeocodingCandidate pickBestGeocodingCandidate(
   NeshanGeocodingCandidate? best;
   var bestScore = -1000;
 
-  for (final candidate in candidates) {
+  for (var i = 0; i < pool.length; i++) {
+    final candidate = pool[i];
+    // Neshan returns up to 5 items ordered by relevance — prefer earlier ranks.
+    final apiRankBonus = (pool.length - i) * 2;
     final score = _candidateMatchScore(
       candidate,
       address: address,
       expectedCity: expectedCity,
-    );
+      searchCenter: searchCenter,
+    ) +
+        apiRankBonus;
     if (score > bestScore) {
       bestScore = score;
       best = candidate;
     }
   }
 
-  return best ?? candidates.first;
+  return best ?? pool.first;
 }
 
 /// Pick the candidate that best matches the expected city and POI terms.
 NeshanGeocodingResult refineGeocodingResult(
   NeshanGeocodingResult result, {
   required String address,
+  NeshanLatLng? searchCenter,
 }) {
   if (result.candidates.isEmpty) return result;
 
-  final best = pickBestGeocodingCandidate(result.candidates, address);
+  final best = pickBestGeocodingCandidate(
+    result.candidates,
+    address,
+    searchCenter: searchCenter,
+  );
   return NeshanGeocodingResult(
     location: best.location,
     province: best.province,
@@ -331,6 +726,7 @@ int _candidateMatchScore(
   NeshanGeocodingCandidate candidate, {
   required String address,
   required String? expectedCity,
+  NeshanLatLng? searchCenter,
 }) {
   final result = NeshanGeocodingResult(
     location: candidate.location,
@@ -347,16 +743,85 @@ int _candidateMatchScore(
     score += _candidateCityScore(candidate, expectedCity) * 2;
   }
 
-  final unmatched = (candidate.unMatchedTerm ?? '').trim().length;
-  if (isPoiAddress(address)) {
-    // Do not prefer empty unMatchedTerm when a landmark POI was provided — that
-    // often means the API snapped to a generic city-centre point.
-    score -= unmatched == 0 ? 2 : 0;
+  final unmatched = (candidate.unMatchedTerm ?? '').trim();
+  final relates = resultMatchesAddressTerms(result, address);
+  if (unmatched.isEmpty) {
+    if (relates) {
+      score += 18;
+    } else if (geocodedCityMatchesAddress(result: result, address: address)) {
+      score += 10;
+    } else {
+      score -= 8;
+    }
   } else {
-    score -= unmatched;
+    score -= unmatched.length.clamp(0, 20);
+  }
+
+  if (searchCenter != null) {
+    final dist = distanceMeters(
+      LatLng(candidate.location.latitude, candidate.location.longitude),
+      LatLng(searchCenter.latitude, searchCenter.longitude),
+    );
+    if (dist <= 8000) {
+      score += 12;
+    } else if (dist <= 25000) {
+      score += 5;
+    } else if (dist >= 55000) {
+      score -= 14;
+    }
   }
 
   return score;
+}
+
+/// Max distance (m) a geocoded point may be from the search bias for [address].
+double geocodeMaxBiasMeters(String address, NeshanLatLng bias) {
+  final hints = extractGeocodeHints(address);
+  if (hints.city != null) {
+    final centroid = iranCityCentroids[hints.city];
+    if (centroid != null) {
+      // Cargo endpoints may be anywhere in the metro area, not near driver GPS.
+      return 75000;
+    }
+  }
+  return 150000;
+}
+
+/// True when [result] sits in the expected metro area for [address].
+bool isGeocodeWithinBias(
+  NeshanGeocodingResult result, {
+  required String address,
+  NeshanLatLng? bias,
+}) {
+  if (!isPlausibleIranCoordinate(result.location)) return false;
+
+  final hints = extractGeocodeHints(address);
+  if (hints.city != null) {
+    final centroid = iranCityCentroids[hints.city];
+    if (centroid != null) {
+      final distFromCity = distanceMeters(
+        LatLng(result.location.latitude, result.location.longitude),
+        LatLng(centroid.latitude, centroid.longitude),
+      );
+      if (distFromCity <= geocodeMaxBiasMeters(address, centroid)) {
+        return true;
+      }
+    }
+  }
+
+  if (bias == null) return true;
+  final dist = distanceMeters(
+    LatLng(result.location.latitude, result.location.longitude),
+    LatLng(bias.latitude, bias.longitude),
+  );
+  return dist <= geocodeMaxBiasMeters(address, bias);
+}
+
+/// Geocoding Plus returned a full match (per Neshan docs).
+bool isGeocodingPlusFullMatch(NeshanGeocodingResult result) {
+  final unmatched = (result.unMatchedTerm ?? '').trim();
+  final hasTitle = result.title != null && result.title!.trim().isNotEmpty;
+  return unmatched.isEmpty && !hasTitle;
 }
 
 int _candidateCityScore(
@@ -427,4 +892,148 @@ bool isPlausibleIranCoordinate(NeshanLatLng location) {
       location.latitude <= 40 &&
       location.longitude >= 44 &&
       location.longitude <= 64;
+}
+
+/// True when [result] title/address text overlaps the user-entered [address].
+bool resultMatchesAddressTerms(
+  NeshanGeocodingResult result,
+  String address,
+) {
+  if (isSpuriousDefaultSearchPoi(result, address)) return false;
+
+  final hints = extractGeocodeHints(address);
+  final query = extractGeocodeQuery(address, hints: hints);
+  final terms = _significantTerms(query.isNotEmpty ? query : address);
+
+  if (_resultOverlapsAddressTerms(result, terms)) return true;
+
+  final unmatched = (result.unMatchedTerm ?? '').trim();
+  final hasTitle = result.title != null && result.title!.trim().isNotEmpty;
+
+  // Geocoding Plus full match with no metadata overlap.
+  if (unmatched.isEmpty && !hasTitle) {
+    if (terms.isEmpty) return true;
+    if (_resultOverlapsAddressTerms(result, terms)) return true;
+    if (geocodedCityMatchesAddress(result: result, address: address)) {
+      if (isCityCentreGeocodingSnap(result, address)) return false;
+      // POI names (metro stations, squares, …) must overlap result metadata.
+      if (isPoiAddress(address)) return false;
+      return true;
+    }
+    return false;
+  }
+
+  if (terms.isEmpty) {
+    if (hasTitle) return false;
+    return unmatched.isEmpty;
+  }
+
+  return false;
+}
+
+bool _resultOverlapsAddressTerms(
+  NeshanGeocodingResult result,
+  List<String> terms,
+) {
+  if (terms.isEmpty) return false;
+
+  final searchable = _normalizeAddress(
+    [
+      result.title,
+      result.formattedAddress,
+      result.neighbourhood,
+    ].whereType<String>().join(' '),
+  );
+
+  for (final term in terms) {
+    if (searchable.contains(term)) return true;
+    if (searchable.split(' ').any(
+      (word) => word.length >= 3 && (word.contains(term) || term.contains(word)),
+    )) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool isNearCityCentroid(NeshanGeocodingResult result, String address) {
+  final hints = extractGeocodeHints(address);
+  final cityKey = hints.city ?? result.city;
+  if (cityKey == null) return false;
+  final centroid = iranCityCentroids[cityKey];
+  if (centroid == null) return false;
+  return distanceMeters(
+        LatLng(result.location.latitude, result.location.longitude),
+        LatLng(centroid.latitude, centroid.longitude),
+      ) <=
+      2800;
+}
+
+/// True when [result] is a confident match for [address].
+bool isConfidentGeocodingMatch(
+  NeshanGeocodingResult result,
+  String address,
+) =>
+    geocodingMatchScore(result, address) >= kMinGeocodingMatchScore;
+
+/// Only reject coordinates that must never be used (known false POI snaps).
+bool isHardRejectGeocodingResult(
+  NeshanGeocodingResult result,
+  String address,
+) {
+  if (!isPlausibleIranCoordinate(result.location)) return true;
+  if (!geocodedCityMatchesAddress(result: result, address: address)) return true;
+  return isSpuriousDefaultSearchPoi(result, address) ||
+      isKnownNeshanFalsePositiveLocation(result, address);
+}
+
+/// Soft quality check — used in tests; navigation accepts nearest valid match.
+bool isClearlyWrongGeocodingResult(
+  NeshanGeocodingResult result,
+  String address,
+) {
+  if (!isPlausibleIranCoordinate(result.location)) return true;
+  if (!geocodedCityMatchesAddress(result: result, address: address)) return true;
+
+  if (isSpuriousDefaultSearchPoi(result, address)) return true;
+
+  if (isCityCentreGeocodingSnap(result, address)) return true;
+
+  // Geocoding Plus full match — only trust when terms overlap or address is
+  // city-level (no street/POI). Otherwise we accept city-centre false positives.
+  if (isGeocodingPlusFullMatch(result) &&
+      geocodedCityMatchesAddress(result: result, address: address)) {
+    if (!hasSpecificLocationTerms(address)) return false;
+    if (resultMatchesAddressTerms(result, address)) return false;
+    if (isCityCentreGeocodingSnap(result, address)) return true;
+    // Same-city street full match — trust Geocoding Plus neighbourhood snap.
+    if (!isPoiAddress(address)) return false;
+    if (isKnownNeshanFalsePositiveLocation(result, address)) return true;
+    if (isNearCityCentroid(result, address)) return true;
+    // POI away from the city-centre cluster — trust API rank (Search unavailable).
+    return false;
+  }
+
+  final unmatched = (result.unMatchedTerm ?? '').trim();
+  final relates = resultMatchesAddressTerms(result, address);
+
+  // Street: Plus matched the main address; leftover is usually پلاک/واحد.
+  if (!isPoiAddress(address) &&
+      unmatched.isNotEmpty &&
+      unmatched.length <= 12 &&
+      geocodedCityMatchesAddress(result: result, address: address)) {
+    return false;
+  }
+
+  if (!relates) return true;
+
+  if (unmatched.isEmpty) return false;
+
+  if (isPoiAddress(address) &&
+      unmatched.length > 2 &&
+      geocodingMatchScore(result, address) < 3) {
+    return true;
+  }
+
+  return false;
 }

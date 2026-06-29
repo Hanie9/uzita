@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
+import 'package:uzita/utils/polyline_decoder.dart';
 import 'package:uzita/utils/neshan_config.dart';
 import 'package:uzita/utils/neshan_error_codes.dart';
 
@@ -38,7 +39,7 @@ class NeshanAndroidChannel {
       );
     }
 
-    return _parseSearchResponse(response, address);
+    return _parseSearchResponse(response, address, searchCenter: searchCenter);
   }
 
   /// Neshan Search API via Android SDK — best for named places (universities).
@@ -63,13 +64,18 @@ class NeshanAndroidChannel {
       );
     }
 
-    return _parseSearchResponse(response, scoringAddress ?? term);
+    return _parseSearchResponse(
+      response,
+      scoringAddress ?? term,
+      searchCenter: searchCenter,
+    );
   }
 
   NeshanGeocodingResult _parseSearchResponse(
     Map<String, dynamic> response,
-    String scoringAddress,
-  ) {
+    String scoringAddress, {
+    NeshanLatLng? searchCenter,
+  }) {
     final itemsRaw = response['items'];
     if (itemsRaw is List && itemsRaw.isNotEmpty) {
       final candidates = itemsRaw
@@ -79,7 +85,11 @@ class NeshanAndroidChannel {
           .toList(growable: false);
 
       if (candidates.isNotEmpty) {
-        final best = pickBestGeocodingCandidate(candidates, scoringAddress);
+        final best = pickBestGeocodingCandidate(
+          candidates,
+          scoringAddress,
+          searchCenter: searchCenter,
+        );
         return NeshanGeocodingResult(
           location: best.location,
           province: best.province,
@@ -213,8 +223,22 @@ class NeshanAndroidChannel {
 
     return stepsRaw
         .whereType<Map>()
-        .map(
-          (step) => NeshanRouteStep(
+        .map((step) {
+          final polyline = step['polyline']?.toString();
+          var startLocation = _parseLocation(step['startLat'], step['startLng']);
+          if (startLocation == null &&
+              polyline != null &&
+              polyline.trim().isNotEmpty) {
+            final decoded = decodePolyline(polyline);
+            if (decoded.isNotEmpty) {
+              final first = decoded.first;
+              startLocation = NeshanLatLng(
+                latitude: first.latitude,
+                longitude: first.longitude,
+              );
+            }
+          }
+          return NeshanRouteStep(
             instruction: step['instruction']?.toString() ?? '',
             name: step['name']?.toString() ?? '',
             distanceText: step['distanceText']?.toString() ?? '',
@@ -222,12 +246,12 @@ class NeshanAndroidChannel {
             distanceMeters: _asDouble(step['distanceMeters']) ?? 0,
             durationSeconds: _asDouble(step['durationSeconds']) ?? 0,
             stepType: step['type']?.toString(),
-            polyline: step['polyline']?.toString(),
+            polyline: polyline,
             modifier: step['modifier']?.toString(),
             bearingAfter: _asDouble(step['bearingAfter']),
-            startLocation: _parseLocation(step['startLat'], step['startLng']),
-          ),
-        )
+            startLocation: startLocation,
+          );
+        })
         .where((step) => step.instruction.isNotEmpty || step.isArrival)
         .toList(growable: false);
   }

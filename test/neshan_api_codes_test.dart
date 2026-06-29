@@ -2,6 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uzita/utils/neshan_api_codes.dart';
 
 void main() {
+  test('maps Neshan error codes 481 and 482 per official docs', () {
+    expect(
+      neshanStatusFromResponse({'status': 'ERROR', 'code': 481}),
+      'LimitExceeded',
+    );
+    expect(
+      neshanStatusFromResponse({'status': 'ERROR', 'code': 482}),
+      'RateExceeded',
+    );
+  });
+
   test('maps Neshan error code 484 to ApiWhiteListError', () {
     expect(
       neshanStatusFromResponse({

@@ -26,8 +26,18 @@ String get neshanMapKey {
 /// Geocoding Plus — matches «تبدیل آدرس به نقطه پلاس» in panel.
 const String neshanGeocodingBaseUrl = 'https://api.neshan.org/geocoding/v1/plus';
 
-/// Place search — better for POIs such as universities and hospitals.
+/// Place search — requires «جستجوی مکان‌مبنا» on the Neshan key (optional).
 const String neshanSearchBaseUrl = 'https://api.neshan.org/v1/search';
+
+/// Most accounts only have Geocoding Plus. Set `NESHAN_SEARCH_ENABLED=true`
+/// after activating «جستجوی مکان‌مبنا» in the Neshan panel.
+bool get neshanSearchEnabled {
+  const fromDefine = String.fromEnvironment('NESHAN_SEARCH_ENABLED');
+  if (fromDefine.trim().isNotEmpty) {
+    return fromDefine.trim().toLowerCase() == 'true';
+  }
+  return false;
+}
 
 /// Routing with live traffic — matches «مسیریابی با ترافیک» in panel.
 const String neshanDirectionBaseUrl = 'https://api.neshan.org/v4/direction';

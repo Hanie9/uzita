@@ -51,6 +51,7 @@ class NeshanDriverMap extends StatefulWidget {
 
   static const navZoom = 17.5;
   static const navTilt = 32.0;
+  static const overviewIdleRefitDuration = Duration(seconds: 10);
 
   @override
   State<NeshanDriverMap> createState() => _NeshanDriverMapState();
@@ -78,26 +79,26 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   Offset? _navPointerStart;
   bool _navPointerDetached = false;
   StreamSubscription<dynamic>? _mapEventSub;
+  Timer? _overviewIdleRefitTimer;
 
   List<LatLng> get _route => widget.routeCoordinates.isNotEmpty
       ? widget.routeCoordinates
       : [widget.origin, widget.destination];
 
   List<LatLng> get _fitPoints {
-    if (widget.overviewMode) {
-      return <LatLng>[
-        widget.origin,
-        widget.destination,
-        if (widget.driverPosition != null) widget.driverPosition!,
-        ..._route,
-      ];
-    }
-    return <LatLng>[
+    final points = <LatLng>[
       widget.origin,
       widget.destination,
       if (widget.driverPosition != null) widget.driverPosition!,
-      ..._route,
     ];
+    if (_route.length >= 2) {
+      points.add(_route.first);
+      if (_route.length > 2) {
+        points.add(_route[_route.length ~/ 2]);
+      }
+      points.add(_route.last);
+    }
+    return points;
   }
 
   bool get _isNavigationMode => widget.navigationMode;
@@ -111,11 +112,12 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       if (_isNavigationMode &&
           widget.driverPosition != null &&
           _route.length >= 2) {
-        return RouteMapGeometry.trimSegmentsFromDriver(
+        final trimmed = RouteMapGeometry.trimSegmentsFromDriver(
           segments: segments,
           fullPolyline: _route,
           driver: widget.driverPosition!,
         );
+        if (trimmed.isNotEmpty) return trimmed;
       }
       return segments;
     }
@@ -178,9 +180,33 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
   @override
   void dispose() {
+    _cancelOverviewIdleRefit();
     widget.controller?.unbind();
     _mapEventSub?.cancel();
     super.dispose();
+  }
+
+  void _cancelOverviewIdleRefit() {
+    _overviewIdleRefitTimer?.cancel();
+    _overviewIdleRefitTimer = null;
+  }
+
+  void _scheduleOverviewIdleRefit() {
+    _cancelOverviewIdleRefit();
+    if (!widget.overviewMode || widget.navigationMode) return;
+    _overviewIdleRefitTimer = Timer(NeshanDriverMap.overviewIdleRefitDuration, () {
+      if (!mounted || !_overviewCameraDetached) return;
+      unawaited(_refitOverview());
+    });
+  }
+
+  void _onOverviewCameraInteraction() {
+    if (!widget.overviewMode || widget.navigationMode) return;
+    if (!_overviewCameraDetached) {
+      setState(() => _overviewCameraDetached = true);
+      widget.onCameraDetached?.call(true);
+    }
+    _scheduleOverviewIdleRefit();
   }
 
   void _onMapEvent(dynamic event) {
@@ -199,12 +225,14 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (type == 'overviewCameraGesture') {
       if (widget.navigationMode) return;
       if (!widget.overviewMode) return;
-      setState(() => _overviewCameraDetached = true);
-      widget.onCameraDetached?.call(true);
+      _onOverviewCameraInteraction();
     }
   }
 
   void _onPointerDown(PointerDownEvent event) {
+    if (widget.overviewMode && !widget.navigationMode) {
+      _onOverviewCameraInteraction();
+    }
     if (!widget.navigationMode) return;
     _navPointerStart = event.localPosition;
     _navPointerDetached = false;
@@ -261,6 +289,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       _fitted = false;
       _navigationCameraReady = false;
     }
+    if (oldWidget.overviewMode && !widget.overviewMode) {
+      _cancelOverviewIdleRefit();
+    }
 
     if (_viewId == null) return;
 
@@ -280,7 +311,8 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         !listEquals(widget.routeCoordinates, oldWidget.routeCoordinates) ||
         !listEquals(widget.routeSegments, oldWidget.routeSegments) ||
         widget.origin != oldWidget.origin ||
-        widget.destination != oldWidget.destination;
+        widget.destination != oldWidget.destination ||
+        widget.pickupLeg != oldWidget.pickupLeg;
 
     if (routeChanged ||
         followChanged ||
@@ -303,16 +335,13 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         routeChanged ||
         themeChanged ||
         !_fitted) {
-      final overviewNeedsRefit =
-          widget.overviewMode && driverMoved && !_overviewCameraDetached;
       _scheduleMapUpdate(
         refit:
             overviewChanged ||
             routeChanged ||
             followChanged ||
             navigationModeChanged ||
-            (!_fitted && !_overviewCameraDetached) ||
-            overviewNeedsRefit,
+            (!_fitted && !_overviewCameraDetached),
       );
     }
   }
@@ -321,7 +350,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     _viewId = id;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final delayMs = widget.followDriver ? 200 : 450;
+      final delayMs = widget.navigationMode ? 120 : 100;
       await Future<void>.delayed(Duration(milliseconds: delayMs));
       if (!mounted || _viewId == null) return;
       final pending = _pendingNavPosition;
@@ -466,6 +495,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
   Future<void> _refitOverview() async {
     if (_viewId == null) return;
+    _cancelOverviewIdleRefit();
     setState(() {
       _fitted = false;
       _overviewCameraDetached = false;
@@ -594,6 +624,10 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (id == null) return;
 
     final traveled = _traveledPolyline;
+    final segments = compactSegmentsForMap(
+      _displaySegments,
+      navigationMode: _isNavigationMode,
+    );
 
     try {
       await _channel.invokeMethod('updateRoute', {
@@ -601,7 +635,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         'mapDark': widget.isDark,
         'overviewMode': !_isNavigationMode,
         'pickupLeg': widget.pickupLeg,
-        'segments': _displaySegments
+        'segments': segments
             .where((s) => s.points.length >= 2)
             .map(
               (s) => {

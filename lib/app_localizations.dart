@@ -1291,6 +1291,10 @@ class AppLocalizations {
           'Neshan API key is missing. Run ./scripts/build_apk.sh or ./scripts/sync_neshan_secrets.sh before building.',
       'driver_neshan_error_backend_proxy':
           'Neshan server proxy is not active. Deploy deploy/backend_neshan_proxy/ on device-control.liara.run and set NESHAN_API_KEY in Liara.',
+      'driver_neshan_error_backend_unauthorized':
+          'Your session expired. Sign in again to use Neshan routing.',
+      'driver_neshan_error_backend_failed':
+          'Could not reach the Neshan server proxy. Check your connection and try again.',
       'driver_neshan_error_address_empty': 'Address is empty.',
       'driver_neshan_error_geocoding_not_found':
           'No location found for this address.',
@@ -2552,6 +2556,10 @@ class AppLocalizations {
           'کلید API نشان تنظیم نشده. قبل از بیلد ./scripts/build_apk.sh یا ./scripts/sync_neshan_secrets.sh را اجرا کنید.',
       'driver_neshan_error_backend_proxy':
           'پراکسی سرور نشان فعال نیست. deploy/backend_neshan_proxy/ را روی device-control.liara.run نصب کنید و NESHAN_API_KEY را در Liara تنظیم کنید.',
+      'driver_neshan_error_backend_unauthorized':
+          'نشست شما منقضی شده. برای استفاده از مسیریابی نشان دوباره وارد شوید.',
+      'driver_neshan_error_backend_failed':
+          'ارتباط با پراکسی سرور نشان برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
       'driver_neshan_error_address_empty': 'آدرس خالی است.',
       'driver_neshan_error_geocoding_not_found':
           'مکانی برای این آدرس پیدا نشد.',
@@ -3694,6 +3702,10 @@ class AppLocalizations {
       _getLocalizedValue('driver_neshan_key_missing');
   String get driver_neshan_error_backend_proxy =>
       _getLocalizedValue('driver_neshan_error_backend_proxy');
+  String get driver_neshan_error_backend_unauthorized =>
+      _getLocalizedValue('driver_neshan_error_backend_unauthorized');
+  String get driver_neshan_error_backend_failed =>
+      _getLocalizedValue('driver_neshan_error_backend_failed');
   String get driver_neshan_error_address_empty =>
       _getLocalizedValue('driver_neshan_error_address_empty');
   String get driver_neshan_error_geocoding_not_found =>

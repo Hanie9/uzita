@@ -29,10 +29,11 @@ import org.neshan.mapsdk.model.Polyline
 import org.neshan.mapsdk.style.NeshanMapStyle
 import java.util.concurrent.ConcurrentHashMap
 
-private const val ROUTE_CYAN = 0xFF00D4FF.toInt()
-private const val ROUTE_PURPLE = 0xFF7C3AED.toInt()
-private const val TRAFFIC_RED = 0xFFDC2626.toInt()
-private const val TRAFFIC_ORANGE = 0xFFEA580C.toInt()
+private const val ROUTE_NESHAN = 0xFF250ECD.toInt()
+private const val TRAFFIC_ORANGE_SMOOTH = 0xFFFF9800.toInt()
+private const val TRAFFIC_RED_HEAVY = 0xFFB71C1C.toInt()
+private const val TRAFFIC_RED_MODERATE = 0xFFF44336.toInt()
+private const val ROUTE_CASING_WHITE = 0xFFFFFFFF.toInt()
 private const val TRAVELED_GREY = 0xFF9CA3AF.toInt()
 private const val ORIGIN_GREEN = 0xFF16A34A.toInt()
 private const val DESTINATION_ORANGE = 0xFFEA580C.toInt()
@@ -314,7 +315,9 @@ private class NeshanMapPlatformView(
         // actually touching the map. Programmatic follow moves happen without a
         // touch, so they never detach the camera.
         mapView.setOnCameraMoveStartListener { _ ->
-            if (!userIsTouching) return@setOnCameraMoveStartListener
+            if (!userIsTouching || suppressGestureEvents) {
+                return@setOnCameraMoveStartListener
+            }
             if (navigationFollowEnabled) {
                 notifyUserDetachedFromRoute()
                 navigationFollowEnabled = false
@@ -358,8 +361,7 @@ private class NeshanMapPlatformView(
     }
 
     private fun notifyOverviewGesture() {
-        if (userGestureNotified || !overviewGesturesEnabled) return
-        userGestureNotified = true
+        if (!overviewGesturesEnabled) return
         NeshanMapRegistry.emitEvent(
             mapOf(
                 "type" to "overviewCameraGesture",
@@ -687,12 +689,25 @@ private class NeshanMapPlatformView(
             if (points.size < 2) continue
 
             val color = when (trafficLevel) {
-                "heavy" -> TRAFFIC_RED
-                "moderate" -> TRAFFIC_ORANGE
-                "clear" -> ROUTE_PURPLE
-                else -> if (congested) TRAFFIC_RED else ROUTE_PURPLE
+                "heavy" -> TRAFFIC_RED_HEAVY
+                "moderate" -> TRAFFIC_RED_MODERATE
+                "smooth" -> TRAFFIC_ORANGE_SMOOTH
+                "clear" -> ROUTE_NESHAN
+                else -> if (congested) TRAFFIC_RED_HEAVY else ROUTE_NESHAN
             }
-            val lineWidth = if (navigationMode) 7f else 5f
+            val lineWidth = if (navigationMode) 12f else 9f
+            val casingWidth = lineWidth + 4f
+
+            val casingStyle = LineStyleBuilder().apply {
+                setColor(com.carto.graphics.Color(ROUTE_CASING_WHITE))
+                setWidth(casingWidth)
+                setLineJoinType(LineJoinType.LINE_JOIN_TYPE_ROUND)
+                setLineEndType(LineEndType.LINE_END_TYPE_ROUND)
+            }.buildStyle()
+            val casing = Polyline(points, casingStyle)
+            routePolylines.add(casing)
+            mapView.addPolyline(casing)
+
             val style = LineStyleBuilder().apply {
                 setColor(com.carto.graphics.Color(color))
                 setWidth(lineWidth)
@@ -708,7 +723,7 @@ private class NeshanMapPlatformView(
         if (traveledPoints.size >= 2) {
             val style = LineStyleBuilder().apply {
                 setColor(com.carto.graphics.Color(TRAVELED_GREY))
-                setWidth(5f)
+                setWidth(7f)
                 setLineJoinType(LineJoinType.LINE_JOIN_TYPE_ROUND)
                 setLineEndType(LineEndType.LINE_END_TYPE_ROUND)
             }.buildStyle()
@@ -728,6 +743,14 @@ private class NeshanMapPlatformView(
                 }
             }
 
+            destination?.let {
+                val lat = it["lat"] ?: return@let
+                val lng = it["lng"] ?: return@let
+                val color = if (pickupLeg) ORIGIN_GREEN else DESTINATION_ORANGE
+                destinationMarker = createMarker(lat, lng, color, OVERVIEW_MARKER_SIZE)
+                mapView.addMarker(destinationMarker!!)
+            }
+        } else if (navigationMode) {
             destination?.let {
                 val lat = it["lat"] ?: return@let
                 val lng = it["lng"] ?: return@let

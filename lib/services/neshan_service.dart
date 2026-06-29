@@ -155,17 +155,24 @@ class NeshanService {
       );
     }
 
-    final best = pickBestGeocodingCandidate(candidates, scoringAddress);
+    try {
+      final best = pickBestGeocodingCandidate(candidates, scoringAddress);
 
-    return NeshanGeocodingResult(
-      location: best.location,
-      province: best.province,
-      city: best.city,
-      neighbourhood: best.neighbourhood,
-      title: best.title,
-      formattedAddress: best.formattedAddress,
-      candidates: candidates,
-    );
+      return NeshanGeocodingResult(
+        location: best.location,
+        province: best.province,
+        city: best.city,
+        neighbourhood: best.neighbourhood,
+        title: best.title,
+        formattedAddress: best.formattedAddress,
+        candidates: candidates,
+      );
+    } on ArgumentError {
+      throw const NeshanApiException(
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
+      );
+    }
   }
 
   NeshanGeocodingCandidate _parseSearchItem(Map<String, dynamic> item) {
@@ -355,17 +362,24 @@ class NeshanService {
       );
     }
 
-    final best = pickBestGeocodingCandidate(candidates, address);
-    return NeshanGeocodingResult(
-      location: best.location,
-      province: best.province,
-      city: best.city,
-      neighbourhood: best.neighbourhood,
-      unMatchedTerm: best.unMatchedTerm,
-      title: best.title,
-      formattedAddress: best.formattedAddress,
-      candidates: candidates,
-    );
+    try {
+      final best = pickBestGeocodingCandidate(candidates, address);
+      return NeshanGeocodingResult(
+        location: best.location,
+        province: best.province,
+        city: best.city,
+        neighbourhood: best.neighbourhood,
+        unMatchedTerm: best.unMatchedTerm,
+        title: best.title,
+        formattedAddress: best.formattedAddress,
+        candidates: candidates,
+      );
+    } on ArgumentError {
+      throw const NeshanApiException(
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
+      );
+    }
   }
 
   NeshanGeocodingCandidate _parseGeocodingItem(Map<String, dynamic> item) {
@@ -392,6 +406,9 @@ class NeshanService {
       city: item['city']?.toString(),
       neighbourhood: item['neighbourhood']?.toString(),
       unMatchedTerm: item['unMatchedTerm']?.toString(),
+      title: item['title']?.toString(),
+      formattedAddress: item['address']?.toString() ??
+          item['formattedAddress']?.toString(),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:uzita/api_config.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
+import 'package:uzita/utils/neshan_api_codes.dart';
 import 'package:uzita/utils/neshan_error_codes.dart';
 
 /// Calls Neshan via device-control backend (service key stays on server).
@@ -137,26 +138,66 @@ class NeshanBackendClient {
   }
 
   void _ensureOk(int statusCode, String body) {
+    final error = exceptionFromResponse(statusCode, body);
+    if (error != null) throw error;
+  }
+
+  /// Maps HTTP responses from device-control Neshan proxy to [NeshanApiException].
+  static NeshanApiException? exceptionFromResponse(
+    int statusCode,
+    String body,
+  ) {
+    if (statusCode == 200) return null;
+
     if (statusCode == 404) {
-      throw const NeshanApiException(
+      return const NeshanApiException(
         'Neshan backend proxy is not deployed',
         statusCode: 404,
         neshanStatus: 'BackendProxyNotFound',
       );
     }
     if (statusCode == 503) {
-      throw const NeshanApiException(
+      return const NeshanApiException(
         'NESHAN_API_KEY is not configured on the server',
         statusCode: 503,
         neshanStatus: 'BackendKeyMissing',
       );
     }
-    if (statusCode != 200) {
-      throw NeshanApiException(
-        'Backend proxy failed ($statusCode)',
+    if (statusCode == 401 || statusCode == 403) {
+      return NeshanApiException(
+        'Authentication failed ($statusCode)',
         statusCode: statusCode,
-        neshanStatus: NeshanErrorCodes.backendProxyFailed,
+        neshanStatus: NeshanErrorCodes.backendUnauthorized,
       );
+    }
+
+    final neshanError = _neshanErrorFromBody(body, statusCode);
+    if (neshanError != null) return neshanError;
+
+    return NeshanApiException(
+      'Backend proxy failed ($statusCode)',
+      statusCode: statusCode,
+      neshanStatus: NeshanErrorCodes.backendProxyFailed,
+    );
+  }
+
+  static NeshanApiException? _neshanErrorFromBody(String body, int statusCode) {
+    if (body.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) return null;
+      final neshanStatus = neshanStatusFromResponse(decoded);
+      if (neshanStatus == null) return null;
+      final message = decoded['message']?.toString() ??
+          decoded['error']?.toString() ??
+          'Neshan API error ($statusCode)';
+      return NeshanApiException(
+        message,
+        statusCode: statusCode,
+        neshanStatus: neshanStatus,
+      );
+    } catch (_) {
+      return null;
     }
   }
 }

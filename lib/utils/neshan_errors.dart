@@ -14,8 +14,10 @@ String localizeNeshanError(AppLocalizations l, NeshanApiException error) {
     case 'BackendProxyNotFound':
     case 'BackendKeyMissing':
       return l.driver_neshan_error_backend_proxy;
+    case NeshanErrorCodes.backendUnauthorized:
+      return l.driver_neshan_error_backend_unauthorized;
     case NeshanErrorCodes.backendProxyFailed:
-      return l.driver_neshan_error_backend_proxy;
+      return l.driver_neshan_error_backend_failed;
     case 'KeyNotFound':
       return l.driver_neshan_error_key_not_found;
     case 'LimitExceeded':

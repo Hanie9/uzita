@@ -47,9 +47,9 @@ void main() {
     const baselineLeg = NeshanRouteLeg(
       summary: 'test',
       distanceText: '1 km',
-      durationText: '2 min',
+      durationText: '3 min',
       distanceMeters: 1000,
-      durationSeconds: 120,
+      durationSeconds: 180,
       steps: [
         NeshanRouteStep(
           instruction: 'ادامه دهید',
@@ -132,7 +132,7 @@ void main() {
     );
   });
 
-  test('does not guess traffic from proportional baseline allocation', () {
+  test('uses distance-share baseline when step locations are missing', () {
     const step = NeshanRouteStep(
       instruction: 'ادامه دهید',
       name: 'ولیعصر',
@@ -141,20 +141,49 @@ void main() {
       distanceMeters: 500,
       durationSeconds: 120,
     );
+    const legWithDistance = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '5 min',
+      distanceMeters: 2000,
+      durationSeconds: 300,
+      steps: const [],
+    );
+    const baselineWithDistance = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '3 min',
+      distanceMeters: 2000,
+      durationSeconds: 180,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'ولیعصر',
+          distanceText: '500 متر',
+          durationText: '1 دقیقه',
+          distanceMeters: 500,
+          durationSeconds: 60,
+        ),
+      ],
+    );
     expect(
-      trafficLevelForStep(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
-      RouteTrafficLevel.clear,
+      trafficLevelForStep(
+        step,
+        liveLeg: legWithDistance,
+        baselineLeg: baselineWithDistance,
+      ),
+      RouteTrafficLevel.heavy,
     );
   });
 
-  test('marks moderately delayed steps as orange traffic', () {
+  test('marks moderately delayed steps as semi-heavy traffic', () {
     const step = NeshanRouteStep(
       instruction: 'ادامه دهید',
       name: 'ولیعصر',
       distanceText: '800 متر',
       durationText: '2 دقیقه',
       distanceMeters: 800,
-      durationSeconds: 90,
+      durationSeconds: 150,
       startLocation: NeshanLatLng(latitude: 35.702, longitude: 51.392),
     );
     const matchedBaselineLeg = NeshanRouteLeg(
@@ -170,7 +199,7 @@ void main() {
           distanceText: '800 متر',
           durationText: '1 دقیقه',
           distanceMeters: 800,
-          durationSeconds: 60,
+          durationSeconds: 72,
           startLocation: NeshanLatLng(latitude: 35.702, longitude: 51.392),
         ),
       ],
@@ -185,8 +214,52 @@ void main() {
       RouteTrafficLevel.moderate,
     );
     expect(
-      isStepCongested(step, liveLeg: liveLeg, baselineLeg: baselineLeg),
+      isStepCongested(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
       isFalse,
+    );
+  });
+
+  test('marks smooth flowing traffic as orange level', () {
+    const step = NeshanRouteStep(
+      instruction: 'ادامه دهید',
+      name: 'اتوبان',
+      distanceText: '2 کیلومتر',
+      durationText: '2 دقیقه',
+      distanceMeters: 2000,
+      durationSeconds: 180,
+      startLocation: NeshanLatLng(latitude: 35.703, longitude: 51.393),
+    );
+    const matchedBaselineLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '3 min',
+      distanceMeters: 2000,
+      durationSeconds: 180,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'اتوبان',
+          distanceText: '2 کیلومتر',
+          durationText: '2 دقیقه',
+          distanceMeters: 2000,
+          durationSeconds: 100,
+          startLocation: NeshanLatLng(latitude: 35.703, longitude: 51.393),
+        ),
+      ],
+    );
+    expect(
+      trafficLevelForStep(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
+      RouteTrafficLevel.smooth,
     );
   });
 
@@ -213,7 +286,7 @@ void main() {
           distanceText: '2 کیلومتر',
           durationText: '2 دقیقه',
           distanceMeters: 2000,
-          durationSeconds: 110,
+          durationSeconds: 119,
           startLocation: NeshanLatLng(latitude: 35.703, longitude: 51.393),
         ),
       ],
@@ -223,6 +296,53 @@ void main() {
         step,
         liveLeg: liveLeg,
         baselineLeg: matchedBaselineLeg,
+        stepIndex: 0,
+      ),
+      RouteTrafficLevel.clear,
+    );
+  });
+
+  test('leg calibration keeps uniformly slower steps clear', () {
+    const liveLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '4 min',
+      distanceMeters: 2000,
+      durationSeconds: 240,
+      steps: [],
+    );
+    const baselineLeg = NeshanRouteLeg(
+      summary: 'test',
+      distanceText: '2 km',
+      durationText: '2 min',
+      distanceMeters: 2000,
+      durationSeconds: 120,
+      steps: [
+        NeshanRouteStep(
+          instruction: 'ادامه دهید',
+          name: 'اتوبان',
+          distanceText: '1 km',
+          durationText: '1 دقیقه',
+          distanceMeters: 1000,
+          durationSeconds: 60,
+          startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+        ),
+      ],
+    );
+    const step = NeshanRouteStep(
+      instruction: 'ادامه دهید',
+      name: 'اتوبان',
+      distanceText: '1 km',
+      durationText: '2 دقیقه',
+      distanceMeters: 1000,
+      durationSeconds: 120,
+      startLocation: NeshanLatLng(latitude: 35.701, longitude: 51.391),
+    );
+    expect(
+      trafficLevelForStep(
+        step,
+        liveLeg: liveLeg,
+        baselineLeg: baselineLeg,
         stepIndex: 0,
       ),
       RouteTrafficLevel.clear,
@@ -283,8 +403,8 @@ void main() {
 
       expect(geometry.segments, isNotEmpty);
       expect(
-        geometry.segments.every((s) => s.trafficLevel == RouteTrafficLevel.clear),
-        isTrue,
+        geometry.segments.first.trafficLevel,
+        RouteTrafficLevel.heavy,
       );
     },
   );
@@ -365,6 +485,7 @@ void main() {
         NeshanGeocodingCandidate(
           location: NeshanLatLng(latitude: 32.65, longitude: 51.67),
           city: 'اصفهان',
+          formattedAddress: 'اصفهان، خیابان چهارباغ',
           unMatchedTerm: '',
         ),
       ],

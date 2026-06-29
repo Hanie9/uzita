@@ -6,11 +6,12 @@ import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_config.dart';
+import 'package:uzita/utils/neshan_error_codes.dart';
 
 /// Geocoding + routing with live traffic — Neshan only.
 ///
-/// Geocoding: backend Geocoding Plus → REST Geocoding Plus → place search
-/// (Search API with lat/lng bias). Routing: backend proxy → Android SDK → v4/direction REST.
+/// Geocoding (Geocoding Plus via backend/direct REST; Search only if enabled).
+/// Routing: backend proxy → Android SDK → v4/direction REST.
 class DriverRoutingService {
   const DriverRoutingService();
 
@@ -28,80 +29,207 @@ class DriverRoutingService {
     NeshanGeocodingExtent? searchExtent,
   }) async {
     final hints = extractGeocodeHints(address);
-    final query = extractGeocodeQuery(address, hints: hints);
-    final apiText = query.isNotEmpty ? query : address.trim();
+    final terms = buildGeocodeSearchTerms(address, hints: hints);
+    final poi = isPoiAddress(address);
 
-    NeshanGeocodingResult? plus;
+    var center = searchCenter ??
+        _searchCenterForAddress(
+          hints: hints,
+          searchCenter: null,
+          plus: null,
+        );
 
-    final fromBackend = await _tryBackend(
-      (token) => _backend.geocodeAddress(
-        apiText,
-        authToken: token,
-        city: city,
-        province: province,
-        searchCenter: searchCenter,
-        searchExtent: searchExtent,
-      ),
-    );
-    plus = fromBackend;
+    NeshanGeocodingResult? best;
+    NeshanGeocodingResult? fallback;
+    var bestScore = -1000;
+    var fallbackScore = -1000;
 
-    if (plus == null && hasDirectNeshanKey) {
-      plus = await _neshan.geocodeAddress(
-        apiText,
-        city: city,
-        province: province,
-        searchCenter: searchCenter,
-        searchExtent: searchExtent,
-      );
+    void consider(NeshanGeocodingResult? candidate, {int bonus = 0}) {
+      if (candidate == null) return;
+
+      final ranked = candidate.candidates.isNotEmpty
+          ? candidate.candidates
+          : [
+              NeshanGeocodingCandidate(
+                location: candidate.location,
+                province: candidate.province,
+                city: candidate.city,
+                neighbourhood: candidate.neighbourhood,
+                unMatchedTerm: candidate.unMatchedTerm,
+                title: candidate.title,
+                formattedAddress: candidate.formattedAddress,
+              ),
+            ];
+
+      for (var i = 0; i < ranked.length; i++) {
+        final item = ranked[i];
+        final refined = NeshanGeocodingResult(
+          location: item.location,
+          province: item.province,
+          city: item.city,
+          neighbourhood: item.neighbourhood,
+          unMatchedTerm: item.unMatchedTerm,
+          title: item.title,
+          formattedAddress: item.formattedAddress,
+          candidates: candidate.candidates,
+        );
+        if (isHardRejectGeocodingResult(refined, address)) continue;
+
+        var score = geocodingMatchScore(refined, address) + bonus;
+        // https://platform.neshan.org/docs/api/search-category/geocoding/
+        score += (ranked.length - i) * 2;
+        if (isGeocodingPlusFullMatch(refined) &&
+            resultMatchesAddressTerms(refined, address)) {
+          score += 10;
+        } else if (isGeocodingPlusFullMatch(refined)) {
+          score += 1;
+        }
+        if (resultMatchesAddressTerms(refined, address)) score += 6;
+        if (isGeocodeWithinBias(
+          refined,
+          address: address,
+          bias: searchCenter ?? center,
+        )) {
+          score += 4;
+        }
+        if (isCityCentreGeocodingSnap(refined, address)) {
+          score -= 55;
+        } else if (isClearlyWrongGeocodingResult(refined, address)) {
+          score -= 25;
+        }
+        if (isKnownNeshanFalsePositiveLocation(refined, address)) {
+          score -= 80;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = refined;
+        }
+
+        // Reserve a same-city API match when strict scoring rejects everything.
+        if (!isSpuriousDefaultSearchPoi(refined, address) &&
+            !isKnownNeshanFalsePositiveLocation(refined, address) &&
+            !isClearlyWrongGeocodingResult(refined, address) &&
+            geocodedCityMatchesAddress(result: refined, address: address) &&
+            (!isCityCentreGeocodingSnap(refined, address) ||
+                !hasSpecificLocationTerms(address))) {
+          var fb = geocodingMatchScore(refined, address) + bonus + (ranked.length - i);
+          final unmatched = (refined.unMatchedTerm ?? '').trim();
+          if (unmatched.isNotEmpty &&
+              !isPoiAddress(address) &&
+              unmatched.length <= 24) {
+            fb += 10;
+          }
+          if (isGeocodingPlusFullMatch(refined)) fb += 5;
+          if (fb > fallbackScore) {
+            fallbackScore = fb;
+            fallback = refined;
+          }
+        }
+      }
     }
 
-    final center = _searchCenterForAddress(
-      hints: hints,
-      searchCenter: searchCenter,
-      plus: plus,
-    );
-
-    final search = await _trySearch(
-      apiText,
-      address: address,
-      center: center,
-    );
-
-    NeshanGeocodingResult? result = plus ?? search;
-
-    if (plus != null && search != null) {
-      final plusScore = geocodingMatchScore(plus, address);
-      final searchScore = geocodingMatchScore(search, address);
-      // Search API is location-biased and usually better for named streets/POIs.
-      result = searchScore >= plusScore ? search : plus;
+    Future<void> runPlaceSearch() async {
+      for (final term in terms) {
+        consider(
+          await _tryPlaceSearch(
+            term,
+            address: address,
+            center: center,
+          ),
+          bonus: poi ? 8 : 4,
+        );
+      }
     }
 
-    if (result == null) {
+    Future<void> runGeocodePlus() async {
+      final plusTerms = <String>[];
+      void addPlusTerm(String? value) {
+        final trimmed = value?.trim() ?? '';
+        if (trimmed.isEmpty || trimmed == '---') return;
+        if (!plusTerms.contains(trimmed)) plusTerms.add(trimmed);
+      }
+
+      // Neshan Geocoding Plus: send full address text; city/province in filters.
+      addPlusTerm(geocodeApiAddressText(address));
+      for (final term in terms) {
+        addPlusTerm(geocodeApiAddressText(term));
+      }
+
+      for (final term in plusTerms) {
+        final plus = await _tryGeocodePlus(
+          term,
+          address: address,
+          city: city,
+          province: province,
+          searchCenter: poi ? null : searchCenter,
+          searchExtent: poi ? null : searchExtent,
+        );
+        consider(plus, bonus: poi ? 0 : 6);
+        if (plus != null) {
+          center = _searchCenterForAddress(
+            hints: hints,
+            searchCenter: searchCenter,
+            plus: best ?? plus,
+          );
+        }
+      }
+    }
+
+    // Geocoding Plus first; place search for POIs (metro stations, squares, …)
+    // even when REST Search is disabled — Geocoding Plus alone often snaps wrong.
+    await runGeocodePlus();
+    if (neshanSearchEnabled || poi) {
+      await runPlaceSearch();
+    }
+
+    if (best == null) {
+      best = fallback;
+    } else if (bestScore < kMinGeocodingMatchScore && fallback != null) {
+      if (fallbackScore > bestScore) best = fallback;
+    }
+
+    if (best != null && isClearlyWrongGeocodingResult(best!, address)) {
+      if (fallback != null &&
+          !isClearlyWrongGeocodingResult(fallback!, address)) {
+        best = fallback;
+      } else {
+        best = null;
+      }
+    }
+
+    if (best == null) {
       throw const NeshanApiException(
-        'Neshan API key is not configured',
-        neshanStatus: 'KeyNotFound',
+        'No location found for address',
+        neshanStatus: NeshanErrorCodes.geocodingNotFound,
       );
     }
 
-    return refineGeocodingResult(result, address: address);
+    return best!;
   }
 
-  NeshanLatLng _searchCenterForAddress({
-    required AddressGeocodeHints hints,
-    required NeshanLatLng? searchCenter,
-    required NeshanGeocodingResult? plus,
-  }) {
-    if (searchCenter != null) return searchCenter;
-    final city = hints.city;
-    if (city != null) {
-      final centroid = iranCityCentroids[city];
-      if (centroid != null) return centroid;
-    }
-    if (plus != null) return plus.location;
-    return const NeshanLatLng(latitude: 35.6892, longitude: 51.3890);
+  /// Resolves a cargo [mabda]/[maghsad] string with city/sibling bias only.
+  Future<NeshanGeocodingResult> resolveCargoAddress(
+    String address, {
+    NeshanGeocodingResult? siblingResult,
+    NeshanLatLng? driverLocation,
+  }) async {
+    final hints = extractGeocodeHints(address);
+    final params = buildCargoGeocodeParams(
+      address: address,
+      hints: hints,
+      siblingResult: siblingResult,
+    );
+    return geocodeAddress(
+      address,
+      city: params.city,
+      province: params.province,
+      searchCenter: params.searchCenter,
+      searchExtent: params.searchExtent,
+    );
   }
 
-  Future<NeshanGeocodingResult?> _trySearch(
+  Future<NeshanGeocodingResult?> _tryPlaceSearch(
     String term, {
     required String address,
     required NeshanLatLng center,
@@ -139,6 +267,100 @@ class DriverRoutingService {
     }
   }
 
+  Future<NeshanGeocodingResult?> _tryGeocodePlus(
+    String apiText, {
+    required String address,
+    String? city,
+    String? province,
+    NeshanLatLng? searchCenter,
+    NeshanGeocodingExtent? searchExtent,
+  }) async {
+    final fromBackend = await _tryBackend(
+      (token) => _backend.geocodeAddress(
+        apiText,
+        authToken: token,
+        city: city,
+        province: province,
+        searchCenter: searchCenter,
+        searchExtent: searchExtent,
+      ),
+    );
+    if (fromBackend != null) return fromBackend;
+
+    if (!hasDirectNeshanKey) return null;
+
+    try {
+      return await _neshan.geocodeAddress(
+        apiText,
+        city: city,
+        province: province,
+        searchCenter: searchCenter,
+        searchExtent: searchExtent,
+      );
+    } on NeshanApiException {
+      return null;
+    }
+  }
+
+  NeshanLatLng _searchCenterForAddress({
+    required AddressGeocodeHints hints,
+    required NeshanLatLng? searchCenter,
+    required NeshanGeocodingResult? plus,
+  }) {
+    if (searchCenter != null) return searchCenter;
+    final city = hints.city;
+    if (city != null) {
+      final centroid = iranCityCentroids[city];
+      if (centroid != null) return centroid;
+    }
+    if (plus != null) return plus.location;
+    return const NeshanLatLng(latitude: 35.6892, longitude: 51.3890);
+  }
+
+  /// Live route with a typical/no-traffic baseline fetched in parallel (for map colours).
+  Future<NeshanRoute> getRouteWithTraffic({
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) async {
+    final liveFuture = _fetchLiveRoute(
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+    final baselineFuture = _tryFetchTrafficBaselineRoute(
+      origin: origin,
+      destination: destination,
+      vehicleType: vehicleType,
+      alternative: alternative,
+      waypoints: waypoints,
+      avoidTrafficZone: avoidTrafficZone,
+      avoidOddEvenZone: avoidOddEvenZone,
+      bearing: bearing,
+    );
+
+    final live = await liveFuture;
+    NeshanRoute? baseline;
+    try {
+      baseline = await baselineFuture.timeout(const Duration(seconds: 8));
+    } catch (_) {
+      baseline = null;
+    }
+    return live.withBaseline(baseline);
+  }
+
+  /// Live traffic route. Does not wait for a no-traffic baseline — call
+  /// [getRouteWithTraffic] or [attachTrafficBaseline] for coloured segments.
   Future<NeshanRoute> getRoute({
     required NeshanLatLng origin,
     required NeshanLatLng destination,
@@ -149,7 +371,7 @@ class DriverRoutingService {
     bool avoidOddEvenZone = false,
     double? bearing,
   }) async {
-    final live = await _fetchLiveRoute(
+    return _fetchLiveRoute(
       origin: origin,
       destination: destination,
       vehicleType: vehicleType,
@@ -159,18 +381,37 @@ class DriverRoutingService {
       avoidOddEvenZone: avoidOddEvenZone,
       bearing: bearing,
     );
+  }
 
-    final baseline = await _tryFetchNoTrafficRoute(
-      origin: origin,
-      destination: destination,
-      vehicleType: vehicleType,
-      alternative: alternative,
-      waypoints: waypoints,
-      avoidTrafficZone: avoidTrafficZone,
-      avoidOddEvenZone: avoidOddEvenZone,
-      bearing: bearing,
-    );
+  /// Adds a typical/no-traffic baseline for per-segment traffic colouring.
+  Future<NeshanRoute> attachTrafficBaseline(
+    NeshanRoute live, {
+    required NeshanLatLng origin,
+    required NeshanLatLng destination,
+    String vehicleType = 'car',
+    bool alternative = false,
+    List<NeshanLatLng>? waypoints,
+    bool avoidTrafficZone = false,
+    bool avoidOddEvenZone = false,
+    double? bearing,
+  }) async {
+    if (live.baselineRoute != null) return live;
 
+    NeshanRoute? baseline;
+    try {
+      baseline = await _tryFetchTrafficBaselineRoute(
+        origin: origin,
+        destination: destination,
+        vehicleType: vehicleType,
+        alternative: alternative,
+        waypoints: waypoints,
+        avoidTrafficZone: avoidTrafficZone,
+        avoidOddEvenZone: avoidOddEvenZone,
+        bearing: bearing,
+      ).timeout(const Duration(seconds: 5));
+    } catch (_) {
+      baseline = null;
+    }
     return live.withBaseline(baseline);
   }
 
@@ -235,7 +476,8 @@ class DriverRoutingService {
     );
   }
 
-  Future<NeshanRoute?> _tryFetchNoTrafficRoute({
+  /// No-traffic baseline first — best contrast for congestion on the route line.
+  Future<NeshanRoute?> _tryFetchTrafficBaselineRoute({
     required NeshanLatLng origin,
     required NeshanLatLng destination,
     String vehicleType = 'car',
@@ -258,16 +500,22 @@ class DriverRoutingService {
         trafficMode: 'none',
       ),
       if (hasDirectNeshanKey)
-        () => _neshan.getNoTrafficRoute(
-          origin: origin,
-          destination: destination,
-          vehicleType: vehicleType,
-          alternative: alternative,
-          waypoints: waypoints,
-          avoidTrafficZone: avoidTrafficZone,
-          avoidOddEvenZone: avoidOddEvenZone,
-          bearing: bearing,
-        ),
+        () async {
+          try {
+            return await _neshan.getNoTrafficRoute(
+              origin: origin,
+              destination: destination,
+              vehicleType: vehicleType,
+              alternative: alternative,
+              waypoints: waypoints,
+              avoidTrafficZone: avoidTrafficZone,
+              avoidOddEvenZone: avoidOddEvenZone,
+              bearing: bearing,
+            );
+          } catch (_) {
+            return null;
+          }
+        },
       () => _tryBackendNoTraffic(
         origin: origin,
         destination: destination,
@@ -279,19 +527,23 @@ class DriverRoutingService {
         bearing: bearing,
         trafficMode: 'typical',
       ),
-      // Typical-pattern routing from Neshan — fallback baseline when the
-      // no-traffic endpoint is not enabled on the API key.
       if (hasDirectNeshanKey)
-        () => _neshan.getTypicalRoute(
-          origin: origin,
-          destination: destination,
-          vehicleType: vehicleType,
-          alternative: alternative,
-          waypoints: waypoints,
-          avoidTrafficZone: avoidTrafficZone,
-          avoidOddEvenZone: avoidOddEvenZone,
-          bearing: bearing,
-        ),
+        () async {
+          try {
+            return await _neshan.getTypicalRoute(
+              origin: origin,
+              destination: destination,
+              vehicleType: vehicleType,
+              alternative: alternative,
+              waypoints: waypoints,
+              avoidTrafficZone: avoidTrafficZone,
+              avoidOddEvenZone: avoidOddEvenZone,
+              bearing: bearing,
+            );
+          } catch (_) {
+            return null;
+          }
+        },
     ];
 
     for (final attempt in attempts) {
@@ -334,7 +586,7 @@ class DriverRoutingService {
   }
 
   Future<T?> _tryBackend<T>(Future<T> Function(String token) call) async {
-    if (kIsWeb || !hasNeshanApiKey) return null;
+    if (kIsWeb) return null;
 
     final token = await _loadAuthToken();
     if (token == null || token.isEmpty) return null;
@@ -342,13 +594,25 @@ class DriverRoutingService {
     try {
       return await call(token);
     } on NeshanApiException catch (e) {
-      switch (e.neshanStatus) {
-        case 'BackendProxyNotFound':
-        case 'BackendKeyMissing':
-          return null;
-        default:
-          rethrow;
-      }
+      if (_shouldFallbackFromBackend(e)) return null;
+      rethrow;
+    }
+  }
+
+  bool _shouldFallbackFromBackend(NeshanApiException error) {
+    switch (error.neshanStatus) {
+      case 'BackendProxyNotFound':
+      case 'BackendKeyMissing':
+      case NeshanErrorCodes.backendProxyFailed:
+      case 'ApiWhiteListError':
+      case 'ApiKeyTypeError':
+      case 'ApiServiceListError':
+      case 'KeyNotFound':
+      case 'LimitExceeded':
+      case 'RateExceeded':
+        return true;
+      default:
+        return false;
     }
   }
 

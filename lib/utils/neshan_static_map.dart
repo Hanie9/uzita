@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/api_config.dart';
+import 'package:uzita/services/neshan_backend_client.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/utils/neshan_config.dart';
 import 'package:uzita/utils/validated_network_tile_provider.dart';
@@ -105,15 +108,13 @@ Future<Uint8List> _fetchStaticArcViaBackend({
     },
   );
 
-  if (response.statusCode == 404) {
-    throw Exception('Neshan backend proxy is not deployed');
-  }
-  if (response.statusCode == 503) {
-    throw Exception('NESHAN_API_KEY is not configured on the server');
-  }
-
-  if (response.statusCode != 200) {
-    throw Exception('Static map failed (${response.statusCode})');
+  final body = utf8.decode(response.bodyBytes);
+  final error = NeshanBackendClient.exceptionFromResponse(
+    response.statusCode,
+    body,
+  );
+  if (error != null) {
+    throw Exception(error.message);
   }
 
   final bytes = response.bodyBytes;

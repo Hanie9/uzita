@@ -21,12 +21,12 @@ String? neshanStatusFromResponse(Map<String, dynamic> data) {
         return 'ApiKeyTypeError';
       case 484:
         return 'ApiWhiteListError';
+      case 481:
+        return 'LimitExceeded';
+      case 482:
+        return 'RateExceeded';
       case 485:
         return 'ApiServiceListError';
-      case 486:
-        return 'RateExceeded';
-      case 487:
-        return 'LimitExceeded';
     }
   }
 

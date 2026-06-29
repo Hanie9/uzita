@@ -1,12 +1,13 @@
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/services/neshan_models.dart';
-import 'package:uzita/utils/neshan_traffic_levels.dart';
 import 'package:uzita/utils/polyline_decoder.dart';
+import 'package:uzita/utils/neshan_traffic_levels.dart';
 import 'package:uzita/utils/route_progress.dart';
 
-/// Traffic density along a route segment.
+/// Traffic density along a route segment (kept for API compatibility).
 enum RouteTrafficLevel {
   clear,
+  smooth,
   moderate,
   heavy;
 
@@ -16,13 +17,15 @@ enum RouteTrafficLevel {
         return RouteTrafficLevel.heavy;
       case 'moderate':
         return RouteTrafficLevel.moderate;
+      case 'smooth':
+        return RouteTrafficLevel.smooth;
       default:
         return RouteTrafficLevel.clear;
     }
   }
 }
 
-/// A drawable slice of the route (blue = clear, orange = moderate, red = heavy).
+/// A drawable slice of the route with per-step traffic colouring.
 class RouteMapSegment {
   final List<LatLng> points;
   final RouteTrafficLevel trafficLevel;
@@ -75,9 +78,58 @@ class RouteMapGeometry {
 
     final drawSegments = segments.isNotEmpty
         ? segments
-        : [RouteMapSegment(points: full)];
+        : _segmentsFromOverview(route, full);
 
     return RouteMapGeometry(fullPolyline: full, segments: drawSegments);
+  }
+
+  /// Splits [overview] into step-sized slices with traffic colours.
+  static List<RouteMapSegment> _segmentsFromOverview(
+    NeshanRoute route,
+    List<LatLng> overview,
+  ) {
+    final leg = route.primaryLeg;
+    if (leg == null || overview.length < 2 || leg.steps.isEmpty) {
+      return overview.length >= 2
+          ? [RouteMapSegment(points: overview)]
+          : const [];
+    }
+
+    final baselineLeg = route.baselineRoute?.primaryLeg;
+    final segments = <RouteMapSegment>[];
+    var distanceCursor = 0.0;
+
+    for (var stepIndex = 0; stepIndex < leg.steps.length; stepIndex++) {
+      final step = leg.steps[stepIndex];
+      if (step.isArrival) continue;
+      if (step.distanceMeters <= 0 && step.durationSeconds <= 0) continue;
+
+      final stepPoints = step.distanceMeters > 0
+          ? slicePolylineByDistance(
+              overview,
+              distanceCursor,
+              step.distanceMeters,
+            )
+          : const <LatLng>[];
+      distanceCursor += step.distanceMeters;
+
+      if (stepPoints.length < 2) continue;
+
+      segments.add(
+        RouteMapSegment(
+          points: stepPoints,
+          trafficLevel: trafficLevelForStep(
+            step,
+            liveLeg: leg,
+            baselineLeg: baselineLeg,
+            stepIndex: stepIndex,
+          ),
+        ),
+      );
+    }
+
+    if (segments.isNotEmpty) return segments;
+    return [RouteMapSegment(points: overview)];
   }
 
   static List<LatLng> _decodeOverview(String? encoded) {
@@ -245,4 +297,93 @@ class RouteMapGeometry {
 
     return trimmed.isNotEmpty ? trimmed : segments;
   }
+}
+
+/// Down-samples polyline points for native map channel payloads.
+List<LatLng> samplePolylinePoints(
+  List<LatLng> points, {
+  int maxPoints = 64,
+}) {
+  if (points.length <= maxPoints) return points;
+  if (maxPoints < 2) return points.take(maxPoints).toList();
+
+  final sampled = <LatLng>[points.first];
+  final step = (points.length - 1) / (maxPoints - 1);
+  for (var i = 1; i < maxPoints - 1; i++) {
+    sampled.add(points[(step * i).round()]);
+  }
+  sampled.add(points.last);
+  return sampled;
+}
+
+/// Merges adjacent segments and caps count/points for smooth map updates.
+///
+/// During navigation, keeps more segments/points so per-step traffic colours
+/// stay aligned with the Neshan route geometry.
+List<RouteMapSegment> compactSegmentsForMap(
+  List<RouteMapSegment> segments, {
+  int? maxSegments,
+  int? maxPointsPerSegment,
+  bool navigationMode = false,
+}) {
+  if (segments.isEmpty) return segments;
+
+  final segmentCap = maxSegments ?? (navigationMode ? 160 : 96);
+  final pointCap = maxPointsPerSegment ?? (navigationMode ? 160 : 96);
+
+  final merged = <RouteMapSegment>[];
+  for (final segment in segments) {
+    if (segment.points.length < 2) continue;
+    final points = samplePolylinePoints(
+      segment.points,
+      maxPoints: pointCap,
+    );
+    if (points.length < 2) continue;
+
+    if (merged.isNotEmpty &&
+        merged.last.trafficLevel == segment.trafficLevel) {
+      final prev = merged.last;
+      merged[merged.length - 1] = RouteMapSegment(
+        points: _concatPolyline(prev.points, points),
+        trafficLevel: prev.trafficLevel,
+      );
+    } else {
+      merged.add(
+        RouteMapSegment(
+          points: points,
+          trafficLevel: segment.trafficLevel,
+        ),
+      );
+    }
+  }
+
+  var compact = merged;
+  while (compact.length > segmentCap && compact.length > 1) {
+    var mergedPair = false;
+    for (var i = 0; i < compact.length - 1; i++) {
+      final a = compact[i];
+      final b = compact[i + 1];
+      if (a.trafficLevel != b.trafficLevel) continue;
+      compact = [
+        ...compact.sublist(0, i),
+        RouteMapSegment(
+          points: _concatPolyline(a.points, b.points),
+          trafficLevel: a.trafficLevel,
+        ),
+        ...compact.sublist(i + 2),
+      ];
+      mergedPair = true;
+      break;
+    }
+    if (!mergedPair) break;
+  }
+
+  return compact;
+}
+
+List<LatLng> _concatPolyline(List<LatLng> a, List<LatLng> b) {
+  if (a.isEmpty) return b;
+  if (b.isEmpty) return a;
+  if (a.last == b.first) return [...a, ...b.skip(1)];
+  return [...a, ...b];
 }

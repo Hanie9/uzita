@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/utils/map_tile_config.dart';
+import 'package:uzita/utils/neshan_route_style.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
 import 'package:uzita/utils/validated_network_tile_provider.dart';
@@ -134,21 +137,12 @@ class _FlutterDriverNavigationMapState
   bool _autoFollow = true;
   bool _overviewCameraDetached = false;
   bool _mapReady = false;
+  Timer? _overviewIdleRefitTimer;
 
-  static const _routePurple = Color(0xFF7C3AED);
-  static const _trafficOrange = Color(0xFFEA580C);
-  static const _trafficRed = Color(0xFFDC2626);
+  static const _overviewIdleRefitDuration = Duration(seconds: 10);
 
-  static Color _colorForTrafficLevel(RouteTrafficLevel level) {
-    switch (level) {
-      case RouteTrafficLevel.heavy:
-        return _trafficRed;
-      case RouteTrafficLevel.moderate:
-        return _trafficOrange;
-      case RouteTrafficLevel.clear:
-        return _routePurple;
-    }
-  }
+  static Color _routeLineColor(RouteTrafficLevel level) =>
+      NeshanRouteStyle.colorForTrafficLevel(level);
 
   @override
   void initState() {
@@ -162,9 +156,33 @@ class _FlutterDriverNavigationMapState
 
   @override
   void dispose() {
+    _cancelOverviewIdleRefit();
     widget.controller?.unbind();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _cancelOverviewIdleRefit() {
+    _overviewIdleRefitTimer?.cancel();
+    _overviewIdleRefitTimer = null;
+  }
+
+  void _scheduleOverviewIdleRefit() {
+    _cancelOverviewIdleRefit();
+    if (!widget.overviewMode || widget.followDriver) return;
+    _overviewIdleRefitTimer = Timer(_overviewIdleRefitDuration, () {
+      if (!mounted || !_overviewCameraDetached) return;
+      unawaited(_refitOverview());
+    });
+  }
+
+  void _onOverviewMapInteraction() {
+    if (!widget.overviewMode || widget.followDriver) return;
+    if (!_overviewCameraDetached) {
+      setState(() => _overviewCameraDetached = true);
+      widget.onCameraDetached?.call(true);
+    }
+    _scheduleOverviewIdleRefit();
   }
 
   @override
@@ -182,6 +200,9 @@ class _FlutterDriverNavigationMapState
 
     if (!oldWidget.followDriver && widget.followDriver) {
       _autoFollow = true;
+    }
+    if (oldWidget.overviewMode && !widget.overviewMode) {
+      _cancelOverviewIdleRefit();
     }
 
     final routeChanged =
@@ -235,6 +256,7 @@ class _FlutterDriverNavigationMapState
   }
 
   Future<void> _refitOverview() async {
+    _cancelOverviewIdleRefit();
     setState(() {
       _fittedInitialBounds = false;
       _overviewCameraDetached = false;
@@ -249,8 +271,13 @@ class _FlutterDriverNavigationMapState
       widget.origin,
       widget.destination,
       if (widget.driverPosition != null) widget.driverPosition!,
-      ...widget.routeCoordinates,
     ];
+    final route = _route;
+    if (route.length >= 2) {
+      points.add(route.first);
+      if (route.length > 2) points.add(route[route.length ~/ 2]);
+      points.add(route.last);
+    }
     if (points.isEmpty) return;
 
     final padding = widget.overviewMode
@@ -345,7 +372,14 @@ class _FlutterDriverNavigationMapState
       color: widget.isDark
           ? const Color(0xFF1A2332)
           : const Color(0xFFE8EEF4),
-      child: FlutterMap(
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) {
+          if (widget.overviewMode && !widget.followDriver) {
+            _onOverviewMapInteraction();
+          }
+        },
+        child: FlutterMap(
           mapController: _mapController,
           options: MapOptions(
             initialCenter: widget.origin,
@@ -360,9 +394,8 @@ class _FlutterDriverNavigationMapState
               if (!hasGesture) return;
               if (widget.followDriver) {
                 _onUserMapInteraction();
-              } else if (widget.overviewMode && !_overviewCameraDetached) {
-                setState(() => _overviewCameraDetached = true);
-                widget.onCameraDetached?.call(true);
+              } else if (widget.overviewMode) {
+                _onOverviewMapInteraction();
               }
             },
           ),
@@ -394,10 +427,12 @@ class _FlutterDriverNavigationMapState
                   if (segment.points.length >= 2)
                     Polyline(
                       points: segment.points,
-                      color: _colorForTrafficLevel(segment.trafficLevel),
-                      strokeWidth: 6,
+                      color: _routeLineColor(segment.trafficLevel),
+                      strokeWidth: widget.followDriver
+                          ? NeshanRouteStyle.navigationLineWidth
+                          : NeshanRouteStyle.overviewLineWidth,
                       borderColor: Colors.white,
-                      borderStrokeWidth: 1.5,
+                      borderStrokeWidth: 2,
                     ),
               ],
             ),
@@ -452,6 +487,7 @@ class _FlutterDriverNavigationMapState
               ],
             ),
           ],
+        ),
       ),
     );
   }

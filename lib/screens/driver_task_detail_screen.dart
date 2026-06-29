@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shamsi_date/shamsi_date.dart';
@@ -13,7 +14,6 @@ import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
-import 'package:uzita/utils/neshan_degraded_route.dart';
 import 'package:uzita/utils/neshan_errors.dart';
 import 'package:uzita/utils/user_error_message.dart';
 import 'package:uzita/utils/ui_scale.dart';
@@ -186,6 +186,34 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     return trimmed.isNotEmpty && trimmed != '---';
   }
 
+  Future<NeshanLatLng?> _currentDriverLocation() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return null;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission != LocationPermission.always &&
+          permission != LocationPermission.whileInUse) {
+        return null;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      ).timeout(const Duration(seconds: 6));
+
+      final location = NeshanLatLng(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      return isPlausibleIranCoordinate(location) ? location : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _startNavigation() async {
     final localizations = AppLocalizations.of(context)!;
     final mabda = (taskData['mabda'] ?? '---').toString();
@@ -206,19 +234,21 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     setState(() => isRouting = true);
 
     try {
-      final originHints = extractGeocodeHints(mabda);
-      final originParams = buildGeocodeParams(
-        address: mabda,
-        hints: originHints,
-      );
-      var originResult = await routingService.geocodeAddress(
+      final driverLocation = await _currentDriverLocation();
+
+      final originResult = await routingService.resolveCargoAddress(
         mabda,
-        city: originParams.city,
-        province: originParams.province,
-        searchCenter: originParams.searchCenter,
-        searchExtent: originParams.searchExtent,
+        driverLocation: driverLocation,
       );
-      originResult = refineGeocodingResult(originResult, address: mabda);
+
+      if (!geocodedCityMatchesAddress(
+        result: originResult,
+        address: mabda,
+      )) {
+        throw NeshanApiException(
+          localizations.driver_route_geocode_city_mismatch,
+        );
+      }
 
       if (!isPlausibleIranCoordinate(originResult.location)) {
         throw NeshanApiException(
@@ -226,22 +256,16 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         );
       }
 
-      final destinationHints = extractGeocodeHints(maghsad);
-      final destinationParams = buildGeocodeParams(
-        address: maghsad,
-        hints: destinationHints,
-        originResult: originResult,
-      );
-      var destinationResult = await routingService.geocodeAddress(
+      if (isClearlyWrongGeocodingResult(originResult, mabda)) {
+        throw NeshanApiException(
+          localizations.driver_route_invalid_address,
+        );
+      }
+
+      final destinationResult = await routingService.resolveCargoAddress(
         maghsad,
-        city: destinationParams.city,
-        province: destinationParams.province,
-        searchCenter: destinationParams.searchCenter,
-        searchExtent: destinationParams.searchExtent,
-      );
-      destinationResult = refineGeocodingResult(
-        destinationResult,
-        address: maghsad,
+        siblingResult: originResult,
+        driverLocation: driverLocation,
       );
 
       if (!geocodedCityMatchesAddress(
@@ -258,20 +282,11 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
           localizations.driver_route_invalid_address,
         );
       }
-      NeshanRoute route;
-      String? routeWarning;
 
-      try {
-        route = await routingService.getRoute(
-          origin: originResult.location,
-          destination: destinationResult.location,
+      if (isClearlyWrongGeocodingResult(destinationResult, maghsad)) {
+        throw NeshanApiException(
+          localizations.driver_route_invalid_address,
         );
-      } on NeshanApiException catch (e) {
-        route = buildDegradedDirectRoute(
-          origin: originResult.location,
-          destination: destinationResult.location,
-        );
-        routeWarning = localizeNeshanError(localizations, e);
       }
 
       if (!mounted) return;
@@ -289,6 +304,8 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         );
       }
 
+      // Open the map as soon as endpoints are geocoded; routing continues on
+      // the route screen so the driver is not kept waiting on two API calls.
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -297,17 +314,8 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
             destinationAddress: maghsad,
             origin: originResult.location,
             destination: destinationResult.location,
-            route: route,
             assignmentId: _assignmentId,
           ),
-        ),
-      );
-
-      if (!mounted || routeWarning == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(routeWarning),
-          duration: const Duration(seconds: 6),
         ),
       );
     } on NeshanApiException catch (e) {
@@ -648,7 +656,9 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   title: localizations.driver_maghsad,
                   value: maghsad,
                 ),
-                if (_isValidAddress(mabda) && _isValidAddress(maghsad)) ...[
+                if (!widget.isReport &&
+                    _isValidAddress(mabda) &&
+                    _isValidAddress(maghsad)) ...[
                   SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                   SizedBox(
                     width: double.infinity,

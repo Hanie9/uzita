@@ -13,6 +13,7 @@ abstract final class NeshanErrorCodes {
   static const sdkEmptyResponse = 'SdkEmptyResponse';
   static const sdkInvalidCoordinates = 'SdkInvalidCoordinates';
   static const backendProxyFailed = 'BackendProxyFailed';
+  static const backendUnauthorized = 'BackendUnauthorized';
   static const invalidArgument = 'INVALID_ARGUMENT';
   static const coordinateParseError = 'CoordinateParseError';
 }
