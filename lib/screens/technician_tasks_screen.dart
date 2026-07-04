@@ -13,6 +13,7 @@ import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
+import 'package:uzita/widgets/technician_task_filter_menu.dart';
 
 class TechnicianTasksScreen extends StatefulWidget {
   const TechnicianTasksScreen({super.key});
@@ -33,6 +34,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String _missionSearchQuery = '';
+  String _missionStatusFilter = 'assigned';
 
   @override
   void initState() {
@@ -178,20 +180,36 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
   }
 
   List<Map<String, dynamic>> _filteredTasksForSearch() {
+    List<Map<String, dynamic>> base = tasks
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .where((task) => matchesMissionStatusFilter(task, _missionStatusFilter))
+        .toList();
+
     if (_missionSearchQuery.trim().isEmpty) {
-      return tasks
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
+      return base;
     }
 
     final String query = _missionSearchQuery.trim().toLowerCase();
-    return tasks
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
+    return base
         .where((task) => !isTechnicianUnassigned(task))
         .where((task) => _buildTaskSearchHaystack(task).contains(query))
         .toList();
+  }
+
+  List<TechnicianTaskFilterOption> _missionFilterOptions(
+    AppLocalizations localizations,
+  ) {
+    return <TechnicianTaskFilterOption>[
+      TechnicianTaskFilterOption(
+        value: 'assigned',
+        label: localizations.tech_filter_assigned_missions,
+      ),
+      TechnicianTaskFilterOption(
+        value: 'suspended',
+        label: localizations.tech_filter_suspended_missions,
+      ),
+    ];
   }
 
   String _assignedToTechnicianRaw(Map<String, dynamic> task) {
@@ -457,7 +475,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                       ],
                                     )
                                   : Text(
-                                      '${tasks.length} ${localizations.tech_mission}',
+                                      '${visibleTasks.length} ${localizations.tech_mission}',
                                       style: TextStyle(
                                         fontSize: ui.scale(
                                           base: 18,
@@ -567,6 +585,21 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                   ),
                 ),
               ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  ui.scale(base: 16, min: 12, max: 20),
+                  0,
+                  ui.scale(base: 16, min: 12, max: 20),
+                  8,
+                ),
+                child: TechnicianTaskFilterMenu(
+                  value: _missionStatusFilter,
+                  options: _missionFilterOptions(localizations),
+                  onChanged: (String value) {
+                    setState(() => _missionStatusFilter = value);
+                  },
+                ),
+              ),
               const SizedBox(height: 8),
               Expanded(
         child: isLoading
@@ -659,6 +692,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                         : '---';
                     final String subjectText =
                         subjectsText.isNotEmpty ? subjectsText : title;
+                    final String serviceId = taskServiceIdDisplay(task);
 
                     return GestureDetector(
                       key: ValueKey('task_$taskId'),
@@ -748,6 +782,13 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                   children: [
+                                    _buildMissionInfoRow(
+                                      context: context,
+                                      icon: Icons.tag_outlined,
+                                      label: localizations.tech_service_id,
+                                      value: serviceId,
+                                    ),
+                                    const SizedBox(height: 6),
                                     _buildMissionInfoRow(
                                       context: context,
                                       icon: Icons.person_outline,
@@ -953,6 +994,8 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
         return localizations.sps_status_open;
       case 'assigned':
         return localizations.sps_status_assigned;
+      case 'suspended':
+        return localizations.sps_status_suspended;
       case 'confirm':
         return localizations.sps_status_confirm;
       case 'done':
@@ -970,6 +1013,8 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
         return Colors.green;
       case 'canceled':
         return Colors.red;
+      case 'suspended':
+        return Colors.grey.shade700;
       case 'confirm':
         return Colors.blue;
       default:
@@ -1012,6 +1057,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
 
   Widget _buildEmptyState() {
     final localizations = AppLocalizations.of(context)!;
+    final bool isSuspendedFilter = _missionStatusFilter == 'suspended';
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).padding.bottom + 40,
@@ -1045,7 +1091,9 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
             ),
             SizedBox(height: kSpacing),
             Text(
-              localizations.tech_no_missions,
+              isSuspendedFilter
+                  ? localizations.tech_no_suspended_missions
+                  : localizations.tech_no_missions,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1054,7 +1102,9 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              localizations.tech_no_missions_description,
+              isSuspendedFilter
+                  ? localizations.tech_no_suspended_missions_description
+                  : localizations.tech_no_missions_description,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodyMedium?.color,

@@ -1076,6 +1076,7 @@ class AppLocalizations {
       'sps_status_confirm': 'Confirmed',
       'sps_status_done': 'Done',
       'sps_status_canceled': 'Canceled',
+      'sps_status_suspended': 'Suspended',
       'sps_technician': 'Technician',
       'sps_technician_name': 'Name',
       'sps_technician_phone': 'Phone',
@@ -1130,6 +1131,32 @@ class AppLocalizations {
       'tech_assign_dialog_assign': 'Assign',
       'tech_assign_error': 'Error assigning mission',
       'tech_assign_server_error': 'Error connecting to server',
+      'tech_suspend_service': 'Suspend service',
+      'tech_unsuspend_service': 'Resume service',
+      'tech_suspend_confirm_message':
+          'Are you sure you want to suspend this service?',
+      'tech_unsuspend_confirm_message':
+          'Are you sure you want to resume this service from suspension?',
+      'tech_suspend_success': 'Service suspended successfully',
+      'tech_unsuspend_success': 'Service resumed successfully',
+      'tech_suspend_error': 'This operation is not allowed',
+      'tech_service_id': 'Service ID',
+      'tech_filter_status': 'Status filter',
+      'tech_filter_assigned_missions': 'Assigned missions',
+      'tech_filter_suspended_missions': 'Suspended missions',
+      'tech_filter_active_reports': 'Reports',
+      'tech_filter_canceled_reports': 'Canceled services',
+      'tech_no_suspended_missions': 'No suspended missions',
+      'tech_no_suspended_missions_description':
+          'There are no suspended missions at the moment.',
+      'tech_no_canceled_reports': 'No canceled services',
+      'tech_no_canceled_reports_description':
+          'There are no canceled services in reports.',
+      'tech_cancel_service': 'Cancel service',
+      'tech_cancel_confirm_message':
+          'Are you sure you want to cancel this service? This action cannot be undone.',
+      'tech_cancel_success': 'Service canceled successfully',
+      'tech_cancel_error': 'This operation is not allowed',
       'tech_no_completed_tasks': 'No completed tasks',
       'tech_no_completed_tasks_description':
           'You have no completed tasks at the moment.',
@@ -1186,11 +1213,13 @@ class AppLocalizations {
       'tech_customer_history_error': 'Could not load service history',
       'tech_customer_history_retry': 'Try again',
       'tech_customer_history_current': 'Current mission',
-      'tech_customer_history_no_phone': 'Customer phone number is not available',
+      'tech_customer_history_no_phone':
+          'Customer phone number is not available',
       'tech_admin_note': 'Manager note',
       'tech_serial_number_correction': 'Serial number correction (Optional)',
       'tech_serial_number_hint': 'Enter digits only',
-      'tech_serial_number_digits_error': 'Serial number must contain digits only',
+      'tech_serial_number_digits_error':
+          'Serial number must contain digits only',
 
       // Driver Screens (driver_)
       'driver_missions': 'Missions',
@@ -1239,7 +1268,8 @@ class AppLocalizations {
       'driver_route_steps': 'Route steps',
       'driver_route_open_map': 'Open in Neshan Maps',
       'driver_route_open_map_error': 'Could not open map app',
-      'driver_route_invalid_address': 'Origin or destination address is missing',
+      'driver_route_invalid_address':
+          'Origin or destination address is missing',
       'driver_route_geocode_city_mismatch':
           'Destination city does not match the address. Include the city name (e.g. Isfahan) in the address.',
       'driver_route_map_error': 'Could not load map',
@@ -2342,6 +2372,7 @@ class AppLocalizations {
       'sps_status_confirm': 'تایید شده',
       'sps_status_done': 'تمام شده',
       'sps_status_canceled': 'کنسل شده',
+      'sps_status_suspended': 'معلق',
       'sps_technician': 'تکنسین',
       'sps_technician_name': 'نام',
       'sps_technician_phone': 'تلفن',
@@ -2393,6 +2424,31 @@ class AppLocalizations {
       'tech_assign_dialog_assign': 'واگذاری',
       'tech_assign_error': 'خطا در واگذاری مأموریت',
       'tech_assign_server_error': 'خطا در ارتباط با سرور',
+      'tech_suspend_service': 'معلق‌سازی سرویس',
+      'tech_unsuspend_service': 'خارج کردن از معلقی',
+      'tech_suspend_confirm_message': 'آیا از معلق‌سازی این سرویس مطمئن هستید؟',
+      'tech_unsuspend_confirm_message':
+          'آیا از خارج کردن این سرویس از حالت معلقی مطمئن هستید؟',
+      'tech_suspend_success': 'سرویس با موفقیت معلق شد.',
+      'tech_unsuspend_success': 'سرویس با موفقیت از حالت معلقی خارج شد.',
+      'tech_suspend_error': 'این عملیات امکان پذیر نمی باشد.',
+      'tech_service_id': 'شناسه سرویس',
+      'tech_filter_status': 'فیلتر وضعیت',
+      'tech_filter_assigned_missions': 'ماموریت‌های واگذار شده',
+      'tech_filter_suspended_missions': 'ماموریت‌های معلق شده',
+      'tech_filter_active_reports': 'همه گزارشات',
+      'tech_filter_canceled_reports': 'سرویس‌های کنسل شده',
+      'tech_no_suspended_missions': 'ماموریت معلقی وجود ندارد',
+      'tech_no_suspended_missions_description':
+          'در حال حاضر ماموریت معلق شده‌ای ندارید.',
+      'tech_no_canceled_reports': 'سرویس کنسل شده‌ای وجود ندارد',
+      'tech_no_canceled_reports_description':
+          'سرویس کنسل شده‌ای در گزارشات وجود ندارد.',
+      'tech_cancel_service': 'کنسل کردن سرویس',
+      'tech_cancel_confirm_message':
+          'آیا از کنسل کردن این سرویس مطمئن هستید؟ این عمل قابل بازگشت نیست.',
+      'tech_cancel_success': 'سرویس با موفقیت کنسل شد.',
+      'tech_cancel_error': 'این عملیات امکان پذیر نمی باشد.',
       'tech_first_visit_date': 'زمان مراجعه اولیه',
       'tech_first_visit_date_hint': 'زمان مراجعه اولیه را انتخاب کنید',
       'tech_first_visit_date_error': 'لطفاً زمان مراجعه اولیه را انتخاب کنید',
@@ -2441,7 +2497,8 @@ class AppLocalizations {
       'tech_customer_name': 'نام مشتری',
       'tech_assigned_org_date': 'تاریخ واگذاری به سازمان',
       'tech_assigned_technician_date': 'تاریخ واگذاری به سرویس‌کار',
-      'tech_mission_search_hint': 'جستجو بر اساس نام مشتری، شماره تماس یا سریال',
+      'tech_mission_search_hint':
+          'جستجو بر اساس نام مشتری، شماره تماس یا سریال',
       'tech_customer_service_history': 'تاریخچه سرویس مشتری',
       'tech_customer_history_empty': 'تاریخچه سرویسی برای این مشتری یافت نشد',
       'tech_customer_history_error': 'بارگذاری تاریخچه سرویس انجام نشد',
@@ -2547,7 +2604,8 @@ class AppLocalizations {
           'نوع کلید با API هم‌خوانی ندارد. از کلید service با سرویس‌های پلاس، مسیریابی و نقشه استاتیک منحنی استفاده کنید.',
       'driver_neshan_error_whitelist':
           'محدودیت کلید نشان. روی اندروید از پراکسی سرور استفاده کنید: deploy/backend_neshan_proxy/ را روی device-control.liara.run نصب کنید، NESHAN_API_KEY را در Liara بگذارید و device-control.liara.run را در پنل نشان مجاز کنید. پکیج را هم com.example.uzita (نه uzha) بگذارید.',
-      'driver_neshan_error_key_not_found': 'کلید API نشان نامعتبر یا وارد نشده است.',
+      'driver_neshan_error_key_not_found':
+          'کلید API نشان نامعتبر یا وارد نشده است.',
       'driver_neshan_error_limit': 'سقف استفاده از API نشان پر شده است.',
       'driver_neshan_error_rate': 'درخواست‌های زیاد به API نشان. کمی صبر کنید.',
       'driver_neshan_need_web_map_key':
@@ -3399,6 +3457,7 @@ class AppLocalizations {
   String get sps_status_confirm => _getLocalizedValue('sps_status_confirm');
   String get sps_status_done => _getLocalizedValue('sps_status_done');
   String get sps_status_canceled => _getLocalizedValue('sps_status_canceled');
+  String get sps_status_suspended => _getLocalizedValue('sps_status_suspended');
   String get sps_technician => _getLocalizedValue('sps_technician');
   String get sps_technician_name => _getLocalizedValue('sps_technician_name');
   String get sps_technician_phone => _getLocalizedValue('sps_technician_phone');
@@ -3466,6 +3525,40 @@ class AppLocalizations {
   String get tech_assign_error => _getLocalizedValue('tech_assign_error');
   String get tech_assign_server_error =>
       _getLocalizedValue('tech_assign_server_error');
+  String get tech_suspend_service => _getLocalizedValue('tech_suspend_service');
+  String get tech_unsuspend_service =>
+      _getLocalizedValue('tech_unsuspend_service');
+  String get tech_suspend_confirm_message =>
+      _getLocalizedValue('tech_suspend_confirm_message');
+  String get tech_unsuspend_confirm_message =>
+      _getLocalizedValue('tech_unsuspend_confirm_message');
+  String get tech_suspend_success => _getLocalizedValue('tech_suspend_success');
+  String get tech_unsuspend_success =>
+      _getLocalizedValue('tech_unsuspend_success');
+  String get tech_suspend_error => _getLocalizedValue('tech_suspend_error');
+  String get tech_service_id => _getLocalizedValue('tech_service_id');
+  String get tech_filter_status => _getLocalizedValue('tech_filter_status');
+  String get tech_filter_assigned_missions =>
+      _getLocalizedValue('tech_filter_assigned_missions');
+  String get tech_filter_suspended_missions =>
+      _getLocalizedValue('tech_filter_suspended_missions');
+  String get tech_filter_active_reports =>
+      _getLocalizedValue('tech_filter_active_reports');
+  String get tech_filter_canceled_reports =>
+      _getLocalizedValue('tech_filter_canceled_reports');
+  String get tech_no_suspended_missions =>
+      _getLocalizedValue('tech_no_suspended_missions');
+  String get tech_no_suspended_missions_description =>
+      _getLocalizedValue('tech_no_suspended_missions_description');
+  String get tech_no_canceled_reports =>
+      _getLocalizedValue('tech_no_canceled_reports');
+  String get tech_no_canceled_reports_description =>
+      _getLocalizedValue('tech_no_canceled_reports_description');
+  String get tech_cancel_service => _getLocalizedValue('tech_cancel_service');
+  String get tech_cancel_confirm_message =>
+      _getLocalizedValue('tech_cancel_confirm_message');
+  String get tech_cancel_success => _getLocalizedValue('tech_cancel_success');
+  String get tech_cancel_error => _getLocalizedValue('tech_cancel_error');
   String get tech_no_completed_tasks =>
       _getLocalizedValue('tech_no_completed_tasks');
   String get tech_no_completed_tasks_description =>
@@ -3537,7 +3630,8 @@ class AppLocalizations {
   String get tech_task_customer_section =>
       _getLocalizedValue('tech_task_customer_section');
   String get tech_customer_name => _getLocalizedValue('tech_customer_name');
-  String get tech_assigned_org_date => _getLocalizedValue('tech_assigned_org_date');
+  String get tech_assigned_org_date =>
+      _getLocalizedValue('tech_assigned_org_date');
   String get tech_assigned_technician_date =>
       _getLocalizedValue('tech_assigned_technician_date');
   String get tech_mission_search_hint =>
@@ -3612,8 +3706,7 @@ class AppLocalizations {
   String get driver_select_load_error =>
       _getLocalizedValue('driver_select_load_error');
   String get driver_navigate => _getLocalizedValue('driver_navigate');
-  String get driver_route_loading =>
-      _getLocalizedValue('driver_route_loading');
+  String get driver_route_loading => _getLocalizedValue('driver_route_loading');
   String get driver_route_error => _getLocalizedValue('driver_route_error');
   String get driver_geocode_origin_error =>
       _getLocalizedValue('driver_geocode_origin_error');

@@ -125,6 +125,8 @@ Color _statusColor(String status) {
       return Colors.green;
     case 'canceled':
       return Colors.red;
+    case 'suspended':
+      return Colors.grey.shade700;
     case 'confirm':
       return Colors.blue;
     default:
@@ -138,6 +140,8 @@ String _statusLabel(String status, AppLocalizations loc) {
       return loc.sps_status_open;
     case 'assigned':
       return loc.sps_status_assigned;
+    case 'suspended':
+      return loc.sps_status_suspended;
     case 'confirm':
       return loc.sps_status_confirm;
     case 'done':

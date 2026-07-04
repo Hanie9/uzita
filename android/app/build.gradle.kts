@@ -31,13 +31,16 @@ android {
 
     }
 
-    // Real phones are ARM only. Drop the x86_64 (emulator-only) native libs,
-    // including the prebuilt ones inside the Neshan/Carto AARs, to shrink the
-    // universal APK. Combine with `--target-platform android-arm,android-arm64`
-    // to also drop the Flutter engine's x86_64 library.
+    // Real phones are ARM only. Drop x86_64 native libs in release builds to
+    // shrink the APK. Keep them for debug so x86_64 emulators can run the app.
+    val isReleaseBuild = gradle.startParameter.taskNames.any {
+        it.contains("Release", ignoreCase = true)
+    }
     packaging {
         jniLibs {
-            excludes += listOf("lib/x86_64/**")
+            if (isReleaseBuild) {
+                excludes += listOf("lib/x86_64/**")
+            }
         }
     }
 

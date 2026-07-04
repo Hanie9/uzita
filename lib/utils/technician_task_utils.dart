@@ -12,10 +12,9 @@ bool isTechnicianUnassigned(Map<String, dynamic> task) {
         value == '---';
   }
   if (technician is Map) {
-    final String username =
-        (technician['username'] ?? technician['name'] ?? '')
-            .toString()
-            .trim();
+    final String username = (technician['username'] ?? technician['name'] ?? '')
+        .toString()
+        .trim();
     return username.isEmpty;
   }
   return false;
@@ -35,7 +34,11 @@ String? resolvedTechnicianUsername(Map<String, dynamic> task) {
     if (fromMap != null && fromMap.trim().isNotEmpty) return fromMap.trim();
   }
 
-  for (final key in ['technician_username', 'assigned_username', 'assigned_to']) {
+  for (final key in [
+    'technician_username',
+    'assigned_username',
+    'assigned_to',
+  ]) {
     final dynamic value = task[key];
     if (value != null && value.toString().trim().isNotEmpty) {
       return value.toString().trim();
@@ -49,6 +52,75 @@ bool canAssignOrgTask(Map<String, dynamic> task) {
   final String status = (task['status'] ?? '').toString().toLowerCase();
   if (status == 'done' || status == 'canceled') return false;
   return isTechnicianUnassigned(task);
+}
+
+bool parseTechnicianConfirm(dynamic value) {
+  if (value is bool) return value;
+  if (value is String) return value.toLowerCase() == 'true';
+  return false;
+}
+
+/// User-facing service identifier (`service_id`), not the assignment record `id`.
+String taskServiceIdDisplay(Map<String, dynamic> task) {
+  final dynamic raw = task['service_id'];
+  if (raw == null) return '---';
+  final String value = raw.toString().trim();
+  if (value.isEmpty || value.toLowerCase() == 'null') return '---';
+  return value;
+}
+
+String _normalizedTaskStatus(Map<String, dynamic> task) =>
+    (task['status'] ?? '').toString().toLowerCase();
+
+/// Mission list filter: assigned (default) or suspended.
+bool matchesMissionStatusFilter(
+  Map<String, dynamic> task,
+  String filter,
+) {
+  final String status = _normalizedTaskStatus(task);
+  switch (filter) {
+    case 'suspended':
+      return status == 'suspended';
+    case 'assigned':
+    default:
+      return status == 'assigned';
+  }
+}
+
+/// Reports list filter: active (default, non-canceled) or canceled.
+bool matchesReportStatusFilter(
+  Map<String, dynamic> task,
+  String filter,
+) {
+  final String status = _normalizedTaskStatus(task);
+  switch (filter) {
+    case 'canceled':
+      return status == 'canceled';
+    case 'active':
+    default:
+      return status != 'canceled';
+  }
+}
+
+/// Org manager can suspend when task is assigned and not yet confirmed.
+bool canSuspendOrgTask(Map<String, dynamic> task) {
+  final String status = (task['status'] ?? '').toString().toLowerCase();
+  if (status != 'assigned') return false;
+  return !parseTechnicianConfirm(task['technician_confirm']);
+}
+
+/// Org manager can unsuspend when task is suspended and not yet confirmed.
+bool canUnsuspendOrgTask(Map<String, dynamic> task) {
+  final String status = (task['status'] ?? '').toString().toLowerCase();
+  if (status != 'suspended') return false;
+  return !parseTechnicianConfirm(task['technician_confirm']);
+}
+
+/// Org manager can cancel when task is assigned/suspended and not yet confirmed.
+bool canCancelOrgTask(Map<String, dynamic> task) {
+  final String status = (task['status'] ?? '').toString().toLowerCase();
+  if (status != 'assigned' && status != 'suspended') return false;
+  return !parseTechnicianConfirm(task['technician_confirm']);
 }
 
 bool _isValidAttachmentPath(String path) {
@@ -274,10 +346,7 @@ List<dynamic> extractTechnicianTaskListPayload(dynamic data) {
   return <dynamic>[];
 }
 
-Map<String, dynamic>? findTechnicianTaskInPayload(
-  dynamic data,
-  String taskId,
-) {
+Map<String, dynamic>? findTechnicianTaskInPayload(dynamic data, String taskId) {
   for (final dynamic item in extractTechnicianTaskListPayload(data)) {
     if (item is Map && (item['id'] ?? '').toString() == taskId) {
       return normalizeTechnicianTask(Map<String, dynamic>.from(item));

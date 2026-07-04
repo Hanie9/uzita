@@ -13,6 +13,7 @@ import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/utils/technician_org_assignment.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
+import 'package:uzita/widgets/technician_task_filter_menu.dart';
 
 class TechnicianOrganTasksScreen extends StatefulWidget {
   const TechnicianOrganTasksScreen({super.key});
@@ -38,6 +39,7 @@ class _TechnicianOrganTasksScreenState
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String _missionSearchQuery = '';
+  String _missionStatusFilter = 'assigned';
 
   @override
   void initState() {
@@ -272,6 +274,17 @@ class _TechnicianOrganTasksScreenState
     ].join(' ').toLowerCase();
   }
 
+  List<Map<String, dynamic>> _applyMissionStatusFilter(
+    List<Map<String, dynamic>> source,
+  ) {
+    return source
+        .where(
+          (Map<String, dynamic> task) =>
+              matchesMissionStatusFilter(task, _missionStatusFilter),
+        )
+        .toList();
+  }
+
   List<Map<String, dynamic>> _applyMissionSearch(
     List<Map<String, dynamic>> source,
   ) {
@@ -312,6 +325,21 @@ class _TechnicianOrganTasksScreenState
       }
     }
     return entries;
+  }
+
+  List<TechnicianTaskFilterOption> _missionFilterOptions(
+    AppLocalizations localizations,
+  ) {
+    return <TechnicianTaskFilterOption>[
+      TechnicianTaskFilterOption(
+        value: 'assigned',
+        label: localizations.tech_filter_assigned_missions,
+      ),
+      TechnicianTaskFilterOption(
+        value: 'suspended',
+        label: localizations.tech_filter_suspended_missions,
+      ),
+    ];
   }
 
   void _onNavItemTapped(int index) {
@@ -419,18 +447,22 @@ class _TechnicianOrganTasksScreenState
         ? task['address'].toString().trim()
         : '---';
     final String subjectText = subjectsText.isNotEmpty ? subjectsText : title;
+    final String serviceId = taskServiceIdDisplay(task);
 
-    void openTaskDetail() {
+    void openTaskDetail() async {
       final Map<String, dynamic> taskToSend =
           normalizeTechnicianTask(Map<String, dynamic>.from(task));
       if (isOrgTask) {
         taskToSend['from_organ_assign_list'] = true;
       }
-      Navigator.pushNamed(
+      final dynamic result = await Navigator.pushNamed(
         context,
         '/technician-task-detail',
         arguments: taskToSend,
       );
+      if (result == true && mounted) {
+        _fetchTasks();
+      }
     }
 
     return Container(
@@ -496,6 +528,13 @@ class _TechnicianOrganTasksScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildMissionInfoRow(
+                      context: context,
+                      icon: Icons.tag_outlined,
+                      label: localizations.tech_service_id,
+                      value: serviceId,
+                    ),
+                    const SizedBox(height: 6),
                     _buildMissionInfoRow(
                       context: context,
                       icon: Icons.person_outline,
@@ -569,6 +608,8 @@ class _TechnicianOrganTasksScreenState
         return localizations.sps_status_open;
       case 'assigned':
         return localizations.sps_status_assigned;
+      case 'suspended':
+        return localizations.sps_status_suspended;
       case 'confirm':
         return localizations.sps_status_confirm;
       case 'done':
@@ -586,6 +627,8 @@ class _TechnicianOrganTasksScreenState
         return Colors.green;
       case 'canceled':
         return Colors.red;
+      case 'suspended':
+        return Colors.grey.shade700;
       case 'confirm':
         return Colors.blue;
       default:
@@ -628,6 +671,7 @@ class _TechnicianOrganTasksScreenState
 
   Widget _buildEmptyState() {
     final localizations = AppLocalizations.of(context)!;
+    final bool isSuspendedFilter = _missionStatusFilter == 'suspended';
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).padding.bottom + 40,
@@ -661,7 +705,9 @@ class _TechnicianOrganTasksScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              localizations.tech_no_missions,
+              isSuspendedFilter
+                  ? localizations.tech_no_suspended_missions
+                  : localizations.tech_no_missions,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -670,7 +716,9 @@ class _TechnicianOrganTasksScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              localizations.tech_no_missions_description,
+              isSuspendedFilter
+                  ? localizations.tech_no_suspended_missions_description
+                  : localizations.tech_no_missions_description,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -683,7 +731,11 @@ class _TechnicianOrganTasksScreenState
     );
   }
 
-  Widget _buildHeader(UiScale ui, AppLocalizations localizations) {
+  Widget _buildHeader(
+    UiScale ui,
+    AppLocalizations localizations, {
+    required int missionCount,
+  }) {
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(
@@ -757,7 +809,7 @@ class _TechnicianOrganTasksScreenState
                         ),
                       )
                     : Text(
-                        '${_getUniqueMissionsCount()} ${localizations.tech_mission}',
+                        '$missionCount ${localizations.tech_mission}',
                         style: TextStyle(
                           fontSize: ui.scale(base: 13, min: 12, max: 15),
                           fontWeight: FontWeight.w600,
@@ -775,17 +827,20 @@ class _TechnicianOrganTasksScreenState
   /// Returns the count of unique missions across organization missions and
   /// the manager's own missions. If the same mission appears in both lists,
   /// it is only counted once (based on its `id`).
-  int _getUniqueMissionsCount() {
+  int _getUniqueMissionsCount({
+    required List<Map<String, dynamic>> orgSource,
+    required List<Map<String, dynamic>> personalSource,
+  }) {
     final Set<String> ids = <String>{};
 
-    for (final Map<String, dynamic> t in orgTasks) {
+    for (final Map<String, dynamic> t in orgSource) {
       final String id = (t['id'] ?? '').toString();
       if (id.isNotEmpty) {
         ids.add(id);
       }
     }
 
-    for (final Map<String, dynamic> t in personalTasks) {
+    for (final Map<String, dynamic> t in personalSource) {
       final String id = (t['id'] ?? '').toString();
       if (id.isNotEmpty) {
         ids.add(id);
@@ -801,16 +856,25 @@ class _TechnicianOrganTasksScreenState
     final ui = UiScale(context);
     final theme = Theme.of(context);
     final double screenHeight = MediaQuery.of(context).size.height;
+    final List<Map<String, dynamic>> statusFilteredOrgTasks =
+        _applyMissionStatusFilter(orgTasks);
+    final List<Map<String, dynamic>> statusFilteredPersonalTasks =
+        _applyMissionStatusFilter(personalTasks);
     final List<Map<String, dynamic>> filteredOrgTasks =
-        _applyMissionSearch(orgTasks);
+        _applyMissionSearch(statusFilteredOrgTasks);
     final List<Map<String, dynamic>> filteredPersonalTasks =
-        _applyMissionSearch(personalTasks);
+        _applyMissionSearch(statusFilteredPersonalTasks);
     final List<Map<String, dynamic>> listEntries = _buildListEntries(
       filteredOrgTasks,
       filteredPersonalTasks,
     );
     final bool hasAnyFiltered =
         filteredOrgTasks.isNotEmpty || filteredPersonalTasks.isNotEmpty;
+
+    final int visibleMissionCount = _getUniqueMissionsCount(
+      orgSource: filteredOrgTasks,
+      personalSource: filteredPersonalTasks,
+    );
 
     return PopScope(
       canPop: false,
@@ -916,7 +980,11 @@ class _TechnicianOrganTasksScreenState
           ? Center(child: Text(localizations.home_access_denies))
           : Column(
               children: [
-                _buildHeader(ui, localizations),
+                _buildHeader(
+                  ui,
+                  localizations,
+                  missionCount: visibleMissionCount,
+                ),
                 Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: ui.scale(base: 16, min: 12, max: 20),
@@ -1003,6 +1071,21 @@ class _TechnicianOrganTasksScreenState
                         ),
                       ),
                     ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    ui.scale(base: 16, min: 12, max: 20),
+                    0,
+                    ui.scale(base: 16, min: 12, max: 20),
+                    8,
+                  ),
+                  child: TechnicianTaskFilterMenu(
+                    value: _missionStatusFilter,
+                    options: _missionFilterOptions(localizations),
+                    onChanged: (String value) {
+                      setState(() => _missionStatusFilter = value);
+                    },
                   ),
                 ),
                 const SizedBox(height: 8),

@@ -7,10 +7,8 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 
-typedef OrgTaskAssignmentCallback = void Function(
-  String username,
-  Map<String, dynamic> updatedFields,
-);
+typedef OrgTaskAssignmentCallback =
+    void Function(String username, Map<String, dynamic> updatedFields);
 
 Future<List<Map<String, String>>> fetchOrganTechnicianUsers() async {
   try {
@@ -103,6 +101,101 @@ Future<bool> assignOrganTask({
   return response.statusCode == 200 || response.statusCode == 201;
 }
 
+class OrgTaskSuspendOutcome {
+  const OrgTaskSuspendOutcome({
+    required this.ok,
+    this.message,
+    this.error,
+  });
+
+  final bool ok;
+  final String? message;
+  final String? error;
+}
+
+Future<OrgTaskSuspendOutcome> suspendOrganTask({
+  required dynamic taskId,
+  required bool suspend,
+}) async {
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      return const OrgTaskSuspendOutcome(ok: false);
+    }
+
+    await SessionManager().onNetworkRequest();
+
+    final Uri url = Uri.parse(
+      '$apiBaseUrl/technician-organ/tasks/$taskId/suspend',
+    );
+
+    final http.Response response = await http.post(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(<String, bool>{'suspend': suspend}),
+    );
+
+    final dynamic data = json.decode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final String? message =
+          data is Map ? data['message']?.toString() : null;
+      return OrgTaskSuspendOutcome(ok: true, message: message);
+    }
+
+    final String? error = data is Map
+        ? (data['error'] ?? data['message'])?.toString()
+        : null;
+    return OrgTaskSuspendOutcome(ok: false, error: error);
+  } catch (_) {
+    return const OrgTaskSuspendOutcome(ok: false);
+  }
+}
+
+Future<OrgTaskSuspendOutcome> cancelOrganTask({
+  required dynamic taskId,
+}) async {
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      return const OrgTaskSuspendOutcome(ok: false);
+    }
+
+    await SessionManager().onNetworkRequest();
+
+    final Uri url = Uri.parse(
+      '$apiBaseUrl/technician-organ/tasks/$taskId/cancel',
+    );
+
+    final http.Response response = await http.post(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(<String, bool>{'cancel': true}),
+    );
+
+    final dynamic data = json.decode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final String? message =
+          data is Map ? data['message']?.toString() : null;
+      return OrgTaskSuspendOutcome(ok: true, message: message);
+    }
+
+    final String? error = data is Map
+        ? (data['error'] ?? data['message'])?.toString()
+        : null;
+    return OrgTaskSuspendOutcome(ok: false, error: error);
+  } catch (_) {
+    return const OrgTaskSuspendOutcome(ok: false);
+  }
+}
+
 Future<void> showOrganTaskAssignmentDialog({
   required BuildContext context,
   required Map<String, dynamic> task,
@@ -126,11 +219,11 @@ Future<void> showOrganTaskAssignmentDialog({
   final List<Map<String, String>> assignableUsers = currentLower.isEmpty
       ? users
       : users
-          .where(
-            (Map<String, String> u) =>
-                u['username']!.trim().toLowerCase() != currentLower,
-          )
-          .toList();
+            .where(
+              (Map<String, String> u) =>
+                  u['username']!.trim().toLowerCase() != currentLower,
+            )
+            .toList();
 
   if (!context.mounted) return;
   Navigator.of(context, rootNavigator: true).pop();
@@ -162,10 +255,7 @@ Future<void> showOrganTaskAssignmentDialog({
     context: context,
     builder: (BuildContext dialogContext) {
       return StatefulBuilder(
-        builder: (
-          BuildContext ctx,
-          void Function(void Function()) setStateDialog,
-        ) {
+        builder: (BuildContext ctx, void Function(void Function()) setStateDialog) {
           final AppLocalizations dialogLoc = AppLocalizations.of(ctx)!;
           final ThemeData theme = Theme.of(ctx);
           return AlertDialog(
@@ -338,14 +428,16 @@ Future<void> showOrganTaskAssignmentDialog({
                         if (ok) {
                           final Map<String, dynamic> updated =
                               <String, dynamic>{
-                            'status': 'assigned',
-                            'technician': username,
-                            'technician_username': username,
-                            'assigned_username': username,
-                          };
+                                'status': 'assigned',
+                                'technician': username,
+                                'technician_username': username,
+                                'assigned_username': username,
+                              };
                           onAssigned?.call(username, updated);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(loc.tech_assignment_success)),
+                            SnackBar(
+                              content: Text(loc.tech_assignment_success),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(

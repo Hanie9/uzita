@@ -45,6 +45,9 @@ class _TechnicianTaskDetailScreenState
   bool _isDownloadingAttachment = false;
   bool _isDownloadingInvoice = false;
   bool _isTechnicianOrgManager = false;
+  bool _isSuspendingTask = false;
+  bool _isCancelingTask = false;
+  bool _missionListNeedsRefresh = false;
   String? _attachmentPath;
   String? _attachmentName;
 
@@ -1997,6 +2000,8 @@ class _TechnicianTaskDetailScreenState
         return localizations.sps_status_open;
       case 'assigned':
         return localizations.sps_status_assigned;
+      case 'suspended':
+        return localizations.sps_status_suspended;
       case 'confirm':
         return localizations.sps_status_confirm;
       case 'done':
@@ -2014,8 +2019,133 @@ class _TechnicianTaskDetailScreenState
         return Colors.green;
       case 'canceled':
         return Colors.red;
+      case 'suspended':
+        return Colors.grey.shade700;
       default:
         return Colors.orange;
+    }
+  }
+
+  void _popDetail() {
+    Navigator.pop(context, _missionListNeedsRefresh ? true : null);
+  }
+
+  Future<void> _confirmOrgTaskSuspension({required bool suspend}) async {
+    final String taskTitle = (widget.task['title'] ?? '---').toString();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext ctx) {
+        return _OrgTaskSuspendConfirmDialog(
+          suspend: suspend,
+          taskTitle: taskTitle,
+          isPersian: _isPersianLocale(),
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      await _handleOrgTaskSuspension(suspend: suspend);
+    }
+  }
+
+  Future<void> _handleOrgTaskSuspension({required bool suspend}) async {
+    if (_isSuspendingTask) return;
+
+    final AppLocalizations loc = AppLocalizations.of(context)!;
+    setState(() => _isSuspendingTask = true);
+
+    try {
+      final OrgTaskSuspendOutcome result = await suspendOrganTask(
+        taskId: widget.task['id'],
+        suspend: suspend,
+      );
+
+      if (!mounted) return;
+
+      if (result.ok) {
+        setState(() {
+          widget.task['status'] = suspend ? 'suspended' : 'assigned';
+          _missionListNeedsRefresh = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message ??
+                  (suspend
+                      ? loc.tech_suspend_success
+                      : loc.tech_unsuspend_success),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? loc.tech_suspend_error),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSuspendingTask = false);
+      }
+    }
+  }
+
+  Future<void> _confirmOrgTaskCancel() async {
+    final String taskTitle = (widget.task['title'] ?? '---').toString();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext ctx) {
+        return _OrgTaskCancelConfirmDialog(
+          taskTitle: taskTitle,
+          isPersian: _isPersianLocale(),
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      await _handleOrgTaskCancel();
+    }
+  }
+
+  Future<void> _handleOrgTaskCancel() async {
+    if (_isCancelingTask) return;
+
+    final AppLocalizations loc = AppLocalizations.of(context)!;
+    setState(() => _isCancelingTask = true);
+
+    try {
+      final OrgTaskSuspendOutcome result = await cancelOrganTask(
+        taskId: widget.task['id'],
+      );
+
+      if (!mounted) return;
+
+      if (result.ok) {
+        setState(() {
+          widget.task['status'] = 'canceled';
+          _missionListNeedsRefresh = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? loc.tech_cancel_success),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? loc.tech_cancel_error),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCancelingTask = false);
+      }
     }
   }
 
@@ -2050,16 +2180,31 @@ class _TechnicianTaskDetailScreenState
     final description = widget.task['description'] ?? '---';
     final String createdAt = (widget.task['created_at'] ?? '').toString();
     final String assignedToTechnicianAt = _assignedToTechnicianRaw();
-    final status = widget.task['status']?.toString() ?? 'open';
+    final status = (widget.task['status']?.toString() ?? 'open').toLowerCase();
     final address = widget.task['address'] ?? '---';
     final phone = widget.task['phone'] ?? '---';
     final String serialNumber = _submittedSerialNumber() ?? '---';
+    final String serviceId = taskServiceIdDisplay(widget.task);
     final urgency = widget.task['urgency']?.toString();
     final String? assignedUsername = resolvedTechnicianUsername(widget.task);
     final bool showOrgAssignAction =
         isFromOrganAssignList && canAssignOrgTask(widget.task);
+    final bool showSuspendAction =
+        _isTechnicianOrgManager && canSuspendOrgTask(widget.task);
+    final bool showUnsuspendAction =
+        _isTechnicianOrgManager && canUnsuspendOrgTask(widget.task);
+    final bool showCancelAction =
+        _isTechnicianOrgManager && canCancelOrgTask(widget.task);
+    final bool orgActionInProgress = _isSuspendingTask || _isCancelingTask;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (!didPop) {
+          _popDetail();
+        }
+      },
+      child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kToolbarHeight),
@@ -2080,7 +2225,7 @@ class _TechnicianTaskDetailScreenState
                           Icons.arrow_back,
                           color: Theme.of(context).appBarTheme.iconTheme?.color,
                         ),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: _popDetail,
                       ),
                       Text(
                         isFromReportsList
@@ -2195,6 +2340,133 @@ class _TechnicianTaskDetailScreenState
                     ],
                   ),
                 ),
+                if (showSuspendAction || showUnsuspendAction || showCancelAction) ...[
+                  const SizedBox(height: 16),
+                  if (showSuspendAction || showUnsuspendAction)
+                    SizedBox(
+                      width: double.infinity,
+                      child: showSuspendAction
+                          ? OutlinedButton.icon(
+                              onPressed: orgActionInProgress
+                                  ? null
+                                  : () =>
+                                        _confirmOrgTaskSuspension(suspend: true),
+                              icon: _isSuspendingTask
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.pause_circle_outline,
+                                      color: AppColors.lapisLazuli,
+                                    ),
+                              label: Text(
+                                localizations.tech_suspend_service,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            )
+                          : ElevatedButton.icon(
+                              onPressed: orgActionInProgress
+                                  ? null
+                                  : () => _confirmOrgTaskSuspension(
+                                      suspend: false,
+                                    ),
+                              icon: _isSuspendingTask
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.play_circle_outline),
+                              label: Text(
+                                localizations.tech_unsuspend_service,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.lapisLazuli,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: AppColors.lapisLazuli
+                                    .withValues(alpha: 0.4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                    ),
+                  if ((showSuspendAction || showUnsuspendAction) &&
+                      showCancelAction)
+                    const SizedBox(height: 10),
+                  if (showCancelAction)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: orgActionInProgress
+                            ? null
+                            : _confirmOrgTaskCancel,
+                        icon: _isCancelingTask
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.cancel_outlined,
+                                color: Colors.red,
+                              ),
+                        label: Text(
+                          localizations.tech_cancel_service,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Colors.red.withValues(alpha: 0.45),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
                 SizedBox(height: 24),
 
                 // Task Title
@@ -2317,6 +2589,81 @@ class _TechnicianTaskDetailScreenState
                     child: _buildSubjectsSection(localizations),
                   ),
                 ],
+                SizedBox(height: 20),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[700]!
+                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.tag_outlined,
+                            color: AppColors.lapisLazuli,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            localizations.tech_service_id,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        child: Text(
+                          serviceId,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.lapisLazuli,
+                            letterSpacing: 0.4,
+                          ),
+                          textDirection: _contentTextDirection(),
+                          textAlign: _isPersianLocale()
+                              ? TextAlign.right
+                              : TextAlign.left,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 SizedBox(height: 20),
 
                 // Location Information
@@ -3227,6 +3574,7 @@ class _TechnicianTaskDetailScreenState
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -3674,6 +4022,363 @@ class _TechnicianTaskDetailScreenState
           ),
         ),
       ],
+    );
+  }
+}
+
+class _OrgTaskCancelConfirmDialog extends StatefulWidget {
+  const _OrgTaskCancelConfirmDialog({
+    required this.taskTitle,
+    required this.isPersian,
+  });
+
+  final String taskTitle;
+  final bool isPersian;
+
+  @override
+  State<_OrgTaskCancelConfirmDialog> createState() =>
+      _OrgTaskCancelConfirmDialogState();
+}
+
+class _OrgTaskCancelConfirmDialogState extends State<_OrgTaskCancelConfirmDialog> {
+  bool _confirmEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _confirmEnabled = true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context)!;
+    final ThemeData theme = Theme.of(context);
+    final UiScale ui = UiScale(context);
+
+    return Directionality(
+      textDirection: widget.isPersian ? TextDirection.rtl : TextDirection.ltr,
+      child: AlertDialog(
+        backgroundColor: theme.cardTheme.color,
+        surfaceTintColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: ui.scale(base: 20, min: 16, max: 28),
+          vertical: ui.scale(base: 24, min: 18, max: 32),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        title: Row(
+          children: <Widget>[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.cancel_outlined,
+                color: Colors.red,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                loc.tech_cancel_service,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
+              ),
+            ),
+          ],
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                loc.tech_cancel_confirm_message,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: theme.textTheme.bodyMedium?.color?.withValues(
+                    alpha: 0.85,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 18,
+                      color: Colors.red.withValues(alpha: 0.85),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.taskTitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 20, 16, 14),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.textTheme.bodyMedium?.color,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
+            ),
+            child: Text(
+              loc.tech_assign_dialog_cancel,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.red.withValues(alpha: 0.4),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
+            ),
+            onPressed: _confirmEnabled
+                ? () => Navigator.of(context).pop(true)
+                : null,
+            child: Text(
+              loc.uds_confirm,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrgTaskSuspendConfirmDialog extends StatefulWidget {
+  const _OrgTaskSuspendConfirmDialog({
+    required this.suspend,
+    required this.taskTitle,
+    required this.isPersian,
+  });
+
+  final bool suspend;
+  final String taskTitle;
+  final bool isPersian;
+
+  @override
+  State<_OrgTaskSuspendConfirmDialog> createState() =>
+      _OrgTaskSuspendConfirmDialogState();
+}
+
+class _OrgTaskSuspendConfirmDialogState
+    extends State<_OrgTaskSuspendConfirmDialog> {
+  bool _confirmEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _confirmEnabled = true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context)!;
+    final ThemeData theme = Theme.of(context);
+    final UiScale ui = UiScale(context);
+    final IconData dialogIcon = widget.suspend
+        ? Icons.pause_circle_outline
+        : Icons.play_circle_outline;
+
+    return Directionality(
+      textDirection: widget.isPersian ? TextDirection.rtl : TextDirection.ltr,
+      child: AlertDialog(
+        backgroundColor: theme.cardTheme.color,
+        surfaceTintColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: ui.scale(base: 20, min: 16, max: 28),
+          vertical: ui.scale(base: 24, min: 18, max: 32),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        title: Row(
+          children: <Widget>[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.lapisLazuli.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                dialogIcon,
+                color: AppColors.lapisLazuli,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.suspend
+                    ? loc.tech_suspend_service
+                    : loc.tech_unsuspend_service,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
+              ),
+            ),
+          ],
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                widget.suspend
+                    ? loc.tech_suspend_confirm_message
+                    : loc.tech_unsuspend_confirm_message,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: theme.textTheme.bodyMedium?.color?.withValues(
+                    alpha: 0.85,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.lapisLazuli.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.lapisLazuli.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 18,
+                      color: AppColors.lapisLazuli.withValues(alpha: 0.85),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.taskTitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 20, 16, 14),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.textTheme.bodyMedium?.color,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
+            ),
+            child: Text(
+              loc.tech_assign_dialog_cancel,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.lapisLazuli,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  AppColors.lapisLazuli.withValues(alpha: 0.4),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
+            ),
+            onPressed: _confirmEnabled
+                ? () => Navigator.of(context).pop(true)
+                : null,
+            child: Text(
+              loc.uds_confirm,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

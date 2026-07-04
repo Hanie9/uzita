@@ -12,6 +12,7 @@ import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
+import 'package:uzita/widgets/technician_task_filter_menu.dart';
 import 'package:uzita/screens/login_screen.dart';
 
 class TechnicianReportsScreen extends StatefulWidget {
@@ -35,6 +36,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String _reportSearchQuery = '';
+  String _reportStatusFilter = 'active';
 
   @override
   void initState() {
@@ -190,6 +192,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     final List<Map<String, dynamic>> allReports = tasks
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
+        .where((task) => matchesReportStatusFilter(task, _reportStatusFilter))
         .toList();
 
     final String query = _reportSearchQuery.trim().toLowerCase();
@@ -199,6 +202,21 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         .where((task) => !isTechnicianUnassigned(task))
         .where((task) => _buildTaskSearchHaystack(task).contains(query))
         .toList();
+  }
+
+  List<TechnicianTaskFilterOption> _reportFilterOptions(
+    AppLocalizations localizations,
+  ) {
+    return <TechnicianTaskFilterOption>[
+      TechnicianTaskFilterOption(
+        value: 'active',
+        label: localizations.tech_filter_active_reports,
+      ),
+      TechnicianTaskFilterOption(
+        value: 'canceled',
+        label: localizations.tech_filter_canceled_reports,
+      ),
+    ];
   }
 
   bool get _isTechnicianOrgManager =>
@@ -513,7 +531,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                             ],
                                           )
                                         : Text(
-                                            '${tasks.length} ${localizations.nav_report}',
+                                            '${visibleReports.length} ${localizations.nav_report}',
                                             style: TextStyle(
                                               fontSize: ui.scale(
                                                 base: 13,
@@ -631,6 +649,21 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                             ),
                           ),
                         ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        ui.scale(base: 16, min: 12, max: 20),
+                        0,
+                        ui.scale(base: 16, min: 12, max: 20),
+                        8,
+                      ),
+                      child: TechnicianTaskFilterMenu(
+                        value: _reportStatusFilter,
+                        options: _reportFilterOptions(localizations),
+                        onChanged: (String value) {
+                          setState(() => _reportStatusFilter = value);
+                        },
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -756,6 +789,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                       subjectsText.isNotEmpty
                                       ? subjectsText
                                       : title;
+                                  final String serviceId =
+                                      taskServiceIdDisplay(task);
 
                                   return GestureDetector(
                                     onTap: () {
@@ -849,6 +884,14 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
+                                                  _buildReportInfoRow(
+                                                    context: context,
+                                                    icon: Icons.tag_outlined,
+                                                    label: localizations
+                                                        .tech_service_id,
+                                                    value: serviceId,
+                                                  ),
+                                                  const SizedBox(height: 6),
                                                   _buildReportInfoRow(
                                                     context: context,
                                                     icon: Icons.person_outline,
@@ -1062,6 +1105,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         return localizations.sps_status_open;
       case 'assigned':
         return localizations.sps_status_assigned;
+      case 'suspended':
+        return localizations.sps_status_suspended;
       case 'confirm':
         return localizations.sps_status_confirm;
       case 'done':
@@ -1079,6 +1124,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         return Colors.green;
       case 'canceled':
         return Colors.red;
+      case 'suspended':
+        return Colors.grey.shade700;
       case 'confirm':
         return Colors.blue;
       default:
@@ -1117,6 +1164,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
 
   Widget _buildEmptyState() {
     final localizations = AppLocalizations.of(context)!;
+    final bool isCanceledFilter = _reportStatusFilter == 'canceled';
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).padding.bottom + 40,
@@ -1143,14 +1191,18 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                 ),
               ),
               child: Icon(
-                Icons.check_circle_outline,
+                isCanceledFilter
+                    ? Icons.cancel_outlined
+                    : Icons.check_circle_outline,
                 size: kIconSize * 2,
                 color: AppColors.lapisLazuli,
               ),
             ),
             SizedBox(height: kSpacing),
             Text(
-              localizations.tech_no_completed_tasks,
+              isCanceledFilter
+                  ? localizations.tech_no_canceled_reports
+                  : localizations.tech_no_completed_tasks,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1159,7 +1211,9 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              localizations.tech_no_completed_tasks_description,
+              isCanceledFilter
+                  ? localizations.tech_no_canceled_reports_description
+                  : localizations.tech_no_completed_tasks_description,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodyMedium?.color,
