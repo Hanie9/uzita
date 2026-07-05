@@ -161,7 +161,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = '';
+    });
 
     try {
       // Ensure any previous session is fully cleared before new login
@@ -342,16 +345,24 @@ class _LoginScreenState extends State<LoginScreen> {
             errorMessage = detail;
           } else if (message.isNotEmpty) {
             errorMessage = message;
+          } else {
+            final apiError = (data['error'] ?? '').toString();
+            if (apiError.isNotEmpty) {
+              errorMessage = apiError;
+            }
           }
         } else {
           // Other errors - try to get message from response
           final detail = (data['detail'] ?? '').toString();
           final message = (data['message'] ?? '').toString();
+          final apiError = (data['error'] ?? '').toString();
 
           if (detail.isNotEmpty) {
             errorMessage = detail;
           } else if (message.isNotEmpty) {
             errorMessage = message;
+          } else if (apiError.isNotEmpty) {
+            errorMessage = apiError;
           }
         }
 

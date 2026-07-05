@@ -10,12 +10,29 @@ export 'package:http/http.dart'
         MultipartFile,
         MultipartRequest;
 
+bool _shouldEndSessionOnUnauthorized(Uri url) {
+  final String path = url.path.toLowerCase();
+  if (path.endsWith('/login') || path.endsWith('/login/')) {
+    return false;
+  }
+  if (path.contains('register') ||
+      path.contains('verify') ||
+      path.contains('otp')) {
+    return false;
+  }
+  return true;
+}
+
+Future<void> _handleUnauthorized(Uri url, int statusCode) async {
+  if (statusCode == 401 && _shouldEndSessionOnUnauthorized(url)) {
+    await SessionManager().endSession();
+  }
+}
+
 Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
   await SessionManager().onNetworkRequest();
   final resp = await http.get(url, headers: headers);
-  if (resp.statusCode == 401) {
-    await SessionManager().endSession();
-  }
+  await _handleUnauthorized(url, resp.statusCode);
   return resp;
 }
 
@@ -32,9 +49,7 @@ Future<http.Response> post(
     body: body,
     encoding: encoding,
   );
-  if (resp.statusCode == 401) {
-    await SessionManager().endSession();
-  }
+  await _handleUnauthorized(url, resp.statusCode);
   return resp;
 }
 
@@ -51,9 +66,7 @@ Future<http.Response> put(
     body: body,
     encoding: encoding,
   );
-  if (resp.statusCode == 401) {
-    await SessionManager().endSession();
-  }
+  await _handleUnauthorized(url, resp.statusCode);
   return resp;
 }
 
@@ -70,9 +83,7 @@ Future<http.Response> delete(
     body: body,
     encoding: encoding,
   );
-  if (resp.statusCode == 401) {
-    await SessionManager().endSession();
-  }
+  await _handleUnauthorized(url, resp.statusCode);
   return resp;
 }
 
@@ -89,8 +100,6 @@ Future<http.Response> patch(
     body: body,
     encoding: encoding,
   );
-  if (resp.statusCode == 401) {
-    await SessionManager().endSession();
-  }
+  await _handleUnauthorized(url, resp.statusCode);
   return resp;
 }

@@ -59,6 +59,7 @@ class SessionManager {
 
   /// End the current session
   Future<void> endSession({bool clearBiometric = false}) async {
+    final bool wasActive = _isSessionActive;
     final prefs = await SharedPreferences.getInstance();
     const secureStorage = FlutterSecureStorage();
 
@@ -79,7 +80,9 @@ class SessionManager {
     _isSessionActive = false;
     _lastActivityTime = null;
 
-    _sessionStateController.add(false);
+    if (wasActive) {
+      _sessionStateController.add(false);
+    }
   }
 
   /// Check if session is expired
