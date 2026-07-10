@@ -1189,6 +1189,10 @@ class AppLocalizations {
       'tech_download_invoice': 'Download invoice',
       'tech_invoice_download_failed': 'Could not download invoice',
       'tech_warranty': 'Warranty',
+      'tech_count': 'Count',
+      'tech_apply_warranty': 'This service is under warranty',
+      'tech_apply_warranty_hint':
+          'Check if this service should be covered by warranty',
       'tech_second_visit_date': 'Second visit date (Optional)',
       'tech_second_visit_date_hint': 'Select second visit date if needed',
       'tech_submit_check_task': 'Submit Task Check',
@@ -2478,6 +2482,10 @@ class AppLocalizations {
       'tech_download_invoice': 'دانلود فاکتور',
       'tech_invoice_download_failed': 'دانلود فاکتور انجام نشد',
       'tech_warranty': 'گارانتی',
+      'tech_count': 'تعداد',
+      'tech_apply_warranty': 'این سرویس تحت گارانتی است',
+      'tech_apply_warranty_hint':
+          'در صورتی که سرویس باید تحت گارانتی انجام شود، این گزینه را انتخاب کنید',
       'tech_second_visit_date': 'زمان مراجعه مجدد (اختیاری)',
       'tech_second_visit_date_hint':
           'در صورت نیاز زمان مراجعه مجدد را انتخاب کنید',
@@ -3607,6 +3615,10 @@ class AppLocalizations {
   String get tech_invoice_download_failed =>
       _getLocalizedValue('tech_invoice_download_failed');
   String get tech_warranty => _getLocalizedValue('tech_warranty');
+  String get tech_count => _getLocalizedValue('tech_count');
+  String get tech_apply_warranty => _getLocalizedValue('tech_apply_warranty');
+  String get tech_apply_warranty_hint =>
+      _getLocalizedValue('tech_apply_warranty_hint');
   String get tech_second_visit_date =>
       _getLocalizedValue('tech_second_visit_date');
   String get tech_second_visit_date_hint =>

@@ -406,3 +406,49 @@ Map<String, dynamic> normalizeTechnicianTask(Map<String, dynamic> raw) {
 
   return t;
 }
+
+int technicianItemCount(dynamic raw) {
+  if (raw is int && raw > 0) return raw;
+  if (raw is String) {
+    final int? parsed = int.tryParse(raw);
+    if (parsed != null && parsed > 0) return parsed;
+  }
+  return 1;
+}
+
+Map<int, int> technicianIdCountMapFromList(dynamic list) {
+  final Map<int, int> result = <int, int>{};
+  if (list is! List) return result;
+  for (final dynamic raw in list) {
+    if (raw is Map) {
+      final int id = int.tryParse(raw['id']?.toString() ?? '') ?? 0;
+      if (id <= 0) continue;
+      result[id] = technicianItemCount(raw['count']);
+      continue;
+    }
+    final int id = int.tryParse(raw.toString()) ?? 0;
+    if (id > 0) {
+      result[id] = 1;
+    }
+  }
+  return result;
+}
+
+List<Map<String, int>> technicianIdCountMapToApiList(Map<int, int> counts) {
+  final List<Map<String, int>> items = counts.entries
+      .map(
+        (MapEntry<int, int> entry) => <String, int>{
+          'id': entry.key,
+          'count': entry.value,
+        },
+      )
+      .toList();
+  items.sort((Map<String, int> a, Map<String, int> b) {
+    return a['id']!.compareTo(b['id']!);
+  });
+  return items;
+}
+
+String technicianItemCountSuffix(int count) {
+  return count > 1 ? ' ×$count' : '';
+}

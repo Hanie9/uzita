@@ -228,8 +228,9 @@ class _TechnicianTaskDetailScreenState
 
   List<Map<String, dynamic>> pieceList = [];
   List<Map<String, dynamic>> tariffList = [];
-  Set<int> selectedPieceIds = {};
-  Set<int> selectedTariffIds = {};
+  Map<int, int> selectedPieceCounts = <int, int>{};
+  Map<int, int> selectedTariffCounts = <int, int>{};
+  bool applyWarranty = false;
   Map<String, dynamic>? _checkTaskSnapshot;
 
   static const double _detailFieldLabelFontSize = 14;
@@ -554,13 +555,53 @@ class _TechnicianTaskDetailScreenState
   List<Map<String, dynamic>> _pieceMapsForDisplay() {
     final embedded = _embeddedObjectList(widget.task['pieces']);
     if (embedded.isNotEmpty) return embedded;
-    return _mapsFromIds(_pieceIdsRaw(), pieceList);
+    return _mapsFromIdsWithCounts(
+      _pieceIdsRaw(),
+      pieceList,
+      _pieceCountsForDisplay(),
+    );
   }
 
   List<Map<String, dynamic>> _tariffMapsForDisplay() {
     final embedded = _embeddedObjectList(widget.task['tariffs']);
     if (embedded.isNotEmpty) return embedded;
-    return _mapsFromIds(_tariffIdsRaw(), tariffList);
+    return _mapsFromIdsWithCounts(
+      _tariffIdsRaw(),
+      tariffList,
+      _tariffCountsForDisplay(),
+    );
+  }
+
+  Map<int, int> _pieceCountsForDisplay() {
+    if (selectedPieceCounts.isNotEmpty) return selectedPieceCounts;
+    final fromSnap = _checkTaskSnapshot?['pieces'] ?? _checkTaskSnapshot?['piece_ids'];
+    if (fromSnap != null) return technicianIdCountMapFromList(fromSnap);
+    return technicianIdCountMapFromList(widget.task['pieces']);
+  }
+
+  Map<int, int> _tariffCountsForDisplay() {
+    if (selectedTariffCounts.isNotEmpty) return selectedTariffCounts;
+    final fromSnap =
+        _checkTaskSnapshot?['tariffs'] ?? _checkTaskSnapshot?['tariff_ids'];
+    if (fromSnap != null) return technicianIdCountMapFromList(fromSnap);
+    return technicianIdCountMapFromList(widget.task['tariffs']);
+  }
+
+  List<Map<String, dynamic>> _mapsFromIdsWithCounts(
+    dynamic idsRaw,
+    List<Map<String, dynamic>> source,
+    Map<int, int> counts,
+  ) {
+    final maps = _mapsFromIds(idsRaw, source);
+    if (counts.isEmpty) return maps;
+    return maps
+        .map(
+          (Map<String, dynamic> item) => <String, dynamic>{
+            ...item,
+            'count': counts[_itemId(item)] ?? 1,
+          },
+        )
+        .toList();
   }
 
   List<String> _parseSubjectsList(dynamic raw) {
@@ -616,11 +657,15 @@ class _TechnicianTaskDetailScreenState
       loc ?? AppLocalizations.of(context)!,
     );
     final base = _pieceDisplayName(piece);
-    if (display.isNotEmpty && base.isNotEmpty) {
-      return _isPersianLocale() ? '$base : $display' : '$base — $display';
+    final countSuffix = technicianItemCountSuffix(
+      technicianItemCount(piece['count']),
+    );
+    final named = base.isNotEmpty ? '$base$countSuffix' : base;
+    if (display.isNotEmpty && named.isNotEmpty) {
+      return _isPersianLocale() ? '$named : $display' : '$named — $display';
     }
     if (display.isNotEmpty) return display;
-    return base;
+    return named;
   }
 
   String _tariffPriceText(Map<String, dynamic> tariff, AppLocalizations loc) {
@@ -635,11 +680,15 @@ class _TechnicianTaskDetailScreenState
   ) {
     final name = tariff['name']?.toString() ?? '';
     final price = _tariffPriceText(tariff, loc);
-    if (name.isNotEmpty && price.isNotEmpty) {
-      return _isPersianLocale() ? '$name : $price' : '$name — $price';
+    final countSuffix = technicianItemCountSuffix(
+      technicianItemCount(tariff['count']),
+    );
+    final named = name.isNotEmpty ? '$name$countSuffix' : name;
+    if (named.isNotEmpty && price.isNotEmpty) {
+      return _isPersianLocale() ? '$named : $price' : '$named — $price';
     }
     if (price.isNotEmpty) return price;
-    return name;
+    return named;
   }
 
   bool _taskHasWarranty() => _parseApiBool(widget.task['warranty']);
@@ -777,7 +826,9 @@ class _TechnicianTaskDetailScreenState
     if (fromTask is List && fromTask.isNotEmpty) return fromTask;
     final fromSnap = _checkTaskSnapshot?['piece_ids'];
     if (fromSnap is List && fromSnap.isNotEmpty) return fromSnap;
-    if (selectedPieceIds.isNotEmpty) return selectedPieceIds.toList();
+    if (selectedPieceCounts.isNotEmpty) {
+      return selectedPieceCounts.keys.toList()..sort();
+    }
     return fromTask;
   }
 
@@ -790,7 +841,9 @@ class _TechnicianTaskDetailScreenState
     if (fromTask is List && fromTask.isNotEmpty) return fromTask;
     final fromSnap = _checkTaskSnapshot?['tariff_ids'];
     if (fromSnap is List && fromSnap.isNotEmpty) return fromSnap;
-    if (selectedTariffIds.isNotEmpty) return selectedTariffIds.toList();
+    if (selectedTariffCounts.isNotEmpty) {
+      return selectedTariffCounts.keys.toList()..sort();
+    }
     return fromTask;
   }
 
@@ -826,6 +879,7 @@ class _TechnicianTaskDetailScreenState
       source: pieceList,
       idsRaw: _pieceIdsRaw(),
       isTariff: false,
+      counts: _pieceCountsForDisplay(),
     );
     if (labels.isEmpty) {
       final ids = _pieceIdsRaw();
@@ -866,6 +920,7 @@ class _TechnicianTaskDetailScreenState
       source: tariffList,
       idsRaw: _tariffIdsRaw(),
       isTariff: true,
+      counts: _tariffCountsForDisplay(),
     );
     if (labels.isEmpty) {
       final ids = _tariffIdsRaw();
@@ -892,26 +947,33 @@ class _TechnicianTaskDetailScreenState
   ) async {
     final pieceLabels = _labelsForIds(
       source: pieceList,
-      idsRaw: selectedPieceIds.toList(),
+      idsRaw: selectedPieceCounts.keys.toList(),
       isTariff: false,
+      counts: selectedPieceCounts,
     );
     final tariffLabels = _labelsForIds(
       source: tariffList,
-      idsRaw: selectedTariffIds.toList(),
+      idsRaw: selectedTariffCounts.keys.toList(),
       isTariff: true,
+      counts: selectedTariffCounts,
     );
 
     final snapshot = <String, dynamic>{
-      'piece_ids': selectedPieceIds.toList(),
-      'tariff_ids': selectedTariffIds.toList(),
+      'pieces': technicianIdCountMapToApiList(selectedPieceCounts),
+      'tariffs': technicianIdCountMapToApiList(selectedTariffCounts),
+      'piece_ids': selectedPieceCounts.keys.toList(),
+      'tariff_ids': selectedTariffCounts.keys.toList(),
       'piece_labels': pieceLabels.isNotEmpty
           ? pieceLabels
-          : selectedPieceIds.map((id) => '#$id').toList(),
+          : selectedPieceCounts.keys.map((id) => '#$id').toList(),
       'tariff_labels': tariffLabels.isNotEmpty
           ? tariffLabels
-          : selectedTariffIds.map((id) => '#$id').toList(),
+          : selectedTariffCounts.keys.map((id) => '#$id').toList(),
       'sayer_hazine': int.tryParse(_otherCostsController.text) ?? 0,
     };
+    if (applyWarranty) {
+      snapshot['warranty'] = true;
+    }
     final String serial = _serialNumberController.text.trim();
     if (serial.isNotEmpty) {
       snapshot['serial_number'] = serial;
@@ -925,6 +987,20 @@ class _TechnicianTaskDetailScreenState
   }
 
   void _applyCheckTaskSnapshot(Map<String, dynamic> snap) {
+    final List<Map<String, int>> pieces =
+        technicianIdCountMapToApiList(
+          technicianIdCountMapFromList(snap['pieces'] ?? snap['piece_ids']),
+        );
+    final List<Map<String, int>> tariffs =
+        technicianIdCountMapToApiList(
+          technicianIdCountMapFromList(snap['tariffs'] ?? snap['tariff_ids']),
+        );
+    if (widget.task['pieces'] == null && pieces.isNotEmpty) {
+      widget.task['pieces'] = pieces;
+    }
+    if (widget.task['tariffs'] == null && tariffs.isNotEmpty) {
+      widget.task['tariffs'] = tariffs;
+    }
     if (widget.task['piece_ids'] == null && snap['piece_ids'] != null) {
       widget.task['piece_ids'] = snap['piece_ids'];
     }
@@ -941,20 +1017,24 @@ class _TechnicianTaskDetailScreenState
     if (widget.task['serial_number'] == null && snap['serial_number'] != null) {
       widget.task['serial_number'] = snap['serial_number'];
     }
-
-    final pieceIds = snap['piece_ids'];
-    if (pieceIds is List && selectedPieceIds.isEmpty) {
-      selectedPieceIds = pieceIds
-          .map((e) => int.tryParse(e.toString()) ?? 0)
-          .where((id) => id > 0)
-          .toSet();
+    if (_parseApiBool(snap['warranty'])) {
+      widget.task['warranty'] = true;
     }
-    final tariffIds = snap['tariff_ids'];
-    if (tariffIds is List && selectedTariffIds.isEmpty) {
-      selectedTariffIds = tariffIds
-          .map((e) => int.tryParse(e.toString()) ?? 0)
-          .where((id) => id > 0)
-          .toSet();
+
+    final Map<int, int> pieceCounts = technicianIdCountMapFromList(
+      snap['pieces'] ?? snap['piece_ids'],
+    );
+    if (pieceCounts.isNotEmpty && selectedPieceCounts.isEmpty) {
+      selectedPieceCounts = pieceCounts;
+    }
+    final Map<int, int> tariffCounts = technicianIdCountMapFromList(
+      snap['tariffs'] ?? snap['tariff_ids'],
+    );
+    if (tariffCounts.isNotEmpty && selectedTariffCounts.isEmpty) {
+      selectedTariffCounts = tariffCounts;
+    }
+    if (_parseApiBool(snap['warranty'])) {
+      applyWarranty = true;
     }
 
     final sayer = snap['sayer_hazine'];
@@ -1174,42 +1254,30 @@ class _TechnicianTaskDetailScreenState
     // `pieces` / `tariffs` on the task come from the original service request
     // (chosen at creation time), not from the technician's check submission.
     if (!_technicianSubmittedCheckOnApi()) {
-      selectedPieceIds = <int>{};
-      selectedTariffIds = <int>{};
+      selectedPieceCounts = <int, int>{};
+      selectedTariffCounts = <int, int>{};
+      applyWarranty = false;
       return;
     }
 
     final embeddedPieces = _embeddedObjectList(widget.task['pieces']);
     if (embeddedPieces.isNotEmpty) {
-      selectedPieceIds = embeddedPieces
-          .map(_itemId)
-          .where((id) => id > 0)
-          .toSet();
+      selectedPieceCounts = technicianIdCountMapFromList(embeddedPieces);
     } else {
-      final pieceIds = widget.task['piece_ids'];
-      if (pieceIds is List) {
-        selectedPieceIds = pieceIds
-            .map((e) => int.tryParse(e.toString()) ?? 0)
-            .where((id) => id > 0)
-            .toSet();
-      }
+      selectedPieceCounts = technicianIdCountMapFromList(
+        widget.task['pieces'] ?? widget.task['piece_ids'],
+      );
     }
 
     final embeddedTariffs = _embeddedObjectList(widget.task['tariffs']);
     if (embeddedTariffs.isNotEmpty) {
-      selectedTariffIds = embeddedTariffs
-          .map(_itemId)
-          .where((id) => id > 0)
-          .toSet();
+      selectedTariffCounts = technicianIdCountMapFromList(embeddedTariffs);
     } else {
-      final tariffIds = widget.task['tariff_ids'];
-      if (tariffIds is List) {
-        selectedTariffIds = tariffIds
-            .map((e) => int.tryParse(e.toString()) ?? 0)
-            .where((id) => id > 0)
-            .toSet();
-      }
+      selectedTariffCounts = technicianIdCountMapFromList(
+        widget.task['tariffs'] ?? widget.task['tariff_ids'],
+      );
     }
+    applyWarranty = _taskHasWarranty();
   }
 
   int _itemId(Map<String, dynamic> item) {
@@ -1234,19 +1302,28 @@ class _TechnicianTaskDetailScreenState
   }
 
   String _selectedPiecesSummary(AppLocalizations loc) {
-    if (selectedPieceIds.isEmpty) return loc.tech_piece_name_hint;
-    return pieceList
-        .where((p) => selectedPieceIds.contains(_itemId(p)))
-        .map(_pieceDisplayName)
+    if (selectedPieceCounts.isEmpty) return loc.tech_piece_name_hint;
+    return selectedPieceCounts.entries
+        .map((MapEntry<int, int> entry) {
+          final match = pieceList.where((p) => _itemId(p) == entry.key);
+          final label = match.isNotEmpty
+              ? _pieceDisplayName(match.first)
+              : '#${entry.key}';
+          return '$label${technicianItemCountSuffix(entry.value)}';
+        })
         .join('، ');
   }
 
   String _selectedTariffsSummary(AppLocalizations loc) {
-    if (selectedTariffIds.isEmpty) return loc.tech_tariffs_hint;
-    return tariffList
-        .where((t) => selectedTariffIds.contains(_itemId(t)))
-        .map((t) => t['name']?.toString() ?? '')
-        .where((n) => n.isNotEmpty)
+    if (selectedTariffCounts.isEmpty) return loc.tech_tariffs_hint;
+    return selectedTariffCounts.entries
+        .map((MapEntry<int, int> entry) {
+          final match = tariffList.where((t) => _itemId(t) == entry.key);
+          final label = match.isNotEmpty
+              ? (match.first['name']?.toString() ?? '#${entry.key}')
+              : '#${entry.key}';
+          return '$label${technicianItemCountSuffix(entry.value)}';
+        })
         .join('، ');
   }
 
@@ -1254,19 +1331,20 @@ class _TechnicianTaskDetailScreenState
     required List<Map<String, dynamic>> source,
     required dynamic idsRaw,
     required bool isTariff,
+    Map<int, int>? counts,
   }) {
     if (idsRaw is! List || idsRaw.isEmpty) return [];
     final loc = AppLocalizations.of(context)!;
-    final ids = idsRaw
-        .map((e) => int.tryParse(e.toString()) ?? 0)
-        .where((id) => id > 0)
-        .toSet();
+    final ids = technicianIdCountMapFromList(idsRaw).keys.toSet();
     return source.where((item) => ids.contains(_itemId(item))).map((item) {
+      final id = _itemId(item);
+      final count = counts?[id] ?? technicianItemCount(item['count']);
+      final countSuffix = technicianItemCountSuffix(count);
       if (isTariff) {
         final name = item['name']?.toString() ?? '';
-        return '$name — ${_tariffPriceLabel(item, loc)}';
+        return '$name$countSuffix — ${_tariffPriceLabel(item, loc)}';
       }
-      return _pieceDisplayName(item);
+      return '${_pieceDisplayName(item)}$countSuffix';
     }).toList();
   }
 
@@ -1370,36 +1448,84 @@ class _TechnicianTaskDetailScreenState
   }
 
   Future<void> _openPiecePicker() async {
-    await _openMultiSelectPicker(
+    await _openCountedMultiSelectPicker(
       title: AppLocalizations.of(context)!.tech_piece_name,
       items: pieceList,
-      initialSelection: Set<int>.from(selectedPieceIds),
+      initialCounts: Map<int, int>.from(selectedPieceCounts),
       isTariff: false,
-      onConfirm: (ids) => setState(() => selectedPieceIds = ids),
+      onConfirm: (Map<int, int> counts) =>
+          setState(() => selectedPieceCounts = counts),
     );
   }
 
   Future<void> _openTariffPicker() async {
-    await _openMultiSelectPicker(
+    await _openCountedMultiSelectPicker(
       title: AppLocalizations.of(context)!.tech_tariffs,
       items: tariffList,
-      initialSelection: Set<int>.from(selectedTariffIds),
+      initialCounts: Map<int, int>.from(selectedTariffCounts),
       isTariff: true,
-      onConfirm: (ids) => setState(() => selectedTariffIds = ids),
+      onConfirm: (Map<int, int> counts) =>
+          setState(() => selectedTariffCounts = counts),
     );
   }
 
-  Future<void> _openMultiSelectPicker({
+  Widget _buildCountStepper({
+    required int count,
+    required VoidCallback onDecrement,
+    required VoidCallback onIncrement,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.lapisLazuli.withValues(alpha: 0.25),
+        ),
+        color: AppColors.lapisLazuli.withValues(alpha: 0.04),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.remove, size: 18),
+            color: AppColors.lapisLazuli,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            onPressed: count > 1 ? onDecrement : null,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.lapisLazuli,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add, size: 18),
+            color: AppColors.lapisLazuli,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            onPressed: onIncrement,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openCountedMultiSelectPicker({
     required String title,
     required List<Map<String, dynamic>> items,
-    required Set<int> initialSelection,
+    required Map<int, int> initialCounts,
     required bool isTariff,
-    required void Function(Set<int> selectedIds) onConfirm,
+    required void Function(Map<int, int> counts) onConfirm,
   }) async {
     if (items.isEmpty) return;
     final localizations = AppLocalizations.of(context)!;
     final searchController = TextEditingController();
-    final tempSelection = Set<int>.from(initialSelection);
+    final Map<int, int> tempCounts = Map<int, int>.from(initialCounts);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -1420,20 +1546,19 @@ class _TechnicianTaskDetailScreenState
 
             return DraggableScrollableSheet(
               expand: false,
-              initialChildSize: 0.65,
-              minChildSize: 0.4,
-              maxChildSize: 0.9,
+              initialChildSize: 0.7,
+              minChildSize: 0.45,
+              maxChildSize: 0.92,
               builder: (context, scrollController) {
                 return Column(
-                  children: [
+                  children: <Widget>[
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                        children: <Widget>[
                           Expanded(
                             child: Text(
                               title,
@@ -1445,7 +1570,7 @@ class _TechnicianTaskDetailScreenState
                           ),
                           TextButton(
                             onPressed: () {
-                              onConfirm(tempSelection);
+                              onConfirm(tempCounts);
                               Navigator.of(bottomSheetContext).pop();
                             },
                             child: Text(localizations.trn_ok),
@@ -1483,7 +1608,8 @@ class _TechnicianTaskDetailScreenState
                         itemBuilder: (context, index) {
                           final item = filtered[index];
                           final id = _itemId(item);
-                          final checked = tempSelection.contains(id);
+                          final checked = tempCounts.containsKey(id);
+                          final count = tempCounts[id] ?? 1;
                           final titleText = isTariff
                               ? (item['name']?.toString() ?? '')
                               : _pieceDisplayName(item);
@@ -1491,30 +1617,78 @@ class _TechnicianTaskDetailScreenState
                               ? _tariffPriceLabel(item, localizations)
                               : null;
 
-                          return CheckboxListTile(
-                            value: checked,
-                            activeColor: AppColors.lapisLazuli,
-                            title: Text(
-                              titleText,
-                              style: const TextStyle(fontSize: 16),
-                              textDirection: Directionality.of(context),
-                            ),
-                            subtitle: subtitle != null
-                                ? Text(
-                                    subtitle,
-                                    style: const TextStyle(fontSize: 14),
-                                    textDirection: Directionality.of(context),
-                                  )
-                                : null,
-                            onChanged: (value) {
-                              modalSetState(() {
-                                if (value == true) {
-                                  tempSelection.add(id);
-                                } else {
-                                  tempSelection.remove(id);
-                                }
-                              });
-                            },
+                          return Column(
+                            children: <Widget>[
+                              CheckboxListTile(
+                                value: checked,
+                                activeColor: AppColors.lapisLazuli,
+                                title: Text(
+                                  titleText,
+                                  style: const TextStyle(fontSize: 16),
+                                  textDirection: Directionality.of(context),
+                                ),
+                                subtitle: subtitle != null
+                                    ? Text(
+                                        subtitle,
+                                        style: const TextStyle(fontSize: 14),
+                                        textDirection: Directionality.of(
+                                          context,
+                                        ),
+                                      )
+                                    : null,
+                                onChanged: (bool? value) {
+                                  modalSetState(() {
+                                    if (value == true) {
+                                      tempCounts[id] = 1;
+                                    } else {
+                                      tempCounts.remove(id);
+                                    }
+                                  });
+                                },
+                              ),
+                              if (checked)
+                                Padding(
+                                  padding: const EdgeInsetsDirectional.only(
+                                    start: 16,
+                                    end: 16,
+                                    bottom: 10,
+                                  ),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        localizations.tech_count,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.color
+                                              ?.withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      _buildCountStepper(
+                                        count: count,
+                                        onDecrement: () {
+                                          modalSetState(() {
+                                            final next = count - 1;
+                                            if (next <= 0) {
+                                              tempCounts.remove(id);
+                                            } else {
+                                              tempCounts[id] = next;
+                                            }
+                                          });
+                                        },
+                                        onIncrement: () {
+                                          modalSetState(() {
+                                            tempCounts[id] = count + 1;
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           );
                         },
                       ),
@@ -1816,10 +1990,14 @@ class _TechnicianTaskDetailScreenState
       print('Sending POST request to: $url');
 
       final requestBody = <String, dynamic>{
-        'piece_ids': selectedPieceIds.toList()..sort(),
-        'tariff_ids': selectedTariffIds.toList()..sort(),
+        'pieces': technicianIdCountMapToApiList(selectedPieceCounts),
+        'tariffs': technicianIdCountMapToApiList(selectedTariffCounts),
         'sayer_hazine': int.parse(_otherCostsController.text),
       };
+
+      if (!_taskHasWarranty() && applyWarranty) {
+        requestBody['warranty'] = true;
+      }
 
       // Include second_visit_date only if it's provided
       // If not provided, don't include it in the request
@@ -1847,9 +2025,18 @@ class _TechnicianTaskDetailScreenState
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (!mounted) return;
-        widget.task['piece_ids'] = selectedPieceIds.toList();
-        widget.task['tariff_ids'] = selectedTariffIds.toList();
+        widget.task['pieces'] = technicianIdCountMapToApiList(
+          selectedPieceCounts,
+        );
+        widget.task['tariffs'] = technicianIdCountMapToApiList(
+          selectedTariffCounts,
+        );
+        widget.task['piece_ids'] = selectedPieceCounts.keys.toList();
+        widget.task['tariff_ids'] = selectedTariffCounts.keys.toList();
         widget.task['sayer_hazine'] = int.parse(_otherCostsController.text);
+        if (!_taskHasWarranty() && applyWarranty) {
+          widget.task['warranty'] = true;
+        }
         if (secondVisitDate != null) {
           widget.task['second_visit_date'] = formatDateForAPI(secondVisitDate!);
         }
@@ -3085,7 +3272,7 @@ class _TechnicianTaskDetailScreenState
                                   _selectedPiecesSummary(localizations),
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: selectedPieceIds.isNotEmpty
+                                    color: selectedPieceCounts.isNotEmpty
                                         ? Theme.of(
                                             context,
                                           ).textTheme.bodyLarge?.color
@@ -3141,7 +3328,7 @@ class _TechnicianTaskDetailScreenState
                                 _selectedTariffsSummary(localizations),
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: selectedTariffIds.isNotEmpty
+                                  color: selectedTariffCounts.isNotEmpty
                                       ? Theme.of(
                                           context,
                                         ).textTheme.bodyLarge?.color
@@ -3317,6 +3504,53 @@ class _TechnicianTaskDetailScreenState
                               ),
                             ),
                           ),
+                          if (!_taskHasWarranty()) ...<Widget>[
+                            const SizedBox(height: 20),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.lapisLazuli.withValues(
+                                  alpha: 0.05,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.18,
+                                  ),
+                                ),
+                              ),
+                              child: CheckboxListTile(
+                                value: applyWarranty,
+                                activeColor: AppColors.lapisLazuli,
+                                controlAffinity: ListTileControlAffinity.leading,
+                                title: Text(
+                                  localizations.tech_apply_warranty,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge?.color,
+                                  ),
+                                  textDirection: _contentTextDirection(),
+                                ),
+                                subtitle: Text(
+                                  localizations.tech_apply_warranty_hint,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.color
+                                        ?.withValues(alpha: 0.7),
+                                  ),
+                                  textDirection: _contentTextDirection(),
+                                ),
+                                onChanged: (bool? value) {
+                                  setState(() => applyWarranty = value ?? false);
+                                },
+                              ),
+                            ),
+                          ],
                           SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
@@ -3864,7 +4098,9 @@ class _TechnicianTaskDetailScreenState
               ),
               const SizedBox(height: 8),
               ...items.map((item) {
-                final name = nameFor(item);
+                final count = technicianItemCount(item['count']);
+                final countSuffix = technicianItemCountSuffix(count);
+                final name = '${nameFor(item)}$countSuffix';
                 final price = priceFor(item);
                 if (name.isNotEmpty && price.isNotEmpty) {
                   return _buildColonPriceRow(name, price);
