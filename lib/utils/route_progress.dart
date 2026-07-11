@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/services/neshan_models.dart';
+import 'package:uzita/utils/route_maneuver.dart';
 
 const Distance _distance = Distance();
 
@@ -91,6 +92,70 @@ double polylineLengthMeters(
     total += distanceMeters(polyline[i], polyline[i + 1]);
   }
   return total;
+}
+
+/// Remaining distance along [polyline] from [point] to the route end.
+double remainingMetersAlongPolyline(List<LatLng> polyline, LatLng point) {
+  if (polyline.length < 2) return 0;
+  final total = polylineLengthMeters(polyline);
+  if (total <= 0) return 0;
+  final traveled = progressAlongPolyline(polyline, point);
+  return (total - traveled).clamp(0.0, total);
+}
+
+/// Index of the next guidance step still ahead of [driver] on [routePolyline].
+int findNextGuidanceStepIndex({
+  required List<NeshanRouteStep> steps,
+  required LatLng driver,
+  required List<LatLng> routePolyline,
+}) {
+  if (steps.isEmpty) return 0;
+  if (routePolyline.length < 2) {
+    return steps.length - 1;
+  }
+
+  final driverProgress = progressAlongPolyline(routePolyline, driver);
+  int? firstAhead;
+
+  for (var i = 0; i < steps.length; i++) {
+    final loc = steps[i].startLocation;
+    if (loc == null) continue;
+    final stepProgress = progressAlongPolyline(
+      routePolyline,
+      LatLng(loc.latitude, loc.longitude),
+    );
+    if (stepProgress <= driverProgress + 25) continue;
+
+    firstAhead ??= i;
+    if (!isDepartOrContinueStep(steps[i]) || i == steps.length - 1) {
+      return i;
+    }
+  }
+
+  return firstAhead ?? steps.length - 1;
+}
+
+/// Distance along the route from [driver] to [step].
+double distanceMetersToGuidanceStep({
+  required LatLng driver,
+  required NeshanRouteStep step,
+  required List<LatLng> routePolyline,
+}) {
+  final loc = step.startLocation;
+  if (routePolyline.length >= 2 && loc != null) {
+    final driverProgress = progressAlongPolyline(routePolyline, driver);
+    final maneuverProgress = progressAlongPolyline(
+      routePolyline,
+      LatLng(loc.latitude, loc.longitude),
+    );
+    final remaining = maneuverProgress - driverProgress;
+    if (remaining > 0) return remaining;
+  }
+
+  if (loc != null) {
+    return distanceMeters(driver, LatLng(loc.latitude, loc.longitude));
+  }
+  return step.distanceMeters;
 }
 
 /// Extracts a polyline slice between [startMeters] and [startMeters + lengthMeters].

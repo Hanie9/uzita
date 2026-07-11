@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/widgets/driver_map_controller.dart';
+import 'package:uzita/utils/navigation_bearing.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
 
@@ -64,18 +65,26 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   /// Max distance (m) the driver can be from the route and still be snapped
   /// onto it. Larger deviations are treated as off-route (handled by reroute).
   static const double _maxSnapMeters = 45;
+  static const double _overlayResyncMinMeters = 8;
+  static const double _cameraBearingMinDelta = 2;
+  static const Duration _cameraUpdateMinInterval = Duration(milliseconds: 100);
 
   int? _viewId;
   bool _fitted = false;
   bool _mapUpdatePending = false;
   bool _mapUpdateQueued = false;
   bool _pendingRefit = false;
+  bool _pendingForceOverlaySync = false;
   LatLng? _pendingNavPosition;
   double? _pendingNavHeading;
   bool _autoFollow = true;
   bool _overviewCameraDetached = false;
   bool _navigationCameraReady = false;
   LatLng? _previousDriverPosition;
+  LatLng? _lastOverlaySyncPosition;
+  int _lastOverlayTraveledEnd = 0;
+  double? _lastCameraBearing;
+  DateTime? _lastCameraUpdateAt;
   Offset? _navPointerStart;
   bool _navPointerDetached = false;
   StreamSubscription<dynamic>? _mapEventSub;
@@ -295,11 +304,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
     if (_viewId == null) return;
 
-    final driverMoved =
-        widget.driverPosition != oldWidget.driverPosition ||
-        widget.driverHeading != oldWidget.driverHeading;
-    if (widget.driverPosition != null &&
-        widget.driverPosition != oldWidget.driverPosition) {
+    final positionChanged = widget.driverPosition != oldWidget.driverPosition;
+    final headingChanged = widget.driverHeading != oldWidget.driverHeading;
+    if (widget.driverPosition != null && positionChanged) {
       _previousDriverPosition = oldWidget.driverPosition;
     }
     final followChanged = widget.followDriver != oldWidget.followDriver;
@@ -313,14 +320,20 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         widget.origin != oldWidget.origin ||
         widget.destination != oldWidget.destination ||
         widget.pickupLeg != oldWidget.pickupLeg;
+    final structuralChanged = routeChanged ||
+        followChanged ||
+        navigationModeChanged ||
+        overviewChanged ||
+        themeChanged;
 
     if (routeChanged ||
         followChanged ||
         navigationModeChanged ||
         overviewChanged) {
       _fitted = false;
+      _lastOverlaySyncPosition = null;
     }
-    if (widget.overviewMode && driverMoved && !_overviewCameraDetached) {
+    if (widget.overviewMode && positionChanged && !_overviewCameraDetached) {
       final prev = oldWidget.driverPosition;
       final next = widget.driverPosition;
       if (prev != null && next != null && distanceMeters(prev, next) > 800) {
@@ -328,13 +341,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       }
     }
 
-    if (driverMoved ||
-        followChanged ||
-        navigationModeChanged ||
-        overviewChanged ||
-        routeChanged ||
-        themeChanged ||
-        !_fitted) {
+    if (structuralChanged || !_fitted) {
       _scheduleMapUpdate(
         refit:
             overviewChanged ||
@@ -342,6 +349,32 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
             followChanged ||
             navigationModeChanged ||
             (!_fitted && !_overviewCameraDetached),
+        forceOverlaySync: structuralChanged,
+      );
+      return;
+    }
+
+    if (positionChanged && widget.driverPosition != null) {
+      if (_isNavigationMode && widget.followDriver) {
+        return;
+      }
+      final navPos = _isNavigationMode
+          ? _snapNavPosition(widget.driverPosition!)
+          : widget.driverPosition!;
+      unawaited(_applyNavigationUpdate(navPos, widget.driverHeading));
+      return;
+    }
+
+    if (headingChanged &&
+        widget.navigationMode &&
+        widget.followDriver &&
+        widget.driverPosition != null) {
+      final navPos = _snapNavPosition(widget.driverPosition!);
+      unawaited(
+        _followNavigationCameraThrottled(
+          navPos,
+          _navHeading(navPos, widget.driverHeading) ?? 0.0,
+        ),
       );
     }
   }
@@ -375,9 +408,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       _pendingNavHeading = heading;
       return;
     }
-    setState(() {
-      _autoFollow = true;
-    });
+    if (!_autoFollow) {
+      setState(() => _autoFollow = true);
+    }
     widget.onCameraDetached?.call(false);
 
     final navPos = _snapNavPosition(position);
@@ -385,9 +418,12 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
     await _setNavigationFollow(true);
     await _setOverviewGestures(false);
-    await _beginNavigationCamera(navPos, resolvedHeading);
-    await _syncOverlays();
-    await _beginNavigationCamera(navPos, resolvedHeading);
+    _lastOverlaySyncPosition = null;
+    await Future.wait([
+      _beginNavigationCamera(navPos, resolvedHeading),
+      _syncOverlays(),
+    ]);
+    _markOverlaySynced(navPos);
     _navigationCameraReady = true;
   }
 
@@ -395,14 +431,69 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (_viewId == null) return;
 
     final navPos = _snapNavPosition(position);
-    final resolvedHeading = _navHeading(navPos, heading) ?? 0.0;
-
-    // Always refresh route overlay (trim purple line / grey traveled) on GPS
-    // ticks — even when the user has panned away from follow mode.
-    await _syncOverlays();
+    await _applyNavigationUpdate(navPos, heading);
 
     if (!_autoFollow || !widget.followDriver) return;
-    await _followNavigationCamera(navPos, resolvedHeading);
+    final resolvedHeading = _navHeading(navPos, heading) ?? 0.0;
+    await _followNavigationCameraThrottled(navPos, resolvedHeading);
+  }
+
+  Future<void> _applyNavigationUpdate(LatLng navPos, double? heading) async {
+    if (_shouldResyncOverlays(navPos)) {
+      await _syncOverlays();
+      _markOverlaySynced(navPos);
+    } else if (_isNavigationMode) {
+      await _updateDriverMarkerOnly(navPos, heading);
+    }
+  }
+
+  bool _shouldResyncOverlays(LatLng navPos) {
+    final last = _lastOverlaySyncPosition;
+    if (last == null) return true;
+    if (distanceMeters(last, navPos) >= _overlayResyncMinMeters) return true;
+    if (_traveledSliceEnd != _lastOverlayTraveledEnd) return true;
+    return false;
+  }
+
+  void _markOverlaySynced(LatLng navPos) {
+    _lastOverlaySyncPosition = navPos;
+    _lastOverlayTraveledEnd = _traveledSliceEnd;
+  }
+
+  Future<void> _updateDriverMarkerOnly(LatLng navPos, double? heading) async {
+    final id = _viewId;
+    if (id == null) return;
+    final bearing = _navHeading(navPos, heading);
+    try {
+      await _channel.invokeMethod('updateDriverMarker', {
+        'viewId': id,
+        'lat': navPos.latitude,
+        'lng': navPos.longitude,
+        if (bearing != null) 'bearing': bearing,
+        'navigationMode': _isNavigationMode,
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _followNavigationCameraThrottled(
+    LatLng position,
+    double bearing,
+  ) async {
+    final now = DateTime.now();
+    final lastAt = _lastCameraUpdateAt;
+    final lastBearing = _lastCameraBearing;
+    final lastPos = _lastOverlaySyncPosition;
+    if (lastAt != null &&
+        lastBearing != null &&
+        lastPos != null &&
+        now.difference(lastAt) < _cameraUpdateMinInterval &&
+        bearingDeltaDegrees(lastBearing, bearing) < _cameraBearingMinDelta &&
+        distanceMeters(lastPos, position) < 1) {
+      return;
+    }
+    _lastCameraUpdateAt = now;
+    _lastCameraBearing = bearing;
+    await _followNavigationCamera(position, bearing);
   }
 
   /// Snaps the raw GPS position onto the planned route so the driver arrow
@@ -414,17 +505,20 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     return distanceMeters(raw, snapped) <= _maxSnapMeters ? snapped : raw;
   }
 
-  /// In navigation follow mode the camera bearing follows the route direction.
-  /// When follow is off, keep the resolved device/movement heading for the puck.
+  /// Heading-up navigation: parent supplies compass/GPS bearing; map rotates to it.
   double? _navHeading(LatLng navPos, double? heading) {
-    if (_isNavigationMode &&
-        _route.length >= 2 &&
-        _autoFollow &&
-        widget.followDriver) {
-      final routeBearing = bearingAlongPolyline(_route, navPos);
-      if (routeBearing != null) return routeBearing;
+    final device = heading ?? widget.driverHeading;
+    if (_isNavigationMode && widget.followDriver && device != null) {
+      return device;
     }
-    return heading ?? _bearingForNavigation(navPos, heading);
+    final resolved = resolveNavigationBearing(
+      position: navPos,
+      deviceHeading: device,
+      previousPosition: _previousDriverPosition,
+      routePolyline: _route,
+      navigationActive: _isNavigationMode && widget.followDriver,
+    );
+    return resolved ?? _bearingForNavigation(navPos, heading);
   }
 
   Future<void> _beginNavigationCamera(LatLng position, double bearing) async {
@@ -527,21 +621,42 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     } catch (_) {}
   }
 
-  Future<void> _scheduleMapUpdate({required bool refit}) async {
+  Future<void> _scheduleMapUpdate({
+    required bool refit,
+    bool forceOverlaySync = false,
+  }) async {
     if (_viewId == null) return;
     // Accumulate refit requests so a queued update never loses the refit
     // intent (otherwise a freshly-loaded route may never be re-framed).
     if (refit) _pendingRefit = true;
+    if (forceOverlaySync) _pendingForceOverlaySync = true;
     if (_mapUpdatePending) {
       _mapUpdateQueued = true;
       return;
     }
     _mapUpdatePending = true;
     final doRefit = _pendingRefit;
+    final doForceOverlaySync = _pendingForceOverlaySync;
     _pendingRefit = false;
+    _pendingForceOverlaySync = false;
 
     try {
-      await _syncOverlays();
+      if (widget.driverPosition != null) {
+        final navPos = _isNavigationMode
+            ? _snapNavPosition(widget.driverPosition!)
+            : widget.driverPosition!;
+        if (doForceOverlaySync || _shouldResyncOverlays(navPos)) {
+          await _syncOverlays();
+          _markOverlaySynced(navPos);
+        } else if (_isNavigationMode) {
+          await _updateDriverMarkerOnly(navPos, widget.driverHeading);
+        } else {
+          await _syncOverlays();
+          _markOverlaySynced(navPos);
+        }
+      } else {
+        await _syncOverlays();
+      }
       if (!mounted || _viewId == null) return;
 
       if (widget.navigationMode || widget.followDriver) {
@@ -571,7 +686,10 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
       _mapUpdatePending = false;
       if (_mapUpdateQueued) {
         _mapUpdateQueued = false;
-        await _scheduleMapUpdate(refit: _pendingRefit);
+        await _scheduleMapUpdate(
+          refit: _pendingRefit,
+          forceOverlaySync: _pendingForceOverlaySync,
+        );
       }
     }
   }

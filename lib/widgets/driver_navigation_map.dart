@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/utils/map_tile_config.dart';
+import 'package:uzita/utils/navigation_bearing.dart';
 import 'package:uzita/utils/neshan_route_style.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
@@ -295,8 +296,14 @@ class _FlutterDriverNavigationMapState
 
   void _followDriverAt(LatLng position, double? heading) {
     const zoom = NeshanDriverMap.navZoom;
-    final bearing =
-        heading ??
+    final bearing = heading ??
+        resolveNavigationBearing(
+          position: position,
+          deviceHeading: widget.driverHeading,
+          previousPosition: _previousDriverPosition,
+          routePolyline: _route,
+          navigationActive: widget.followDriver,
+        ) ??
         resolveDriverHeading(
           position: position,
           deviceHeading: widget.driverHeading,

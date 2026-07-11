@@ -187,6 +187,14 @@ class NeshanMapPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                 )
                 result.success(null)
             }
+            "updateDriverMarker" -> {
+                val lat = call.argument<Double>("lat") ?: 0.0
+                val lng = call.argument<Double>("lng") ?: 0.0
+                val bearing = call.argument<Double>("bearing")?.toFloat()
+                val navigationMode = call.argument<Boolean>("navigationMode") ?: true
+                mapView.updateDriverMarker(lat, lng, bearing, navigationMode)
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
@@ -771,6 +779,21 @@ private class NeshanMapPlatformView(
             }
             mapView.addMarker(driverMarker!!)
         }
+    }
+
+    fun updateDriverMarker(
+        lat: Double,
+        lng: Double,
+        bearing: Float?,
+        navigationMode: Boolean,
+    ) {
+        driverMarker?.let { mapView.removeMarker(it) }
+        driverMarker = if (navigationMode) {
+            createDriverArrowMarker(lat, lng, bearing)
+        } else {
+            createMarker(lat, lng, 0xFF2563EB.toInt(), DRIVER_DOT_SIZE)
+        }
+        mapView.addMarker(driverMarker!!)
     }
 
     private fun createDriverArrowMarker(

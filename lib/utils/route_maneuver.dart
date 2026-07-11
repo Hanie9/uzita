@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:uzita/services/neshan_models.dart';
 
+bool isDepartOrContinueStep(NeshanRouteStep step) {
+  final type = step.stepType?.toLowerCase() ?? '';
+  if (type == 'depart' || type == 'continue' || type == 'new name') {
+    return true;
+  }
+  final text = step.instruction.toLowerCase();
+  if (text.contains('حرکت به سمت') ||
+      text.contains('ادامه دهید') ||
+      text.contains('continue on')) {
+    return true;
+  }
+  return false;
+}
+
+bool isArrivalStep(NeshanRouteStep step) {
+  final type = step.stepType?.toLowerCase() ?? '';
+  if (type == 'arrive') return true;
+  return step.instruction.contains('رسیدن') ||
+      step.instruction.contains('مقصد');
+}
+
 IconData maneuverIcon(NeshanRouteStep step) {
   final type = step.stepType?.toLowerCase() ?? '';
   final modifier = step.modifier?.toLowerCase() ?? '';
   final text = step.instruction.toLowerCase();
 
-  if (type == 'arrive' || text.contains('رسیدن')) {
+  if (isArrivalStep(step)) {
     return Icons.flag;
   }
   if (type == 'depart' || text.contains('حرکت') || text.contains('مبدا')) {
-    return Icons.play_arrow_rounded;
+    return Icons.arrow_upward_rounded;
   }
   if (text.contains('راست') ||
       modifier.contains('right') ||
@@ -30,6 +51,26 @@ IconData maneuverIcon(NeshanRouteStep step) {
     return Icons.merge;
   }
   return Icons.straight;
+}
+
+/// Navigation maneuver icon for the guidance card.
+Widget maneuverIconWidget(
+  NeshanRouteStep step, {
+  required bool rtl,
+  Color color = Colors.white,
+  double size = 42,
+}) {
+  return Icon(
+    maneuverIcon(step),
+    color: color,
+    size: size,
+  );
+}
+
+String guidancePrimaryLabel(NeshanRouteStep step) {
+  final instruction = step.instruction.trim();
+  if (instruction.isNotEmpty) return instruction;
+  return step.name.trim();
 }
 
 String formatManeuverDistance(double meters, {required bool persian}) {

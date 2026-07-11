@@ -11,7 +11,9 @@ import 'package:uzita/services/driver_routing_service.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/utils/driver_location_tracker.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:uzita/utils/neshan_degraded_route.dart';
+import 'package:uzita/utils/navigation_bearing.dart';
 import 'package:uzita/utils/neshan_map_preferences.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_maneuver.dart';
@@ -59,6 +61,12 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
 
   LatLng? _driverPosition;
   double? _driverHeading;
+  double? _compassHeading;
+  double? _gpsCourseHeading;
+  double _driverSpeedMps = 0;
+  double? _smoothedNavigationBearing;
+  DateTime? _lastCompassCameraTick;
+  StreamSubscription<CompassEvent>? _compassSubscription;
   DriverLocationStatus? _locationStatus;
   int _activeStepIndex = 0;
   bool _navigationActive = false;
@@ -130,9 +138,16 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
           segments: const [],
         );
       }
+      // Keep the routed polyline stable (route origin → mبدا). Snapping the
+      // moving driver onto index 0 made findClosestPolylineIndex always return 0
+      // and the bottom bar showed distance traveled instead of remaining.
+      final legStart = route.primaryLeg?.steps.firstOrNull?.startLocation;
+      final routeOrigin = legStart != null
+          ? LatLng(legStart.latitude, legStart.longitude)
+          : driver;
       return RouteMapGeometry.fromRoute(
         route,
-        origin: driver,
+        origin: routeOrigin,
         destination: _originLatLng,
       );
     }
@@ -262,18 +277,39 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     return distanceMeters(driver, _originLatLng) <= 120;
   }
 
-  NeshanRouteStep? get _activeStep => _steps.isEmpty
-      ? null
-      : _steps[_activeStepIndex.clamp(0, _steps.length - 1)];
+  int get _guidanceStepIndex {
+    final driver = _driverPosition;
+    if (driver == null || _steps.isEmpty) {
+      return _activeStepIndex.clamp(0, _steps.length - 1);
+    }
+    return findNextGuidanceStepIndex(
+      steps: _steps,
+      driver: driver,
+      routePolyline: _routeCoordinates,
+    );
+  }
 
-  NeshanRouteStep? get _nextStep {
-    if (_steps.isEmpty || _activeStepIndex >= _steps.length - 1) return null;
-    return _steps[_activeStepIndex + 1];
+  NeshanRouteStep? get _guidanceStep {
+    if (_steps.isEmpty) return null;
+    return _steps[_guidanceStepIndex.clamp(0, _steps.length - 1)];
+  }
+
+  NeshanRouteStep? get _thenGuidanceStep {
+    if (_steps.isEmpty) return null;
+    final start = _guidanceStepIndex + 1;
+    if (start >= _steps.length) return null;
+    for (var i = start; i < _steps.length; i++) {
+      if (!isDepartOrContinueStep(_steps[i]) || i == _steps.length - 1) {
+        return _steps[i];
+      }
+    }
+    return null;
   }
 
   int get _traveledPolylineIndex {
     if (_driverPosition == null || !_isTracking) return 0;
-    return findClosestPolylineIndex(_routeCoordinates, _driverPosition!);
+    final snapped = snapPointToPolyline(_routeCoordinates, _driverPosition!);
+    return findClosestPolylineIndex(_routeCoordinates, snapped);
   }
 
   @override
@@ -480,6 +516,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       _resetStepKeys();
     });
     _stopTrafficRefreshTimer();
+    _stopCompassTracking();
+    _smoothedNavigationBearing = null;
     _invalidateDeliveryGeometry();
     unawaited(_onCargoPickedUp());
   }
@@ -499,6 +537,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopTrafficRefreshTimer();
+    _stopCompassTracking();
     _mapDarkMode.dispose();
     _locationTracker.dispose();
     _locationReporter.stop();
@@ -551,18 +590,6 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       return;
     }
 
-    if (_phase == DriverTripPhase.toPickup) {
-      if (_pickupRoute == null) {
-        await _loadPickupRoute(driver);
-      } else if (_shouldReloadPickupRoute(driver)) {
-        await _loadPickupRoute(driver, force: true);
-      }
-      if (!mounted) return;
-    } else {
-      await _ensureDeliveryRoute();
-      if (!mounted) return;
-    }
-
     final newStep = findActiveStepIndex(
       _steps,
       driver,
@@ -576,19 +603,28 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       _activeStepIndex = newStep;
     });
     _syncStepKeys();
-
-    // Wait one frame so followDriver propagates before moving the camera.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-
-    await _mapController.resumeNavigation(
-      position: driver,
-      heading: _driverHeading,
-    );
-
-    if (!mounted) return;
+    _startCompassTracking();
     _scrollToActiveStep();
     _startTrafficRefreshTimer();
+
+    // Use the route already on screen (or a straight-line fallback) so
+    // navigation UI opens immediately; refresh routing in the background.
+    if (_phase == DriverTripPhase.toPickup) {
+      if (_pickupRoute == null) {
+        unawaited(_loadPickupRoute(driver));
+      } else if (_shouldReloadPickupRoute(driver)) {
+        unawaited(_loadPickupRoute(driver, force: true));
+      }
+    } else {
+      final overview = _deliveryRoute.overviewPolyline?.trim();
+      final needsRoute = _deliveryRouteLoading ||
+          overview == null ||
+          overview.isEmpty ||
+          _deliveryGeometry.fullPolyline.length <= 2;
+      if (needsRoute) {
+        unawaited(_ensureDeliveryRoute());
+      }
+    }
   }
 
   void _startTrafficRefreshTimer() {
@@ -630,9 +666,13 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
         if (!mounted) return;
         setState(() {
           _deliveryReroute = route;
+          final legStart = route.primaryLeg?.steps.firstOrNull?.startLocation;
+          final routeOrigin = legStart != null
+              ? LatLng(legStart.latitude, legStart.longitude)
+              : driver;
           _deliveryRerouteGeometry = RouteMapGeometry.fromRoute(
             route,
-            origin: driver,
+            origin: routeOrigin,
             destination: _destinationLatLng,
           );
         });
@@ -646,10 +686,85 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     }
   }
 
+  void _startCompassTracking() {
+    _compassSubscription?.cancel();
+    final stream = FlutterCompass.events;
+    if (stream == null) return;
+
+    _compassSubscription = stream.listen((CompassEvent event) {
+      final double? heading = event.heading;
+      if (heading == null || !mounted || !_navigationActive) return;
+
+      _compassHeading = normalizeBearingDegrees(heading);
+      final LatLng? position = _driverPosition;
+      if (position == null) return;
+
+      final double? bearing = _resolveNavigationBearingForUpdate(
+        position: position,
+      );
+      if (bearing == null) return;
+
+      final double? lastHeading = _driverHeading;
+      if (lastHeading != null &&
+          bearingDeltaDegrees(lastHeading, bearing) < 1.5) {
+        return;
+      }
+
+      final now = DateTime.now();
+      final lastTick = _lastCompassCameraTick;
+      if (lastTick != null &&
+          now.difference(lastTick) < const Duration(milliseconds: 120)) {
+        return;
+      }
+      _lastCompassCameraTick = now;
+      _driverHeading = bearing;
+
+      if (_isTracking) {
+        unawaited(
+          _mapController.tickNavigation(
+            position: position,
+            heading: bearing,
+          ),
+        );
+      }
+    });
+  }
+
+  void _stopCompassTracking() {
+    _compassSubscription?.cancel();
+    _compassSubscription = null;
+    _compassHeading = null;
+    _lastCompassCameraTick = null;
+  }
+
+  double? _resolveNavigationBearingForUpdate({
+    required LatLng position,
+    LatLng? previousPosition,
+  }) {
+    final double? raw = resolveNavigationBearing(
+      position: position,
+      compassHeading: _compassHeading,
+      deviceHeading: _gpsCourseHeading,
+      speedMps: _driverSpeedMps,
+      previousPosition: previousPosition,
+      routePolyline: _routeCoordinates,
+      navigationActive: _navigationActive,
+    );
+    if (raw == null) return _smoothedNavigationBearing;
+
+    _smoothedNavigationBearing = smoothBearingDegrees(
+      _smoothedNavigationBearing,
+      raw,
+      alpha: _navigationActive ? 0.42 : 0.3,
+    );
+    return _smoothedNavigationBearing;
+  }
+
   void _onDriverLocationUpdated(DriverLocationSnapshot update) {
     if (!mounted) return;
 
     final position = update.position;
+    final previousPosition = _driverPosition;
     final newActiveStep = findActiveStepIndex(
       _steps,
       position,
@@ -658,13 +773,21 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     );
 
     final stepChanged = newActiveStep != _activeStepIndex;
-    final resolvedHeading = resolveDriverHeading(
-      position: position,
-      deviceHeading: update.heading,
-      speedMps: update.speedMps,
-      previousPosition: _driverPosition,
-      routePolyline: _routeCoordinates,
-    );
+    _gpsCourseHeading = update.heading;
+    _driverSpeedMps = update.speedMps;
+
+    final double? resolvedHeading = _navigationActive
+        ? _resolveNavigationBearingForUpdate(
+            position: position,
+            previousPosition: previousPosition,
+          )
+        : resolveDriverHeading(
+            position: position,
+            deviceHeading: update.heading,
+            speedMps: update.speedMps,
+            previousPosition: previousPosition,
+            routePolyline: _routeCoordinates,
+          );
 
     _locationReporter.updatePosition(position.latitude, position.longitude);
 
@@ -800,9 +923,9 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
   int _remainingMetersValue() {
     if (_isAwaitingGpsLocation) return 0;
 
-    final remainingMeters = polylineLengthMeters(
+    final remainingMeters = remainingMetersAlongPolyline(
       _routeCoordinates,
-      startIndex: _traveledPolylineIndex,
+      _driverPosition!,
     );
 
     if (_phase == DriverTripPhase.toPickup && _driverPosition != null) {
@@ -866,13 +989,13 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     ).round();
   }
 
-  double _distanceToActiveStepMeters() {
+  double _distanceToGuidanceStepMeters() {
     final driver = _driverPosition;
-    if (driver == null || _steps.isEmpty) return 0;
-    return distanceToManeuverMeters(
+    final step = _guidanceStep;
+    if (driver == null || step == null) return 0;
+    return distanceMetersToGuidanceStep(
       driver: driver,
-      steps: _steps,
-      activeIndex: _activeStepIndex,
+      step: step,
       routePolyline: _routeCoordinates,
     );
   }
@@ -1075,13 +1198,13 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
                         ? 8
                         : ui.scale(base: 8, min: 6, max: 10),
                   ),
-                  if (_navigationActive && _activeStep != null)
+                  if (_navigationActive && _guidanceStep != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: _NavigationGuidanceCard(
-                        step: _activeStep!,
-                        nextStep: _nextStep,
-                        distanceMeters: _distanceToActiveStepMeters(),
+                        step: _guidanceStep!,
+                        nextStep: _thenGuidanceStep,
+                        distanceMeters: _distanceToGuidanceStepMeters(),
                         persian: persian,
                         thenLabel: localizations.driver_route_then,
                       ),
@@ -1422,9 +1545,10 @@ class _NavigationGuidanceCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Row(
+          textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(maneuverIcon(step), color: Colors.white, size: 42),
+            maneuverIconWidget(step, rtl: persian),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -1437,16 +1561,18 @@ class _NavigationGuidanceCard extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
+                    textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    step.name.isNotEmpty ? step.name : step.instruction,
+                    guidancePrimaryLabel(step),
                     style: const TextStyle(
                       color: Color(0xFF22D3EE),
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       height: 1.3,
                     ),
+                    textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
                   ),
                   if (nextStep != null) ...[
                     const SizedBox(height: 6),
@@ -1458,6 +1584,7 @@ class _NavigationGuidanceCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 12,
                       ),
+                      textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
                     ),
                   ],
                 ],
