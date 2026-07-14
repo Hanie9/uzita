@@ -18,18 +18,20 @@ class DriverLocationTracker {
   StreamSubscription<Position>? _subscription;
   DriverLocationStatus _lastStatus = DriverLocationStatus.unavailable;
 
-  /// First fix must be at least this accurate (meters) before we trust it.
-  /// This filters out coarse network / last-known fixes that can be kilometers
-  /// off and would otherwise produce a wrong, huge route.
+  /// Preferred accuracy for the first lock (meters).
   static const double _goodAccuracyMeters = 50;
 
-  /// Upper bound for fixes accepted as a fallback / while already tracking.
-  /// Anything coarser is treated as unreliable and dropped.
+  /// Acceptable accuracy while tracking or as a quick initial fix.
   static const double _coarseAccuracyMeters = 200;
 
-  /// After this long without a good fix, accept the best one we've seen so the
-  /// UI never gets stuck "searching" on a device with weak GPS.
-  static const Duration _gracePeriod = Duration(seconds: 8);
+  /// Last-resort accuracy after the grace period on weak GPS.
+  static const double _fallbackAccuracyMeters = 500;
+
+  /// How long to wait before accepting a coarse first fix.
+  static const Duration _coarseGracePeriod = Duration(milliseconds: 1500);
+
+  /// How long to wait before accepting any plausible fix.
+  static const Duration _gracePeriod = Duration(seconds: 3);
 
   DateTime? _trackingStartedAt;
   bool _hasAcceptedFix = false;
@@ -48,21 +50,25 @@ class DriverLocationTracker {
     if (!_isPlausibleCoordinate(position)) return false;
     final accuracy = position.accuracy;
 
-    // A good fix is always accepted.
     if (accuracy > 0 && accuracy <= _goodAccuracyMeters) return true;
 
-    // Once we already locked onto a good fix, keep accepting reasonably accurate
-    // fixes so live movement keeps updating (but still drop very coarse ones).
     if (_hasAcceptedFix) {
       return accuracy > 0 && accuracy <= _coarseAccuracyMeters;
     }
 
-    // No good fix yet: after the grace period accept the best-effort fix so the
-    // UI is not stuck "searching" on a device with weak GPS.
     final startedAt = _trackingStartedAt;
-    final waitedLongEnough = startedAt != null &&
-        DateTime.now().difference(startedAt) >= _gracePeriod;
-    return waitedLongEnough && accuracy > 0 && accuracy <= _coarseAccuracyMeters;
+    if (startedAt == null) return false;
+    final elapsed = DateTime.now().difference(startedAt);
+
+    if (elapsed >= _coarseGracePeriod &&
+        accuracy > 0 &&
+        accuracy <= _coarseAccuracyMeters) {
+      return true;
+    }
+
+    return elapsed >= _gracePeriod &&
+        accuracy > 0 &&
+        accuracy <= _fallbackAccuracyMeters;
   }
 
   Future<bool> requestPermission() async {
@@ -133,23 +139,46 @@ class DriverLocationTracker {
       onError: onError,
     );
 
+    unawaited(_emitBootstrapFix(onUpdate));
+
     _lastStatus = DriverLocationStatus.tracking;
     return DriverLocationStatus.tracking;
   }
 
-  Future<DriverLocationSnapshot?> getCurrentSnapshot() async {
+  /// Fast first position: last-known fix, then a short medium-accuracy request.
+  Future<DriverLocationSnapshot?> getBootstrapSnapshot() async {
+    final lastKnown = await _readLastKnownPosition();
+    if (lastKnown != null) return lastKnown;
+
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 4),
         ),
       );
-      // Only trust the immediate fix if it is plausible and accurate; otherwise
-      // wait for the stream to deliver a good fix.
       if (!_isPlausibleCoordinate(position)) return null;
-      if (position.accuracy <= 0 || position.accuracy > _goodAccuracyMeters) {
-        return null;
-      }
+      return _toSnapshot(position);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<DriverLocationSnapshot?> getCurrentSnapshot() => getBootstrapSnapshot();
+
+  Future<void> _emitBootstrapFix(
+    void Function(DriverLocationSnapshot update) onUpdate,
+  ) async {
+    final snapshot = await getBootstrapSnapshot();
+    if (snapshot == null || _hasAcceptedFix) return;
+    _hasAcceptedFix = true;
+    onUpdate(snapshot);
+  }
+
+  Future<DriverLocationSnapshot?> _readLastKnownPosition() async {
+    try {
+      final position = await Geolocator.getLastKnownPosition();
+      if (position == null || !_isPlausibleCoordinate(position)) return null;
       return _toSnapshot(position);
     } catch (_) {
       return null;

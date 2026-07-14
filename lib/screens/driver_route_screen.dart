@@ -11,7 +11,6 @@ import 'package:uzita/services/driver_routing_service.dart';
 import 'package:uzita/services/neshan_models.dart';
 import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/utils/driver_location_tracker.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'package:uzita/utils/neshan_degraded_route.dart';
 import 'package:uzita/utils/navigation_bearing.dart';
 import 'package:uzita/utils/neshan_map_preferences.dart';
@@ -61,12 +60,10 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
 
   LatLng? _driverPosition;
   double? _driverHeading;
-  double? _compassHeading;
   double? _gpsCourseHeading;
   double _driverSpeedMps = 0;
   double? _smoothedNavigationBearing;
-  DateTime? _lastCompassCameraTick;
-  StreamSubscription<CompassEvent>? _compassSubscription;
+  int? _lockedRouteSegmentIndex;
   DriverLocationStatus? _locationStatus;
   int _activeStepIndex = 0;
   bool _navigationActive = false;
@@ -516,8 +513,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       _resetStepKeys();
     });
     _stopTrafficRefreshTimer();
-    _stopCompassTracking();
     _smoothedNavigationBearing = null;
+    _lockedRouteSegmentIndex = null;
     _invalidateDeliveryGeometry();
     unawaited(_onCargoPickedUp());
   }
@@ -537,7 +534,6 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopTrafficRefreshTimer();
-    _stopCompassTracking();
     _mapDarkMode.dispose();
     _locationTracker.dispose();
     _locationReporter.stop();
@@ -553,11 +549,15 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
 
     setState(() => _locationStatus = status);
 
-    if (status == DriverLocationStatus.tracking) {
-      final current = await _locationTracker.getCurrentSnapshot();
-      if (current != null && mounted) {
-        _onDriverLocationUpdated(current);
-      }
+    if (status == DriverLocationStatus.tracking && _driverPosition == null) {
+      unawaited(_bootstrapDriverLocation());
+    }
+  }
+
+  Future<void> _bootstrapDriverLocation() async {
+    final current = await _locationTracker.getBootstrapSnapshot();
+    if (current != null && mounted && _driverPosition == null) {
+      _onDriverLocationUpdated(current);
     }
   }
 
@@ -597,13 +597,33 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       routePolyline: _routeCoordinates,
     );
 
+    _smoothedNavigationBearing = null;
+    _lockedRouteSegmentIndex = null;
+    final double? rawBearing = resolveNavigationBearing(
+      position: driver,
+      routePolyline: _mapRouteCoordinates,
+      navigationActive: true,
+    );
+    final double initialBearing = rawBearing == null
+        ? 0.0
+        : smoothBearingDegrees(null, rawBearing, alpha: 0.42);
+    _smoothedNavigationBearing = initialBearing;
+    _lockedRouteSegmentIndex =
+        routeSegmentIndexForPosition(_mapRouteCoordinates, driver);
+
     setState(() {
       _navigationActive = true;
       _mapCameraDetached = false;
       _activeStepIndex = newStep;
+      _driverHeading = initialBearing;
     });
     _syncStepKeys();
-    _startCompassTracking();
+    unawaited(
+      _mapController.resumeNavigation(
+        position: driver,
+        heading: initialBearing,
+      ),
+    );
     _scrollToActiveStep();
     _startTrafficRefreshTimer();
 
@@ -686,78 +706,47 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     }
   }
 
-  void _startCompassTracking() {
-    _compassSubscription?.cancel();
-    final stream = FlutterCompass.events;
-    if (stream == null) return;
-
-    _compassSubscription = stream.listen((CompassEvent event) {
-      final double? heading = event.heading;
-      if (heading == null || !mounted || !_navigationActive) return;
-
-      _compassHeading = normalizeBearingDegrees(heading);
-      final LatLng? position = _driverPosition;
-      if (position == null) return;
-
-      final double? bearing = _resolveNavigationBearingForUpdate(
-        position: position,
-      );
-      if (bearing == null) return;
-
-      final double? lastHeading = _driverHeading;
-      if (lastHeading != null &&
-          bearingDeltaDegrees(lastHeading, bearing) < 1.5) {
-        return;
-      }
-
-      final now = DateTime.now();
-      final lastTick = _lastCompassCameraTick;
-      if (lastTick != null &&
-          now.difference(lastTick) < const Duration(milliseconds: 120)) {
-        return;
-      }
-      _lastCompassCameraTick = now;
-      _driverHeading = bearing;
-
-      if (_isTracking) {
-        unawaited(
-          _mapController.tickNavigation(
-            position: position,
-            heading: bearing,
-          ),
-        );
-      }
-    });
-  }
-
-  void _stopCompassTracking() {
-    _compassSubscription?.cancel();
-    _compassSubscription = null;
-    _compassHeading = null;
-    _lastCompassCameraTick = null;
-  }
-
   double? _resolveNavigationBearingForUpdate({
     required LatLng position,
     LatLng? previousPosition,
   }) {
+    if (!_navigationActive) {
+      final double? raw = resolveNavigationBearing(
+        position: position,
+        deviceHeading: _gpsCourseHeading,
+        speedMps: _driverSpeedMps,
+        previousPosition: previousPosition,
+        routePolyline: _routeCoordinates,
+        navigationActive: false,
+      );
+      if (raw == null) return _smoothedNavigationBearing;
+
+      _smoothedNavigationBearing = smoothBearingDegrees(
+        _smoothedNavigationBearing,
+        raw,
+        alpha: 0.3,
+      );
+      return _smoothedNavigationBearing;
+    }
+
+    final segmentIndex =
+        routeSegmentIndexForPosition(_routeCoordinates, position);
     final double? raw = resolveNavigationBearing(
       position: position,
-      compassHeading: _compassHeading,
-      deviceHeading: _gpsCourseHeading,
-      speedMps: _driverSpeedMps,
-      previousPosition: previousPosition,
       routePolyline: _routeCoordinates,
-      navigationActive: _navigationActive,
+      navigationActive: true,
+      lastKnownBearing: _smoothedNavigationBearing,
+      lastRouteSegmentIndex: _lockedRouteSegmentIndex,
     );
     if (raw == null) return _smoothedNavigationBearing;
 
-    _smoothedNavigationBearing = smoothBearingDegrees(
-      _smoothedNavigationBearing,
-      raw,
-      alpha: _navigationActive ? 0.42 : 0.3,
-    );
-    return _smoothedNavigationBearing;
+    if (raw == _smoothedNavigationBearing) {
+      return _smoothedNavigationBearing;
+    }
+
+    _lockedRouteSegmentIndex = segmentIndex;
+    _smoothedNavigationBearing = raw;
+    return raw;
   }
 
   void _onDriverLocationUpdated(DriverLocationSnapshot update) {

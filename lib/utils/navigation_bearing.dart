@@ -41,27 +41,36 @@ double blendBearingTowardRoute(
   return normalizeBearingDegrees(deviceBearing + delta * maxPull);
 }
 
-/// Bearing for heading-up navigation: compass / GPS first, route as fallback.
+/// Bearing for heading-up navigation: locked to the route polyline.
+///
+/// The map keeps a stable angle like Neshan — it does not spin with GPS noise
+/// or phone rotation. Bearing only changes when the driver advances to the
+/// next route segment (a turn).
 double? resolveNavigationBearing({
   required LatLng position,
-  double? compassHeading,
   double? deviceHeading,
   double speedMps = 0,
   LatLng? previousPosition,
   List<LatLng> routePolyline = const [],
   bool navigationActive = false,
+  double? lastKnownBearing,
+  int? lastRouteSegmentIndex,
 }) {
+  if (navigationActive) {
+    return resolveRouteLockedNavigationBearing(
+      position: position,
+      routePolyline: routePolyline,
+      lastKnownBearing: lastKnownBearing,
+      lastRouteSegmentIndex: lastRouteSegmentIndex,
+    );
+  }
+
   double? primary;
 
-  if (navigationActive &&
-      compassHeading != null &&
-      compassHeading >= 0 &&
-      compassHeading <= 360) {
-    primary = normalizeBearingDegrees(compassHeading);
-  } else if (deviceHeading != null &&
+  if (deviceHeading != null &&
       deviceHeading >= 0 &&
       deviceHeading <= 360 &&
-      (!navigationActive || speedMps >= 0.25)) {
+      speedMps >= 0.25) {
     primary = normalizeBearingDegrees(deviceHeading);
   } else if (previousPosition != null &&
       distanceMeters(previousPosition, position) >= 3) {
@@ -71,12 +80,49 @@ double? resolveNavigationBearing({
   }
 
   final routeBearing = bearingAlongPolyline(routePolyline, position);
+  return primary ?? routeBearing;
+}
 
-  if (primary != null && routeBearing != null && navigationActive) {
-    return blendBearingTowardRoute(primary, routeBearing);
+/// Route-segment bearing: stable on straight sections, updates only at turns.
+double? resolveRouteLockedNavigationBearing({
+  required LatLng position,
+  List<LatLng> routePolyline = const [],
+  double? lastKnownBearing,
+  int? lastRouteSegmentIndex,
+}) {
+  if (routePolyline.length < 2) return lastKnownBearing;
+
+  final index = findClosestPolylineIndex(routePolyline, position).clamp(
+    0,
+    routePolyline.length - 2,
+  );
+  final segmentBearing =
+      bearingAheadOnPolyline(routePolyline, position) ??
+      bearingAlongPolyline(routePolyline, position);
+  if (segmentBearing == null) return lastKnownBearing;
+
+  if (lastRouteSegmentIndex == index && lastKnownBearing != null) {
+    return lastKnownBearing;
   }
 
-  return primary ?? routeBearing;
+  if (lastKnownBearing == null) {
+    return normalizeBearingDegrees(segmentBearing);
+  }
+
+  return smoothBearingDegrees(
+    lastKnownBearing,
+    segmentBearing,
+    alpha: 0.28,
+  );
+}
+
+/// Segment index paired with [resolveRouteLockedNavigationBearing].
+int? routeSegmentIndexForPosition(List<LatLng> routePolyline, LatLng position) {
+  if (routePolyline.length < 2) return null;
+  return findClosestPolylineIndex(routePolyline, position).clamp(
+    0,
+    routePolyline.length - 2,
+  );
 }
 
 double bearingDeltaDegrees(double a, double b) {

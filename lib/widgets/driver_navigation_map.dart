@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uzita/utils/map_tile_config.dart';
-import 'package:uzita/utils/navigation_bearing.dart';
 import 'package:uzita/utils/neshan_route_style.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
@@ -132,8 +131,6 @@ class _FlutterDriverNavigationMap extends StatefulWidget {
 class _FlutterDriverNavigationMapState
     extends State<_FlutterDriverNavigationMap> {
   final MapController _mapController = MapController();
-  final Distance _distance = const Distance();
-  LatLng? _previousDriverPosition;
   bool _fittedInitialBounds = false;
   bool _autoFollow = true;
   bool _overviewCameraDetached = false;
@@ -217,7 +214,6 @@ class _FlutterDriverNavigationMapState
 
     if (widget.driverPosition != null &&
         widget.driverPosition != oldWidget.driverPosition) {
-      _previousDriverPosition = oldWidget.driverPosition;
       if (widget.followDriver && _autoFollow) {
         _followDriver(widget.driverPosition!);
       }
@@ -296,21 +292,7 @@ class _FlutterDriverNavigationMapState
 
   void _followDriverAt(LatLng position, double? heading) {
     const zoom = NeshanDriverMap.navZoom;
-    final bearing = heading ??
-        resolveNavigationBearing(
-          position: position,
-          deviceHeading: widget.driverHeading,
-          previousPosition: _previousDriverPosition,
-          routePolyline: _route,
-          navigationActive: widget.followDriver,
-        ) ??
-        resolveDriverHeading(
-          position: position,
-          deviceHeading: widget.driverHeading,
-          previousPosition: _previousDriverPosition,
-          routePolyline: _route,
-        ) ??
-        _movementBearing(position);
+    final bearing = heading ?? widget.driverHeading;
     if (bearing != null) {
       _mapController.moveAndRotate(position, zoom, bearing);
     } else {
@@ -320,13 +302,6 @@ class _FlutterDriverNavigationMapState
 
   void _followDriver(LatLng position) {
     _followDriverAt(position, widget.driverHeading);
-  }
-
-  double? _movementBearing(LatLng current) {
-    final prev = _previousDriverPosition;
-    if (prev == null) return null;
-    if (_distance(prev, current) < 3) return null;
-    return _distance.bearing(prev, current);
   }
 
   List<LatLng> get _route =>

@@ -403,6 +403,71 @@ double? bearingAlongPolyline(List<LatLng> polyline, LatLng point) {
   return _distance.bearing(polyline[index], polyline[index + 1]);
 }
 
+/// A point [meters] ahead on [polyline] from [point] (snapped to the path first).
+LatLng? pointAheadOnPolyline(
+  List<LatLng> polyline,
+  LatLng point, {
+  double meters = 45,
+}) {
+  if (polyline.length < 2 || meters <= 0) return null;
+
+  final snapped = snapPointToPolyline(polyline, point);
+  final startIndex = findClosestPolylineIndex(polyline, snapped).clamp(
+    0,
+    polyline.length - 2,
+  );
+
+  var remaining = meters;
+  for (var i = startIndex; i < polyline.length - 1; i++) {
+    final segStart = i == startIndex ? snapped : polyline[i];
+    final segEnd = polyline[i + 1];
+    final segLen = distanceMeters(segStart, segEnd);
+    if (segLen <= 0) continue;
+
+    if (remaining <= segLen) {
+      final t = remaining / segLen;
+      return LatLng(
+        segStart.latitude + (segEnd.latitude - segStart.latitude) * t,
+        segStart.longitude + (segEnd.longitude - segStart.longitude) * t,
+      );
+    }
+    remaining -= segLen;
+  }
+  return polyline.last;
+}
+
+/// Heading-up bearing: direction from the driver toward upcoming route geometry.
+double? bearingAheadOnPolyline(
+  List<LatLng> polyline,
+  LatLng point, {
+  double meters = 45,
+}) {
+  if (polyline.length < 2) return null;
+
+  final snapped = snapPointToPolyline(polyline, point);
+  final ahead = pointAheadOnPolyline(polyline, point, meters: meters);
+  if (ahead == null) return bearingAlongPolyline(polyline, point);
+
+  final leadMeters = distanceMeters(snapped, ahead);
+  if (leadMeters < 2) return bearingAlongPolyline(polyline, point);
+
+  return _distance.bearing(snapped, ahead);
+}
+
+/// Route polyline from [point] forward (snapped position first, then ahead).
+List<LatLng> polylineAheadOf(List<LatLng> polyline, LatLng point) {
+  if (polyline.length < 2) return polyline;
+
+  final snapped = snapPointToPolyline(polyline, point);
+  final index = findClosestPolylineIndex(polyline, snapped).clamp(
+    0,
+    polyline.length - 2,
+  );
+  final tail = polyline.sublist(index + 1);
+  if (tail.isEmpty) return [snapped];
+  return [snapped, ...tail];
+}
+
 /// Resolves the best available heading for the driver arrow.
 double? resolveDriverHeading({
   required LatLng position,

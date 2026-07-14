@@ -259,8 +259,8 @@ class RouteMapGeometry {
   }) {
     if (segments.isEmpty || fullPolyline.length < 2) return segments;
 
-    final startIndex = findClosestPolylineIndex(fullPolyline, driver)
-        .clamp(0, fullPolyline.length - 2);
+    final ahead = polylineAheadOf(fullPolyline, driver);
+    if (ahead.length < 2) return segments;
 
     final merged = <LatLng>[];
     final ranges = <({int start, int end, RouteMapSegment segment})>[];
@@ -272,7 +272,17 @@ class RouteMapGeometry {
       ranges.add((start: start, end: merged.length - 1, segment: segment));
     }
 
-    if (merged.isEmpty) return segments;
+    if (merged.isEmpty) {
+      return [
+        RouteMapSegment(
+          points: ahead,
+          trafficLevel: segments.first.trafficLevel,
+        ),
+      ];
+    }
+
+    final startIndex = findClosestPolylineIndex(merged, ahead.first)
+        .clamp(0, merged.length - 2);
 
     final trimmed = <RouteMapSegment>[];
     for (final range in ranges) {
@@ -295,7 +305,20 @@ class RouteMapGeometry {
       }
     }
 
-    return trimmed.isNotEmpty ? trimmed : segments;
+    if (trimmed.isEmpty) {
+      return [
+        RouteMapSegment(
+          points: ahead,
+          trafficLevel: segments.first.trafficLevel,
+        ),
+      ];
+    }
+
+    trimmed[0] = RouteMapSegment(
+      points: ahead,
+      trafficLevel: trimmed.first.trafficLevel,
+    );
+    return trimmed;
   }
 }
 
