@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uzita/services/neshan_map_bindings.dart';
 import 'package:uzita/widgets/driver_map_controller.dart';
+import 'package:uzita/widgets/neshan_map_platform_view.dart';
 import 'package:uzita/utils/navigation_bearing.dart';
 import 'package:uzita/utils/route_map_geometry.dart';
 import 'package:uzita/utils/route_progress.dart';
@@ -48,7 +48,10 @@ class NeshanDriverMap extends StatefulWidget {
     this.onCameraDetached,
   });
 
-  static bool get isSupported => !kIsWeb && Platform.isAndroid;
+  static bool get isSupported {
+    if (kIsWeb) return true;
+    return defaultTargetPlatform == TargetPlatform.android;
+  }
 
   static const navZoom = 17.5;
   /// Matches [NeshanMapPlugin] NAV_TILT (Carto: 0 = horizon, 90 = top-down).
@@ -62,9 +65,6 @@ class NeshanDriverMap extends StatefulWidget {
 }
 
 class _NeshanDriverMapState extends State<NeshanDriverMap> {
-  static const _channel = MethodChannel('com.example.uzita/neshan_map');
-  static const _events = EventChannel('com.example.uzita/neshan_map_events');
-
   /// Max distance (m) the driver can be from the route and still be snapped
   /// onto it. Larger deviations are treated as off-route (handled by reroute).
   static const double _maxSnapMeters = 45;
@@ -220,7 +220,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   @override
   void initState() {
     super.initState();
-    _mapEventSub = _events.receiveBroadcastStream().listen(_onMapEvent);
+    _mapEventSub = NeshanMapBindings.events.listen(_onMapEvent);
     widget.controller?.bind(
       refitOverview: _refitOverview,
       resumeNavigation: _resumeNavigationAt,
@@ -529,7 +529,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (id == null) return;
     final bearing = _navHeading(navPos, heading);
     try {
-      await _channel.invokeMethod('updateDriverMarker', {
+      await NeshanMapBindings.invokeMethod('updateDriverMarker', {
         'viewId': id,
         'lat': navPos.latitude,
         'lng': navPos.longitude,
@@ -616,7 +616,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final id = _viewId;
     if (id == null) return;
     try {
-      await _channel.invokeMethod('beginNavigationCamera', {
+      await NeshanMapBindings.invokeMethod('beginNavigationCamera', {
         'viewId': id,
         'lat': position.latitude,
         'lng': position.longitude,
@@ -634,7 +634,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final id = _viewId;
     if (id == null) return;
     try {
-      await _channel.invokeMethod('updateNavigationCamera', {
+      await NeshanMapBindings.invokeMethod('updateNavigationCamera', {
         'viewId': id,
         'lat': position.latitude,
         'lng': position.longitude,
@@ -694,7 +694,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final id = _viewId;
     if (id == null) return;
     try {
-      await _channel.invokeMethod('setOverviewGestures', {
+      await NeshanMapBindings.invokeMethod('setOverviewGestures', {
         'viewId': id,
         'enabled': enabled,
       });
@@ -705,7 +705,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final id = _viewId;
     if (id == null) return;
     try {
-      await _channel.invokeMethod('setNavigationFollow', {
+      await NeshanMapBindings.invokeMethod('setNavigationFollow', {
         'viewId': id,
         'enabled': enabled,
       });
@@ -798,7 +798,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     if (points.isEmpty) return;
 
     try {
-      await _channel.invokeMethod('fitBounds', {
+      await NeshanMapBindings.invokeMethod('fitBounds', {
         'viewId': id,
         'points': points.map(_point).toList(),
         'overview': widget.overviewMode,
@@ -821,7 +821,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     final id = _viewId;
     if (id == null) return;
     try {
-      await _channel.invokeMethod('moveCamera', {
+      await NeshanMapBindings.invokeMethod('moveCamera', {
         'viewId': id,
         'lat': position.latitude,
         'lng': position.longitude,
@@ -844,7 +844,7 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     );
 
     try {
-      await _channel.invokeMethod('updateRoute', {
+      await NeshanMapBindings.invokeMethod('updateRoute', {
         'viewId': id,
         'mapDark': widget.isDark,
         'overviewMode': !_isNavigationMode,
@@ -894,10 +894,8 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         onPointerMove: _onPointerMove,
         onPointerUp: _onPointerEnd,
         onPointerCancel: _onPointerEnd,
-        child: AndroidView(
-          viewType: 'com.example.uzita/neshan_map_view',
-          creationParams: {'isDark': widget.isDark},
-          creationParamsCodec: const StandardMessageCodec(),
+        child: buildNeshanMapPlatformView(
+          isDark: widget.isDark,
           onPlatformViewCreated: _onPlatformViewCreated,
           gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
             Factory<OneSequenceGestureRecognizer>(

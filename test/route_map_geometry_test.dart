@@ -15,15 +15,6 @@ void main() {
     steps: [],
   );
 
-  const baselineLeg = NeshanRouteLeg(
-    summary: 'test',
-    distanceText: '2 km',
-    durationText: '3 min',
-    distanceMeters: 2000,
-    durationSeconds: 180,
-    steps: [],
-  );
-
   test('uses matching baseline step duration when start locations align', () {
     const liveLeg = NeshanRouteLeg(
       summary: 'test',
@@ -402,10 +393,7 @@ void main() {
       );
 
       expect(geometry.segments, isNotEmpty);
-      expect(
-        geometry.segments.first.trafficLevel,
-        RouteTrafficLevel.heavy,
-      );
+      expect(geometry.segments.first.trafficLevel, RouteTrafficLevel.heavy);
     },
   );
 
@@ -432,10 +420,7 @@ void main() {
   });
 
   test('extractGeocodeQuery strips city prefix for POI lookup', () {
-    expect(
-      extractGeocodeQuery('کاشان, دانشگاه کاشان'),
-      'دانشگاه کاشان',
-    );
+    expect(extractGeocodeQuery('کاشان, دانشگاه کاشان'), 'دانشگاه کاشان');
     expect(
       extractGeocodeQuery('تهران، پارک علم و فناوری علم و صنعت'),
       'پارک علم و فناوری علم و صنعت',

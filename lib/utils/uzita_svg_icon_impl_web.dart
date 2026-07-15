@@ -1,11 +1,9 @@
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
-
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'uzita_svg_icon_mapping.dart';
 
-/// Web: render SVG natively to preserve original colors.
+/// Web: flutter_svg for full-color assets; Material icons when tinting is requested.
 class UzitaSvgIcon extends StatelessWidget {
   const UzitaSvgIcon({
     super.key,
@@ -22,8 +20,6 @@ class UzitaSvgIcon extends StatelessWidget {
   final Color? color;
   final ColorFilter? colorFilter;
 
-  static int _viewFactoryId = 0;
-
   @override
   Widget build(BuildContext context) {
     final String normalizedPath = UzitaSvgIconMapping.normalizePath(assetPath);
@@ -37,34 +33,10 @@ class UzitaSvgIcon extends StatelessWidget {
       );
     }
 
-    const Set<String> mappedFallbackOnlyAssets = <String>{
-      'assets/icons/users.svg',
-      'assets/icons/report.svg',
-      'assets/icons/setting.svg',
-    };
-    if (mappedFallbackOnlyAssets.contains(normalizedPath)) {
-      return Icon(
-        UzitaSvgIconMapping.iconForAsset(normalizedPath),
-        size: width,
-        color: Theme.of(context).iconTheme.color,
-      );
-    }
-
-    final String viewType = 'uzita-svg-${_viewFactoryId++}';
-    ui_web.platformViewRegistry.registerViewFactory(viewType, (int _) {
-      final html.ImageElement image =
-          html.ImageElement()
-            ..src = normalizedPath
-            ..style.width = '100%'
-            ..style.height = '100%'
-            ..style.objectFit = 'contain';
-      return image;
-    });
-
-    return SizedBox(
+    return SvgPicture.asset(
+      normalizedPath,
       width: width,
       height: height,
-      child: HtmlElementView(viewType: viewType),
     );
   }
 }
