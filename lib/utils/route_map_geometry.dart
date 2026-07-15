@@ -314,10 +314,25 @@ class RouteMapGeometry {
       ];
     }
 
-    trimmed[0] = RouteMapSegment(
-      points: ahead,
-      trafficLevel: trimmed.first.trafficLevel,
-    );
+    // Snap the first segment to the driver — do not replace it with the full
+    // overview polyline (that drew a second road on top of step geometry).
+    final snapped = ahead.first;
+    final first = trimmed.first;
+    final firstPoints = List<LatLng>.from(first.points);
+    if (firstPoints.length >= 2) {
+      final snapIndex = findClosestPolylineIndex(firstPoints, snapped)
+          .clamp(0, firstPoints.length - 2);
+      var tail = firstPoints.sublist(snapIndex);
+      if (tail.isEmpty) tail = firstPoints;
+      if (tail.first.latitude != snapped.latitude ||
+          tail.first.longitude != snapped.longitude) {
+        tail = [snapped, ...tail];
+      }
+      trimmed[0] = RouteMapSegment(
+        points: tail.length >= 2 ? tail : firstPoints,
+        trafficLevel: first.trafficLevel,
+      );
+    }
     return trimmed;
   }
 }

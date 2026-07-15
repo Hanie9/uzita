@@ -46,5 +46,29 @@ void main() {
 
       expect(maneuverIcon(step), Icons.turn_left);
     });
+
+    test('maneuverIcon maps continue straight to upward arrow', () {
+      const step = NeshanRouteStep(
+        instruction: 'به مسیر خود ادامه دهید',
+        name: 'بلوار کشاورز',
+        distanceText: '',
+        durationText: '',
+        stepType: 'continue',
+      );
+
+      expect(maneuverIcon(step), Icons.arrow_upward_rounded);
+    });
+
+    test('maneuverIcon does not treat street name راست as right turn', () {
+      const step = NeshanRouteStep(
+        instruction: 'در بلوار شهید راستی به مسیر خود ادامه دهید',
+        name: 'بلوار شهید راستی',
+        distanceText: '',
+        durationText: '',
+        stepType: 'continue',
+      );
+
+      expect(maneuverIcon(step), Icons.arrow_upward_rounded);
+    });
   });
 }

@@ -92,9 +92,10 @@ double? resolveRouteLockedNavigationBearing({
 }) {
   if (routePolyline.length < 2) return lastKnownBearing;
 
-  final index = findClosestPolylineIndex(routePolyline, position).clamp(
-    0,
-    routePolyline.length - 2,
+  final index = resolveLockedRouteSegmentIndex(
+    routePolyline,
+    position,
+    lastRouteSegmentIndex,
   );
   final segmentBearing =
       bearingAheadOnPolyline(routePolyline, position) ??
@@ -109,11 +110,30 @@ double? resolveRouteLockedNavigationBearing({
     return normalizeBearingDegrees(segmentBearing);
   }
 
-  return smoothBearingDegrees(
+  final blended = smoothBearingDegrees(
     lastKnownBearing,
     segmentBearing,
     alpha: 0.28,
   );
+  if (bearingDeltaDegrees(lastKnownBearing, blended) < 6) {
+    return lastKnownBearing;
+  }
+  return blended;
+}
+
+/// Segment index with forward-only hysteresis (prevents GPS jitter near vertices).
+int resolveLockedRouteSegmentIndex(
+  List<LatLng> routePolyline,
+  LatLng position,
+  int? lastRouteSegmentIndex,
+) {
+  final raw = findClosestPolylineIndex(routePolyline, position).clamp(
+    0,
+    routePolyline.length - 2,
+  );
+  if (lastRouteSegmentIndex == null) return raw;
+  if (raw < lastRouteSegmentIndex) return lastRouteSegmentIndex;
+  return raw;
 }
 
 /// Segment index paired with [resolveRouteLockedNavigationBearing].
