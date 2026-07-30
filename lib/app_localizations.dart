@@ -252,6 +252,7 @@ class AppLocalizations {
       'public_loads_no_loads': 'No public loads',
       'public_loads_no_loads_description':
           'There are currently no public loads available',
+      'public_loads_count': 'Public load',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'Please wait',
@@ -1560,6 +1561,7 @@ class AppLocalizations {
       'public_loads_no_loads': 'بار عمومی وجود ندارد',
       'public_loads_no_loads_description':
           'در حال حاضر هیچ بار عمومی در دسترس نیست',
+      'public_loads_count': 'بار عمومی',
 
       // Shared Loading (loading_)
       'loading_please_wait_short': 'لطفاً صبر کنید',
@@ -2779,6 +2781,7 @@ class AppLocalizations {
       _getLocalizedValue('public_loads_no_loads');
   String get public_loads_no_loads_description =>
       _getLocalizedValue('public_loads_no_loads_description');
+  String get public_loads_count => _getLocalizedValue('public_loads_count');
 
   String get shareddrawer_transport_requests =>
       _getLocalizedValue('shareddrawer_transport_requests');

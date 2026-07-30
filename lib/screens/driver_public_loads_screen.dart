@@ -416,19 +416,26 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                               Text(
                                 localizations.nav_public_loads,
                                 style: TextStyle(
+                                  color: Colors.white,
                                   fontSize: ui.scale(
-                                    base: 14,
-                                    min: 12,
-                                    max: 16,
+                                    base: 18,
+                                    min: 16,
+                                    max: 20,
                                   ),
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              isLoading
-                                  ? Row(
-                                      children: [
-                                        SizedBox(
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.list_alt,
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  isLoading
+                                      ? SizedBox(
                                           width: ui.scale(
                                             base: 14,
                                             min: 12,
@@ -439,28 +446,29 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                                             min: 12,
                                             max: 16,
                                           ),
-                                          child: CircularProgressIndicator(
+                                          child: const CircularProgressIndicator(
                                             strokeWidth: 2,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
+                                              Colors.white,
+                                            ),
+                                          ),
+                                        )
+                                      : Text(
+                                          '${loads.length} ${localizations.public_loads_count}',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.9,
+                                            ),
+                                            fontSize: ui.scale(
+                                              base: 12,
+                                              min: 10,
+                                              max: 14,
+                                            ),
                                           ),
                                         ),
-                                      ],
-                                    )
-                                  : Text(
-                                      '${loads.length} ${localizations.nav_public_loads}',
-                                      style: TextStyle(
-                                        fontSize: ui.scale(
-                                          base: 18,
-                                          min: 16,
-                                          max: 20,
-                                        ),
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                                ],
+                              ),
                             ],
                           ),
                         ],
