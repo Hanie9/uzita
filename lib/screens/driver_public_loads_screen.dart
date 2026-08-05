@@ -8,11 +8,13 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/number_format_utils.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 
 class DriverPublicLoadsScreen extends StatefulWidget {
   const DriverPublicLoadsScreen({super.key});
@@ -513,12 +515,9 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                                 .toString();
                             final String phone = (load['phone'] ?? '---')
                                 .toString();
-                            final dynamic priceTransportValue =
-                                load['price_transport'];
-                            final String priceTransport =
-                                priceTransportValue == null
-                                ? '---'
-                                : priceTransportValue.toString();
+                            final String priceTransport = formatGroupedNumber(
+                              load['price_transport'],
+                            );
                             final dynamic vaznValue = load['vazn'];
                             final String vazn = vaznValue == null
                                 ? '---'
@@ -641,8 +640,8 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                                                   ),
                                                   const SizedBox(width: 4),
                                                   Expanded(
-                                                    child: Text(
-                                                      phone,
+                                                    child: TappablePhone(
+                                                      phone: phone,
                                                       style: const TextStyle(
                                                         fontSize: 12,
                                                         color: AppColors

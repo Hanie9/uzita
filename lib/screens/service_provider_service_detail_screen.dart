@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/number_format_utils.dart';
 import 'package:uzita/utils/user_error_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 import 'dart:convert';
 
 class ServiceProviderServiceDetailScreen extends StatefulWidget {
@@ -299,9 +301,12 @@ class _ServiceProviderServiceDetailScreenState
     final piece = widget.service['piece'];
     final pieceName = piece?['name'] ?? '---';
     final pieceCode = piece?['code'] ?? '---';
-    final piecePrice = piece?['price']?.toString() ?? '0';
-    final hazine = widget.service['hazine']?.toString() ?? '0';
-    final sayerHazine = widget.service['sayer_hazine']?.toString() ?? '0';
+    final piecePrice = formatGroupedNumber(piece?['price'], fallback: '0');
+    final hazine = formatGroupedNumber(widget.service['hazine'], fallback: '0');
+    final sayerHazine = formatGroupedNumber(
+      widget.service['sayer_hazine'],
+      fallback: '0',
+    );
     final time = widget.service['time']?.toString() ?? '0';
     final bool isWarranty = widget.service['warranty'] == true;
     final createdAt = widget.service['created_at'] ?? '';
@@ -913,8 +918,8 @@ class _ServiceProviderServiceDetailScreenState
                                     ),
                                   ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    technician['phone'] ?? '---',
+                                  TappablePhone(
+                                    phone: technician['phone'] ?? '---',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

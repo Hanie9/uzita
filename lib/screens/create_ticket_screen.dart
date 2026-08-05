@@ -552,74 +552,247 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           context,
                         ).scale(base: 16, min: 12, max: 20),
                       ),
-                      DropdownButtonFormField<String>(
-                        value: selectedSubjectType,
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double fieldRadius = UiScale(
                             context,
-                          )!.ct_subject_required,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              UiScale(context).scale(base: 12, min: 8, max: 16),
-                            ),
-                            borderSide: BorderSide(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[600]!
-                                  : Colors.grey[300]!,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              UiScale(context).scale(base: 12, min: 8, max: 16),
-                            ),
-                            borderSide: BorderSide(
-                              color: Color(0xFF4CAF50),
-                              width: 2,
-                            ),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              UiScale(context).scale(base: 12, min: 8, max: 16),
-                            ),
-                            borderSide: BorderSide(color: Colors.red, width: 2),
-                          ),
-                          filled: true,
-                          fillColor:
+                          ).scale(base: 12, min: 8, max: 16);
+                          final BorderRadius menuRadius =
+                              BorderRadius.circular(fieldRadius);
+                          final Color menuColor =
                               Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[800]
-                              : Colors.grey[50],
-                          contentPadding: EdgeInsets.symmetric(
+                              ? Colors.grey[800]!
+                              : Colors.grey[50]!;
+                          final Color borderColor =
+                              Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[600]!
+                              : Colors.grey[300]!;
+                          const Color accentColor = Color(0xFF4CAF50);
+                          final EdgeInsets fieldPadding = EdgeInsets.symmetric(
                             horizontal: UiScale(
                               context,
                             ).scale(base: 16, min: 12, max: 20),
                             vertical: UiScale(
                               context,
-                            ).scale(base: 12, min: 8, max: 16),
-                          ),
-                        ),
-                        items: subjectTypes.map((subject) {
-                          return DropdownMenuItem<String>(
-                            value: subject['value'],
-                            child: Text(
-                              _getSubjectLabel(subject['value']!),
-                              style: TextStyle(fontFamily: 'Vazir'),
-                            ),
+                            ).scale(base: 14, min: 12, max: 16),
                           );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSubjectType = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return AppLocalizations.of(
-                              context,
-                            )!.ct_subject_required;
-                          }
-                          return null;
+
+                          return FormField<String>(
+                            initialValue: selectedSubjectType,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return AppLocalizations.of(
+                                  context,
+                                )!.ct_subject_required;
+                              }
+                              return null;
+                            },
+                            builder: (field) {
+                              final String? selected = field.value;
+                              final bool hasValue = selected != null;
+                              final String hintText = AppLocalizations.of(
+                                context,
+                              )!.ct_subject_required;
+
+                              return MenuAnchor(
+                                consumeOutsideTap: true,
+                                alignmentOffset: const Offset(0, 4),
+                                style: MenuStyle(
+                                  backgroundColor:
+                                      WidgetStatePropertyAll(menuColor),
+                                  elevation: const WidgetStatePropertyAll(4),
+                                  shadowColor: WidgetStatePropertyAll(
+                                    Colors.black.withValues(alpha: 0.12),
+                                  ),
+                                  shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                      borderRadius: menuRadius,
+                                      side: BorderSide(color: borderColor),
+                                    ),
+                                  ),
+                                  minimumSize: WidgetStatePropertyAll(
+                                    Size(constraints.maxWidth, 0),
+                                  ),
+                                  maximumSize: WidgetStatePropertyAll(
+                                    Size(constraints.maxWidth, 280),
+                                  ),
+                                  padding: const WidgetStatePropertyAll(
+                                    EdgeInsets.symmetric(vertical: 4),
+                                  ),
+                                ),
+                                menuChildren: subjectTypes.map((subject) {
+                                  final String value = subject['value']!;
+                                  final bool isSelected = selected == value;
+                                  return MenuItemButton(
+                                    onPressed: () {
+                                      field.didChange(value);
+                                      setState(() {
+                                        selectedSubjectType = value;
+                                      });
+                                    },
+                                    style: ButtonStyle(
+                                      backgroundColor:
+                                          WidgetStateProperty.resolveWith((
+                                            states,
+                                          ) {
+                                            if (isSelected) {
+                                              return accentColor.withValues(
+                                                alpha: 0.18,
+                                              );
+                                            }
+                                            return Colors.transparent;
+                                          }),
+                                    ),
+                                    child: SizedBox(
+                                      width: constraints.maxWidth - 24,
+                                      child: Text(
+                                        _getSubjectLabel(value),
+                                        style: TextStyle(
+                                          fontFamily: 'Vazir',
+                                          fontSize: 15,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w700
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? accentColor
+                                              : (Theme.of(context).brightness ==
+                                                        Brightness.dark
+                                                    ? Colors.white
+                                                    : const Color(0xFF1A1A1A)),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                builder: (context, controller, child) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius: menuRadius,
+                                          onTap: () {
+                                            if (controller.isOpen) {
+                                              controller.close();
+                                            } else {
+                                              FocusScope.of(context).unfocus();
+                                              controller.open();
+                                            }
+                                          },
+                                          child: InputDecorator(
+                                            isEmpty: !hasValue,
+                                            decoration: InputDecoration(
+                                              hintText: hintText,
+                                              hintStyle: TextStyle(
+                                                fontFamily: 'Vazir',
+                                                fontSize: 16,
+                                                color:
+                                                    Theme.of(context)
+                                                            .brightness ==
+                                                        Brightness.dark
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600],
+                                              ),
+                                              errorText: field.errorText,
+                                              border: OutlineInputBorder(
+                                                borderRadius: menuRadius,
+                                                borderSide: BorderSide(
+                                                  color: borderColor,
+                                                ),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: menuRadius,
+                                                borderSide: BorderSide(
+                                                  color: borderColor,
+                                                ),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius: menuRadius,
+                                                borderSide: const BorderSide(
+                                                  color: accentColor,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              errorBorder: OutlineInputBorder(
+                                                borderRadius: menuRadius,
+                                                borderSide: const BorderSide(
+                                                  color: Colors.red,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              focusedErrorBorder:
+                                                  OutlineInputBorder(
+                                                    borderRadius: menuRadius,
+                                                    borderSide:
+                                                        const BorderSide(
+                                                          color: Colors.red,
+                                                          width: 2,
+                                                        ),
+                                                  ),
+                                              filled: true,
+                                              fillColor: menuColor,
+                                              contentPadding: fieldPadding,
+                                              isDense: true,
+                                              suffixIcon: Icon(
+                                                controller.isOpen
+                                                    ? Icons.arrow_drop_up
+                                                    : Icons.arrow_drop_down,
+                                                color: accentColor,
+                                              ),
+                                              suffixIconConstraints:
+                                                  const BoxConstraints(
+                                                    minWidth: 40,
+                                                    minHeight: 40,
+                                                  ),
+                                            ),
+                                            child: Align(
+                                              alignment: AlignmentDirectional
+                                                  .centerStart,
+                                              child: Text(
+                                                hasValue
+                                                    ? _getSubjectLabel(
+                                                        selected,
+                                                      )
+                                                    : ' ',
+                                                style: TextStyle(
+                                                  fontFamily: 'Vazir',
+                                                  fontSize: 16,
+                                                  height: 1.25,
+                                                  fontWeight: hasValue
+                                                      ? FontWeight.w700
+                                                      : FontWeight.w400,
+                                                  color: hasValue
+                                                      ? (Theme.of(context)
+                                                                  .brightness ==
+                                                              Brightness.dark
+                                                          ? Colors.white
+                                                          : const Color(
+                                                              0xFF111111,
+                                                            ))
+                                                      : Colors.transparent,
+                                                ),
+                                                textAlign:
+                                                    Directionality.of(
+                                                          context,
+                                                        ) ==
+                                                        TextDirection.rtl
+                                                    ? TextAlign.right
+                                                    : TextAlign.left,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
                         },
                       ),
                     ],

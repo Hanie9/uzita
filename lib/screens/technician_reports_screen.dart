@@ -14,6 +14,7 @@ import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/widgets/technician_task_filter_menu.dart';
 import 'package:uzita/screens/login_screen.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 
 class TechnicianReportsScreen extends StatefulWidget {
   const TechnicianReportsScreen({super.key});
@@ -906,6 +907,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                                     label:
                                                         localizations.tech_phone,
                                                     value: customerPhone,
+                                                    isPhone: true,
                                                   ),
                                                   const SizedBox(height: 6),
                                                   _buildReportInfoRow(
@@ -1139,6 +1141,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     required String label,
     required String value,
     int maxLines = 1,
+    bool isPhone = false,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1147,16 +1150,40 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         Icon(icon, size: 14, color: AppColors.iranianGray),
         const SizedBox(width: 4),
         Expanded(
-          child: Text(
-            '$label: $value',
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-            textDirection: Directionality.of(context),
-            overflow: TextOverflow.ellipsis,
-            maxLines: maxLines,
-          ),
+          child: isPhone
+              ? Row(
+                  textDirection: Directionality.of(context),
+                  children: [
+                    Text(
+                      '$label: ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                    Expanded(
+                      child: TappablePhone(
+                        phone: value,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: maxLines,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  '$label: $value',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                  textDirection: Directionality.of(context),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: maxLines,
+                ),
         ),
       ],
     );

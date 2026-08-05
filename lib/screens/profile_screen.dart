@@ -18,6 +18,7 @@ import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/utils/shared_loading.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:uzita/utils/ui_scale.dart';
 
@@ -1159,6 +1160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     _kvRow(
                                       AppLocalizations.of(context)!.pro_phone,
                                       (phone ?? '—'),
+                                      isPhone: true,
                                     ),
                                     _kvRow(
                                       AppLocalizations.of(
@@ -1328,7 +1330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // Key-Value row for details
-  Widget _kvRow(String keyLabel, String value) {
+  Widget _kvRow(String keyLabel, String value, {bool isPhone = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
@@ -1356,16 +1358,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-              textAlign: Directionality.of(context) == TextDirection.rtl
-                  ? TextAlign.left
-                  : TextAlign.right,
-            ),
+            child: isPhone
+                ? TappablePhone(
+                    phone: value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                    textAlign: Directionality.of(context) == TextDirection.rtl
+                        ? TextAlign.left
+                        : TextAlign.right,
+                  )
+                : Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                    textAlign: Directionality.of(context) == TextDirection.rtl
+                        ? TextAlign.left
+                        : TextAlign.right,
+                  ),
           ),
         ],
       ),

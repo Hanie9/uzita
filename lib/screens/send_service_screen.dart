@@ -13,6 +13,7 @@ import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/utils/number_format_utils.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -202,7 +203,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
       } else {
         // For other levels: send title, description, time, sayer_hazine, name_piece
         final timeInMinutes = getTimeInMinutes(selectedTime!);
-        final otherCost = int.tryParse(_otherCostController.text) ?? 0;
+        final otherCost = parseGroupedInt(_otherCostController.text) ?? 0;
         requestBody = {
           'title': _titleController.text,
           'description': _descriptionController.text,
@@ -286,7 +287,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          '$hazine ${AppLocalizations.of(context)!.sss_tooman}',
+                          '${formatGroupedNumber(hazine)} ${AppLocalizations.of(context)!.sss_tooman}',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1303,6 +1304,9 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                 ? TextAlign.right
                                 : TextAlign.left,
                             keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              ThousandSeparatorInputFormatter(),
+                            ],
                             decoration: InputDecoration(
                               hintText: AppLocalizations.of(
                                 context,
@@ -1344,7 +1348,7 @@ class _SendServiceScreenState extends State<SendServiceScreen> {
                                   context,
                                 )!.sss_other_costs_error;
                               }
-                              if (int.tryParse(value) == null) {
+                              if (parseGroupedInt(value) == null) {
                                 return AppLocalizations.of(
                                   context,
                                 )!.sss_other_costs_error_number;

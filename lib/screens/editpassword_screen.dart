@@ -17,8 +17,10 @@ Widget buildPasswordChangeForm({
   required String error,
   required bool loading,
   required bool isFormValid,
-  required bool obscurePassword,
-  required VoidCallback onToggle,
+  required bool obscureNewPassword,
+  required bool obscureConfirmPassword,
+  required VoidCallback onToggleNewPassword,
+  required VoidCallback onToggleConfirmPassword,
 }) {
   return Builder(
     builder: (context) {
@@ -197,7 +199,7 @@ Widget buildPasswordChangeForm({
 
                             TextField(
                               controller: controllers['newPassword'],
-                              obscureText: obscurePassword,
+                              obscureText: obscureNewPassword,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: screenWidth * 0.035),
                               decoration: InputDecoration(
@@ -218,9 +220,9 @@ Widget buildPasswordChangeForm({
                                     screenWidth * 0.02,
                                   ), // 2% of screen width
                                   child: GestureDetector(
-                                    onTap: onToggle,
+                                    onTap: onToggleNewPassword,
                                     child: Icon(
-                                      obscurePassword
+                                      obscureNewPassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
                                       color:
@@ -262,7 +264,7 @@ Widget buildPasswordChangeForm({
 
                             TextField(
                               controller: controllers['confirmPassword'],
-                              obscureText: obscurePassword,
+                              obscureText: obscureConfirmPassword,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: screenWidth * 0.035),
                               decoration: InputDecoration(
@@ -283,9 +285,9 @@ Widget buildPasswordChangeForm({
                                     screenWidth * 0.02,
                                   ), // 2% of screen width
                                   child: GestureDetector(
-                                    onTap: onToggle,
+                                    onTap: onToggleConfirmPassword,
                                     child: Icon(
-                                      obscurePassword
+                                      obscureConfirmPassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
                                       color:
@@ -483,7 +485,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   String error = '';
   bool loading = false;
-  bool _obscurePassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void initState() {
@@ -584,8 +587,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       error: error,
       loading: loading,
       isFormValid: _isValidForm(),
-      obscurePassword: _obscurePassword,
-      onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+      obscureNewPassword: _obscureNewPassword,
+      obscureConfirmPassword: _obscureConfirmPassword,
+      onToggleNewPassword: () =>
+          setState(() => _obscureNewPassword = !_obscureNewPassword),
+      onToggleConfirmPassword: () =>
+          setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
     );
   }
 }

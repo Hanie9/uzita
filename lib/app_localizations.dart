@@ -776,6 +776,11 @@ class AppLocalizations {
       'trn_price_transport': 'Price transport',
       'trn_price_transport_hint': 'Enter price transport',
       'trn_price_transport_error': 'Please enter price transport',
+      'trn_attachment': 'Attachment',
+      'trn_attach_file': 'Attach file',
+      'trn_attachment_hint': 'Image or PDF (optional)',
+      'trn_attachment_remove': 'Remove attachment',
+      'trn_attachment_invalid': 'Only image or PDF files are allowed',
       'trn_required_error': 'Please fill in all required fields',
       'trn_success_title': 'Successfully',
       'trn_success_message': 'Your Transport request has been submitted',
@@ -785,6 +790,16 @@ class AppLocalizations {
       'trn_error_send_request': 'Error sending request',
       'trn_error_connecting': 'Error connecting to server',
       'trn_direct': 'direct',
+
+      'phone_copied': 'Phone number copied',
+      'phone_call_failed': 'Could not open the phone dialer',
+      'sps_status_draft': 'Draft',
+
+      'trd_cancel_request': 'Cancel request',
+      'trd_cancel_request_confirm':
+          'Are you sure you want to cancel this transport request?',
+      'trd_cancel_request_success': 'Request canceled successfully',
+      'trd_cancel_request_error': 'Error canceling request',
 
       'trd_title': 'Transport request details',
       'trd_pieces': 'Requested parts',
@@ -1258,6 +1273,10 @@ class AppLocalizations {
       'driver_fee_received': 'Fee Received',
       'driver_fee_received_hint': 'Enter received fee (optional)',
       'driver_fee_received_invalid': 'Please enter a valid amount',
+      'driver_final_attachment': 'Receipt',
+      'driver_final_attachment_hint': 'Upload receipt image or PDF (optional)',
+      'driver_final_attachment_pick': 'Attach receipt',
+      'driver_final_attachment_remove': 'Remove receipt',
       'driver_weight': 'Weight',
       'driver_insurance': 'Insurance',
       'driver_select_load': 'Select Load',
@@ -2082,6 +2101,11 @@ class AppLocalizations {
       'trn_price_transport': 'قیمت حمل',
       'trn_price_transport_hint': 'قیمت حمل را وارد کنید',
       'trn_price_transport_error': 'لطفاً قیمت حمل را وارد کنید',
+      'trn_attachment': 'پیوست',
+      'trn_attach_file': 'افزودن فایل',
+      'trn_attachment_hint': 'تصویر یا PDF (اختیاری)',
+      'trn_attachment_remove': 'حذف پیوست',
+      'trn_attachment_invalid': 'فقط فایل تصویر یا PDF مجاز است',
       'trn_required_error': 'لطفاً همه فیلدهای ضروری را تکمیل کنید',
       'trn_success_title': 'موفقیت آمیز',
       'trn_success_message': 'درخواست شما با موفقیت ثبت شد',
@@ -2091,6 +2115,16 @@ class AppLocalizations {
       'trn_error_send_request': 'خطا در ارسال درخواست',
       'trn_error_connecting': 'خطا در اتصال به سرور',
       'trn_direct': 'مستقیم از مشتری',
+
+      'phone_copied': 'شماره تماس کپی شد',
+      'phone_call_failed': 'امکان باز کردن شماره‌گیر وجود ندارد',
+      'sps_status_draft': 'پیش‌نویس',
+
+      'trd_cancel_request': 'لغو درخواست',
+      'trd_cancel_request_confirm':
+          'آیا از لغو این درخواست حمل مطمئن هستید؟',
+      'trd_cancel_request_success': 'درخواست با موفقیت لغو شد',
+      'trd_cancel_request_error': 'خطا در لغو درخواست',
 
       'trd_title': 'جزئیات درخواست حمل',
       'trd_pieces': 'قطعات درخواستی',
@@ -2556,6 +2590,10 @@ class AppLocalizations {
       'driver_fee_received': 'مبلغ دریافتی',
       'driver_fee_received_hint': 'مبلغ دریافتی را وارد کنید (اختیاری)',
       'driver_fee_received_invalid': 'لطفا مبلغ معتبر وارد کنید',
+      'driver_final_attachment': 'رسید',
+      'driver_final_attachment_hint': 'آپلود رسید (تصویر یا PDF، اختیاری)',
+      'driver_final_attachment_pick': 'پیوست رسید',
+      'driver_final_attachment_remove': 'حذف رسید',
       'driver_weight': 'وزن',
       'driver_insurance': 'بیمه',
       'driver_select_load': 'انتخاب بار',
@@ -2846,6 +2884,13 @@ class AppLocalizations {
       _getLocalizedValue('trn_price_transport_hint');
   String get trn_price_transport_error =>
       _getLocalizedValue('trn_price_transport_error');
+  String get trn_attachment => _getLocalizedValue('trn_attachment');
+  String get trn_attach_file => _getLocalizedValue('trn_attach_file');
+  String get trn_attachment_hint => _getLocalizedValue('trn_attachment_hint');
+  String get trn_attachment_remove =>
+      _getLocalizedValue('trn_attachment_remove');
+  String get trn_attachment_invalid =>
+      _getLocalizedValue('trn_attachment_invalid');
   String get trn_required_error => _getLocalizedValue('trn_required_error');
   String get trn_success_title => _getLocalizedValue('trn_success_title');
   String get trn_success_message => _getLocalizedValue('trn_success_message');
@@ -2856,6 +2901,18 @@ class AppLocalizations {
       _getLocalizedValue('trn_error_send_request');
   String get trn_error_connecting => _getLocalizedValue('trn_error_connecting');
   String get trn_direct => _getLocalizedValue('trn_direct');
+
+  String get phone_copied => _getLocalizedValue('phone_copied');
+  String get phone_call_failed => _getLocalizedValue('phone_call_failed');
+  String get sps_status_draft => _getLocalizedValue('sps_status_draft');
+
+  String get trd_cancel_request => _getLocalizedValue('trd_cancel_request');
+  String get trd_cancel_request_confirm =>
+      _getLocalizedValue('trd_cancel_request_confirm');
+  String get trd_cancel_request_success =>
+      _getLocalizedValue('trd_cancel_request_success');
+  String get trd_cancel_request_error =>
+      _getLocalizedValue('trd_cancel_request_error');
 
   String get trd_title => _getLocalizedValue('trd_title');
   String get trd_pieces => _getLocalizedValue('trd_pieces');
@@ -3713,6 +3770,14 @@ class AppLocalizations {
       _getLocalizedValue('driver_fee_received_hint');
   String get driver_fee_received_invalid =>
       _getLocalizedValue('driver_fee_received_invalid');
+  String get driver_final_attachment =>
+      _getLocalizedValue('driver_final_attachment');
+  String get driver_final_attachment_hint =>
+      _getLocalizedValue('driver_final_attachment_hint');
+  String get driver_final_attachment_pick =>
+      _getLocalizedValue('driver_final_attachment_pick');
+  String get driver_final_attachment_remove =>
+      _getLocalizedValue('driver_final_attachment_remove');
   String get driver_weight => _getLocalizedValue('driver_weight');
   String get driver_insurance => _getLocalizedValue('driver_insurance');
   String get driver_select_load => _getLocalizedValue('driver_select_load');

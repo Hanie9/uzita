@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,8 +16,24 @@ import 'package:uzita/services/neshan_service.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/address_geocode_hints.dart';
 import 'package:uzita/utils/neshan_errors.dart';
+import 'package:uzita/utils/number_format_utils.dart';
+import 'package:uzita/utils/read_local_file_bytes.dart';
+import 'package:uzita/utils/transport_attachment_utils.dart';
 import 'package:uzita/utils/user_error_message.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
+
+class _CompleteTaskFormResult {
+  const _CompleteTaskFormResult({
+    required this.report,
+    this.fee,
+    this.receipt,
+  });
+
+  final String report;
+  final int? fee;
+  final PickedTransportAttachment? receipt;
+}
 
 class DriverTaskDetailScreen extends StatefulWidget {
   final Map<String, dynamic> task;
@@ -35,6 +52,8 @@ class DriverTaskDetailScreen extends StatefulWidget {
 class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
   bool isLoading = false;
   bool isRouting = false;
+  bool isDownloadingAttachment = false;
+  bool isDownloadingFinalAttachment = false;
   late Map<String, dynamic> taskData;
 
   @override
@@ -345,81 +364,220 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
   Future<void> _completeTask() async {
     final localizations = AppLocalizations.of(context)!;
 
-    // Show dialog to enter report
     final reportController = TextEditingController();
     final feeController = TextEditingController();
+    PickedTransportAttachment? receipt;
 
-    final report = await showDialog<String>(
+    final _CompleteTaskFormResult? formResult =
+        await showDialog<_CompleteTaskFormResult>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(localizations.driver_enter_report),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: reportController,
-                decoration: InputDecoration(
-                  labelText: localizations.driver_report,
-                  hintText: localizations.driver_report,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                maxLines: 5,
-                autofocus: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: feeController,
-                decoration: InputDecoration(
-                  labelText: localizations.driver_fee_received,
-                  hintText: localizations.driver_fee_received_hint,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: Text(localizations.home_no),
-            ),
-            TextButton(
-              onPressed: () {
-                if (reportController.text.trim().isEmpty) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> pickReceipt() async {
+              try {
+                final FilePickerResult? result =
+                    await FilePicker.platform.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: kTransportAttachmentExtensions,
+                  withData: true,
+                  allowMultiple: false,
+                );
+                if (result == null || result.files.isEmpty) return;
+
+                final PlatformFile file = result.files.single;
+                if (!isAllowedTransportAttachmentName(file.name)) {
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(localizations.driver_report_required),
-                      backgroundColor: Colors.red,
+                      content: Text(localizations.trn_attachment_invalid),
                     ),
                   );
                   return;
                 }
-                if (feeController.text.trim().isNotEmpty &&
-                    int.tryParse(feeController.text.trim()) == null) {
+
+                Uint8List? bytes = file.bytes;
+                if (bytes == null && file.path != null) {
+                  bytes = await readLocalFileBytes(file.path!);
+                }
+                if (bytes == null) {
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(localizations.driver_fee_received_invalid),
-                      backgroundColor: Colors.red,
+                      content: Text(localizations.trn_attachment_invalid),
                     ),
                   );
                   return;
                 }
-                Navigator.pop(context, reportController.text.trim());
-              },
-              child: Text(localizations.home_yes),
-            ),
-          ],
+
+                setDialogState(() {
+                  receipt = PickedTransportAttachment(
+                    name: file.name,
+                    bytes: bytes!,
+                    path: file.path,
+                  );
+                });
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(localizations.trn_attachment_invalid),
+                  ),
+                );
+              }
+            }
+
+            return AlertDialog(
+              title: Text(localizations.driver_enter_report),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: reportController,
+                      decoration: InputDecoration(
+                        labelText: localizations.driver_report,
+                        hintText: localizations.driver_report,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      maxLines: 5,
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: feeController,
+                      decoration: InputDecoration(
+                        labelText: localizations.driver_fee_received,
+                        hintText: localizations.driver_fee_received_hint,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [ThousandSeparatorInputFormatter()],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      localizations.driver_final_attachment,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.iranianGray,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (receipt != null) ...[
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.insert_drive_file,
+                            color: AppColors.lapisLazuli,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              receipt!.name,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip:
+                                localizations.driver_final_attachment_remove,
+                            onPressed: () {
+                              setDialogState(() => receipt = null);
+                            },
+                            icon: const Icon(
+                              Icons.close,
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    OutlinedButton.icon(
+                      onPressed: pickReceipt,
+                      icon: const Icon(
+                        Icons.receipt_long,
+                        color: AppColors.lapisLazuli,
+                      ),
+                      label: Text(
+                        localizations.driver_final_attachment_pick,
+                        style: const TextStyle(
+                          color: AppColors.lapisLazuli,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.lapisLazuli),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      localizations.driver_final_attachment_hint,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: Text(localizations.home_no),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (reportController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(localizations.driver_report_required),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    if (feeController.text.trim().isNotEmpty &&
+                        parseGroupedInt(feeController.text) == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            localizations.driver_fee_received_invalid,
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pop(
+                      context,
+                      _CompleteTaskFormResult(
+                        report: reportController.text.trim(),
+                        fee: parseGroupedInt(feeController.text),
+                        receipt: receipt,
+                      ),
+                    );
+                  },
+                  child: Text(localizations.home_yes),
+                ),
+              ],
+            );
+          },
         );
       },
     );
 
-    if (report == null || report.isEmpty) return;
+    reportController.dispose();
+    feeController.dispose();
+
+    if (formResult == null || formResult.report.isEmpty) return;
 
     setState(() => isLoading = true);
 
@@ -438,24 +596,26 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
 
       await SessionManager().onNetworkRequest();
 
-      // Confirm task with report
       final url = '$baseUrl5/transport/task/$taskId/confirm';
-
-      final requestBody = <String, dynamic>{'report': report};
-
-      if (feeController.text.trim().isNotEmpty) {
-        requestBody['fee_received'] = int.parse(feeController.text.trim());
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+      request.fields['report'] = formResult.report;
+      if (formResult.fee != null) {
+        request.fields['fee_received'] = formResult.fee!.toString();
+      }
+      if (formResult.receipt != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'driver_final_attachment',
+            formResult.receipt!.bytes,
+            filename: formResult.receipt!.name,
+          ),
+        );
       }
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode(requestBody),
-      );
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
 
       if (!mounted) return;
 
@@ -472,7 +632,6 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
           SnackBar(content: Text(message), backgroundColor: Colors.green),
         );
 
-        // Navigate back to missions screen
         Navigator.pop(context, true);
       } else {
         final body = utf8.decode(response.bodyBytes);
@@ -528,14 +687,13 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     final String paymentType = (taskData['payment_type'] ?? '').toString();
     final String customer = (taskData['customer'] ?? '').toString();
     // Handle price_transport - can be null, number, or string
-    final dynamic priceTransportValue = taskData['price_transport'];
-    final String priceTransport = priceTransportValue == null
-        ? '---'
-        : priceTransportValue.toString();
-    final dynamic feeReceivedValue = taskData['fee_received'];
-    final String feeReceived = feeReceivedValue == null
-        ? '0'
-        : feeReceivedValue.toString();
+    final String priceTransport = formatGroupedNumber(
+      taskData['price_transport'],
+    );
+    final String feeReceived = formatGroupedNumber(
+      taskData['fee_received'],
+      fallback: '0',
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -704,6 +862,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   icon: Icons.phone,
                   title: localizations.driver_phone,
                   value: phone,
+                  isPhone: true,
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 if (!widget.isReport) ...[
@@ -725,6 +884,50 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                       ? '---'
                       : '$feeReceived ${localizations.sls_tooman}',
                 ),
+                if (hasTransportAttachment(taskData)) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  buildTransportAttachmentSection(
+                    context: context,
+                    data: taskData,
+                    isDownloading: isDownloadingAttachment,
+                    onDownload: () async {
+                      setState(() => isDownloadingAttachment = true);
+                      try {
+                        await downloadTransportAttachment(
+                          context: context,
+                          data: taskData,
+                        );
+                      } finally {
+                        if (mounted) {
+                          setState(() => isDownloadingAttachment = false);
+                        }
+                      }
+                    },
+                  ),
+                ],
+                if (hasDriverFinalAttachment(taskData)) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  buildDriverFinalAttachmentSection(
+                    context: context,
+                    data: taskData,
+                    isDownloading: isDownloadingFinalAttachment,
+                    onDownload: () async {
+                      setState(() => isDownloadingFinalAttachment = true);
+                      try {
+                        await downloadDriverFinalAttachment(
+                          context: context,
+                          data: taskData,
+                        );
+                      } finally {
+                        if (mounted) {
+                          setState(
+                            () => isDownloadingFinalAttachment = false,
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(
                   context,
@@ -944,6 +1147,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     required IconData icon,
     required String title,
     required String value,
+    bool isPhone = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -973,15 +1177,26 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color:
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87,
+                if (isPhone)
+                  TappablePhone(
+                    phone: value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
+                    ),
+                  )
+                else
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

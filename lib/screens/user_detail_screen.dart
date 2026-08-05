@@ -9,6 +9,7 @@ import 'package:uzita/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 
 class UserDetailScreen extends StatefulWidget {
   final Map user;
@@ -1015,6 +1016,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                               Icons.phone,
                               AppLocalizations.of(context)!.uds_phone,
                               user['phone'],
+                              isPhone: true,
                             ),
                             _buildInfoTile(
                               Icons.code,
@@ -1465,6 +1467,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     String label,
     dynamic value, {
     Color? statusColor,
+    bool isPhone = false,
   }) {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
@@ -1509,15 +1512,26 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                   ),
                 ),
                 SizedBox(height: 2),
-                Text(
-                  value?.toString() ?? '-',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.titleMedium?.color,
+                if (isPhone)
+                  TappablePhone(
+                    phone: value?.toString() ?? '-',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.titleMedium?.color,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  )
+                else
+                  Text(
+                    value?.toString() ?? '-',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.titleMedium?.color,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
           ),

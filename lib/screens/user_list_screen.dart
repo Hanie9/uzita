@@ -239,6 +239,8 @@ class _UserListScreenState extends State<UserListScreen> {
     int? level = 1;
     String message = '';
     bool isLoading = false;
+    final GlobalKey levelFieldKey = GlobalKey();
+    double? levelFieldWidth;
     // final userLevels = {
     //   1: AppLocalizations.of(context)!.uds_level_1,
     //   2: AppLocalizations.of(context)!.uds_level_2,
@@ -251,171 +253,332 @@ class _UserListScreenState extends State<UserListScreen> {
             ? TextDirection.ltr
             : TextDirection.rtl,
         child: StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            backgroundColor: Theme.of(context).cardTheme.color,
-            surfaceTintColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            actionsPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            title: Row(
-              children: [
-                Icon(Icons.person_add, color: Color(0xFF007BA7), size: 24),
-                SizedBox(width: 8),
-                Text(
-                  AppLocalizations.of(context)!.uls_add_user_title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+          builder: (context, setDialogState) {
+            void syncLevelFieldWidth() {
+              final RenderObject? renderObject =
+                  levelFieldKey.currentContext?.findRenderObject();
+              if (renderObject is! RenderBox || !renderObject.hasSize) {
+                return;
+              }
+              final double width = renderObject.size.width;
+              if (levelFieldWidth != width) {
+                setDialogState(() {
+                  levelFieldWidth = width;
+                });
+              }
+            }
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              syncLevelFieldWidth();
+            });
+
+            final double? menuWidth = levelFieldWidth;
+
+            return AlertDialog(
+              backgroundColor: Theme.of(context).cardTheme.color,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              actionsPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              title: Row(
                 children: [
-                  _buildAddUserField(
-                    controller: usernameController,
-                    label: AppLocalizations.of(context)!.uls_username,
-                    icon: Icons.person,
-                  ),
-                  SizedBox(height: 16),
-                  _buildAddUserField(
-                    controller: passwordController,
-                    label: AppLocalizations.of(context)!.uls_password,
-                    icon: Icons.lock,
-                    isPassword: true,
-                  ),
-                  SizedBox(height: 16),
-                  _buildPhoneUserField(
-                    controller: phoneController,
-                    label: AppLocalizations.of(context)!.uls_phone,
-                    icon: Icons.phone,
-                  ),
-                  SizedBox(height: 16),
-                  _buildAddUserField(
-                    controller: codeController,
-                    label: AppLocalizations.of(context)!.uls_user_code,
-                    icon: Icons.code,
-                    keyboardType: TextInputType.number,
-                  ),
-                  SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[800]
-                          : Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey[600]!
-                            : Colors.grey[300]!,
-                      ),
+                  Icon(Icons.person_add, color: Color(0xFF007BA7), size: 24),
+                  SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.uls_add_user_title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: DropdownButtonFormField<int>(
-                      value: level ?? 2,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(
-                          context,
-                        )!.uls_access_level,
-                        hintText: AppLocalizations.of(context)!.uls_level2,
-                        prefixIcon: Icon(
-                          Icons.admin_panel_settings,
-                          color: Color(0xFF007BA7),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                      ),
-                      isExpanded: true,
-                      isDense: true,
-                      menuMaxHeight: 280,
-                      items: [
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text(
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildAddUserField(
+                      controller: usernameController,
+                      label: AppLocalizations.of(context)!.uls_username,
+                      icon: Icons.person,
+                    ),
+                    SizedBox(height: 16),
+                    _buildAddUserField(
+                      controller: passwordController,
+                      label: AppLocalizations.of(context)!.uls_password,
+                      icon: Icons.lock,
+                      isPassword: true,
+                    ),
+                    SizedBox(height: 16),
+                    _buildPhoneUserField(
+                      controller: phoneController,
+                      label: AppLocalizations.of(context)!.uls_phone,
+                      icon: Icons.phone,
+                    ),
+                    SizedBox(height: 16),
+                    _buildAddUserField(
+                      controller: codeController,
+                      label: AppLocalizations.of(context)!.uls_user_code,
+                      icon: Icons.code,
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 16),
+                    Builder(
+                      builder: (context) {
+                        const BorderRadius menuRadius = BorderRadius.all(
+                          Radius.circular(12),
+                        );
+                        final Color menuColor =
+                            Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[800]!
+                            : Colors.grey[50]!;
+                        final Color borderColor =
+                            Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[600]!
+                            : Colors.grey[300]!;
+                        const Color accentColor = Color(0xFF007BA7);
+                        final List<MapEntry<int, String>> levelOptions = [
+                          MapEntry(
+                            1,
                             AppLocalizations.of(context)!.uls_level1,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
                           ),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          child: Text(
+                          MapEntry(
+                            2,
                             AppLocalizations.of(context)!.uls_level2,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
                           ),
-                        ),
-                        // DropdownMenuItem(
-                        //   value: 3,
-                        //   child: Text(
-                        //     AppLocalizations.of(context)!.uls_level3,
-                        //     maxLines: 1,
-                        //     overflow: TextOverflow.ellipsis,
-                        //     softWrap: false,
-                        //   ),
-                        // ),
-                      ],
-                      onChanged: (val) {
-                        setDialogState(() {
-                          level = val;
-                        });
+                        ];
+                        final int selectedLevel = level ?? 1;
+                        final String selectedLabel = levelOptions
+                            .firstWhere(
+                              (e) => e.key == selectedLevel,
+                              orElse: () => levelOptions.first,
+                            )
+                            .value;
+
+                        return MenuAnchor(
+                          consumeOutsideTap: true,
+                          crossAxisUnconstrained: false,
+                          alignmentOffset: const Offset(0, 4),
+                          style: MenuStyle(
+                            backgroundColor: WidgetStatePropertyAll(menuColor),
+                            elevation: const WidgetStatePropertyAll(4),
+                            shadowColor: WidgetStatePropertyAll(
+                              Colors.black.withValues(alpha: 0.12),
+                            ),
+                            shape: WidgetStatePropertyAll(
+                              RoundedRectangleBorder(
+                                borderRadius: menuRadius,
+                                side: BorderSide(color: borderColor),
+                              ),
+                            ),
+                            minimumSize: menuWidth == null
+                                ? null
+                                : WidgetStatePropertyAll(Size(menuWidth, 0)),
+                            maximumSize: menuWidth == null
+                                ? null
+                                : WidgetStatePropertyAll(
+                                    Size(menuWidth, 240),
+                                  ),
+                            padding: const WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(vertical: 4),
+                            ),
+                          ),
+                          menuChildren: levelOptions.map((option) {
+                            final bool isSelected =
+                                selectedLevel == option.key;
+                            return MenuItemButton(
+                              onPressed: () {
+                                setDialogState(() {
+                                  level = option.key;
+                                });
+                              },
+                              style: ButtonStyle(
+                                backgroundColor:
+                                    WidgetStateProperty.resolveWith((states) {
+                                      if (isSelected) {
+                                        return accentColor.withValues(
+                                          alpha: 0.18,
+                                        );
+                                      }
+                                      return Colors.transparent;
+                                    }),
+                              ),
+                              child: SizedBox(
+                                width: menuWidth == null
+                                    ? null
+                                    : menuWidth - 24,
+                                child: Text(
+                                  option.value,
+                                  style: TextStyle(
+                                    fontFamily: 'Vazir',
+                                    fontSize: 15,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    color: isSelected
+                                        ? accentColor
+                                        : (Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : const Color(0xFF1A1A1A)),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          builder: (context, controller, child) {
+                            return KeyedSubtree(
+                              key: levelFieldKey,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: menuRadius,
+                                  onTap: () {
+                                    syncLevelFieldWidth();
+                                    if (controller.isOpen) {
+                                      controller.close();
+                                      return;
+                                    }
+                                    FocusScope.of(context).unfocus();
+                                    // Open after width is applied so menu matches the field.
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (!controller.isOpen) {
+                                            controller.open();
+                                          }
+                                        });
+                                  },
+                                  child: InputDecorator(
+                                    isEmpty: false,
+                                    decoration: InputDecoration(
+                                      labelText: AppLocalizations.of(
+                                        context,
+                                      )!.uls_access_level,
+                                      labelStyle: TextStyle(
+                                        color: accentColor.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        fontFamily: 'Vazir',
+                                      ),
+                                      prefixIcon: const Icon(
+                                        Icons.admin_panel_settings,
+                                        color: accentColor,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: menuRadius,
+                                        borderSide: BorderSide(
+                                          color: borderColor,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: menuRadius,
+                                        borderSide: BorderSide(
+                                          color: borderColor,
+                                        ),
+                                      ),
+                                      focusedBorder: const OutlineInputBorder(
+                                        borderRadius: menuRadius,
+                                        borderSide: BorderSide(
+                                          color: accentColor,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      filled: true,
+                                      fillColor: menuColor,
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 14,
+                                          ),
+                                      suffixIcon: Icon(
+                                        controller.isOpen
+                                            ? Icons.arrow_drop_up
+                                            : Icons.arrow_drop_down,
+                                        color: accentColor,
+                                      ),
+                                      suffixIconConstraints:
+                                          const BoxConstraints(
+                                            minWidth: 40,
+                                            minHeight: 40,
+                                          ),
+                                    ),
+                                    child: Align(
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
+                                      child: Text(
+                                        selectedLabel,
+                                        style: TextStyle(
+                                          fontFamily: 'Vazir',
+                                          fontSize: 16,
+                                          height: 1.25,
+                                          fontWeight: FontWeight.w700,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : const Color(0xFF111111),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
                       },
                     ),
-                  ),
-                  if (message.isNotEmpty) ...[
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: message.contains('موفقیت')
-                            ? Colors.blue.withValues(alpha: 0.1)
-                            : Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
+                    if (message.isNotEmpty) ...[
+                      SizedBox(height: 16),
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
                           color: message.contains('موفقیت')
-                              ? Colors.blue
-                              : Colors.red,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            message.contains('موفقیت')
-                                ? Icons.check_circle
-                                : Icons.error,
+                              ? Colors.blue.withValues(alpha: 0.1)
+                              : Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
                             color: message.contains('موفقیت')
                                 ? Colors.blue
                                 : Colors.red,
-                            size: 20,
+                            width: 1,
                           ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              message,
-                              style: TextStyle(
-                                color: message.contains('موفقیت')
-                                    ? Colors.blue
-                                    : Colors.red,
-                                fontWeight: FontWeight.w500,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              message.contains('موفقیت')
+                                  ? Icons.check_circle
+                                  : Icons.error,
+                              color: message.contains('موفقیت')
+                                  ? Colors.blue
+                                  : Colors.red,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                message,
+                                style: TextStyle(
+                                  color: message.contains('موفقیت')
+                                      ? Colors.blue
+                                      : Colors.red,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            actions: [
+              actions: [
               Row(
                 children: [
                   Expanded(
@@ -573,7 +736,8 @@ class _UserListScreenState extends State<UserListScreen> {
                 ],
               ),
             ],
-          ),
+          );
+          },
         ),
       ),
     );

@@ -6,8 +6,11 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/number_format_utils.dart';
+import 'package:uzita/utils/transport_attachment_utils.dart';
 import 'package:uzita/utils/user_error_message.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 
 class TransportRequestDetailScreen extends StatefulWidget {
   final Map<String, dynamic> request;
@@ -23,6 +26,9 @@ class _TransportRequestDetailScreenState
     extends State<TransportRequestDetailScreen> {
   bool isLoading = false;
   bool isSubmittingRating = false;
+  bool isCanceling = false;
+  bool isDownloadingAttachment = false;
+  bool isDownloadingFinalAttachment = false;
   int? selectedGrade;
   final TextEditingController _commentController = TextEditingController();
   Map<String, dynamic>? driverInfo;
@@ -207,6 +213,8 @@ class _TransportRequestDetailScreenState
     switch (status) {
       case 'open':
         return localizations.sps_status_open;
+      case 'draft':
+        return localizations.sps_status_draft;
       case 'assigned':
         return localizations.sps_status_assigned;
       case 'confirm':
@@ -215,8 +223,121 @@ class _TransportRequestDetailScreenState
         return localizations.sps_status_done;
       case 'canceled':
         return localizations.sps_status_canceled;
+      case 'suspended':
+        return localizations.sps_status_suspended;
       default:
         return status;
+    }
+  }
+
+  bool _canCancelRequest(String status) {
+    return status == 'open' || status == 'draft' || status == 'suspended';
+  }
+
+  Future<void> _cancelRequest() async {
+    final localizations = AppLocalizations.of(context)!;
+    final requestId = requestData['id']?.toString() ?? '';
+    if (requestId.isEmpty) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.trd_cancel_request),
+        content: Text(localizations.trd_cancel_request_confirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(localizations.trd_cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(localizations.trd_cancel_request),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => isCanceling = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      await SessionManager().onNetworkRequest();
+      final response = await http.patch(
+        Uri.parse('$baseUrl5/transport/listrequest/$requestId/status'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'status': 'canceled'}),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        setState(() {
+          requestData['status'] = 'canceled';
+          isCanceling = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localizations.trd_cancel_request_success),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true);
+      } else {
+        String errorMessage = localizations.trd_cancel_request_error;
+        try {
+          final data = json.decode(utf8.decode(response.bodyBytes));
+          if (data is Map) {
+            errorMessage =
+                data['error']?.toString() ??
+                data['message']?.toString() ??
+                errorMessage;
+          }
+        } catch (_) {}
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => isCanceling = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userFacingErrorMessage(e, localizations)),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadAttachment() async {
+    setState(() => isDownloadingAttachment = true);
+    try {
+      await downloadTransportAttachment(context: context, data: requestData);
+    } finally {
+      if (mounted) {
+        setState(() => isDownloadingAttachment = false);
+      }
+    }
+  }
+
+  Future<void> _downloadFinalAttachment() async {
+    setState(() => isDownloadingFinalAttachment = true);
+    try {
+      await downloadDriverFinalAttachment(context: context, data: requestData);
+    } finally {
+      if (mounted) {
+        setState(() => isDownloadingFinalAttachment = false);
+      }
     }
   }
 
@@ -703,8 +824,9 @@ class _TransportRequestDetailScreenState
     final String createdAt = (requestData['created_at'] ?? '').toString();
     final String comment = (requestData['comment'] ?? '---').toString();
     final String grade = (requestData['grade'] ?? '---').toString();
-    final String priceTransport = (requestData['price_transport'] ?? '---')
-        .toString();
+    final String priceTransport = formatGroupedNumber(
+      requestData['price_transport'],
+    );
     final String productDescription =
         (requestData['product_description'] ?? '---').toString();
     final String output = (requestData['output_number'] ?? '---').toString();
@@ -737,6 +859,7 @@ class _TransportRequestDetailScreenState
     // Check if user can complete task: same access rule but status 'assigned'
     final bool canCompleteTask =
         (logicalLevel == 1 || logicalLevel == 2) && status == 'assigned';
+    final bool canCancel = _canCancelRequest(status);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -883,6 +1006,7 @@ class _TransportRequestDetailScreenState
                   icon: Icons.phone,
                   title: localizations.trd_phone,
                   value: phone,
+                  isPhone: true,
                 ),
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 _buildInfoItem(
@@ -924,8 +1048,28 @@ class _TransportRequestDetailScreenState
                   context,
                   icon: Icons.attach_money,
                   title: localizations.trn_price_transport,
-                  value: priceTransport,
+                  value: priceTransport == '---'
+                      ? priceTransport
+                      : '$priceTransport ${localizations.sls_tooman}',
                 ),
+                if (hasTransportAttachment(requestData)) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  buildTransportAttachmentSection(
+                    context: context,
+                    data: requestData,
+                    isDownloading: isDownloadingAttachment,
+                    onDownload: _downloadAttachment,
+                  ),
+                ],
+                if (hasDriverFinalAttachment(requestData)) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  buildDriverFinalAttachmentSection(
+                    context: context,
+                    data: requestData,
+                    isDownloading: isDownloadingFinalAttachment,
+                    onDownload: _downloadFinalAttachment,
+                  ),
+                ],
                 SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
                 // Driver information section with all details
                 _buildDriverInfoSection(context),
@@ -1010,6 +1154,36 @@ class _TransportRequestDetailScreenState
                         backgroundColor: AppColors.lapisLazuli,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (canCancel) ...[
+                  SizedBox(height: ui.scale(base: 16, min: 12, max: 20)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: isCanceling ? null : _cancelRequest,
+                      icon: isCanceling
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cancel_outlined, color: Colors.red),
+                      label: Text(
+                        localizations.trd_cancel_request,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1155,6 +1329,7 @@ class _TransportRequestDetailScreenState
               Icons.phone,
               localizations.trd_driver_phone,
               driverPhone,
+              isPhone: true,
             ),
           ],
           if (driverCity != '---') ...[
@@ -1184,8 +1359,9 @@ class _TransportRequestDetailScreenState
     BuildContext context,
     IconData icon,
     String label,
-    String value,
-  ) {
+    String value, {
+    bool isPhone = false,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1203,16 +1379,28 @@ class _TransportRequestDetailScreenState
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 14,
-                  color:
-                      Theme.of(context).textTheme.bodyMedium?.color ??
-                      Colors.black87,
-                  fontWeight: FontWeight.w500,
+              if (isPhone)
+                TappablePhone(
+                  phone: value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                )
+              else
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color:
+                        Theme.of(context).textTheme.bodyMedium?.color ??
+                        Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1368,6 +1556,7 @@ class _TransportRequestDetailScreenState
     required IconData icon,
     required String title,
     required String value,
+    bool isPhone = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1397,15 +1586,26 @@ class _TransportRequestDetailScreenState
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color:
-                        Theme.of(context).textTheme.bodyMedium?.color ??
-                        Colors.black87,
+                if (isPhone)
+                  TappablePhone(
+                    phone: value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
+                    ),
+                  )
+                else
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color:
+                          Theme.of(context).textTheme.bodyMedium?.color ??
+                          Colors.black87,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

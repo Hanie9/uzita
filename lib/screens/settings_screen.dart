@@ -156,97 +156,190 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   context: context,
                   title: localizations.set_app_language_title,
                   subtitle: localizations.set_change_language_subtitle,
-                  child: DropdownButtonFormField<String>(
-                    value: dropdownValue,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      fillColor: isDark ? Colors.grey[800] : Colors.white,
-                      filled: true,
-                    ),
-                    style: TextStyle(
-                      color: isDark ? Colors.white : Colors.grey[800],
-                    ),
-                    dropdownColor: isDark ? Colors.grey[800] : Colors.white,
-                    items: [
-                      DropdownMenuItem<String>(
-                        value: 'fa',
-                        child: Text(
-                          'فارسی',
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.grey[800],
-                          ),
-                        ),
-                      ),
-                      DropdownMenuItem<String>(
-                        value: 'en',
-                        child: Text(
-                          'English',
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.grey[800],
-                          ),
-                        ),
-                      ),
-                    ],
-                    onChanged: (newValue) async {
-                      print(
-                        'DEBUG: [settings_screen] Language dropdown changed to: $newValue, current: ${settings.selectedLanguage}',
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      const Color accentColor = Color(0xFF007BA7);
+                      final BorderRadius menuRadius = BorderRadius.circular(
+                        ui.scale(base: 12, min: 8, max: 16),
                       );
-                      if (newValue != null &&
-                          newValue != settings.selectedLanguage) {
-                        try {
-                          // Show loading dialog
-                          if (!context.mounted) return;
-                          // showDialog(
-                          //   context: context,
-                          //   barrierDismissible: false,
-                          //   builder: (context) => WillPopScope(
-                          //     onWillPop: () async => false,
-                          //     child: Center(child: CircularProgressIndicator()),
-                          //   ),
-                          // );
+                      final Color menuColor = isDark
+                          ? Colors.grey[800]!
+                          : Colors.grey[50]!;
+                      final Color borderColor = isDark
+                          ? Colors.grey[600]!
+                          : Colors.grey[300]!;
+                      final List<MapEntry<String, String>> languageOptions = [
+                        const MapEntry('fa', 'فارسی'),
+                        const MapEntry('en', 'English'),
+                      ];
+                      final String selectedLabel = languageOptions
+                          .firstWhere(
+                            (e) => e.key == dropdownValue,
+                            orElse: () => languageOptions.first,
+                          )
+                          .value;
 
+                      Future<void> changeLanguage(String newValue) async {
+                        print(
+                          'DEBUG: [settings_screen] Language dropdown changed to: $newValue, current: ${settings.selectedLanguage}',
+                        );
+                        if (newValue == settings.selectedLanguage) {
+                          return;
+                        }
+                        try {
+                          if (!context.mounted) return;
                           print(
                             'DEBUG: [settings_screen] Updating language to $newValue',
                           );
-                          // Update language in settings and wait for it to complete
                           await settings.setLanguage(newValue);
                           print(
                             'DEBUG: [settings_screen] Language updated in settings',
                           );
-
                           if (!context.mounted) return;
-
-                          // Important: Use a short delay to ensure the language change is applied
-                          // await Future.delayed(
-                          //   const Duration(milliseconds: 100),
-                          // );
-
-                          // Force rebuild the entire app to apply new locale
-                          // if (!context.mounted) return;
-
-                          // Pop loading dialog
-                          // Navigator.of(context, rootNavigator: true).pop();
-
-                          // // Restart the app from root
-                          // if (!context.mounted) return;
                         } catch (e) {
                           // print('Error changing language: $e');
-                          // if (!context.mounted) return;
-                          // Navigator.of(context, rootNavigator: true).pop();
                         }
                       }
+
+                      return MenuAnchor(
+                        consumeOutsideTap: true,
+                        alignmentOffset: const Offset(0, 4),
+                        style: MenuStyle(
+                          backgroundColor: WidgetStatePropertyAll(menuColor),
+                          elevation: const WidgetStatePropertyAll(4),
+                          shadowColor: WidgetStatePropertyAll(
+                            Colors.black.withValues(alpha: 0.12),
+                          ),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: menuRadius,
+                              side: BorderSide(color: borderColor),
+                            ),
+                          ),
+                          minimumSize: WidgetStatePropertyAll(
+                            Size(constraints.maxWidth, 0),
+                          ),
+                          maximumSize: WidgetStatePropertyAll(
+                            Size(constraints.maxWidth, 240),
+                          ),
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(vertical: 4),
+                          ),
+                        ),
+                        menuChildren: languageOptions.map((option) {
+                          final bool isSelected = dropdownValue == option.key;
+                          return MenuItemButton(
+                            onPressed: () => changeLanguage(option.key),
+                            style: ButtonStyle(
+                              backgroundColor:
+                                  WidgetStateProperty.resolveWith((states) {
+                                    if (isSelected) {
+                                      return accentColor.withValues(
+                                        alpha: 0.18,
+                                      );
+                                    }
+                                    return Colors.transparent;
+                                  }),
+                            ),
+                            child: SizedBox(
+                              width: constraints.maxWidth - 24,
+                              child: Text(
+                                option.value,
+                                style: TextStyle(
+                                  fontFamily: 'Vazir',
+                                  fontSize: 15,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  color: isSelected
+                                      ? accentColor
+                                      : (isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1A1A1A)),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        builder: (context, controller, child) {
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: menuRadius,
+                              onTap: () {
+                                if (controller.isOpen) {
+                                  controller.close();
+                                } else {
+                                  FocusScope.of(context).unfocus();
+                                  controller.open();
+                                }
+                              },
+                              child: InputDecorator(
+                                isEmpty: false,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: const BorderSide(
+                                      color: accentColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: menuColor,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: ui.scale(
+                                      base: 12,
+                                      min: 10,
+                                      max: 16,
+                                    ),
+                                    vertical: ui.scale(
+                                      base: 14,
+                                      min: 12,
+                                      max: 16,
+                                    ),
+                                  ),
+                                  suffixIcon: Icon(
+                                    controller.isOpen
+                                        ? Icons.arrow_drop_up
+                                        : Icons.arrow_drop_down,
+                                    color: accentColor,
+                                  ),
+                                  suffixIconConstraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                ),
+                                child: Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(
+                                    selectedLabel,
+                                    style: TextStyle(
+                                      fontFamily: 'Vazir',
+                                      fontSize: 16,
+                                      height: 1.25,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF111111),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
                 ),

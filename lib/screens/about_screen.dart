@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/utils/ui_scale.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -355,14 +356,16 @@ class AboutScreen extends StatelessWidget {
                           color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                         SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(
-                            context,
-                          )!.about_uzita_contact_phone,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                          textAlign: TextAlign.justify,
+                        Expanded(
+                          child: TappablePhone(
+                            phone: AppLocalizations.of(
+                              context,
+                            )!.about_uzita_contact_phone,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                            textAlign: TextAlign.justify,
+                          ),
                         ),
                       ],
                     ),

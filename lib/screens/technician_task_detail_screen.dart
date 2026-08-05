@@ -14,7 +14,9 @@ import 'package:uzita/utils/technician_customer_history.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/utils/task_attachment_download.dart';
 import 'package:uzita/utils/file_download_utils.dart';
+import 'package:uzita/utils/number_format_utils.dart';
 import 'package:uzita/api_config.dart';
+import 'package:uzita/widgets/tappable_phone.dart';
 import 'dart:convert';
 
 class TechnicianTaskDetailScreen extends StatefulWidget {
@@ -644,7 +646,9 @@ class _TechnicianTaskDetailScreenState
     final display = piece['display']?.toString().trim() ?? '';
     if (display.isNotEmpty) return display;
     final price = piece['price'];
-    if (price != null) return '$price ${loc.sls_tooman}';
+    if (price != null) {
+      return '${formatGroupedNumber(price)} ${loc.sls_tooman}';
+    }
     return '';
   }
 
@@ -969,7 +973,7 @@ class _TechnicianTaskDetailScreenState
       'tariff_labels': tariffLabels.isNotEmpty
           ? tariffLabels
           : selectedTariffCounts.keys.map((id) => '#$id').toList(),
-      'sayer_hazine': int.tryParse(_otherCostsController.text) ?? 0,
+      'sayer_hazine': parseGroupedInt(_otherCostsController.text) ?? 0,
     };
     if (applyWarranty) {
       snapshot['warranty'] = true;
@@ -1039,7 +1043,7 @@ class _TechnicianTaskDetailScreenState
 
     final sayer = snap['sayer_hazine'];
     if (sayer != null && _otherCostsController.text.isEmpty) {
-      _otherCostsController.text = sayer.toString();
+      _otherCostsController.text = formatGroupedNumber(sayer, fallback: '');
     }
 
     final serial = snap['serial_number'];
@@ -1296,7 +1300,7 @@ class _TechnicianTaskDetailScreenState
   String _tariffPriceLabel(Map<String, dynamic> tariff, AppLocalizations loc) {
     if (tariff['is_const_price'] == true) {
       final price = tariff['price'];
-      return '$price ${loc.sls_tooman}';
+      return '${formatGroupedNumber(price)} ${loc.sls_tooman}';
     }
     return loc.tech_tariff_agreed;
   }
@@ -1992,7 +1996,7 @@ class _TechnicianTaskDetailScreenState
       final requestBody = <String, dynamic>{
         'pieces': technicianIdCountMapToApiList(selectedPieceCounts),
         'tariffs': technicianIdCountMapToApiList(selectedTariffCounts),
-        'sayer_hazine': int.parse(_otherCostsController.text),
+        'sayer_hazine': parseGroupedInt(_otherCostsController.text) ?? 0,
       };
 
       if (!_taskHasWarranty() && applyWarranty) {
@@ -2033,7 +2037,8 @@ class _TechnicianTaskDetailScreenState
         );
         widget.task['piece_ids'] = selectedPieceCounts.keys.toList();
         widget.task['tariff_ids'] = selectedTariffCounts.keys.toList();
-        widget.task['sayer_hazine'] = int.parse(_otherCostsController.text);
+        widget.task['sayer_hazine'] =
+            parseGroupedInt(_otherCostsController.text) ?? 0;
         if (!_taskHasWarranty() && applyWarranty) {
           widget.task['warranty'] = true;
         }
@@ -2958,6 +2963,7 @@ class _TechnicianTaskDetailScreenState
                         localizations.tech_phone,
                         phone,
                         Icons.phone,
+                        isPhone: true,
                       ),
                       if (_isTechnicianOrgManager) ...[
                         const SizedBox(height: 12),
@@ -3352,6 +3358,9 @@ class _TechnicianTaskDetailScreenState
                           TextFormField(
                             controller: _otherCostsController,
                             keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              ThousandSeparatorInputFormatter(),
+                            ],
                             decoration: InputDecoration(
                               hintText: localizations.tech_other_costs_hint,
                               filled: true,
@@ -3378,7 +3387,7 @@ class _TechnicianTaskDetailScreenState
                               if (value == null || value.isEmpty) {
                                 return localizations.tech_other_costs_error;
                               }
-                              if (int.tryParse(value) == null) {
+                              if (parseGroupedInt(value) == null) {
                                 return localizations
                                     .sss_other_costs_error_number;
                               }
@@ -4214,7 +4223,12 @@ class _TechnicianTaskDetailScreenState
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    IconData icon, {
+    bool isPhone = false,
+  }) {
     final textDir = _contentTextDirection();
 
     return Row(
@@ -4243,16 +4257,27 @@ class _TechnicianTaskDetailScreenState
               SizedBox(height: 4),
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.lapisLazuli,
-                  ),
-                  textDirection: textDir,
-                  textAlign: TextAlign.start,
-                ),
+                child: isPhone
+                    ? TappablePhone(
+                        phone: value,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.lapisLazuli,
+                        ),
+                        textDirection: textDir,
+                        textAlign: TextAlign.start,
+                      )
+                    : Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.lapisLazuli,
+                        ),
+                        textDirection: textDir,
+                        textAlign: TextAlign.start,
+                      ),
               ),
             ],
           ),

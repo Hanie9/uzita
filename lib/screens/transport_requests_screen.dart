@@ -8,6 +8,8 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
+import 'package:uzita/utils/number_format_utils.dart';
+import 'package:uzita/utils/transport_attachment_utils.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/providers/settings_provider.dart';
 
@@ -160,6 +162,8 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
     switch (status) {
       case 'open':
         return localizations.sps_status_open;
+      case 'draft':
+        return localizations.sps_status_draft;
       case 'assigned':
         return localizations.sps_status_assigned;
       case 'confirm':
@@ -168,6 +172,8 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
         return localizations.sps_status_done;
       case 'canceled':
         return localizations.sps_status_canceled;
+      case 'suspended':
+        return localizations.sps_status_suspended;
       default:
         return status;
     }
@@ -431,12 +437,16 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                               .toString();
                           final status = (request['status'] ?? 'open')
                               .toString();
-                          final price = (request['price_transport'] ?? '---')
-                              .toString();
+                          final price = formatGroupedNumber(
+                            request['price_transport'],
+                          );
+                          final bool hasAttachment = hasTransportAttachment(
+                            request,
+                          );
 
                           return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => TransportRequestDetailScreen(
@@ -444,6 +454,9 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                                   ),
                                 ),
                               );
+                              if (result == true && mounted) {
+                                fetchRequests();
+                              }
                             },
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -543,7 +556,9 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                                               const SizedBox(width: 4),
                                               Flexible(
                                                 child: Text(
-                                                  '$price تومان',
+                                                  price == '---'
+                                                      ? price
+                                                      : '$price تومان',
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     color:
@@ -557,6 +572,14 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                                                       TextOverflow.ellipsis,
                                                 ),
                                               ),
+                                              if (hasAttachment) ...[
+                                                const SizedBox(width: 8),
+                                                const Icon(
+                                                  Icons.attach_file,
+                                                  size: 14,
+                                                  color: AppColors.iranianGray,
+                                                ),
+                                              ],
                                             ],
                                           ),
                                           const SizedBox(height: 6),

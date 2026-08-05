@@ -8,6 +8,7 @@ import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/number_format_utils.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
@@ -473,11 +474,9 @@ class _DriverMissionsScreenState extends State<DriverMissionsScreen> {
                       final mabda = task['mabda']?.toString() ?? '---';
                       final status = task['status']?.toString() ?? 'open';
                       final createdAt = task['created_at']?.toString() ?? '';
-                      final dynamic priceTransportValue =
-                          task['price_transport'];
-                      final String priceTransport = priceTransportValue == null
-                          ? '---'
-                          : priceTransportValue.toString();
+                      final String priceTransport = formatGroupedNumber(
+                        task['price_transport'],
+                      );
 
                       return GestureDetector(
                         onTap: () {
