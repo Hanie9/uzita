@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:js_util' as js_util;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 import 'package:flutter/foundation.dart';
 
@@ -13,18 +14,17 @@ class NeshanMapBindings {
 
   static Stream<dynamic> get events => _eventController.stream;
 
-  static Object? get _bridge =>
-      js_util.getProperty(js_util.globalThis, 'UzitaNeshanMap');
+  static JSObject? get _bridge => globalContext['UzitaNeshanMap'] as JSObject?;
 
   static void _ensureEventHook() {
     if (_eventsHooked) return;
     _eventsHooked = true;
     final bridge = _bridge;
     if (bridge == null) return;
-    js_util.callMethod<void>(bridge, 'setEventCallback', [
-      js_util.allowInterop((dynamic payload) {
-        _eventController.add(payload);
-      }),
+    bridge.callMethodVarArgs<JSAny?>('setEventCallback'.toJS, [
+      ((JSAny? payload) {
+        _eventController.add(payload?.dartify());
+      }).toJS,
     ]);
   }
 
@@ -48,16 +48,19 @@ class NeshanMapBindings {
         case 'fitBounds':
         case 'updateRoute':
         case 'updateDriverMarker':
-          js_util.callMethod<void>(bridge, method, [viewId, arguments]);
+          bridge.callMethodVarArgs<JSAny?>(method.toJS, [
+            viewId.jsify(),
+            arguments.jsify(),
+          ]);
         case 'setNavigationFollow':
-          js_util.callMethod<void>(bridge, method, [
-            viewId,
-            arguments['enabled'] ?? false,
+          bridge.callMethodVarArgs<JSAny?>(method.toJS, [
+            viewId.jsify(),
+            ((arguments['enabled'] as bool?) ?? false).toJS,
           ]);
         case 'setOverviewGestures':
-          js_util.callMethod<void>(bridge, method, [
-            viewId,
-            arguments['enabled'] ?? false,
+          bridge.callMethodVarArgs<JSAny?>(method.toJS, [
+            viewId.jsify(),
+            ((arguments['enabled'] as bool?) ?? false).toJS,
           ]);
         default:
           debugPrint('[UzitaNeshanMap] unknown method: $method');
@@ -76,17 +79,17 @@ class NeshanMapBindings {
     _ensureEventHook();
     final bridge = _bridge;
     if (bridge == null) return;
-    js_util.callMethod<void>(bridge, 'createMap', [
-      viewId,
-      containerId,
-      mapKey,
-      isDark,
+    bridge.callMethodVarArgs<JSAny?>('createMap'.toJS, [
+      viewId.toJS,
+      containerId.toJS,
+      mapKey.toJS,
+      isDark.toJS,
     ]);
   }
 
   static Future<void> destroyMap(int viewId) async {
     final bridge = _bridge;
     if (bridge == null) return;
-    js_util.callMethod<void>(bridge, 'destroyMap', [viewId]);
+    bridge.callMethodVarArgs<JSAny?>('destroyMap'.toJS, [viewId.toJS]);
   }
 }

@@ -833,6 +833,10 @@ class _UserListScreenState extends State<UserListScreen> {
     final phoneController = TextEditingController(text: filterPhone);
     String levelValue = filterLevel ?? '';
     String activeValue = filterActive ?? '';
+    final GlobalKey levelFieldKey = GlobalKey();
+    final GlobalKey activeFieldKey = GlobalKey();
+    double? levelFieldWidth;
+    double? activeFieldWidth;
 
     showDialog(
       context: context,
@@ -840,169 +844,482 @@ class _UserListScreenState extends State<UserListScreen> {
         textDirection: Localizations.localeOf(context).languageCode == 'en'
             ? TextDirection.ltr
             : TextDirection.rtl,
-        child: AlertDialog(
-          backgroundColor: Theme.of(context).cardTheme.color,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.filter_list,
-                color: AppColors.lapisLazuli.withValues(alpha: 0.8),
-                size: 24,
+        child: StatefulBuilder(
+          builder: (context, setDialogState) {
+            void syncFieldWidth(
+              GlobalKey key,
+              void Function(double width) onWidth,
+            ) {
+              final RenderObject? renderObject =
+                  key.currentContext?.findRenderObject();
+              if (renderObject is! RenderBox || !renderObject.hasSize) {
+                return;
+              }
+              onWidth(renderObject.size.width);
+            }
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              syncFieldWidth(levelFieldKey, (width) {
+                if (levelFieldWidth != width) {
+                  setDialogState(() {
+                    levelFieldWidth = width;
+                  });
+                }
+              });
+              syncFieldWidth(activeFieldKey, (width) {
+                if (activeFieldWidth != width) {
+                  setDialogState(() {
+                    activeFieldWidth = width;
+                  });
+                }
+              });
+            });
+
+            const BorderRadius menuRadius = BorderRadius.all(
+              Radius.circular(12),
+            );
+            final Color menuColor = Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[800]!
+                : Colors.grey[50]!;
+            final Color borderColor =
+                Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[600]!
+                : Colors.grey[300]!;
+
+            final List<MapEntry<String, String>> levelOptions = [
+              MapEntry('1', AppLocalizations.of(context)!.uls_admin),
+              MapEntry('2', AppLocalizations.of(context)!.uls_installer),
+              MapEntry('3', AppLocalizations.of(context)!.uls_user),
+            ];
+
+            final List<MapEntry<String, String>> activeOptions = [
+              MapEntry('true', AppLocalizations.of(context)!.uls_active),
+              MapEntry('false', AppLocalizations.of(context)!.uls_inactive),
+            ];
+
+            final String levelLabel = levelOptions
+                .firstWhere(
+                  (e) => e.key == levelValue,
+                  orElse: () => MapEntry(
+                    '',
+                    AppLocalizations.of(context)!.uls_access_level,
+                  ),
+                )
+                .value;
+
+            final String activeLabel = activeOptions
+                .firstWhere(
+                  (e) => e.key == activeValue,
+                  orElse: () => MapEntry(
+                    '',
+                    AppLocalizations.of(context)!.uls_active_status,
+                  ),
+                )
+                .value;
+
+            return AlertDialog(
+              backgroundColor: Theme.of(context).cardTheme.color,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              SizedBox(width: 8),
-              Text(
-                AppLocalizations.of(context)!.uls_filter_users,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildFilterField(
-                  controller: usernameController,
-                  label: AppLocalizations.of(context)!.uls_username,
-                  icon: Icons.person,
-                ),
-                SizedBox(height: 16),
-                _buildFilterField(
-                  controller: phoneController,
-                  label: AppLocalizations.of(context)!.uls_phone_label,
-                  icon: Icons.phone,
-                ),
-                SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]
-                        : Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[600]!
-                          : Colors.grey[300]!,
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.filter_list,
+                    color: AppColors.lapisLazuli.withValues(alpha: 0.8),
+                    size: 24,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context)!.uls_filter_users,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    value: levelValue.isEmpty ? null : levelValue,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.uls_access_level,
-                      prefixIcon: Icon(
-                        Icons.admin_panel_settings,
-                        color: AppColors.lapisLazuli.withValues(alpha: 0.8),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildFilterField(
+                      controller: usernameController,
+                      label: AppLocalizations.of(context)!.uls_username,
+                      icon: Icons.person,
                     ),
-                    items: [
-                      DropdownMenuItem(
-                        value: '1',
-                        child: Text(AppLocalizations.of(context)!.uls_admin),
-                      ),
-                      DropdownMenuItem(
-                        value: '2',
-                        child: Text(
-                          AppLocalizations.of(context)!.uls_installer,
+                    SizedBox(height: 16),
+                    _buildFilterField(
+                      controller: phoneController,
+                      label: AppLocalizations.of(context)!.uls_phone_label,
+                      icon: Icons.phone,
+                    ),
+                    SizedBox(height: 16),
+                    MenuAnchor(
+                      consumeOutsideTap: true,
+                      crossAxisUnconstrained: false,
+                      alignmentOffset: const Offset(0, 4),
+                      style: MenuStyle(
+                        backgroundColor: WidgetStatePropertyAll(menuColor),
+                        elevation: const WidgetStatePropertyAll(4),
+                        shadowColor: WidgetStatePropertyAll(
+                          Colors.black.withValues(alpha: 0.12),
+                        ),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: menuRadius,
+                            side: BorderSide(color: borderColor),
+                          ),
+                        ),
+                        minimumSize: levelFieldWidth == null
+                            ? null
+                            : WidgetStatePropertyAll(Size(levelFieldWidth!, 0)),
+                        maximumSize: levelFieldWidth == null
+                            ? null
+                            : WidgetStatePropertyAll(Size(levelFieldWidth!, 240)),
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(vertical: 4),
                         ),
                       ),
-                      DropdownMenuItem(
-                        value: '3',
-                        child: Text(AppLocalizations.of(context)!.uls_user),
+                      menuChildren: levelOptions.map((option) {
+                        final bool isSelected = levelValue == option.key;
+                        return MenuItemButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              levelValue = option.key;
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith((
+                              states,
+                            ) {
+                              if (isSelected) {
+                                return AppColors.lapisLazuli.withValues(
+                                  alpha: 0.18,
+                                );
+                              }
+                              return Colors.transparent;
+                            }),
+                          ),
+                          child: SizedBox(
+                            width: levelFieldWidth == null
+                                ? null
+                                : levelFieldWidth! - 24,
+                            child: Text(
+                              option.value,
+                              style: TextStyle(
+                                fontFamily: 'Vazir',
+                                fontSize: 15,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: isSelected
+                                    ? AppColors.lapisLazuli
+                                    : (Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.white
+                                          : const Color(0xFF1A1A1A)),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      builder: (context, controller, child) {
+                        return KeyedSubtree(
+                          key: levelFieldKey,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: menuRadius,
+                              onTap: () {
+                                syncFieldWidth(levelFieldKey, (width) {
+                                  if (levelFieldWidth != width) {
+                                    setDialogState(() {
+                                      levelFieldWidth = width;
+                                    });
+                                  }
+                                });
+                                if (controller.isOpen) {
+                                  controller.close();
+                                  return;
+                                }
+                                FocusScope.of(context).unfocus();
+                                controller.open();
+                              },
+                              child: InputDecorator(
+                                isEmpty: levelValue.isEmpty,
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(
+                                    context,
+                                  )!.uls_access_level,
+                                  labelText: AppLocalizations.of(
+                                    context,
+                                  )!.uls_access_level,
+                                  prefixIcon: Icon(
+                                    Icons.admin_panel_settings,
+                                    color: AppColors.lapisLazuli.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: const BorderSide(
+                                      color: AppColors.lapisLazuli,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: menuColor,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  suffixIcon: Icon(
+                                    controller.isOpen
+                                        ? Icons.arrow_drop_up
+                                        : Icons.arrow_drop_down,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                  suffixIconConstraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                ),
+                                child: Text(
+                                  levelValue.isEmpty ? ' ' : levelLabel,
+                                  style: TextStyle(
+                                    fontFamily: 'Vazir',
+                                    fontSize: 16,
+                                    height: 1.25,
+                                    fontWeight: levelValue.isEmpty
+                                        ? FontWeight.w400
+                                        : FontWeight.w700,
+                                    color: levelValue.isEmpty
+                                        ? Colors.transparent
+                                        : (Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : const Color(0xFF111111)),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    MenuAnchor(
+                      consumeOutsideTap: true,
+                      crossAxisUnconstrained: false,
+                      alignmentOffset: const Offset(0, 4),
+                      style: MenuStyle(
+                        backgroundColor: WidgetStatePropertyAll(menuColor),
+                        elevation: const WidgetStatePropertyAll(4),
+                        shadowColor: WidgetStatePropertyAll(
+                          Colors.black.withValues(alpha: 0.12),
+                        ),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: menuRadius,
+                            side: BorderSide(color: borderColor),
+                          ),
+                        ),
+                        minimumSize: activeFieldWidth == null
+                            ? null
+                            : WidgetStatePropertyAll(Size(activeFieldWidth!, 0)),
+                        maximumSize: activeFieldWidth == null
+                            ? null
+                            : WidgetStatePropertyAll(Size(activeFieldWidth!, 240)),
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(vertical: 4),
+                        ),
                       ),
-                    ],
-                    onChanged: (val) {
-                      levelValue = val ?? '';
-                    },
-                  ),
+                      menuChildren: activeOptions.map((option) {
+                        final bool isSelected = activeValue == option.key;
+                        return MenuItemButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              activeValue = option.key;
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith((
+                              states,
+                            ) {
+                              if (isSelected) {
+                                return AppColors.lapisLazuli.withValues(
+                                  alpha: 0.18,
+                                );
+                              }
+                              return Colors.transparent;
+                            }),
+                          ),
+                          child: SizedBox(
+                            width: activeFieldWidth == null
+                                ? null
+                                : activeFieldWidth! - 24,
+                            child: Text(
+                              option.value,
+                              style: TextStyle(
+                                fontFamily: 'Vazir',
+                                fontSize: 15,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: isSelected
+                                    ? AppColors.lapisLazuli
+                                    : (Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.white
+                                          : const Color(0xFF1A1A1A)),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      builder: (context, controller, child) {
+                        return KeyedSubtree(
+                          key: activeFieldKey,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: menuRadius,
+                              onTap: () {
+                                syncFieldWidth(activeFieldKey, (width) {
+                                  if (activeFieldWidth != width) {
+                                    setDialogState(() {
+                                      activeFieldWidth = width;
+                                    });
+                                  }
+                                });
+                                if (controller.isOpen) {
+                                  controller.close();
+                                  return;
+                                }
+                                FocusScope.of(context).unfocus();
+                                controller.open();
+                              },
+                              child: InputDecorator(
+                                isEmpty: activeValue.isEmpty,
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(
+                                    context,
+                                  )!.uls_active_status,
+                                  labelText: AppLocalizations.of(
+                                    context,
+                                  )!.uls_active_status,
+                                  prefixIcon: Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.lapisLazuli.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: BorderSide(color: borderColor),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: menuRadius,
+                                    borderSide: const BorderSide(
+                                      color: AppColors.lapisLazuli,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: menuColor,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  suffixIcon: Icon(
+                                    controller.isOpen
+                                        ? Icons.arrow_drop_up
+                                        : Icons.arrow_drop_down,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                  suffixIconConstraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                ),
+                                child: Text(
+                                  activeValue.isEmpty ? ' ' : activeLabel,
+                                  style: TextStyle(
+                                    fontFamily: 'Vazir',
+                                    fontSize: 16,
+                                    height: 1.25,
+                                    fontWeight: activeValue.isEmpty
+                                        ? FontWeight.w400
+                                        : FontWeight.w700,
+                                    color: activeValue.isEmpty
+                                        ? Colors.transparent
+                                        : (Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : const Color(0xFF111111)),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[800]
-                        : Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[600]!
-                          : Colors.grey[300]!,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(AppLocalizations.of(context)!.uls_cancel),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      filterUsername = usernameController.text;
+                      filterPhone = phoneController.text;
+                      filterLevel = levelValue;
+                      filterActive = activeValue;
+                    });
+                    fetchUsers();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.lapisLazuli.withValues(alpha: 0.8),
+                    textStyle: TextStyle(color: Colors.white),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    value: activeValue.isEmpty ? null : activeValue,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(
-                        context,
-                      )!.uls_active_status,
-                      prefixIcon: Icon(
-                        Icons.check_circle,
-                        color: AppColors.lapisLazuli.withValues(alpha: 0.8),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'true',
-                        child: Text(AppLocalizations.of(context)!.uls_active),
-                      ),
-                      DropdownMenuItem(
-                        value: 'false',
-                        child: Text(AppLocalizations.of(context)!.uls_inactive),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      activeValue = val!;
-                    },
+                  child: Text(
+                    AppLocalizations.of(context)!.uls_apply,
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(AppLocalizations.of(context)!.uls_cancel),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  filterUsername = usernameController.text;
-                  filterPhone = phoneController.text;
-                  filterLevel = levelValue;
-                  filterActive = activeValue;
-                });
-                fetchUsers();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.lapisLazuli.withValues(alpha: 0.8),
-                textStyle: TextStyle(color: Colors.white),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                AppLocalizations.of(context)!.uls_apply,
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
