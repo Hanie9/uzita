@@ -18,14 +18,13 @@ Future<void> saveTaskAttachmentFile({
     mimeType,
   );
 
-  final html.Blob blob = html.Blob(
-    <Uint8List>[Uint8List.fromList(bytes)],
-    mimeType,
-  );
+  final html.Blob blob = html.Blob(<Uint8List>[
+    Uint8List.fromList(bytes),
+  ], mimeType);
   final String url = html.Url.createObjectUrlFromBlob(blob);
 
-  final bool viewInBrowser = mimeType == 'application/pdf' ||
-      mimeType.startsWith('image/');
+  final bool viewInBrowser =
+      mimeType == 'application/pdf' || mimeType.startsWith('image/');
 
   if (viewInBrowser) {
     html.window.open(url, '_blank');
@@ -33,18 +32,24 @@ Future<void> saveTaskAttachmentFile({
     _triggerAnchorDownload(url, safeName);
   }
 
-  Future<void>.delayed(const Duration(seconds: 15), () {
+  Future<void>.delayed(const Duration(seconds: 60), () {
     html.Url.revokeObjectUrl(url);
   });
 }
 
 void _triggerAnchorDownload(String blobUrl, String fileName) {
   final html.AnchorElement anchor = html.AnchorElement(href: blobUrl)
-    ..setAttribute('download', fileName)
-    ..style.display = 'none';
-  html.document.body?.children.add(anchor);
+    ..download = fileName
+    ..rel = 'noopener'
+    ..style.position = 'fixed'
+    ..style.left = '-1000px'
+    ..style.top = '0';
+  html.document.body?.append(anchor);
   anchor.click();
-  anchor.remove();
+  // Removing the link in the same turn cancels the download in mobile browsers.
+  Future<void>.delayed(const Duration(seconds: 2), () {
+    anchor.remove();
+  });
 }
 
 /// Last resort on PWA when authenticated fetch is blocked.

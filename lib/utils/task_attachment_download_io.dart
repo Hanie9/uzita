@@ -12,7 +12,9 @@ Future<void> saveTaskAttachmentFile({
   final String safeName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   final File file = File('${dir.path}/$safeName');
   await file.writeAsBytes(bytes, flush: true);
-  await OpenFilex.open(file.path);
+  try {
+    await OpenFilex.open(file.path);
+  } catch (_) {}
 }
 
 Future<void> openDownloadUrlInBrowser(String url) async {}

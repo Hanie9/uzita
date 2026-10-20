@@ -7,6 +7,7 @@ import 'package:uzita/api_config.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/http_with_session.dart' as http;
 import 'package:uzita/app_localizations.dart';
+import 'package:uzita/utils/keyboard_dismiss.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_drawer.dart';
@@ -14,6 +15,7 @@ import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/utils/technician_org_assignment.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/widgets/technician_task_filter_menu.dart';
+import 'package:uzita/widgets/technician_search_filter_card.dart';
 import 'package:uzita/widgets/tappable_phone.dart';
 
 class TechnicianOrganTasksScreen extends StatefulWidget {
@@ -24,8 +26,8 @@ class TechnicianOrganTasksScreen extends StatefulWidget {
       _TechnicianOrganTasksScreenState();
 }
 
-class _TechnicianOrganTasksScreenState
-    extends State<TechnicianOrganTasksScreen> {
+class _TechnicianOrganTasksScreenState extends State<TechnicianOrganTasksScreen>
+    with WidgetsBindingObserver {
   bool isLoading = true;
   List<Map<String, dynamic>> orgTasks = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> personalTasks = <Map<String, dynamic>>[];
@@ -38,15 +40,46 @@ class _TechnicianOrganTasksScreenState
   bool userActive = true;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  void Function() _cancelKeyboardDismiss = () {};
+  double _keyboardInset = 0;
   String _missionSearchQuery = '';
   String _missionStatusFilter = 'assigned';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _cancelKeyboardDismiss = bindKeyboardDismiss(_clearSearchFocus);
     _loadUserMeta();
     _fetchTasks();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final double inset = views.first.viewInsets.bottom;
+    if (_keyboardInset > 0 && inset == 0) {
+      _clearSearchFocus();
+    }
+    _keyboardInset = inset;
+  }
+
+  void _clearSearchFocus() {
+    if (_searchFocus.hasFocus) {
+      _searchFocus.unfocus();
+    }
+  }
+
+  void _scrollResultsToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.offset <= 0) return;
+      _scrollController.jumpTo(0);
+    });
   }
 
   Future<void> _loadUserMeta() async {
@@ -98,8 +131,12 @@ class _TechnicianOrganTasksScreenState
       source,
     );
     sorted.sort((a, b) {
-      final DateTime da = _parseSortableDate((a['created_at'] ?? '').toString());
-      final DateTime db = _parseSortableDate((b['created_at'] ?? '').toString());
+      final DateTime da = _parseSortableDate(
+        (a['created_at'] ?? '').toString(),
+      );
+      final DateTime db = _parseSortableDate(
+        (b['created_at'] ?? '').toString(),
+      );
       return db.compareTo(da);
     });
     return sorted;
@@ -118,8 +155,12 @@ class _TechnicianOrganTasksScreenState
       if (aUnassigned != bUnassigned) {
         return aUnassigned ? -1 : 1;
       }
-      final DateTime da = _parseSortableDate((a['created_at'] ?? '').toString());
-      final DateTime db = _parseSortableDate((b['created_at'] ?? '').toString());
+      final DateTime da = _parseSortableDate(
+        (a['created_at'] ?? '').toString(),
+      );
+      final DateTime db = _parseSortableDate(
+        (b['created_at'] ?? '').toString(),
+      );
       return db.compareTo(da);
     });
     return sorted;
@@ -219,10 +260,12 @@ class _TechnicianOrganTasksScreenState
       }
 
       if (mounted) {
-        final List<Map<String, dynamic>> sortedOrg =
-            _sortOrgTasksForManager(parsedOrgTasks);
-        final List<Map<String, dynamic>> sortedPersonal =
-            _sortByCreatedAtDesc(parsedPersonalTasks);
+        final List<Map<String, dynamic>> sortedOrg = _sortOrgTasksForManager(
+          parsedOrgTasks,
+        );
+        final List<Map<String, dynamic>> sortedPersonal = _sortByCreatedAtDesc(
+          parsedPersonalTasks,
+        );
         setState(() {
           orgTasks = sortedOrg;
           personalTasks = sortedPersonal;
@@ -245,6 +288,10 @@ class _TechnicianOrganTasksScreenState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cancelKeyboardDismiss();
+    _scrollController.dispose();
+    _searchFocus.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -254,8 +301,7 @@ class _TechnicianOrganTasksScreenState
         task['customer_first_name']?.toString().trim() ?? '';
     final String customerLast =
         task['customer_last_name']?.toString().trim() ?? '';
-    final String customerName =
-        task['customer_name']?.toString().trim() ?? '';
+    final String customerName = task['customer_name']?.toString().trim() ?? '';
     final String phone = task['phone']?.toString().trim() ?? '';
     final String customerPhone =
         task['customer_phone']?.toString().trim() ?? '';
@@ -395,8 +441,9 @@ class _TechnicianOrganTasksScreenState
           orgTasks = _sortOrgTasksForManager(
             orgTasks.map((Map<String, dynamic> t) {
               if ((t['id'] ?? '').toString() == (task['id'] ?? '').toString()) {
-                final Map<String, dynamic> merged =
-                    Map<String, dynamic>.from(t);
+                final Map<String, dynamic> merged = Map<String, dynamic>.from(
+                  t,
+                );
                 merged.addAll(updated);
                 return merged;
               }
@@ -417,22 +464,20 @@ class _TechnicianOrganTasksScreenState
     final localizations = AppLocalizations.of(context)!;
     final String taskId = (task['id'] ?? '').toString();
     final String title = (task['title'] ?? '---').toString();
-    final String status =
-        (task['status'] ?? 'open').toString().toLowerCase();
+    final String status = (task['status'] ?? 'open').toString().toLowerCase();
     final dynamic subjectsRaw = task['subjects'];
     final String subjectsText = subjectsRaw is List
         ? subjectsRaw
-            .map((e) => e.toString())
-            .where((s) => s.isNotEmpty)
-            .join('، ')
+              .map((e) => e.toString())
+              .where((s) => s.isNotEmpty)
+              .join('، ')
         : '';
     final String customerFirstName =
         task['customer_first_name']?.toString().trim() ?? '';
     final String customerLastName =
         task['customer_last_name']?.toString().trim() ?? '';
-    final String customerName = ('$customerFirstName $customerLastName')
-            .trim()
-            .isEmpty
+    final String customerName =
+        ('$customerFirstName $customerLastName').trim().isEmpty
         ? ((task['customer_name']?.toString().trim().isNotEmpty ?? false)
               ? task['customer_name'].toString().trim()
               : '---')
@@ -451,8 +496,9 @@ class _TechnicianOrganTasksScreenState
     final String serviceId = taskServiceIdDisplay(task);
 
     void openTaskDetail() async {
-      final Map<String, dynamic> taskToSend =
-          normalizeTechnicianTask(Map<String, dynamic>.from(task));
+      final Map<String, dynamic> taskToSend = normalizeTechnicianTask(
+        Map<String, dynamic>.from(task),
+      );
       if (isOrgTask) {
         taskToSend['from_organ_assign_list'] = true;
       }
@@ -467,140 +513,140 @@ class _TechnicianOrganTasksScreenState
     }
 
     return Container(
-        key: ValueKey('task_$taskId'),
-        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black.withValues(alpha: 0.2)
-                  : AppColors.lapisLazuli.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-          border: Border.all(
+      key: ValueKey('task_$taskId'),
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey[700]!
-                : AppColors.lapisLazuli.withValues(alpha: 0.08),
-            width: 1,
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : AppColors.lapisLazuli.withValues(alpha: 0.08),
+          width: 1,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            textDirection: Directionality.of(context),
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: openTaskDetail,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Row(
-                    textDirection: Directionality.of(context),
-                    children: [
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(status).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _getStatusColor(status).withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _getStatusText(status, localizations),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _getStatusColor(status),
-                  ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          textDirection: Directionality.of(context),
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: openTaskDetail,
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
                   textDirection: Directionality.of(context),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildMissionInfoRow(
-                      context: context,
-                      icon: Icons.tag_outlined,
-                      label: localizations.tech_service_id,
-                      value: serviceId,
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(status).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _getStatusColor(status).withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        _getStatusText(status, localizations),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _getStatusColor(status),
+                        ),
+                        textDirection: Directionality.of(context),
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    _buildMissionInfoRow(
-                      context: context,
-                      icon: Icons.person_outline,
-                      label: localizations.tech_customer_name,
-                      value: customerName,
-                    ),
-                    const SizedBox(height: 6),
-                    _buildMissionInfoRow(
-                      context: context,
-                      icon: Icons.phone_outlined,
-                      label: localizations.tech_phone,
-                      value: customerPhone,
-                      isPhone: true,
-                    ),
-                    const SizedBox(height: 6),
-                    _buildMissionInfoRow(
-                      context: context,
-                      icon: Icons.location_on_outlined,
-                      label: localizations.tech_address,
-                      value: customerAddress,
-                    ),
-                    const SizedBox(height: 6),
-                    _buildMissionInfoRow(
-                      context: context,
-                      icon: Icons.label_outline,
-                      label: localizations.sss_subject,
-                      value: subjectText.isEmpty ? '---' : subjectText,
-                      maxLines: 2,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMissionInfoRow(
+                            context: context,
+                            icon: Icons.tag_outlined,
+                            label: localizations.tech_service_id,
+                            value: serviceId,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildMissionInfoRow(
+                            context: context,
+                            icon: Icons.person_outline,
+                            label: localizations.tech_customer_name,
+                            value: customerName,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildMissionInfoRow(
+                            context: context,
+                            icon: Icons.phone_outlined,
+                            label: localizations.tech_phone,
+                            value: customerPhone,
+                            isPhone: true,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildMissionInfoRow(
+                            context: context,
+                            icon: Icons.location_on_outlined,
+                            label: localizations.tech_address,
+                            value: customerAddress,
+                          ),
+                          const SizedBox(height: 6),
+                          _buildMissionInfoRow(
+                            context: context,
+                            icon: Icons.label_outline,
+                            label: localizations.sss_subject,
+                            value: subjectText.isEmpty ? '---' : subjectText,
+                            maxLines: 2,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-                    ],
-                  ),
+            ),
+            if (canAssign)
+              TextButton.icon(
+                onPressed: () => _openAssignmentDialog(task),
+                icon: const Icon(
+                  Icons.assignment_ind,
+                  size: 18,
+                  color: AppColors.lapisLazuli,
                 ),
-              ),
-              if (canAssign)
-                TextButton.icon(
-                  onPressed: () => _openAssignmentDialog(task),
-                  icon: const Icon(
-                    Icons.assignment_ind,
-                    size: 18,
+                label: Text(
+                  localizations.tech_assign_dialog_assign,
+                  style: const TextStyle(
                     color: AppColors.lapisLazuli,
+                    fontWeight: FontWeight.w500,
                   ),
-                  label: Text(
-                    localizations.tech_assign_dialog_assign,
-                    style: const TextStyle(
-                      color: AppColors.lapisLazuli,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                )
-              else
-                Icon(
-                  Icons.chevron_left,
-                  color: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-                  textDirection: Directionality.of(context) == TextDirection.rtl
-                      ? TextDirection.ltr
-                      : TextDirection.rtl,
                 ),
-            ],
-          ),
+              )
+            else
+              Icon(
+                Icons.chevron_left,
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                textDirection: Directionality.of(context) == TextDirection.rtl
+                    ? TextDirection.ltr
+                    : TextDirection.rtl,
+              ),
+          ],
         ),
+      ),
     );
   }
 
@@ -650,11 +696,7 @@ class _TechnicianOrganTasksScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       textDirection: Directionality.of(context),
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: AppColors.iranianGray,
-        ),
+        Icon(icon, size: 14, color: AppColors.iranianGray),
         const SizedBox(width: 4),
         Expanded(
           child: isPhone
@@ -887,8 +929,9 @@ class _TechnicianOrganTasksScreenState
         _applyMissionStatusFilter(orgTasks);
     final List<Map<String, dynamic>> statusFilteredPersonalTasks =
         _applyMissionStatusFilter(personalTasks);
-    final List<Map<String, dynamic>> filteredOrgTasks =
-        _applyMissionSearch(statusFilteredOrgTasks);
+    final List<Map<String, dynamic>> filteredOrgTasks = _applyMissionSearch(
+      statusFilteredOrgTasks,
+    );
     final List<Map<String, dynamic>> filteredPersonalTasks =
         _applyMissionSearch(statusFilteredPersonalTasks);
     final List<Map<String, dynamic>> listEntries = _buildListEntries(
@@ -927,321 +970,258 @@ class _TechnicianOrganTasksScreenState
         }
       },
       child: Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.appBarTheme.backgroundColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ui.scale(base: 16, min: 12, max: 20),
-              ),
-              child: Row(
-                children: [
-                  // Left side - menu & notifications
-                  Row(
-                    children: [
-                      Builder(
-                        builder: (BuildContext context) => IconButton(
+        key: _scaffoldKey,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.appBarTheme.backgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
+                child: Row(
+                  children: [
+                    // Left side - menu & notifications
+                    Row(
+                      children: [
+                        Builder(
+                          builder: (BuildContext context) => IconButton(
+                            icon: Icon(
+                              Icons.menu,
+                              color: theme.appBarTheme.iconTheme?.color,
+                            ),
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                          ),
+                        ),
+                        IconButton(
                           icon: Icon(
-                            Icons.menu,
+                            Icons.notifications,
                             color: theme.appBarTheme.iconTheme?.color,
                           ),
-                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+
+                    // Center - title
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          localizations.tech_missions,
+                          style: theme.appBarTheme.titleTextStyle,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications,
-                          color: theme.appBarTheme.iconTheme?.color,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
+                    ),
 
-                  // Center - title
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        localizations.tech_missions,
-                        style: theme.appBarTheme.titleTextStyle,
+                    // Right side - logo
+                    Image.asset(
+                      'assets/logouzita.png',
+                      height: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
+                      width: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
                       ),
                     ),
-                  ),
-
-                  // Right side - logo
-                  Image.asset(
-                    'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      body: !userActive
-          ? _buildInactiveState()
-          : !isAuthorized
-          ? Center(child: Text(localizations.home_access_denies))
-          : Column(
-              children: [
-                _buildHeader(
-                  ui,
-                  localizations,
-                  missionCount: visibleMissionCount,
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: ui.scale(base: 16, min: 12, max: 20),
+        body: !userActive
+            ? _buildInactiveState()
+            : !isAuthorized
+            ? Center(child: Text(localizations.home_access_denies))
+            : Column(
+                children: [
+                  _buildHeader(
+                    ui,
+                    localizations,
+                    missionCount: visibleMissionCount,
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.black.withValues(alpha: 0.2)
-                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.grey[700]!
-                            : AppColors.lapisLazuli.withValues(alpha: 0.1),
-                        width: 1,
-                      ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      ui.scale(base: 16, min: 12, max: 20),
+                      0,
+                      ui.scale(base: 16, min: 12, max: 20),
+                      8,
                     ),
-                    child: TextField(
+                    child: TechnicianSearchFilterCard(
                       controller: _searchController,
-                      onChanged: (value) {
+                      focusNode: _searchFocus,
+                      query: _missionSearchQuery,
+                      hintText: localizations.tech_mission_search_hint,
+                      clearTooltip: localizations.cls_filtering_search,
+                      filterValue: _missionStatusFilter,
+                      options: _missionFilterOptions(localizations),
+                      onDismissFocus: _clearSearchFocus,
+                      onQueryChanged: (String value) {
                         setState(() => _missionSearchQuery = value);
+                        _scrollResultsToTop();
                       },
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        hintText: localizations.tech_mission_search_hint,
-                        hintStyle: TextStyle(
-                          color: theme.textTheme.bodyMedium?.color?.withValues(
-                            alpha: 0.6,
-                          ),
-                          fontSize: 13,
-                        ),
-                        prefixIcon: Container(
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.lapisLazuli.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.search,
-                            color: AppColors.lapisLazuli,
-                            size: 20,
-                          ),
-                        ),
-                        suffixIcon: _missionSearchQuery.trim().isEmpty
-                            ? null
-                            : IconButton(
-                                icon: Icon(
-                                  Icons.close_rounded,
-                                  color: theme.textTheme.bodyMedium?.color,
-                                ),
-                                tooltip: localizations.cls_filtering_search,
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _missionSearchQuery = '');
-                                },
-                              ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
-                        ),
-                        filled: true,
-                        fillColor: Colors.transparent,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
-                            color: AppColors.lapisLazuli,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
+                      onClear: () {
+                        _searchController.clear();
+                        _clearSearchFocus();
+                        setState(() => _missionSearchQuery = '');
+                        _scrollResultsToTop();
+                      },
+                      onFilterChanged: (String value) {
+                        setState(() => _missionStatusFilter = value);
+                        _scrollResultsToTop();
+                      },
                     ),
                   ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    ui.scale(base: 16, min: 12, max: 20),
-                    0,
-                    ui.scale(base: 16, min: 12, max: 20),
-                    8,
-                  ),
-                  child: TechnicianTaskFilterMenu(
-                    value: _missionStatusFilter,
-                    options: _missionFilterOptions(localizations),
-                    onChanged: (String value) {
-                      setState(() => _missionStatusFilter = value);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : !hasAnyFiltered
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
-                          onRefresh: _fetchTasks,
-                          color: AppColors.lapisLazuli,
-                          child: ListView.builder(
-                            padding: EdgeInsets.only(
-                              left: ui.scale(base: 16, min: 12, max: 20),
-                              right: ui.scale(base: 16, min: 12, max: 20),
-                              bottom: 12,
-                            ),
-                            itemCount: listEntries.length,
-                            itemBuilder: (context, index) {
-                              final Map<String, dynamic> entry =
-                                  listEntries[index];
-                              if (entry['type'] == 'header') {
-                                final bool isOrg = entry['section'] == 'org';
-                                return Padding(
-                                  key: ValueKey(
-                                    'header_${isOrg ? 'org' : 'personal'}_$index',
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: ui.scale(
-                                      base: isOrg ? 4 : 8,
-                                      min: isOrg ? 2 : 6,
-                                      max: isOrg ? 6 : 10,
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : !hasAnyFiltered
+                        ? _buildEmptyState()
+                        : RefreshIndicator(
+                            onRefresh: _fetchTasks,
+                            color: AppColors.lapisLazuli,
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: EdgeInsets.only(
+                                left: ui.scale(base: 16, min: 12, max: 20),
+                                right: ui.scale(base: 16, min: 12, max: 20),
+                                bottom: 12,
+                              ),
+                              itemCount: listEntries.length,
+                              itemBuilder: (context, index) {
+                                final Map<String, dynamic> entry =
+                                    listEntries[index];
+                                if (entry['type'] == 'header') {
+                                  final bool isOrg = entry['section'] == 'org';
+                                  return Padding(
+                                    key: ValueKey(
+                                      'header_${isOrg ? 'org' : 'personal'}_$index',
                                     ),
-                                  ),
-                                  child: Text(
-                                    isOrg
-                                        ? localizations
-                                              .organ_missions_need_assignment
-                                        : localizations.my_missions,
-                                    style:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ) ??
-                                        TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Theme.of(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: ui.scale(
+                                        base: isOrg ? 4 : 8,
+                                        min: isOrg ? 2 : 6,
+                                        max: isOrg ? 6 : 10,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      isOrg
+                                          ? localizations
+                                                .organ_missions_need_assignment
+                                          : localizations.my_missions,
+                                      style:
+                                          Theme.of(
                                             context,
-                                          ).textTheme.bodyLarge?.color,
-                                        ),
+                                          ).textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ) ??
+                                          TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge?.color,
+                                          ),
+                                    ),
+                                  );
+                                }
+
+                                final Map<String, dynamic> task =
+                                    Map<String, dynamic>.from(
+                                      entry['task'] as Map<String, dynamic>,
+                                    );
+                                final bool isOrg = entry['section'] == 'org';
+                                final bool canAssign =
+                                    (entry['canAssign'] as bool?) ?? false;
+                                final String id = (task['id'] ?? 'noid')
+                                    .toString();
+                                return KeyedSubtree(
+                                  key: ValueKey(
+                                    '${isOrg ? 'org' : 'personal'}_task_${id}_$index',
+                                  ),
+                                  child: _buildTaskCard(
+                                    task,
+                                    isOrgTask: isOrg,
+                                    canAssign: canAssign,
                                   ),
                                 );
-                              }
-
-                              final Map<String, dynamic> task =
-                                  Map<String, dynamic>.from(
-                                    entry['task'] as Map<String, dynamic>,
-                                  );
-                              final bool isOrg = entry['section'] == 'org';
-                              final bool canAssign =
-                                  (entry['canAssign'] as bool?) ?? false;
-                              final String id =
-                                  (task['id'] ?? 'noid').toString();
-                              return KeyedSubtree(
-                                key: ValueKey(
-                                  '${isOrg ? 'org' : 'personal'}_task_${id}_$index',
-                                ),
-                                child: _buildTaskCard(
-                                  task,
-                                  isOrgTask: isOrg,
-                                  canAssign: canAssign,
-                                ),
-                              );
-                            },
+                              },
+                            ),
                           ),
-                        ),
-                ),
-              ],
-            ),
-      drawer: SharedAppDrawer(
-        username: username,
-        userRoleTitle: userRoleTitle,
-        userModir: false,
-        userLevel: userLevel,
-        refreshUserData: _loadUserMeta,
-        userActive: userActive,
-        logout: () async {
-          final SharedPreferences prefs = await SharedPreferences.getInstance();
+                  ),
+                ],
+              ),
+        drawer: SharedAppDrawer(
+          username: username,
+          userRoleTitle: userRoleTitle,
+          userModir: false,
+          userLevel: userLevel,
+          refreshUserData: _loadUserMeta,
+          userActive: userActive,
+          logout: () async {
+            final SharedPreferences prefs =
+                await SharedPreferences.getInstance();
 
-          final String? saved = prefs.getString('saved_username');
-          final String? preservedLanguage = prefs.getString('selectedLanguage');
-          final bool? preservedDarkMode = prefs.getBool('darkModeEnabled');
-          final double? preservedTextSize = prefs.getDouble('textSize');
-          final bool? preservedNotifications = prefs.getBool(
-            'notificationsEnabled',
-          );
+            final String? saved = prefs.getString('saved_username');
+            final String? preservedLanguage = prefs.getString(
+              'selectedLanguage',
+            );
+            final bool? preservedDarkMode = prefs.getBool('darkModeEnabled');
+            final double? preservedTextSize = prefs.getDouble('textSize');
+            final bool? preservedNotifications = prefs.getBool(
+              'notificationsEnabled',
+            );
 
-          await prefs.clear();
+            await prefs.clear();
 
-          if (saved != null && saved.isNotEmpty) {
-            await prefs.setString('saved_username', saved);
-          }
-          if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
-            await prefs.setString('selectedLanguage', preservedLanguage);
-          }
-          if (preservedDarkMode != null) {
-            await prefs.setBool('darkModeEnabled', preservedDarkMode);
-          }
-          if (preservedTextSize != null) {
-            await prefs.setDouble('textSize', preservedTextSize);
-          }
-          if (preservedNotifications != null) {
-            await prefs.setBool('notificationsEnabled', preservedNotifications);
-          }
+            if (saved != null && saved.isNotEmpty) {
+              await prefs.setString('saved_username', saved);
+            }
+            if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
+              await prefs.setString('selectedLanguage', preservedLanguage);
+            }
+            if (preservedDarkMode != null) {
+              await prefs.setBool('darkModeEnabled', preservedDarkMode);
+            }
+            if (preservedTextSize != null) {
+              await prefs.setDouble('textSize', preservedTextSize);
+            }
+            if (preservedNotifications != null) {
+              await prefs.setBool(
+                'notificationsEnabled',
+                preservedNotifications,
+              );
+            }
 
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
-        },
-      ),
-      bottomNavigationBar: SharedBottomNavigation(
-        selectedIndex: selectedNavIndex,
-        userLevel: userLevel,
-        onItemTapped: _onNavItemTapped,
-        organType: organType,
-      ),
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            );
+          },
+        ),
+        bottomNavigationBar: SharedBottomNavigation(
+          selectedIndex: selectedNavIndex,
+          userLevel: userLevel,
+          onItemTapped: _onNavItemTapped,
+          organType: organType,
+        ),
       ),
     );
   }

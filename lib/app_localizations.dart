@@ -1330,6 +1330,34 @@ class AppLocalizations {
       'driver_route_cargo_picked_up': 'Cargo picked up',
       'driver_route_then': 'Then',
       'driver_route_return_to_route': 'Return to route',
+      'accounting_title': 'Accounts',
+      'accounting_loading': 'Loading accounts...',
+      'accounting_error': 'Could not load accounts',
+      'accounting_retry': 'Try again',
+      'accounting_download_excel': 'Download Excel',
+      'accounting_download_done': 'Downloaded',
+      'accounting_download_failed': 'Could not download Excel',
+      'accounting_net': 'Overall balance',
+      'accounting_driver_creditor': 'Overall, the company owes you this amount',
+      'accounting_driver_debtor': 'Overall, you owe this amount to the company',
+      'accounting_tech_creditor':
+          'The technician group is owed this amount by Kaveh',
+      'accounting_tech_debtor':
+          'The technician group must pay this amount to Kaveh',
+      'accounting_driver_total_direct':
+          'Cash collected directly from customers',
+      'accounting_driver_direct_loss': 'Commission owed to the company (20%)',
+      'accounting_driver_total_invoice':
+          'Freight added to invoices (owed by the company)',
+      'accounting_tech_price_sum':
+          'Non-warranty services collected from customers',
+      'accounting_tech_price_sum_loss': 'Commission owed to Kaveh (35%)',
+      'accounting_tech_price_warranty': 'Warranty service costs',
+      'accounting_tech_price_warranty_profit':
+          'Warranty share owed by Kaveh (65%)',
+      'driver_requester': 'Requester',
+      'driver_report_search_hint':
+          'Search by customer, requester, origin, or destination',
       'driver_neshan_error_service_list':
           'Enable these services on your service key in Neshan panel: Geocoding Plus, Routing with traffic, and Static arc map.',
       'driver_neshan_error_key_type':
@@ -2646,6 +2674,29 @@ class AppLocalizations {
       'driver_route_cargo_picked_up': 'بار تحویل گرفتم',
       'driver_route_then': 'سپس',
       'driver_route_return_to_route': 'برگرد به مسیر',
+      'accounting_title': 'حساب و کتاب',
+      'accounting_loading': 'در حال دریافت حساب و کتاب...',
+      'accounting_error': 'خطا در دریافت حساب و کتاب',
+      'accounting_retry': 'تلاش مجدد',
+      'accounting_download_excel': 'دانلود اکسل',
+      'accounting_download_done': 'دانلود شد',
+      'accounting_download_failed': 'دانلود اکسل انجام نشد',
+      'accounting_net': 'مانده حساب',
+      'accounting_driver_creditor': 'در کل از شرکت طلبکار هستید',
+      'accounting_driver_debtor': 'در کل به شرکت بدهکار هستید',
+      'accounting_tech_creditor': 'گروه تکنسین از شرکت کاوه طلبکار است',
+      'accounting_tech_debtor':
+          'گروه تکنسین باید این مبلغ را به شرکت کاوه بپردازد',
+      'accounting_driver_total_direct': 'مجموع دریافتی مستقیم از مشتری',
+      'accounting_driver_direct_loss': 'بدهی کمیسیون به شرکت (۲۰٪)',
+      'accounting_driver_total_invoice': 'طلب کرایه از شرکت (اضافه بر فاکتور)',
+      'accounting_tech_price_sum': 'مجموع سرویس‌های بدون گارانتی',
+      'accounting_tech_price_sum_loss': 'بدهی کمیسیون به شرکت کاوه (۳۵٪)',
+      'accounting_tech_price_warranty': 'مجموع هزینه سرویس‌های با گارانتی',
+      'accounting_tech_price_warranty_profit': 'طلب گارانتی از شرکت کاوه (۶۵٪)',
+      'driver_requester': 'درخواست‌کننده',
+      'driver_report_search_hint':
+          'جستجو بر اساس مشتری، درخواست‌کننده، مبدا یا مقصد',
       'driver_neshan_error_service_list':
           'در پنل نشان برای کلید service این سرویس‌ها را فعال کنید: تبدیل آدرس به نقطه پلاس، مسیریابی با ترافیک، نقشه استاتیک منحنی‌دار.',
       'driver_neshan_error_key_type':
@@ -3857,6 +3908,42 @@ class AppLocalizations {
   String get driver_route_then => _getLocalizedValue('driver_route_then');
   String get driver_route_return_to_route =>
       _getLocalizedValue('driver_route_return_to_route');
+  String get accounting_title => _getLocalizedValue('accounting_title');
+  String get accounting_loading => _getLocalizedValue('accounting_loading');
+  String get accounting_error => _getLocalizedValue('accounting_error');
+  String get accounting_retry => _getLocalizedValue('accounting_retry');
+  String get accounting_download_excel =>
+      _getLocalizedValue('accounting_download_excel');
+  String get accounting_download_done =>
+      _getLocalizedValue('accounting_download_done');
+  String get accounting_download_failed =>
+      _getLocalizedValue('accounting_download_failed');
+  String get accounting_net => _getLocalizedValue('accounting_net');
+  String get accounting_driver_creditor =>
+      _getLocalizedValue('accounting_driver_creditor');
+  String get accounting_driver_debtor =>
+      _getLocalizedValue('accounting_driver_debtor');
+  String get accounting_tech_creditor =>
+      _getLocalizedValue('accounting_tech_creditor');
+  String get accounting_tech_debtor =>
+      _getLocalizedValue('accounting_tech_debtor');
+  String get accounting_driver_total_direct =>
+      _getLocalizedValue('accounting_driver_total_direct');
+  String get accounting_driver_direct_loss =>
+      _getLocalizedValue('accounting_driver_direct_loss');
+  String get accounting_driver_total_invoice =>
+      _getLocalizedValue('accounting_driver_total_invoice');
+  String get accounting_tech_price_sum =>
+      _getLocalizedValue('accounting_tech_price_sum');
+  String get accounting_tech_price_sum_loss =>
+      _getLocalizedValue('accounting_tech_price_sum_loss');
+  String get accounting_tech_price_warranty =>
+      _getLocalizedValue('accounting_tech_price_warranty');
+  String get accounting_tech_price_warranty_profit =>
+      _getLocalizedValue('accounting_tech_price_warranty_profit');
+  String get driver_requester => _getLocalizedValue('driver_requester');
+  String get driver_report_search_hint =>
+      _getLocalizedValue('driver_report_search_hint');
   String get driver_neshan_error_service_list =>
       _getLocalizedValue('driver_neshan_error_service_list');
   String get driver_neshan_error_key_type =>

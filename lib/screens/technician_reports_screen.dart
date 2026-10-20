@@ -11,10 +11,13 @@ import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
+import 'package:uzita/utils/keyboard_dismiss.dart';
+import 'package:uzita/utils/paged_results.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/widgets/technician_task_filter_menu.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/widgets/tappable_phone.dart';
+import 'package:uzita/widgets/task_accounting_sheet.dart';
 
 class TechnicianReportsScreen extends StatefulWidget {
   const TechnicianReportsScreen({super.key});
@@ -24,9 +27,13 @@ class TechnicianReportsScreen extends StatefulWidget {
       _TechnicianReportsScreenState();
 }
 
-class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
+class _TechnicianReportsScreenState extends State<TechnicianReportsScreen>
+    with WidgetsBindingObserver {
   List tasks = [];
   bool isLoading = true;
+  bool _isLoadingMore = false;
+  String? _nextPageUrl;
+  int _requestGen = 0;
   int selectedNavIndex = 2; // Reports tab index for technician users
   int userLevel = 2;
   String organType = '';
@@ -35,14 +42,38 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
   bool userActive = true;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  void Function() _cancelKeyboardDismiss = () {};
+  double _keyboardInset = 0;
   String _reportSearchQuery = '';
   String _reportStatusFilter = 'active';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _cancelKeyboardDismiss = bindKeyboardDismiss(_clearSearchFocus);
+    _scrollController.addListener(_onScroll);
     _loadUserData();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final double inset = views.first.viewInsets.bottom;
+    if (_keyboardInset > 0 && inset == 0) {
+      _clearSearchFocus();
+    }
+    _keyboardInset = inset;
+  }
+
+  void _clearSearchFocus() {
+    if (_searchFocus.hasFocus) {
+      _searchFocus.unfocus();
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -72,10 +103,20 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     fetchTasks();
   }
 
-  Future<void> fetchTasks() async {
+  Future<void> fetchTasks({bool reset = true}) async {
     if (!mounted) return;
+    if (!reset && (_isLoadingMore || isLoading || _nextPageUrl == null)) {
+      return;
+    }
+
+    final int gen = reset ? ++_requestGen : _requestGen;
+    final String? pageUrl = reset ? null : _nextPageUrl;
     setState(() {
-      isLoading = true;
+      if (reset) {
+        isLoading = true;
+      } else {
+        _isLoadingMore = true;
+      }
     });
 
     try {
@@ -83,19 +124,22 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        if (!mounted) return;
+        if (!mounted || gen != _requestGen) return;
         setState(() {
           isLoading = false;
+          _isLoadingMore = false;
         });
         return;
       }
 
       await SessionManager().onNetworkRequest();
-      if (!mounted) return;
+      if (!mounted || gen != _requestGen) return;
 
-      final ts = DateTime.now().millisecondsSinceEpoch;
+      final String url =
+          pageUrl ??
+          '$_listEndpoint?ts=${DateTime.now().millisecondsSinceEpoch}';
       final response = await http.get(
-        Uri.parse('$baseUrl5/technician/reports?ts=$ts'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',
@@ -103,64 +147,112 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
           'Connection': 'close',
         },
       );
-      if (!mounted) return;
+      if (!mounted || gen != _requestGen) return;
 
-      if (response.statusCode == 200) {
-        final body = utf8.decode(response.bodyBytes);
-        final dynamic data = json.decode(body);
-        if (data is Map && data['error'] != null) {
-          setState(() {
-            tasks = [];
-            isLoading = false;
-          });
-        } else if (data is Map && data['results'] != null) {
-          // Handle paginated response
-          final results = data['results'];
-          if (results is List) {
-            final List<Map<String, dynamic>> normalized = results
-                .whereType<Map>()
-                .map(
-                  (dynamic item) =>
-                      normalizeTechnicianTask(Map<String, dynamic>.from(item)),
-                )
-                .toList();
-            final List<Map<String, dynamic>> sorted =
-                _sortReportsForRole(normalized);
-            setState(() {
-              tasks = sorted;
-              isLoading = false;
-            });
-          } else {
-            setState(() {
-              tasks = [];
-              isLoading = false;
-            });
-          }
-        } else {
-          setState(() {
-            tasks = [];
-            isLoading = false;
-          });
-        }
-      } else {
+      if (response.statusCode != 200) {
         setState(() {
-          tasks = [];
+          if (reset) {
+            tasks = [];
+            _nextPageUrl = null;
+          }
           isLoading = false;
+          _isLoadingMore = false;
         });
+        return;
       }
+
+      final dynamic data = json.decode(utf8.decode(response.bodyBytes));
+      if (data is Map && data['error'] != null) {
+        setState(() {
+          if (reset) {
+            tasks = [];
+            _nextPageUrl = null;
+          }
+          isLoading = false;
+          _isLoadingMore = false;
+        });
+        return;
+      }
+
+      final ReportPagePayload page = parseReportPage(
+        data,
+        listEndpoint: _listEndpoint,
+      );
+      final List<Map<String, dynamic>> incoming = page.results
+          .whereType<Map>()
+          .map(
+            (dynamic item) =>
+                normalizeTechnicianTask(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+      final String? nextUrl = page.nextUrl == pageUrl ? null : page.nextUrl;
+      setState(() {
+        tasks = _sortReportsForRole(
+          reset ? incoming : appendUniqueReports(tasks, incoming),
+        );
+        _nextPageUrl = nextUrl;
+        isLoading = false;
+        _isLoadingMore = false;
+      });
+      _continueIfNeeded();
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _requestGen) return;
       setState(() {
         isLoading = false;
-        tasks = [];
+        _isLoadingMore = false;
+        if (reset) {
+          tasks = [];
+          _nextPageUrl = null;
+        }
       });
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cancelKeyboardDismiss();
+    _scrollController.dispose();
+    _searchFocus.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted || isLoading || _isLoadingMore || _nextPageUrl == null) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 280) {
+      fetchTasks(reset: false);
+    }
+  }
+
+  void _scrollResultsToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.offset <= 0) return;
+      _scrollController.jumpTo(0);
+    });
+  }
+
+  String get _listEndpoint => '$baseUrl5/technician/reports';
+
+  void _continueIfNeeded() {
+    if (!mounted || isLoading || _isLoadingMore || _nextPageUrl == null) return;
+    final bool searching = _reportSearchQuery.trim().isNotEmpty;
+    if (searching || _filteredReportsForSearch().isEmpty) {
+      fetchTasks(reset: false);
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || isLoading || _isLoadingMore || _nextPageUrl == null) {
+        return;
+      }
+      if (!_scrollController.hasClients) return;
+      if (_scrollController.position.maxScrollExtent <= 48) {
+        fetchTasks(reset: false);
+      }
+    });
   }
 
   String _buildTaskSearchHaystack(Map<String, dynamic> task) {
@@ -168,8 +260,7 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         task['customer_first_name']?.toString().trim() ?? '';
     final String customerLast =
         task['customer_last_name']?.toString().trim() ?? '';
-    final String customerName =
-        task['customer_name']?.toString().trim() ?? '';
+    final String customerName = task['customer_name']?.toString().trim() ?? '';
     final String phone = task['phone']?.toString().trim() ?? '';
     final String customerPhone =
         task['customer_phone']?.toString().trim() ?? '';
@@ -218,6 +309,153 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
         label: localizations.tech_filter_canceled_reports,
       ),
     ];
+  }
+
+  Widget _buildSearchAndFilter(AppLocalizations localizations) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final List<TechnicianTaskFilterOption> options = _reportFilterOptions(
+      localizations,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: isDark
+              ? Colors.grey[700]!
+              : AppColors.lapisLazuli.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _searchController,
+            focusNode: _searchFocus,
+            onTapOutside: (_) => _clearSearchFocus(),
+            onEditingComplete: _clearSearchFocus,
+            onChanged: (String value) {
+              setState(() => _reportSearchQuery = value);
+              _scrollResultsToTop();
+              _continueIfNeeded();
+            },
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: localizations.tech_mission_search_hint,
+              hintStyle: TextStyle(
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.55),
+                fontSize: 13,
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                color: AppColors.lapisLazuli,
+                size: 22,
+              ),
+              suffixIcon: _reportSearchQuery.trim().isEmpty
+                  ? null
+                  : IconButton(
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
+                      tooltip: localizations.cls_filtering_search,
+                      onPressed: () {
+                        _searchController.clear();
+                        _clearSearchFocus();
+                        setState(() => _reportSearchQuery = '');
+                        _scrollResultsToTop();
+                      },
+                    ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 14,
+              ),
+              filled: true,
+              fillColor: Colors.transparent,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.lapisLazuli.withValues(alpha: 0.1),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.lapisLazuli.withValues(
+                  alpha: isDark ? 0.16 : 0.08,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: options.map((TechnicianTaskFilterOption option) {
+                  final bool selected = option.value == _reportStatusFilter;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Material(
+                        color: selected
+                            ? AppColors.lapisLazuli
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            _clearSearchFocus();
+                            if (selected) return;
+                            setState(() => _reportStatusFilter = option.value);
+                            _continueIfNeeded();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Text(
+                              option.label,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: selected
+                                    ? Colors.white
+                                    : Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withValues(alpha: 0.75),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   bool get _isTechnicianOrgManager =>
@@ -320,7 +558,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
-    final List<Map<String, dynamic>> visibleReports = _filteredReportsForSearch();
+    final List<Map<String, dynamic>> visibleReports =
+        _filteredReportsForSearch();
 
     return PopScope(
       canPop: false,
@@ -489,64 +728,97 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      localizations.nav_reports,
-                                      style: TextStyle(
-                                        fontSize: ui.scale(
-                                          base: 18,
-                                          min: 16,
-                                          max: 20,
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        localizations.nav_reports,
+                                        style: TextStyle(
+                                          fontSize: ui.scale(
+                                            base: 18,
+                                            min: 16,
+                                            max: 20,
+                                          ),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.95,
+                                          ),
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        color: Colors.white.withValues(
-                                          alpha: 0.95,
-                                        ),
-                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ),
-                                    isLoading
-                                        ? Row(
-                                            children: [
-                                              SizedBox(
-                                                width: ui.scale(
-                                                  base: 14,
+                                      isLoading
+                                          ? Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: ui.scale(
+                                                    base: 14,
+                                                    min: 12,
+                                                    max: 16,
+                                                  ),
+                                                  height: ui.scale(
+                                                    base: 14,
+                                                    min: 12,
+                                                    max: 16,
+                                                  ),
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(Colors.white),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '${visibleReports.length} ${localizations.nav_report}',
+                                              style: TextStyle(
+                                                fontSize: ui.scale(
+                                                  base: 13,
                                                   min: 12,
-                                                  max: 16,
+                                                  max: 15,
                                                 ),
-                                                height: ui.scale(
-                                                  base: 14,
-                                                  min: 12,
-                                                  max: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.9,
                                                 ),
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(Colors.white),
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        : Text(
-                                            '${visibleReports.length} ${localizations.nav_report}',
-                                            style: TextStyle(
-                                              fontSize: ui.scale(
-                                                base: 13,
-                                                min: 12,
-                                                max: 15,
-                                              ),
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white.withValues(
-                                                alpha: 0.9,
                                               ),
                                             ),
-                                          ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
+                                if (_isTechnicianOrgManager) ...[
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: AppColors.lapisLazuli,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: () => showTaskAccountingSheet(
+                                      context,
+                                      TaskAccountingKind.technician,
+                                    ),
+                                    child: Text(
+                                      localizations.accounting_title,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -555,121 +827,17 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                     ),
                     // Content
                     Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ui.scale(base: 16, min: 12, max: 20),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.black.withValues(alpha: 0.2)
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.06,
-                                    ),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                          border: Border.all(
-                            color:
-                                Theme.of(context).brightness ==
-                                    Brightness.dark
-                                ? Colors.grey[700]!
-                                : AppColors.lapisLazuli.withValues(alpha: 0.1),
-                            width: 1,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (value) {
-                            setState(() => _reportSearchQuery = value);
-                          },
-                          textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            hintText: localizations.tech_mission_search_hint,
-                            hintStyle: TextStyle(
-                              color: Theme.of(context).textTheme.bodyMedium
-                                  ?.color
-                                  ?.withValues(alpha: 0.6),
-                              fontSize: 13,
-                            ),
-                            prefixIcon: Container(
-                              margin: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.lapisLazuli.withValues(
-                                  alpha: 0.12,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.search,
-                                color: AppColors.lapisLazuli,
-                                size: 20,
-                              ),
-                            ),
-                            suffixIcon: _reportSearchQuery.trim().isEmpty
-                                ? null
-                                : IconButton(
-                                    icon: Icon(
-                                      Icons.close_rounded,
-                                      color: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.color,
-                                    ),
-                                    tooltip: localizations.cls_filtering_search,
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _reportSearchQuery = '');
-                                    },
-                                  ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: AppColors.lapisLazuli,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
                       padding: EdgeInsets.fromLTRB(
                         ui.scale(base: 16, min: 12, max: 20),
                         0,
                         ui.scale(base: 16, min: 12, max: 20),
                         8,
                       ),
-                      child: TechnicianTaskFilterMenu(
-                        value: _reportStatusFilter,
-                        options: _reportFilterOptions(localizations),
-                        onChanged: (String value) {
-                          setState(() => _reportStatusFilter = value);
-                        },
-                      ),
+                      child: _buildSearchAndFilter(localizations),
                     ),
                     const SizedBox(height: 8),
                     Expanded(
-                      child: isLoading
+                      child: isLoading && tasks.isEmpty
                           ? Center(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -708,12 +876,21 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                 ],
                               ),
                             )
+                          : visibleReports.isEmpty &&
+                                (_isLoadingMore || _nextPageUrl != null)
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.lapisLazuli,
+                              ),
+                            )
                           : visibleReports.isEmpty
                           ? _buildEmptyState()
                           : RefreshIndicator(
-                              onRefresh: fetchTasks,
+                              onRefresh: () => fetchTasks(),
                               color: AppColors.lapisLazuli,
                               child: ListView.builder(
+                                controller: _scrollController,
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 padding: EdgeInsets.only(
                                   left: ui.scale(base: 16, min: 12, max: 20),
                                   right: ui.scale(base: 16, min: 12, max: 20),
@@ -723,82 +900,103 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                       MediaQuery.of(context).padding.bottom +
                                       20,
                                 ),
-                                itemCount: visibleReports.length,
+                                itemCount:
+                                    visibleReports.length +
+                                    (_nextPageUrl != null ? 1 : 0),
                                 itemBuilder: (context, index) {
+                                  if (index >= visibleReports.length) {
+                                    return const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.lapisLazuli,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
                                   final task = visibleReports[index];
                                   final title =
                                       task['title']?.toString() ?? '---';
                                   final status =
                                       task['status']?.toString() ?? 'open';
                                   final dynamic subjectsRaw = task['subjects'];
-                                  final String subjectsText = subjectsRaw is List
+                                  final String subjectsText =
+                                      subjectsRaw is List
                                       ? subjectsRaw
-                                          .map((e) => e.toString())
-                                          .where((s) => s.isNotEmpty)
-                                          .join('، ')
+                                            .map((e) => e.toString())
+                                            .where((s) => s.isNotEmpty)
+                                            .join('، ')
                                       : '';
                                   final String customerFirstName =
                                       task['customer_first_name']
-                                              ?.toString()
-                                              .trim() ??
-                                          '';
+                                          ?.toString()
+                                          .trim() ??
+                                      '';
                                   final String customerLastName =
                                       task['customer_last_name']
-                                              ?.toString()
-                                              .trim() ??
-                                          '';
+                                          ?.toString()
+                                          .trim() ??
+                                      '';
                                   final String customerName =
                                       ('$customerFirstName $customerLastName')
-                                              .trim()
-                                              .isEmpty
-                                          ? ((task['customer_name']
-                                                          ?.toString()
-                                                          .trim()
-                                                          .isNotEmpty ??
-                                                      false)
-                                                  ? task['customer_name']
-                                                      .toString()
-                                                      .trim()
-                                                  : '---')
-                                          : ('$customerFirstName $customerLastName')
-                                              .trim();
+                                          .trim()
+                                          .isEmpty
+                                      ? ((task['customer_name']
+                                                    ?.toString()
+                                                    .trim()
+                                                    .isNotEmpty ??
+                                                false)
+                                            ? task['customer_name']
+                                                  .toString()
+                                                  .trim()
+                                            : '---')
+                                      : ('$customerFirstName $customerLastName')
+                                            .trim();
                                   final String customerPhone =
                                       (task['phone']
-                                                  ?.toString()
+                                              ?.toString()
+                                              .trim()
+                                              .isNotEmpty ??
+                                          false)
+                                      ? task['phone'].toString().trim()
+                                      : ((task['customer_phone']
+                                                    ?.toString()
+                                                    .trim()
+                                                    .isNotEmpty ??
+                                                false)
+                                            ? task['customer_phone']
+                                                  .toString()
                                                   .trim()
-                                                  .isNotEmpty ??
-                                              false)
-                                          ? task['phone'].toString().trim()
-                                          : ((task['customer_phone']
-                                                          ?.toString()
-                                                          .trim()
-                                                          .isNotEmpty ??
-                                                      false)
-                                                  ? task['customer_phone']
-                                                      .toString()
-                                                      .trim()
-                                                  : '---');
+                                            : '---');
                                   final String customerAddress =
                                       (task['address']
-                                                  ?.toString()
-                                                  .trim()
-                                                  .isNotEmpty ??
-                                              false)
-                                          ? task['address'].toString().trim()
-                                          : '---';
+                                              ?.toString()
+                                              .trim()
+                                              .isNotEmpty ??
+                                          false)
+                                      ? task['address'].toString().trim()
+                                      : '---';
                                   final String subjectText =
                                       subjectsText.isNotEmpty
                                       ? subjectsText
                                       : title;
-                                  final String serviceId =
-                                      taskServiceIdDisplay(task);
+                                  final String serviceId = taskServiceIdDisplay(
+                                    task,
+                                  );
 
                                   return GestureDetector(
                                     onTap: () {
                                       final Map<String, dynamic> taskToSend =
                                           normalizeTechnicianTask(
-                                        Map<String, dynamic>.from(task),
-                                      );
+                                            Map<String, dynamic>.from(task),
+                                          );
                                       taskToSend['from_reports_list'] = true;
                                       Navigator.pushNamed(
                                         context,
@@ -904,8 +1102,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                                   _buildReportInfoRow(
                                                     context: context,
                                                     icon: Icons.phone_outlined,
-                                                    label:
-                                                        localizations.tech_phone,
+                                                    label: localizations
+                                                        .tech_phone,
                                                     value: customerPhone,
                                                     isPhone: true,
                                                   ),
@@ -922,8 +1120,8 @@ class _TechnicianReportsScreenState extends State<TechnicianReportsScreen> {
                                                   _buildReportInfoRow(
                                                     context: context,
                                                     icon: Icons.label_outline,
-                                                    label:
-                                                        localizations.sss_subject,
+                                                    label: localizations
+                                                        .sss_subject,
                                                     value: subjectText.isEmpty
                                                         ? '---'
                                                         : subjectText,

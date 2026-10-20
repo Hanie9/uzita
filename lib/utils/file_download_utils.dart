@@ -52,6 +52,13 @@ String ensureDownloadExtension(String fileName, String mimeType) {
       return lower.endsWith('.gif') ? base : '$base.gif';
     case 'image/webp':
       return lower.endsWith('.webp') ? base : '$base.webp';
+    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+      return lower.endsWith('.xlsx') ? base : '$base.xlsx';
+    case 'application/vnd.ms-excel':
+      if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return base;
+      return '$base.xls';
+    case 'text/csv':
+      return lower.endsWith('.csv') ? base : '$base.csv';
     default:
       return base;
   }
@@ -73,15 +80,40 @@ bool looksLikeJsonError(List<int> bytes) {
 
 bool looksLikeHtmlError(List<int> bytes) {
   if (bytes.isEmpty) return false;
-  final String head = String.fromCharCodes(
-    bytes.take(32),
-  ).toLowerCase();
+  final String head = String.fromCharCodes(bytes.take(32)).toLowerCase();
   return head.contains('<!doctype') ||
       head.contains('<html') ||
       head.trimLeft().startsWith('<');
 }
 
+bool looksLikeZip(List<int> bytes) {
+  return bytes.length >= 2 && bytes[0] == 0x50 && bytes[1] == 0x4b;
+}
+
+bool looksLikeLegacyExcel(List<int> bytes) {
+  return bytes.length >= 4 &&
+      bytes[0] == 0xd0 &&
+      bytes[1] == 0xcf &&
+      bytes[2] == 0x11 &&
+      bytes[3] == 0xe0;
+}
+
+bool looksLikeSpreadsheet({required List<int> bytes, String? contentType}) {
+  final String type = (contentType ?? '').toLowerCase();
+  if (type.contains('spreadsheet') ||
+      type.contains('excel') ||
+      type.contains('csv')) {
+    return true;
+  }
+  return looksLikeZip(bytes) || looksLikeLegacyExcel(bytes);
+}
+
 bool looksLikeDownloadErrorBody(List<int> bytes) {
+  if (looksLikeZip(bytes) ||
+      looksLikeLegacyExcel(bytes) ||
+      looksLikePdf(bytes)) {
+    return false;
+  }
   return looksLikeJsonError(bytes) || looksLikeHtmlError(bytes);
 }
 

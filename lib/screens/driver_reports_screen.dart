@@ -8,11 +8,14 @@ import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/keyboard_dismiss.dart';
+import 'package:uzita/utils/paged_results.dart';
 import 'package:uzita/utils/ui_scale.dart';
 // import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import 'package:uzita/widgets/task_accounting_sheet.dart';
 
 class DriverReportsScreen extends StatefulWidget {
   const DriverReportsScreen({super.key});
@@ -21,9 +24,14 @@ class DriverReportsScreen extends StatefulWidget {
   State<DriverReportsScreen> createState() => _DriverReportsScreenState();
 }
 
-class _DriverReportsScreenState extends State<DriverReportsScreen> {
+class _DriverReportsScreenState extends State<DriverReportsScreen>
+    with WidgetsBindingObserver {
   List tasks = [];
   bool isLoading = true;
+  bool _isLoadingMore = false;
+  String? _nextPageUrl;
+  int? _totalCount;
+  int _requestGen = 0;
   int selectedNavIndex = 1; // Reports tab index for driver users
   int userLevel = 3;
   String username = '';
@@ -31,11 +39,64 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
   bool userActive = true;
   // DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  void Function() _cancelKeyboardDismiss = () {};
+  double _keyboardInset = 0;
+  String _reportSearchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _cancelKeyboardDismiss = bindKeyboardDismiss(_clearSearchFocus);
+    _scrollController.addListener(_onScroll);
     _loadUserData();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final double inset = views.first.viewInsets.bottom;
+    if (_keyboardInset > 0 && inset == 0) {
+      _clearSearchFocus();
+    }
+    _keyboardInset = inset;
+  }
+
+  void _clearSearchFocus() {
+    if (_searchFocus.hasFocus) {
+      _searchFocus.unfocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cancelKeyboardDismiss();
+    _scrollController.dispose();
+    _searchFocus.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted || isLoading || _isLoadingMore || _nextPageUrl == null) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 280) {
+      fetchTasks(reset: false);
+    }
+  }
+
+  void _scrollResultsToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.offset <= 0) return;
+      _scrollController.jumpTo(0);
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -56,9 +117,61 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
     fetchTasks();
   }
 
-  Future<void> fetchTasks() async {
+  String get _listEndpoint => '$baseUrl5/transport/report';
+
+  List<dynamic> get _visibleTasks {
+    final String query = _reportSearchQuery.trim().toLowerCase();
+    if (query.isEmpty) return tasks;
+    return tasks.where((dynamic task) {
+      if (task is! Map) return false;
+      return _searchHaystack(Map<String, dynamic>.from(task)).contains(query);
+    }).toList();
+  }
+
+  String _searchHaystack(Map<String, dynamic> task) {
+    return <String>[
+      _partyName(task['customer']),
+      _partyName(task['requester']),
+      task['mabda']?.toString() ?? '',
+      task['maghsad']?.toString() ?? '',
+      task['phone']?.toString() ?? '',
+      task['description']?.toString() ?? '',
+      task['output_number']?.toString() ?? '',
+    ].join(' ').toLowerCase();
+  }
+
+  void _continueIfNeeded() {
+    if (!mounted || isLoading || _isLoadingMore || _nextPageUrl == null) return;
+    final bool searching = _reportSearchQuery.trim().isNotEmpty;
+    if (searching || _visibleTasks.isEmpty) {
+      fetchTasks(reset: false);
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || isLoading || _isLoadingMore || _nextPageUrl == null) {
+        return;
+      }
+      if (!_scrollController.hasClients) return;
+      if (_scrollController.position.maxScrollExtent <= 48) {
+        fetchTasks(reset: false);
+      }
+    });
+  }
+
+  Future<void> fetchTasks({bool reset = true}) async {
+    if (!mounted) return;
+    if (!reset && (_isLoadingMore || isLoading || _nextPageUrl == null)) {
+      return;
+    }
+
+    final int gen = reset ? ++_requestGen : _requestGen;
+    final String? pageUrl = reset ? null : _nextPageUrl;
     setState(() {
-      isLoading = true;
+      if (reset) {
+        isLoading = true;
+      } else {
+        _isLoadingMore = true;
+      }
     });
 
     try {
@@ -66,17 +179,22 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
       final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
+        if (!mounted || gen != _requestGen) return;
         setState(() {
           isLoading = false;
+          _isLoadingMore = false;
         });
         return;
       }
 
       await SessionManager().onNetworkRequest();
+      if (!mounted || gen != _requestGen) return;
 
-      final ts = DateTime.now().millisecondsSinceEpoch;
+      final String url =
+          pageUrl ??
+          '$_listEndpoint?ts=${DateTime.now().millisecondsSinceEpoch}';
       final response = await http.get(
-        Uri.parse('$baseUrl5/transport/report?ts=$ts'),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',
@@ -84,45 +202,57 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
           'Connection': 'close',
         },
       );
+      if (!mounted || gen != _requestGen) return;
 
-      if (response.statusCode == 200) {
-        final body = utf8.decode(response.bodyBytes);
-        final dynamic data = json.decode(body);
-        if (data is Map && data['error'] != null) {
-          setState(() {
-            tasks = [];
-            isLoading = false;
-          });
-        } else if (data is Map && data['results'] != null) {
-          // Handle paginated response
-          final results = data['results'];
-          if (results is List) {
-            setState(() {
-              tasks = results;
-              isLoading = false;
-            });
-          } else {
-            setState(() {
-              tasks = [];
-              isLoading = false;
-            });
-          }
-        } else {
-          setState(() {
-            tasks = [];
-            isLoading = false;
-          });
-        }
-      } else {
+      if (response.statusCode != 200) {
         setState(() {
-          tasks = [];
+          if (reset) {
+            tasks = [];
+            _nextPageUrl = null;
+            _totalCount = null;
+          }
           isLoading = false;
+          _isLoadingMore = false;
         });
+        return;
       }
+
+      final dynamic data = json.decode(utf8.decode(response.bodyBytes));
+      if (data is Map && data['error'] != null) {
+        setState(() {
+          if (reset) {
+            tasks = [];
+            _nextPageUrl = null;
+            _totalCount = null;
+          }
+          isLoading = false;
+          _isLoadingMore = false;
+        });
+        return;
+      }
+
+      final ReportPagePayload page = parseReportPage(
+        data,
+        listEndpoint: _listEndpoint,
+      );
+      final String? nextUrl = page.nextUrl == pageUrl ? null : page.nextUrl;
+      setState(() {
+        tasks = reset ? page.results : appendUniqueReports(tasks, page.results);
+        _nextPageUrl = nextUrl;
+        if (page.totalCount != null) _totalCount = page.totalCount;
+        isLoading = false;
+        _isLoadingMore = false;
+      });
+      _continueIfNeeded();
     } catch (e) {
+      if (!mounted || gen != _requestGen) return;
       setState(() {
         isLoading = false;
-        tasks = [];
+        _isLoadingMore = false;
+        if (reset) {
+          tasks = [];
+          _nextPageUrl = null;
+        }
       });
     }
   }
@@ -380,71 +510,85 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      localizations.nav_reports,
-                                      style: TextStyle(
-                                        fontSize: ui.scale(
-                                          base: 14,
-                                          min: 12,
-                                          max: 16,
-                                        ),
-                                        color: Colors.white.withValues(
-                                          alpha: 0.9,
-                                        ),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    isLoading
-                                        ? Row(
-                                            children: [
-                                              SizedBox(
-                                                width: ui.scale(
-                                                  base: 14,
-                                                  min: 12,
-                                                  max: 16,
-                                                ),
-                                                height: ui.scale(
-                                                  base: 14,
-                                                  min: 12,
-                                                  max: 16,
-                                                ),
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(Colors.white),
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        : Text(
-                                            '${tasks.length} ${localizations.nav_report}',
-                                            style: TextStyle(
-                                              fontSize: ui.scale(
-                                                base: 18,
-                                                min: 16,
-                                                max: 20,
-                                              ),
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        localizations.nav_reports,
+                                        style: TextStyle(
+                                          fontSize: ui.scale(
+                                            base: 14,
+                                            min: 12,
+                                            max: 16,
                                           ),
-                                  ],
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      isLoading
+                                          ? Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: ui.scale(
+                                                    base: 14,
+                                                    min: 12,
+                                                    max: 16,
+                                                  ),
+                                                  height: ui.scale(
+                                                    base: 14,
+                                                    min: 12,
+                                                    max: 16,
+                                                  ),
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(Colors.white),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '${_reportSearchQuery.trim().isEmpty ? (_totalCount ?? tasks.length) : _visibleTasks.length} ${localizations.nav_report}',
+                                              style: TextStyle(
+                                                fontSize: ui.scale(
+                                                  base: 18,
+                                                  min: 16,
+                                                  max: 20,
+                                                ),
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
+                                _buildAccountingButton(localizations),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        ui.scale(base: 16, min: 12, max: 20),
+                        0,
+                        ui.scale(base: 16, min: 12, max: 20),
+                        8,
+                      ),
+                      child: _buildSearchField(localizations),
+                    ),
                     // Content
                     Expanded(
-                      child: isLoading
+                      child: isLoading && tasks.isEmpty
                           ? Center(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -483,12 +627,21 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
                                 ],
                               ),
                             )
-                          : tasks.isEmpty
+                          : _visibleTasks.isEmpty &&
+                                (_isLoadingMore || _nextPageUrl != null)
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.lapisLazuli,
+                              ),
+                            )
+                          : _visibleTasks.isEmpty
                           ? _buildEmptyState()
                           : RefreshIndicator(
-                              onRefresh: fetchTasks,
+                              onRefresh: () => fetchTasks(),
                               color: AppColors.lapisLazuli,
                               child: ListView.builder(
+                                controller: _scrollController,
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 padding: EdgeInsets.only(
                                   left: kSpacing,
                                   right: kSpacing,
@@ -498,9 +651,28 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
                                       MediaQuery.of(context).padding.bottom +
                                       20,
                                 ),
-                                itemCount: tasks.length,
+                                itemCount:
+                                    _visibleTasks.length +
+                                    (_nextPageUrl != null ? 1 : 0),
                                 itemBuilder: (context, index) {
-                                  final task = tasks[index];
+                                  if (index >= _visibleTasks.length) {
+                                    return const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.lapisLazuli,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final task = _visibleTasks[index];
                                   final maghsad =
                                       task['maghsad']?.toString() ?? '---';
                                   final mabda =
@@ -683,6 +855,19 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
                                                     ],
                                                   ),
                                                   SizedBox(height: 6),
+                                                  _buildPartyRow(
+                                                    context,
+                                                    Icons.person_outline,
+                                                    '${localizations.trn_customer}: ${_partyName(task['customer'])}',
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  _buildPartyRow(
+                                                    context,
+                                                    Icons
+                                                        .assignment_ind_outlined,
+                                                    '${localizations.driver_requester}: ${_partyName(task['requester'])}',
+                                                  ),
+                                                  SizedBox(height: 4),
                                                   // Payment type
                                                   Row(
                                                     mainAxisSize:
@@ -875,6 +1060,151 @@ class _DriverReportsScreenState extends State<DriverReportsScreen> {
         //   onItemTapped: _onNavItemTapped,
         // ),
       ),
+    );
+  }
+
+  Widget _buildSearchField(AppLocalizations localizations) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.2)
+                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[700]!
+              : AppColors.lapisLazuli.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocus,
+        onTapOutside: (_) => _clearSearchFocus(),
+        onEditingComplete: _clearSearchFocus,
+        onChanged: (String value) {
+          setState(() => _reportSearchQuery = value);
+          _scrollResultsToTop();
+          _continueIfNeeded();
+        },
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: localizations.driver_report_search_hint,
+          hintStyle: TextStyle(
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+            fontSize: 13,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.lapisLazuli.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.search,
+              color: AppColors.lapisLazuli,
+              size: 20,
+            ),
+          ),
+          suffixIcon: _reportSearchQuery.trim().isEmpty
+              ? null
+              : IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                  tooltip: localizations.cls_filtering_search,
+                  onPressed: () {
+                    _searchController.clear();
+                    _clearSearchFocus();
+                    setState(() => _reportSearchQuery = '');
+                    _scrollResultsToTop();
+                  },
+                ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountingButton(AppLocalizations localizations) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.lapisLazuli,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      onPressed: () =>
+          showTaskAccountingSheet(context, TaskAccountingKind.driver),
+      child: Text(
+        localizations.accounting_title,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  String _partyName(dynamic value) {
+    if (value is Map) {
+      for (final String key in <String>[
+        'name',
+        'full_name',
+        'title',
+        'username',
+      ]) {
+        final String text = value[key]?.toString().trim() ?? '';
+        if (text.isNotEmpty) return text;
+      }
+      return '---';
+    }
+    final String text = value?.toString().trim() ?? '';
+    return text.isEmpty ? '---' : text;
+  }
+
+  Widget _buildPartyRow(BuildContext context, IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      textDirection: Directionality.of(context),
+      children: [
+        Icon(icon, size: 14, color: AppColors.iranianGray),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: AppColors.iranianGray),
+            textDirection: Directionality.of(context),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

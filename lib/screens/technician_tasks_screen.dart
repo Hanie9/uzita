@@ -8,12 +8,14 @@ import '../services.dart';
 import 'package:provider/provider.dart';
 import 'package:uzita/providers/settings_provider.dart';
 import 'package:uzita/services/session_manager.dart';
+import 'package:uzita/utils/keyboard_dismiss.dart';
 import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/utils/technician_task_utils.dart';
 import 'package:uzita/widgets/technician_task_filter_menu.dart';
+import 'package:uzita/widgets/technician_search_filter_card.dart';
 import 'package:uzita/widgets/tappable_phone.dart';
 
 class TechnicianTasksScreen extends StatefulWidget {
@@ -23,7 +25,8 @@ class TechnicianTasksScreen extends StatefulWidget {
   State<TechnicianTasksScreen> createState() => _TechnicianTasksScreenState();
 }
 
-class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
+class _TechnicianTasksScreenState extends State<TechnicianTasksScreen>
+    with WidgetsBindingObserver {
   List tasks = [];
   bool isLoading = true;
   int selectedNavIndex = 3; // Missions tab index for technician users
@@ -33,14 +36,45 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
   bool userActive = true;
   DateTime? _lastBackPressedAt;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  void Function() _cancelKeyboardDismiss = () {};
+  double _keyboardInset = 0;
   String _missionSearchQuery = '';
   String _missionStatusFilter = 'assigned';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _cancelKeyboardDismiss = bindKeyboardDismiss(_clearSearchFocus);
     _loadUserData();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return;
+    final double inset = views.first.viewInsets.bottom;
+    if (_keyboardInset > 0 && inset == 0) {
+      _clearSearchFocus();
+    }
+    _keyboardInset = inset;
+  }
+
+  void _clearSearchFocus() {
+    if (_searchFocus.hasFocus) {
+      _searchFocus.unfocus();
+    }
+  }
+
+  void _scrollResultsToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.offset <= 0) return;
+      _scrollController.jumpTo(0);
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -52,8 +86,9 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       userActive = prefs.getBool('active') ?? true;
       final int logicalLevel = getLogicalUserLevel(userLevel);
       if (isModir && logicalLevel == 1) {
-        userRoleTitle =
-            AppLocalizations.of(context)!.pro_company_representative;
+        userRoleTitle = AppLocalizations.of(
+          context,
+        )!.pro_company_representative;
       } else if (logicalLevel == 1) {
         userRoleTitle = AppLocalizations.of(context)!.pro_admin;
       } else if (logicalLevel == 2) {
@@ -87,9 +122,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
 
       final ts = DateTime.now().millisecondsSinceEpoch;
       final response = await http.get(
-        Uri.parse(
-          '$baseUrl5/technician/tasks?ts=$ts',
-        ),
+        Uri.parse('$baseUrl5/technician/tasks?ts=$ts'),
         headers: {
           'Authorization': 'Bearer $token',
           'Cache-Control': 'no-cache',
@@ -108,7 +141,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
           });
         } else {
           final List<dynamic> taskList = extractTechnicianTaskListPayload(data);
-          
+
           // Remove duplicates based on task ID
           final Map<int, dynamic> uniqueTasks = {};
           for (var task in taskList) {
@@ -121,15 +154,14 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
               }
             }
           }
-          
-          final List<dynamic> sortedTasks =
-              _sortTechnicianTasksByAssignedDate(uniqueTasks.values.toList());
+
+          final List<dynamic> sortedTasks = _sortTechnicianTasksByAssignedDate(
+            uniqueTasks.values.toList(),
+          );
           setState(() {
             tasks = sortedTasks.map((dynamic task) {
               if (task is! Map) return task;
-              return normalizeTechnicianTask(
-                Map<String, dynamic>.from(task),
-              );
+              return normalizeTechnicianTask(Map<String, dynamic>.from(task));
             }).toList();
             isLoading = false;
           });
@@ -150,6 +182,10 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cancelKeyboardDismiss();
+    _scrollController.dispose();
+    _searchFocus.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -159,8 +195,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
         task['customer_first_name']?.toString().trim() ?? '';
     final String customerLast =
         task['customer_last_name']?.toString().trim() ?? '';
-    final String customerName =
-        task['customer_name']?.toString().trim() ?? '';
+    final String customerName = task['customer_name']?.toString().trim() ?? '';
     final String phone = task['phone']?.toString().trim() ?? '';
     final String customerPhone =
         task['customer_phone']?.toString().trim() ?? '';
@@ -294,611 +329,596 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       },
       child: Scaffold(
         key: _scaffoldKey,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).appBarTheme.backgroundColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ui.scale(base: 16, min: 12, max: 20),
-              ),
-              child: Row(
-                children: [
-                  // Left side - Icons
-                  Row(
-                    children: [
-                      Builder(
-                        builder: (context) => IconButton(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).appBarTheme.backgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
+                child: Row(
+                  children: [
+                    // Left side - Icons
+                    Row(
+                      children: [
+                        Builder(
+                          builder: (context) => IconButton(
+                            icon: Icon(
+                              Icons.menu,
+                              color: Theme.of(
+                                context,
+                              ).appBarTheme.iconTheme?.color,
+                            ),
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                          ),
+                        ),
+                        IconButton(
                           icon: Icon(
-                            Icons.menu,
+                            Icons.notifications,
                             color: Theme.of(
                               context,
                             ).appBarTheme.iconTheme?.color,
                           ),
-                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+
+                    // Center - Text
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          localizations.tech_missions,
+                          style: Theme.of(context).appBarTheme.titleTextStyle,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.notifications,
-                            color: Theme.of(
-                              context,
-                            ).appBarTheme.iconTheme?.color,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
+                    ),
 
-                  // Center - Text
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        localizations.tech_missions,
-                        style: Theme.of(context).appBarTheme.titleTextStyle,
+                    // Right side - Logo
+                    Image.asset(
+                      'assets/logouzita.png',
+                      height: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
+                      ),
+                      width: ui.scale(
+                        base: screenHeight * 0.08,
+                        min: 28,
+                        max: 56,
                       ),
                     ),
-                  ),
-
-                  // Right side - Logo
-                  Image.asset(
-                    'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      body: !userActive
-          ? _buildInactiveState()
-          : Directionality(
-              textDirection:
-                  Provider.of<SettingsProvider>(
-                        context,
-                        listen: false,
-                      ).selectedLanguage ==
-                      'en'
-                  ? TextDirection.ltr
-                  : TextDirection.rtl,
-              child: Column(
-            children: [
-              // Blue header box
-              Container(
-                width: double.infinity,
-                margin: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                  vertical: ui.scale(base: 8, min: 6, max: 12),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                  vertical: ui.scale(base: 12, min: 8, max: 16),
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.lapisLazuli,
-                      AppColors.lapisLazuli.withValues(alpha: 0.85),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(
-                    ui.scale(base: 12, min: 10, max: 14),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.lapisLazuli.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
+        body: !userActive
+            ? _buildInactiveState()
+            : Directionality(
+                textDirection:
+                    Provider.of<SettingsProvider>(
+                          context,
+                          listen: false,
+                        ).selectedLanguage ==
+                        'en'
+                    ? TextDirection.ltr
+                    : TextDirection.rtl,
+                child: Column(
                   children: [
+                    // Blue header box
                     Container(
-                      width: ui.scale(base: 40, min: 32, max: 48),
-                      height: ui.scale(base: 40, min: 32, max: 48),
+                      width: double.infinity,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                        vertical: ui.scale(base: 8, min: 6, max: 12),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                        vertical: ui.scale(base: 12, min: 8, max: 16),
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.lapisLazuli,
+                            AppColors.lapisLazuli.withValues(alpha: 0.85),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          ui.scale(base: 12, min: 10, max: 14),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.assignment,
-                        color: Colors.white,
-                        size: ui.scale(base: 20, min: 16, max: 24),
-                      ),
-                    ),
-                    SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
-                    Expanded(
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                localizations.tech_missions,
-                                style: TextStyle(
-                                  fontSize: ui.scale(
-                                    base: 14,
-                                    min: 12,
-                                    max: 16,
-                                  ),
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              isLoading
-                                  ? Row(
-                                      children: [
-                                        SizedBox(
-                                          width: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          height: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Text(
-                                      '${visibleTasks.length} ${localizations.tech_mission}',
+                          Container(
+                            width: ui.scale(base: 40, min: 32, max: 48),
+                            height: ui.scale(base: 40, min: 32, max: 48),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.assignment,
+                              color: Colors.white,
+                              size: ui.scale(base: 20, min: 16, max: 24),
+                            ),
+                          ),
+                          SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      localizations.tech_missions,
                                       style: TextStyle(
                                         fontSize: ui.scale(
-                                          base: 18,
-                                          min: 16,
-                                          max: 20,
+                                          base: 14,
+                                          min: 12,
+                                          max: 16,
                                         ),
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                            ],
+                                    isLoading
+                                        ? Row(
+                                            children: [
+                                              SizedBox(
+                                                width: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
+                                                ),
+                                                height: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
+                                                ),
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Text(
+                                            '${visibleTasks.length} ${localizations.tech_mission}',
+                                            style: TextStyle(
+                                              fontSize: ui.scale(
+                                                base: 18,
+                                                min: 16,
+                                                max: 20,
+                                              ),
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              // Content
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                    // Content
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        ui.scale(base: 16, min: 12, max: 20),
+                        0,
+                        ui.scale(base: 16, min: 12, max: 20),
+                        8,
                       ),
-                    ],
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() => _missionSearchQuery = value);
-                    },
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: localizations.tech_mission_search_hint,
-                      hintStyle: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-                        fontSize: 13,
-                      ),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.lapisLazuli.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.search,
-                          color: AppColors.lapisLazuli,
-                          size: 20,
-                        ),
-                      ),
-                      suffixIcon: _missionSearchQuery.trim().isEmpty
-                          ? null
-                          : IconButton(
-                              icon: Icon(
-                                Icons.close_rounded,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.color,
-                              ),
-                              tooltip: localizations.cls_filtering_search,
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _missionSearchQuery = '');
-                              },
-                            ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      filled: true,
-                      fillColor: Colors.transparent,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: AppColors.lapisLazuli,
-                          width: 1.5,
-                        ),
+                      child: TechnicianSearchFilterCard(
+                        controller: _searchController,
+                        focusNode: _searchFocus,
+                        query: _missionSearchQuery,
+                        hintText: localizations.tech_mission_search_hint,
+                        clearTooltip: localizations.cls_filtering_search,
+                        filterValue: _missionStatusFilter,
+                        options: _missionFilterOptions(localizations),
+                        onDismissFocus: _clearSearchFocus,
+                        onQueryChanged: (String value) {
+                          setState(() => _missionSearchQuery = value);
+                          _scrollResultsToTop();
+                        },
+                        onClear: () {
+                          _searchController.clear();
+                          _clearSearchFocus();
+                          setState(() => _missionSearchQuery = '');
+                          _scrollResultsToTop();
+                        },
+                        onFilterChanged: (String value) {
+                          setState(() => _missionStatusFilter = value);
+                          _scrollResultsToTop();
+                        },
                       ),
                     ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  ui.scale(base: 16, min: 12, max: 20),
-                  0,
-                  ui.scale(base: 16, min: 12, max: 20),
-                  8,
-                ),
-                child: TechnicianTaskFilterMenu(
-                  value: _missionStatusFilter,
-                  options: _missionFilterOptions(localizations),
-                  onChanged: (String value) {
-                    setState(() => _missionStatusFilter = value);
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-        child: isLoading
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        top: 20,
-                        bottom: MediaQuery.of(context).padding.bottom,
-                      ),
-                      decoration: BoxDecoration(
-                                color: AppColors.lapisLazuli.withValues(
-                                  alpha: 0.1,
-                                ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.lapisLazuli,
-                        ),
-                        strokeWidth: 3,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      localizations.sls_loading,
-                      style: TextStyle(
-                        color: AppColors.lapisLazuli,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : visibleTasks.isEmpty
-            ? _buildEmptyState()
-            : RefreshIndicator(
-                onRefresh: fetchTasks,
-                color: AppColors.lapisLazuli,
-                child: ListView.builder(
-                  padding: EdgeInsets.only(
-                    left: ui.scale(base: 16, min: 12, max: 20),
-                    right: ui.scale(base: 16, min: 12, max: 20),
-                    top: ui.scale(base: 16, min: 12, max: 20),
-                    bottom: ui.scale(base: 16, min: 12, max: 20) +
-                        MediaQuery.of(context).padding.bottom +
-                        20,
-                  ),
-                  itemCount: visibleTasks.length,
-                  itemBuilder: (context, index) {
-                    final task = visibleTasks[index];
-                            final taskId =
-                                task['id']?.toString() ?? index.toString();
-                    final title = task['title']?.toString() ?? '---';
-                    final status =
-                        (task['status'] ?? 'open').toString().toLowerCase();
-                    final dynamic subjectsRaw = task['subjects'];
-                    final String subjectsText = subjectsRaw is List
-                        ? subjectsRaw
-                            .map((e) => e.toString())
-                            .where((s) => s.isNotEmpty)
-                            .join('، ')
-                        : '';
-                    final String customerFirstName =
-                        task['customer_first_name']?.toString().trim() ?? '';
-                    final String customerLastName =
-                        task['customer_last_name']?.toString().trim() ?? '';
-                    final String customerName =
-                        ('$customerFirstName $customerLastName').trim().isEmpty
-                        ? ((task['customer_name']?.toString().trim().isNotEmpty ??
-                              false)
-                              ? task['customer_name'].toString().trim()
-                              : '---')
-                        : ('$customerFirstName $customerLastName').trim();
-                    final String customerPhone =
-                        (task['phone']?.toString().trim().isNotEmpty ?? false)
-                        ? task['phone'].toString().trim()
-                        : ((task['customer_phone']?.toString().trim().isNotEmpty ??
-                              false)
-                              ? task['customer_phone'].toString().trim()
-                              : '---');
-                    final String customerAddress =
-                        (task['address']?.toString().trim().isNotEmpty ?? false)
-                        ? task['address'].toString().trim()
-                        : '---';
-                    final String subjectText =
-                        subjectsText.isNotEmpty ? subjectsText : title;
-                    final String serviceId = taskServiceIdDisplay(task);
-
-                    return GestureDetector(
-                      key: ValueKey('task_$taskId'),
-                      onTap: () {
-                        final Map<String, dynamic> taskToSend =
-                            normalizeTechnicianTask(
-                          Map<String, dynamic>.from(task as Map),
-                        );
-                        Navigator.pushNamed(
-                          context,
-                          '/technician-task-detail',
-                          arguments: taskToSend,
-                        );
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 0,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.black.withValues(alpha: 0.2)
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.06,
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: isLoading
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.only(
+                                      left: 20,
+                                      right: 20,
+                                      top: 20,
+                                      bottom: MediaQuery.of(
+                                        context,
+                                      ).padding.bottom,
                                     ),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                          border: Border.all(
-                            color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                ? Colors.grey[700]!
-                                        : AppColors.lapisLazuli.withValues(
-                                            alpha: 0.08,
-                                          ),
-                            width: 1,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Row(
-                            textDirection: Directionality.of(context),
-                            children: [
-                              // Status badge (like service list)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    status,
-                                  ).withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                  border: Border.all(
-                                    color: _getStatusColor(
-                                      status,
-                                    ).withValues(alpha: 0.3),
-                                    width: 1,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.lapisLazuli.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.lapisLazuli,
+                                      ),
+                                      strokeWidth: 3,
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  _getStatusText(status, localizations),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getStatusColor(status),
+                                  SizedBox(height: 20),
+                                  Text(
+                                    localizations.sls_loading,
+                                    style: TextStyle(
+                                      color: AppColors.lapisLazuli,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
+                                ],
+                              ),
+                            )
+                          : visibleTasks.isEmpty
+                          ? _buildEmptyState()
+                          : RefreshIndicator(
+                              onRefresh: fetchTasks,
+                              color: AppColors.lapisLazuli,
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: EdgeInsets.only(
+                                  left: ui.scale(base: 16, min: 12, max: 20),
+                                  right: ui.scale(base: 16, min: 12, max: 20),
+                                  top: ui.scale(base: 16, min: 12, max: 20),
+                                  bottom:
+                                      ui.scale(base: 16, min: 12, max: 20) +
+                                      MediaQuery.of(context).padding.bottom +
+                                      20,
+                                ),
+                                itemCount: visibleTasks.length,
+                                itemBuilder: (context, index) {
+                                  final task = visibleTasks[index];
+                                  final taskId =
+                                      task['id']?.toString() ??
+                                      index.toString();
+                                  final title =
+                                      task['title']?.toString() ?? '---';
+                                  final status = (task['status'] ?? 'open')
+                                      .toString()
+                                      .toLowerCase();
+                                  final dynamic subjectsRaw = task['subjects'];
+                                  final String subjectsText =
+                                      subjectsRaw is List
+                                      ? subjectsRaw
+                                            .map((e) => e.toString())
+                                            .where((s) => s.isNotEmpty)
+                                            .join('، ')
+                                      : '';
+                                  final String customerFirstName =
+                                      task['customer_first_name']
+                                          ?.toString()
+                                          .trim() ??
+                                      '';
+                                  final String customerLastName =
+                                      task['customer_last_name']
+                                          ?.toString()
+                                          .trim() ??
+                                      '';
+                                  final String customerName =
+                                      ('$customerFirstName $customerLastName')
+                                          .trim()
+                                          .isEmpty
+                                      ? ((task['customer_name']
+                                                    ?.toString()
+                                                    .trim()
+                                                    .isNotEmpty ??
+                                                false)
+                                            ? task['customer_name']
+                                                  .toString()
+                                                  .trim()
+                                            : '---')
+                                      : ('$customerFirstName $customerLastName')
+                                            .trim();
+                                  final String customerPhone =
+                                      (task['phone']
+                                              ?.toString()
+                                              .trim()
+                                              .isNotEmpty ??
+                                          false)
+                                      ? task['phone'].toString().trim()
+                                      : ((task['customer_phone']
+                                                    ?.toString()
+                                                    .trim()
+                                                    .isNotEmpty ??
+                                                false)
+                                            ? task['customer_phone']
+                                                  .toString()
+                                                  .trim()
+                                            : '---');
+                                  final String customerAddress =
+                                      (task['address']
+                                              ?.toString()
+                                              .trim()
+                                              .isNotEmpty ??
+                                          false)
+                                      ? task['address'].toString().trim()
+                                      : '---';
+                                  final String subjectText =
+                                      subjectsText.isNotEmpty
+                                      ? subjectsText
+                                      : title;
+                                  final String serviceId = taskServiceIdDisplay(
+                                    task,
+                                  );
+
+                                  return GestureDetector(
+                                    key: ValueKey('task_$taskId'),
+                                    onTap: () {
+                                      final Map<String, dynamic> taskToSend =
+                                          normalizeTechnicianTask(
+                                            Map<String, dynamic>.from(
+                                              task as Map,
+                                            ),
+                                          );
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/technician-task-detail',
+                                        arguments: taskToSend,
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 0,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).cardTheme.color,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.black.withValues(
+                                                    alpha: 0.2,
+                                                  )
+                                                : AppColors.lapisLazuli
+                                                      .withValues(alpha: 0.06),
+                                            blurRadius: 8,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                        border: Border.all(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey[700]!
+                                              : AppColors.lapisLazuli
+                                                    .withValues(alpha: 0.08),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Row(
                                           textDirection: Directionality.of(
                                             context,
                                           ),
-                                ),
+                                          children: [
+                                            // Status badge (like service list)
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getStatusColor(
+                                                  status,
+                                                ).withValues(alpha: 0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: _getStatusColor(
+                                                    status,
+                                                  ).withValues(alpha: 0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                _getStatusText(
+                                                  status,
+                                                  localizations,
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _getStatusColor(
+                                                    status,
+                                                  ),
+                                                ),
+                                                textDirection:
+                                                    Directionality.of(context),
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  _buildMissionInfoRow(
+                                                    context: context,
+                                                    icon: Icons.tag_outlined,
+                                                    label: localizations
+                                                        .tech_service_id,
+                                                    value: serviceId,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  _buildMissionInfoRow(
+                                                    context: context,
+                                                    icon: Icons.person_outline,
+                                                    label: localizations
+                                                        .tech_customer_name,
+                                                    value: customerName,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  _buildMissionInfoRow(
+                                                    context: context,
+                                                    icon: Icons.phone_outlined,
+                                                    label: localizations
+                                                        .tech_phone,
+                                                    value: customerPhone,
+                                                    isPhone: true,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  _buildMissionInfoRow(
+                                                    context: context,
+                                                    icon: Icons
+                                                        .location_on_outlined,
+                                                    label: localizations
+                                                        .tech_address,
+                                                    value: customerAddress,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  _buildMissionInfoRow(
+                                                    context: context,
+                                                    icon: Icons.label_outline,
+                                                    label: localizations
+                                                        .sss_subject,
+                                                    value: subjectText.isEmpty
+                                                        ? '---'
+                                                        : subjectText,
+                                                    maxLines: 2,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.chevron_left,
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.color
+                                                  ?.withValues(alpha: 0.5),
+                                              textDirection:
+                                                  Directionality.of(context) ==
+                                                      TextDirection.rtl
+                                                  ? TextDirection.ltr
+                                                  : TextDirection.rtl,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                  children: [
-                                    _buildMissionInfoRow(
-                                      context: context,
-                                      icon: Icons.tag_outlined,
-                                      label: localizations.tech_service_id,
-                                      value: serviceId,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    _buildMissionInfoRow(
-                                      context: context,
-                                      icon: Icons.person_outline,
-                                      label: localizations.tech_customer_name,
-                                      value: customerName,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    _buildMissionInfoRow(
-                                      context: context,
-                                      icon: Icons.phone_outlined,
-                                      label: localizations.tech_phone,
-                                      value: customerPhone,
-                                      isPhone: true,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    _buildMissionInfoRow(
-                                      context: context,
-                                      icon: Icons.location_on_outlined,
-                                      label: localizations.tech_address,
-                                      value: customerAddress,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    _buildMissionInfoRow(
-                                      context: context,
-                                      icon: Icons.label_outline,
-                                      label: localizations.sss_subject,
-                                      value:
-                                          subjectText.isEmpty ? '---' : subjectText,
-                                      maxLines: 2,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_left,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.5),
-                                textDirection:
-                                    Directionality.of(context) ==
-                                        TextDirection.rtl
-                                    ? TextDirection.ltr
-                                    : TextDirection.rtl,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                            ),
+                    ),
+                  ],
                 ),
-                      ),
               ),
-            ],
-              ),
-              ),
-      drawer: SharedAppDrawer(
-        username: username,
-        userRoleTitle: userRoleTitle,
-        userModir: false,
-        userLevel: userLevel,
-        refreshUserData: _loadUserData,
-        userActive: userActive,
-        logout: () async {
-          final prefs = await SharedPreferences.getInstance();
-          // Preserve user preferences
-          final saved = prefs.getString('saved_username');
-          final preservedLanguage = prefs.getString('selectedLanguage');
-          final preservedDarkMode = prefs.getBool('darkModeEnabled');
-          final preservedTextSize = prefs.getDouble('textSize');
+        drawer: SharedAppDrawer(
+          username: username,
+          userRoleTitle: userRoleTitle,
+          userModir: false,
+          userLevel: userLevel,
+          refreshUserData: _loadUserData,
+          userActive: userActive,
+          logout: () async {
+            final prefs = await SharedPreferences.getInstance();
+            // Preserve user preferences
+            final saved = prefs.getString('saved_username');
+            final preservedLanguage = prefs.getString('selectedLanguage');
+            final preservedDarkMode = prefs.getBool('darkModeEnabled');
+            final preservedTextSize = prefs.getDouble('textSize');
             final preservedNotifications = prefs.getBool(
               'notificationsEnabled',
             );
 
-          await prefs.clear();
+            await prefs.clear();
 
-          // Restore preserved settings
-          if (saved != null && saved.isNotEmpty) {
-            await prefs.setString('saved_username', saved);
-          }
-          if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
-            await prefs.setString('selectedLanguage', preservedLanguage);
-          }
-          if (preservedDarkMode != null) {
-            await prefs.setBool('darkModeEnabled', preservedDarkMode);
-          }
-          if (preservedTextSize != null) {
-            await prefs.setDouble('textSize', preservedTextSize);
-          }
-          if (preservedNotifications != null) {
+            // Restore preserved settings
+            if (saved != null && saved.isNotEmpty) {
+              await prefs.setString('saved_username', saved);
+            }
+            if (preservedLanguage != null && preservedLanguage.isNotEmpty) {
+              await prefs.setString('selectedLanguage', preservedLanguage);
+            }
+            if (preservedDarkMode != null) {
+              await prefs.setBool('darkModeEnabled', preservedDarkMode);
+            }
+            if (preservedTextSize != null) {
+              await prefs.setDouble('textSize', preservedTextSize);
+            }
+            if (preservedNotifications != null) {
               await prefs.setBool(
                 'notificationsEnabled',
                 preservedNotifications,
               );
-          }
+            }
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
-        },
-      ),
-      bottomNavigationBar: SharedBottomNavigation(
-        selectedIndex: selectedNavIndex,
-        userLevel: userLevel,
-        onItemTapped: _onNavItemTapped,
-      ),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+            );
+          },
+        ),
+        bottomNavigationBar: SharedBottomNavigation(
+          selectedIndex: selectedNavIndex,
+          userLevel: userLevel,
+          onItemTapped: _onNavItemTapped,
+        ),
       ),
     );
   }
@@ -938,8 +958,9 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
             const SizedBox(height: 12),
             // Description
             Text(
-              AppLocalizations.of(context)!
-                  .tls_waiting_for_activation_description,
+              AppLocalizations.of(
+                context,
+              )!.tls_waiting_for_activation_description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -1036,11 +1057,7 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       textDirection: Directionality.of(context),
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: AppColors.iranianGray,
-        ),
+        Icon(icon, size: 14, color: AppColors.iranianGray),
         const SizedBox(width: 4),
         Expanded(
           child: isPhone
