@@ -8,9 +8,11 @@ class MapTileConfig {
   static const String userAgentPackageName = 'com.example.uzita';
 
   /// MeMaps OSM — Iranian servers, no API key, works without international routing.
-  static const String lightUrlTemplate = 'https://memaps.ir/hot/{z}/{x}/{y}.png';
+  static const String lightUrlTemplate =
+      'https://memaps.ir/hot/{z}/{x}/{y}.png';
 
-  static const String darkUrlTemplate = 'https://memaps.ir/dark/{z}/{x}/{y}.png';
+  static const String darkUrlTemplate =
+      'https://memaps.ir/dark/{z}/{x}/{y}.png';
 
   /// Global CDN fallback when MeMaps is unreachable.
   static const String lightFallbackUrl =

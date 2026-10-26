@@ -63,10 +63,7 @@ Future<Uint8List> fetchNeshanStaticArcImage({
     dark: dark,
   );
 
-  final response = await http.get(
-    uri,
-    headers: {'Api-Key': neshanApiKey},
-  );
+  final response = await http.get(uri, headers: {'Api-Key': neshanApiKey});
 
   if (response.statusCode != 200) {
     throw Exception('Static map failed (${response.statusCode})');

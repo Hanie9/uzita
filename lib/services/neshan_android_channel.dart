@@ -48,14 +48,12 @@ class NeshanAndroidChannel {
     required NeshanLatLng searchCenter,
     String? scoringAddress,
   }) async {
-    final response = await _channel.invokeMapMethod<String, dynamic>(
-      'searchAddress',
-      {
-        'term': term.trim(),
-        'centerLat': searchCenter.latitude,
-        'centerLng': searchCenter.longitude,
-      },
-    );
+    final response = await _channel
+        .invokeMapMethod<String, dynamic>('searchAddress', {
+          'term': term.trim(),
+          'centerLat': searchCenter.latitude,
+          'centerLng': searchCenter.longitude,
+        });
 
     if (response == null) {
       throw const NeshanApiException(
@@ -225,7 +223,10 @@ class NeshanAndroidChannel {
         .whereType<Map>()
         .map((step) {
           final polyline = step['polyline']?.toString();
-          var startLocation = _parseLocation(step['startLat'], step['startLng']);
+          var startLocation = _parseLocation(
+            step['startLat'],
+            step['startLng'],
+          );
           if (startLocation == null &&
               polyline != null &&
               polyline.trim().isNotEmpty) {

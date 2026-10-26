@@ -133,8 +133,7 @@ Future<void> downloadTransportAttachment({
     final http.Response response = await http.get(
       Uri.parse(url),
       headers: <String, String>{
-        if (token != null && token.isNotEmpty)
-          'Authorization': 'Bearer $token',
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
         'Accept': '*/*',
       },
     );
@@ -191,6 +190,7 @@ Widget buildTransportAttachmentSection({
   required bool isDownloading,
   required VoidCallback onDownload,
   String? title,
+  Color? titleColor,
   List<String> keys = const <String>['attachment', 'attachment_url', 'file'],
   String nameKey = 'attachment_name',
 }) {
@@ -233,6 +233,7 @@ Widget buildTransportAttachmentSection({
                 title ?? localizations.trn_attachment,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: titleColor,
                 ),
               ),
             ),
@@ -279,6 +280,7 @@ Widget buildDriverFinalAttachmentSection({
   required Map<String, dynamic> data,
   required bool isDownloading,
   required VoidCallback onDownload,
+  Color? titleColor,
 }) {
   final AppLocalizations localizations = AppLocalizations.of(context)!;
   return buildTransportAttachmentSection(
@@ -287,6 +289,7 @@ Widget buildDriverFinalAttachmentSection({
     isDownloading: isDownloading,
     onDownload: onDownload,
     title: localizations.driver_final_attachment,
+    titleColor: titleColor,
     keys: const <String>[
       'driver_final_attachment',
       'driver_final_attachment_url',

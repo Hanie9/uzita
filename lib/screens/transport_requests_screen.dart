@@ -193,7 +193,6 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     final ui = UiScale(context);
-    final screenHeight = MediaQuery.of(context).size.height;
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -229,22 +228,10 @@ class _TransportRequestsScreenState extends State<TransportRequestsScreen> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Image.asset(
-                        'assets/logouzita.png',
-                        height: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
-                        width: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
-                      ),
-                    ],
+                  Image.asset(
+                    'assets/logouzita.png',
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),

@@ -106,12 +106,11 @@ class AppLocalizations {
       'help_postpurchase_title':
           'Necessary steps after purchasing and installing the application',
       'help_postpurchase_body':
-          'After purchasing and installing the application, it will bring you to the login and registration page, where you must click on the administrator registration button to enter the registration page. On this page, it will ask for your information such as username, password, phone number, and organization code. Please note that after purchasing the product, an eight-digit disposable code is written on its carton in the software specifications section, and you must enter it when registering. Please note that you do not provide this code to anyone and only the original owner of the device should use it. After entering the information, a confirmation code will be sent to the contact number by SMS. Also, pay attention to the following when registering:',
+          'After installing the application, open customer registration. Enter your first name, last name, mobile number, and password. Registration is a single step and does not send a confirmation code. Then sign in with the same mobile number and password. From your account you can submit a service request, a transport request, a warranty registration, and a support ticket.',
       'help_postpurchase_bullet_1': 'Your phone number should not be repeated.',
-      'help_postpurchase_bullet_2':
-          'Your username should be unique. Please select a name so that no one is selected in the server.',
+      'help_postpurchase_bullet_2': 'Password and its confirmation must match.',
       'help_postpurchase_bullet_3':
-          'You can only use the organization\'s admin code once, and if someone else registers with the organization\'s code, it will no longer be possible to register this way.',
+          'Enter the full mobile number. A leading zero is removed automatically.',
       'help_postpurchase_bullet_4':
           'If you do not comply with any of the above, error text will be displayed to you.',
       'help_add_device_title': 'Add device',
@@ -249,6 +248,9 @@ class AppLocalizations {
       'nav_services': 'Services',
       'nav_missions': 'Missions',
       'nav_public_loads': 'Public loads',
+      'nav_cargo': 'Transport',
+      'nav_tickets': 'Tickets',
+      'nav_warranty': 'Warranty',
       'public_loads_no_loads': 'No public loads',
       'public_loads_no_loads_description':
           'There are currently no public loads available',
@@ -653,6 +655,7 @@ class AppLocalizations {
       'home_company_representative': 'Company representative',
       'home_installer': 'Service technician',
       'home_user': 'User',
+      'home_customer': 'Customer',
       'home_admin': 'Admin',
       'home_driver': 'Driver',
       'home_retailer': 'Retailer',
@@ -728,6 +731,86 @@ class AppLocalizations {
       'login': 'Login',
       'login_user_register': 'User registration',
       'login_admin_register': 'Admin registration',
+      'login_customer_register': 'Customer registration',
+      'cust_register_title': 'Customer registration',
+      'cust_first_name': 'First name',
+      'cust_last_name': 'Last name',
+      'cust_password_confirm': 'Repeat password',
+      'cust_phone_hint': 'Mobile number, 10 digits',
+      'cust_register_action': 'Register',
+      'cust_register_success': 'Registration completed. Signing in...',
+      'cust_phone_invalid': 'Enter a valid mobile number.',
+      'cust_passwords_mismatch': 'Password and confirmation do not match.',
+      'cust_required': 'Fill in the required fields.',
+      'cust_home_intro': 'Your services',
+      'cust_service_title': 'Service request',
+      'cust_service_subtitle': 'Register and track a repair request',
+      'cust_service_count': 'services',
+      'cust_bar_title': 'Transport request',
+      'cust_bar_subtitle': 'Request cargo transport',
+      'cust_warranty_title': 'Warranty registration',
+      'cust_warranty_subtitle': 'Submit a product warranty request',
+      'cust_warranty_count': 'warranties',
+      'cust_ticket_title': 'Ticket',
+      'cust_ticket_subtitle': 'Send a message to support',
+      'cust_new_request': 'New request',
+      'cust_empty': 'Nothing has been registered yet.',
+      'cust_load_failed': 'Could not load the list.',
+      'cust_save': 'Submit',
+      'cust_edit': 'Edit',
+      'cust_delete': 'Delete',
+      'cust_delete_confirm': 'Delete this request?',
+      'cust_saved': 'Saved.',
+      'cust_deleted': 'Deleted.',
+      'cust_title': 'Title',
+      'cust_description': 'Description',
+      'cust_address': 'Address',
+      'cust_serial': 'Serial number',
+      'cust_subjects': 'Service subjects',
+      'cust_subjects_required': 'Choose at least one subject.',
+      'cust_origin': 'Origin',
+      'cust_destination': 'Destination',
+      'cust_invoice_file': 'Invoice file',
+      'cust_warranty_file': 'Warranty card',
+      'cust_attachment': 'Attachment',
+      'cust_pick_file': 'Choose file',
+      'cust_file_required': 'Invoice file is required.',
+      'cust_serial_invalid': 'Serial number must be 6 to 30 characters.',
+      'cust_confirm_delivery': 'Confirm delivery',
+      'cust_grade': 'Score',
+      'cust_comment': 'Comment',
+      'cust_reply': 'Reply',
+      'cust_reply_hint': 'Write your reply',
+      'cust_your_reply': 'Your reply',
+      'cust_replies': 'Replies',
+      'cust_no_replies': 'No replies yet.',
+      'cust_pieces': 'Parts',
+      'cust_tariffs': 'Tariffs',
+      'cust_cost': 'Cost',
+      'cust_admin_note': 'Admin note',
+      'cust_status': 'Status',
+      'cust_created': 'Registered at',
+      'cust_subject': 'Subject',
+      'cust_subject_service': 'Service',
+      'cust_subject_warranty': 'Warranty',
+      'cust_subject_bar': 'Transport',
+      'cust_subject_feedback': 'Feedback',
+      'cust_subject_other': 'Other',
+      'cust_load_more': 'Load more',
+      'cust_optional': 'Optional',
+      'cust_download': 'Download',
+      'cust_driver_file': 'Driver file',
+      'cust_rejection': 'Rejection reason',
+      'cust_warranty_until': 'Warranty end',
+      'cust_confirmed_at': 'Confirmed at',
+      'cust_has_warranty': 'Warranty is active',
+      'cust_warranty_confirm': 'Warranty confirmation',
+      'cust_customer_phone': 'Customer phone',
+      'cust_fixed_price': 'Fixed price',
+      'cust_can_confirm': 'Customer confirmation',
+      'cust_field_id': 'ID',
+      'cust_login_again': 'Please sign in again.',
+      'cust_connecting': 'Connection error. Try again.',
 
       // Transport Requests (trr_, trn_, trd_)
       'shareddrawer_transport_requests': 'Transport requests',
@@ -1093,6 +1176,7 @@ class AppLocalizations {
       'sps_status_done': 'Done',
       'sps_status_canceled': 'Canceled',
       'sps_status_suspended': 'Suspended',
+      'sps_status_public': 'Public',
       'sps_technician': 'Technician',
       'sps_technician_name': 'Name',
       'sps_technician_phone': 'Phone',
@@ -1422,6 +1506,51 @@ class AppLocalizations {
 
       // All
       'click_again_to_exit': 'Click again to exit',
+      'help_cust_intro_title': 'Customer guide',
+      'help_cust_intro_body':
+          'With a customer account you can register and follow service requests, cargo transport, warranty, and support tickets.',
+      'help_cust_nav_title': 'Moving around the app',
+      'help_cust_nav_1':
+          'The bottom bar has Home, Service request, Transport request, Ticket, and Profile.',
+      'help_cust_nav_2':
+          'The menu has warranty registration, change password, help, about, and sign out.',
+      'help_cust_nav_3':
+          'On bottom-bar pages, press back once to see the exit message, then again to leave the app.',
+      'help_cust_service_title': 'Service request',
+      'help_cust_service_body':
+          'Open the service list from Home or the bottom bar, then create a new request.',
+      'help_cust_service_1':
+          'Title, description, and at least one subject are required.',
+      'help_cust_service_2':
+          'Address, serial number, and the invoice file are optional.',
+      'help_cust_service_3':
+          'Open a card to see the status and every detail the server returned.',
+      'help_cust_bar_title': 'Transport request',
+      'help_cust_bar_body':
+          'Enter the origin, destination, and description. An attachment is optional.',
+      'help_cust_bar_1': 'The list shows the route and status of each request.',
+      'help_cust_bar_2': 'Details show only the fields that have a value.',
+      'help_cust_bar_3':
+          'When delivery can be confirmed, you can leave a score and a comment.',
+      'help_cust_warranty_title': 'Warranty registration',
+      'help_cust_warranty_body':
+          'Open warranty registration from Home or the menu.',
+      'help_cust_warranty_1':
+          'The serial number must be 6 to 30 characters.',
+      'help_cust_warranty_2':
+          'The invoice file is required. The warranty card is optional.',
+      'help_cust_warranty_3':
+          'This page has a back button and does not show the bottom bar.',
+      'help_cust_ticket_title': 'Support ticket',
+      'help_cust_ticket_body':
+          'Choose a subject and write the title and message. An attachment is optional.',
+      'help_cust_ticket_1': 'The list shows whether the ticket has been answered.',
+      'help_cust_ticket_2':
+          'Open a ticket to read the reply and send your own, with an optional file.',
+      'help_cust_account_title': 'Account',
+      'help_cust_account_1': 'Profile opens from the bottom bar.',
+      'help_cust_account_2':
+          'Change password and settings are available from the menu or profile.',
     },
     'fa': {
       //About screen sections
@@ -1463,12 +1592,11 @@ class AppLocalizations {
           'ما در تیم یوز های فناوری هوشمند نرم افزاری برای کنترل و امنیت ساختمان های شما طراحی کردیم. شما بعد از خریداری این محصول میتوانید دستگاه های مختلف و کاربران با حق دسترسی های مختلف را به اپلیکیشن اضافه بکنید و گزارشات عملکرد آن ها را مشاهده و در صورت نیاز آن ها را حذف و یا غیر فعال بکنید. همچنین از طریق نرم افزار می توانید به دستگاه ها فرمان باز شدن در، قفل شدن در و ... را ارسال بکنید.',
       'help_postpurchase_title': 'اقدامات لازم پس از خرید و نصب اپلیکیشن',
       'help_postpurchase_body':
-          'پس از خرید و نصب اپلیکیشن برای شما صفحه لاگین و ثبت نام را می آورد که شما باید روی دکمه ثبت نام مدیر بزنید تا وارد صفحه ثبت نام بشوید. در این صفحه اطلاعات شما مانند نام کاربری ، رمز عبور، شماره تلفن و کد سازمان را می خواهد. دقت کنید پس از خرید محصول بر روی کارتن آن در قسمت مشخصات نرم افزار، کدی هشت رقمی یکبار مصرف نوشته شده و شما در هنگام ثبت نام باید آن را وارد بکنید. دقت کنید این کد را در اختیار هیچ شخصی قرار ندهید و فقط مالک اصلی دستگاه باید از آن استفاده بکند. پس از وارد کردن اطلاعات، به شماره تماس کد تایید پیامک خواهد شد. همچنین در هنگام ثبت نام به موارد زیر دقت بکنید:',
+          'پس از نصب اپلیکیشن، ثبت‌نام مشتری را باز کنید. نام، نام خانوادگی، شماره موبایل و رمز عبور را وارد کنید. ثبت‌نام یک مرحله است و کد تایید ندارد. سپس با همان شماره و رمز وارد شوید. از این حساب می‌توانید درخواست سرویس، درخواست حمل، ثبت گارانتی و تیکت پشتیبانی بزنید.',
       'help_postpurchase_bullet_1': 'شماره موبایل شما نباید تکراری باشد.',
-      'help_postpurchase_bullet_2':
-          'نام کاربری شما باید منحصر به فرد باشد. لطفا نامی را انتخاب بکنید تا افراد در سرور انتخاب نشده باشد.',
+      'help_postpurchase_bullet_2': 'رمز عبور و تکرار آن باید یکسان باشد.',
       'help_postpurchase_bullet_3':
-          'از کد ادمین سازمان فقط یکبار می توانید استفاده بکنید و در صورت ثبت نام شخصی دیگر با کد سازمان، دیگر امکان ثبت نام از این طریق وجود ندارد.',
+          'شماره موبایل را کامل وارد کنید. صفر اول به‌صورت خودکار حذف می‌شود.',
       'help_postpurchase_bullet_4':
           'در صورت رعایت نکردن هر کدام از موارد بالا، متن ارور به شما نمایش داده خواهد شد.',
       'help_add_device_title': 'اضافه کردن دستگاه',
@@ -1605,6 +1733,9 @@ class AppLocalizations {
       'nav_services': 'سرویس ها',
       'nav_missions': 'ماموریت ها',
       'nav_public_loads': 'بارهای عمومی',
+      'nav_cargo': 'حمل',
+      'nav_tickets': 'تیکت',
+      'nav_warranty': 'گارانتی',
       'public_loads_no_loads': 'بار عمومی وجود ندارد',
       'public_loads_no_loads_description':
           'در حال حاضر هیچ بار عمومی در دسترس نیست',
@@ -2006,6 +2137,7 @@ class AppLocalizations {
       'home_company_representative': 'نماینده شرکت',
       'home_installer': 'سرویس کار',
       'home_user': 'کاربر',
+      'home_customer': 'مشتری',
       'home_admin': 'ادمین',
       'home_driver': 'راننده',
       'home_retailer': 'خرده فروش',
@@ -2080,6 +2212,86 @@ class AppLocalizations {
       'login': 'ورود',
       'login_user_register': 'ثبت‌نام کاربر',
       'login_admin_register': 'ثبت‌نام مدیر',
+      'login_customer_register': 'ثبت‌نام مشتری',
+      'cust_register_title': 'ثبت‌نام مشتری',
+      'cust_first_name': 'نام',
+      'cust_last_name': 'نام خانوادگی',
+      'cust_password_confirm': 'تکرار رمز عبور',
+      'cust_phone_hint': 'شماره موبایل، ۱۰ رقم',
+      'cust_register_action': 'ثبت‌نام',
+      'cust_register_success': 'ثبت‌نام انجام شد. در حال ورود...',
+      'cust_phone_invalid': 'شماره تماس معتبر نیست.',
+      'cust_passwords_mismatch': 'رمز عبور و تکرار آن یکسان نیستند.',
+      'cust_required': 'فیلدهای ضروری را کامل کنید.',
+      'cust_home_intro': 'خدمات شما',
+      'cust_service_title': 'درخواست سرویس',
+      'cust_service_subtitle': 'ثبت و پیگیری درخواست تعمیر',
+      'cust_service_count': 'سرویس',
+      'cust_bar_title': 'درخواست حمل',
+      'cust_bar_subtitle': 'ثبت درخواست حمل بار',
+      'cust_warranty_title': 'ثبت گارانتی',
+      'cust_warranty_subtitle': 'ارسال درخواست گارانتی محصول',
+      'cust_warranty_count': 'گارانتی',
+      'cust_ticket_title': 'تیکت',
+      'cust_ticket_subtitle': 'ارسال پیام به پشتیبانی',
+      'cust_new_request': 'درخواست جدید',
+      'cust_empty': 'هنوز موردی ثبت نشده است.',
+      'cust_load_failed': 'بارگذاری فهرست انجام نشد.',
+      'cust_save': 'ثبت',
+      'cust_edit': 'ویرایش',
+      'cust_delete': 'حذف',
+      'cust_delete_confirm': 'این درخواست حذف شود؟',
+      'cust_saved': 'ذخیره شد.',
+      'cust_deleted': 'حذف شد.',
+      'cust_title': 'عنوان',
+      'cust_description': 'توضیحات',
+      'cust_address': 'آدرس',
+      'cust_serial': 'شماره سریال',
+      'cust_subjects': 'موضوعات سرویس',
+      'cust_subjects_required': 'حداقل یک موضوع را انتخاب کنید.',
+      'cust_origin': 'مبدا',
+      'cust_destination': 'مقصد',
+      'cust_invoice_file': 'فایل فاکتور',
+      'cust_warranty_file': 'کارت گارانتی',
+      'cust_attachment': 'پیوست',
+      'cust_pick_file': 'انتخاب فایل',
+      'cust_file_required': 'فایل فاکتور الزامی است.',
+      'cust_serial_invalid': 'شماره سریال باید بین ۶ تا ۳۰ نویسه باشد.',
+      'cust_confirm_delivery': 'تایید تحویل',
+      'cust_grade': 'امتیاز',
+      'cust_comment': 'توضیح',
+      'cust_reply': 'پاسخ',
+      'cust_reply_hint': 'پاسخ خود را بنویسید',
+      'cust_your_reply': 'پاسخ شما',
+      'cust_replies': 'پاسخ‌ها',
+      'cust_no_replies': 'هنوز پاسخی ثبت نشده است.',
+      'cust_pieces': 'قطعات',
+      'cust_tariffs': 'تعرفه‌ها',
+      'cust_cost': 'هزینه',
+      'cust_admin_note': 'یادداشت مدیر',
+      'cust_status': 'وضعیت',
+      'cust_created': 'تاریخ ثبت',
+      'cust_subject': 'موضوع',
+      'cust_subject_service': 'سرویس',
+      'cust_subject_warranty': 'گارانتی',
+      'cust_subject_bar': 'حمل',
+      'cust_subject_feedback': 'انتقاد و پیشنهاد',
+      'cust_subject_other': 'سایر',
+      'cust_load_more': 'نمایش بیشتر',
+      'cust_optional': 'اختیاری',
+      'cust_download': 'دانلود',
+      'cust_driver_file': 'فایل راننده',
+      'cust_rejection': 'دلیل رد',
+      'cust_warranty_until': 'پایان گارانتی',
+      'cust_confirmed_at': 'تاریخ تایید',
+      'cust_has_warranty': 'گارانتی فعال است',
+      'cust_warranty_confirm': 'تایید گارانتی',
+      'cust_customer_phone': 'تلفن مشتری',
+      'cust_fixed_price': 'قیمت ثابت',
+      'cust_can_confirm': 'تایید مشتری',
+      'cust_field_id': 'شناسه',
+      'cust_login_again': 'دوباره وارد شوید.',
+      'cust_connecting': 'خطا در اتصال. دوباره تلاش کنید.',
 
       // Transport Requests (trr_, trn_, trd_)
       'shareddrawer_transport_requests': 'درخواست حمل',
@@ -2149,8 +2361,7 @@ class AppLocalizations {
       'sps_status_draft': 'پیش‌نویس',
 
       'trd_cancel_request': 'لغو درخواست',
-      'trd_cancel_request_confirm':
-          'آیا از لغو این درخواست حمل مطمئن هستید؟',
+      'trd_cancel_request_confirm': 'آیا از لغو این درخواست حمل مطمئن هستید؟',
       'trd_cancel_request_success': 'درخواست با موفقیت لغو شد',
       'trd_cancel_request_error': 'خطا در لغو درخواست',
 
@@ -2441,6 +2652,7 @@ class AppLocalizations {
       'sps_status_done': 'تمام شده',
       'sps_status_canceled': 'کنسل شده',
       'sps_status_suspended': 'معلق',
+      'sps_status_public': 'اعلان عمومی',
       'sps_technician': 'تکنسین',
       'sps_technician_name': 'نام',
       'sps_technician_phone': 'تلفن',
@@ -2762,6 +2974,45 @@ class AppLocalizations {
 
       // All
       'click_again_to_exit': 'برای خروج دوباره دکمه بازگشت را فشار دهید',
+      'help_cust_intro_title': 'راهنمای مشتری',
+      'help_cust_intro_body':
+          'با حساب مشتری می‌توانید درخواست سرویس، حمل بار، گارانتی و تیکت پشتیبانی را ثبت و پیگیری کنید.',
+      'help_cust_nav_title': 'حرکت در برنامه',
+      'help_cust_nav_1':
+          'نوار پایین شامل خانه، درخواست سرویس، درخواست حمل، تیکت و پروفایل است.',
+      'help_cust_nav_2':
+          'از منوی همبرگری ثبت گارانتی، تغییر رمز، راهنما، درباره ما و خروج در دسترس است.',
+      'help_cust_nav_3':
+          'در صفحه‌های نوار پایین، یک بار بازگشت پیام خروج را نشان می‌دهد و بار دوم برنامه بسته می‌شود.',
+      'help_cust_service_title': 'درخواست سرویس',
+      'help_cust_service_body':
+          'از خانه یا نوار پایین وارد فهرست سرویس‌ها شوید و درخواست تازه بسازید.',
+      'help_cust_service_1': 'عنوان، توضیحات و حداقل یک موضوع لازم است.',
+      'help_cust_service_2': 'آدرس، شماره سریال و فایل فاکتور اختیاری است.',
+      'help_cust_service_3':
+          'با باز کردن هر کارت، وضعیت و جزئیاتی که سرور برگردانده دیده می‌شود.',
+      'help_cust_bar_title': 'درخواست حمل',
+      'help_cust_bar_body':
+          'مبدأ، مقصد و توضیحات را وارد کنید. پیوست اختیاری است.',
+      'help_cust_bar_1': 'در فهرست، مسیر و وضعیت هر درخواست دیده می‌شود.',
+      'help_cust_bar_2': 'جزئیات فقط فیلدهای دارای مقدار را نشان می‌دهد.',
+      'help_cust_bar_3':
+          'اگر تحویل قابل تأیید باشد، می‌توانید امتیاز و توضیح ثبت کنید.',
+      'help_cust_warranty_title': 'ثبت گارانتی',
+      'help_cust_warranty_body': 'از خانه یا منو وارد ثبت گارانتی شوید.',
+      'help_cust_warranty_1': 'شماره سریال باید بین ۶ تا ۳۰ نویسه باشد.',
+      'help_cust_warranty_2': 'فایل فاکتور الزامی و کارت گارانتی اختیاری است.',
+      'help_cust_warranty_3': 'این صفحه دکمه بازگشت دارد و نوار پایین ندارد.',
+      'help_cust_ticket_title': 'تیکت پشتیبانی',
+      'help_cust_ticket_body':
+          'موضوع، عنوان و متن پیام را بنویسید. پیوست اختیاری است.',
+      'help_cust_ticket_1': 'وضعیت پاسخ در فهرست مشخص است.',
+      'help_cust_ticket_2':
+          'در جزئیات می‌توانید پاسخ پشتیبانی را بخوانید و پاسخ خود را همراه فایل اختیاری بفرستید.',
+      'help_cust_account_title': 'حساب کاربری',
+      'help_cust_account_1': 'پروفایل از نوار پایین باز می‌شود.',
+      'help_cust_account_2':
+          'تغییر رمز عبور و تنظیمات از منو یا پروفایل در دسترس است.',
     },
   };
 
@@ -2866,6 +3117,9 @@ class AppLocalizations {
   String get nav_services => _getLocalizedValue('nav_services');
   String get nav_missions => _getLocalizedValue('nav_missions');
   String get nav_public_loads => _getLocalizedValue('nav_public_loads');
+  String get nav_cargo => _getLocalizedValue('nav_cargo');
+  String get nav_tickets => _getLocalizedValue('nav_tickets');
+  String get nav_warranty => _getLocalizedValue('nav_warranty');
   String get public_loads_no_loads =>
       _getLocalizedValue('public_loads_no_loads');
   String get public_loads_no_loads_description =>
@@ -3297,6 +3551,7 @@ class AppLocalizations {
       _getLocalizedValue('home_company_representative');
   String get home_installer => _getLocalizedValue('home_installer');
   String get home_user => _getLocalizedValue('home_user');
+  String get home_customer => _getLocalizedValue('home_customer');
   String get home_admin => _getLocalizedValue('home_admin');
   String get home_driver => _getLocalizedValue('home_driver');
   String get home_retailer => _getLocalizedValue('home_retailer');
@@ -3386,6 +3641,97 @@ class AppLocalizations {
   String get login => _getLocalizedValue('login');
   String get login_user_register => _getLocalizedValue('login_user_register');
   String get login_admin_register => _getLocalizedValue('login_admin_register');
+  String get login_customer_register =>
+      _getLocalizedValue('login_customer_register');
+  String get cust_register_title => _getLocalizedValue('cust_register_title');
+  String get cust_first_name => _getLocalizedValue('cust_first_name');
+  String get cust_last_name => _getLocalizedValue('cust_last_name');
+  String get cust_password_confirm =>
+      _getLocalizedValue('cust_password_confirm');
+  String get cust_phone_hint => _getLocalizedValue('cust_phone_hint');
+  String get cust_register_action => _getLocalizedValue('cust_register_action');
+  String get cust_register_success =>
+      _getLocalizedValue('cust_register_success');
+  String get cust_phone_invalid => _getLocalizedValue('cust_phone_invalid');
+  String get cust_passwords_mismatch =>
+      _getLocalizedValue('cust_passwords_mismatch');
+  String get cust_required => _getLocalizedValue('cust_required');
+  String get cust_home_intro => _getLocalizedValue('cust_home_intro');
+  String get cust_service_title => _getLocalizedValue('cust_service_title');
+  String get cust_service_subtitle =>
+      _getLocalizedValue('cust_service_subtitle');
+  String get cust_service_count => _getLocalizedValue('cust_service_count');
+  String get cust_bar_title => _getLocalizedValue('cust_bar_title');
+  String get cust_bar_subtitle => _getLocalizedValue('cust_bar_subtitle');
+  String get cust_warranty_title => _getLocalizedValue('cust_warranty_title');
+  String get cust_warranty_subtitle =>
+      _getLocalizedValue('cust_warranty_subtitle');
+  String get cust_warranty_count => _getLocalizedValue('cust_warranty_count');
+  String get cust_ticket_title => _getLocalizedValue('cust_ticket_title');
+  String get cust_ticket_subtitle => _getLocalizedValue('cust_ticket_subtitle');
+  String get cust_new_request => _getLocalizedValue('cust_new_request');
+  String get cust_empty => _getLocalizedValue('cust_empty');
+  String get cust_load_failed => _getLocalizedValue('cust_load_failed');
+  String get cust_save => _getLocalizedValue('cust_save');
+  String get cust_edit => _getLocalizedValue('cust_edit');
+  String get cust_delete => _getLocalizedValue('cust_delete');
+  String get cust_delete_confirm => _getLocalizedValue('cust_delete_confirm');
+  String get cust_saved => _getLocalizedValue('cust_saved');
+  String get cust_deleted => _getLocalizedValue('cust_deleted');
+  String get cust_title => _getLocalizedValue('cust_title');
+  String get cust_description => _getLocalizedValue('cust_description');
+  String get cust_address => _getLocalizedValue('cust_address');
+  String get cust_serial => _getLocalizedValue('cust_serial');
+  String get cust_subjects => _getLocalizedValue('cust_subjects');
+  String get cust_subjects_required =>
+      _getLocalizedValue('cust_subjects_required');
+  String get cust_origin => _getLocalizedValue('cust_origin');
+  String get cust_destination => _getLocalizedValue('cust_destination');
+  String get cust_invoice_file => _getLocalizedValue('cust_invoice_file');
+  String get cust_warranty_file => _getLocalizedValue('cust_warranty_file');
+  String get cust_attachment => _getLocalizedValue('cust_attachment');
+  String get cust_pick_file => _getLocalizedValue('cust_pick_file');
+  String get cust_file_required => _getLocalizedValue('cust_file_required');
+  String get cust_serial_invalid => _getLocalizedValue('cust_serial_invalid');
+  String get cust_confirm_delivery =>
+      _getLocalizedValue('cust_confirm_delivery');
+  String get cust_grade => _getLocalizedValue('cust_grade');
+  String get cust_comment => _getLocalizedValue('cust_comment');
+  String get cust_reply => _getLocalizedValue('cust_reply');
+  String get cust_reply_hint => _getLocalizedValue('cust_reply_hint');
+  String get cust_your_reply => _getLocalizedValue('cust_your_reply');
+  String get cust_replies => _getLocalizedValue('cust_replies');
+  String get cust_no_replies => _getLocalizedValue('cust_no_replies');
+  String get cust_pieces => _getLocalizedValue('cust_pieces');
+  String get cust_tariffs => _getLocalizedValue('cust_tariffs');
+  String get cust_cost => _getLocalizedValue('cust_cost');
+  String get cust_admin_note => _getLocalizedValue('cust_admin_note');
+  String get cust_status => _getLocalizedValue('cust_status');
+  String get cust_created => _getLocalizedValue('cust_created');
+  String get cust_subject => _getLocalizedValue('cust_subject');
+  String get cust_subject_service => _getLocalizedValue('cust_subject_service');
+  String get cust_subject_warranty =>
+      _getLocalizedValue('cust_subject_warranty');
+  String get cust_subject_bar => _getLocalizedValue('cust_subject_bar');
+  String get cust_subject_feedback =>
+      _getLocalizedValue('cust_subject_feedback');
+  String get cust_subject_other => _getLocalizedValue('cust_subject_other');
+  String get cust_load_more => _getLocalizedValue('cust_load_more');
+  String get cust_optional => _getLocalizedValue('cust_optional');
+  String get cust_download => _getLocalizedValue('cust_download');
+  String get cust_driver_file => _getLocalizedValue('cust_driver_file');
+  String get cust_rejection => _getLocalizedValue('cust_rejection');
+  String get cust_warranty_until => _getLocalizedValue('cust_warranty_until');
+  String get cust_confirmed_at => _getLocalizedValue('cust_confirmed_at');
+  String get cust_has_warranty => _getLocalizedValue('cust_has_warranty');
+  String get cust_warranty_confirm =>
+      _getLocalizedValue('cust_warranty_confirm');
+  String get cust_customer_phone => _getLocalizedValue('cust_customer_phone');
+  String get cust_fixed_price => _getLocalizedValue('cust_fixed_price');
+  String get cust_can_confirm => _getLocalizedValue('cust_can_confirm');
+  String get cust_field_id => _getLocalizedValue('cust_field_id');
+  String get cust_login_again => _getLocalizedValue('cust_login_again');
+  String get cust_connecting => _getLocalizedValue('cust_connecting');
 
   // Registration Forms getters (reg_*)
   String get reg_user_register => _getLocalizedValue('reg_user_register');
@@ -3577,6 +3923,7 @@ class AppLocalizations {
   String get sps_status_done => _getLocalizedValue('sps_status_done');
   String get sps_status_canceled => _getLocalizedValue('sps_status_canceled');
   String get sps_status_suspended => _getLocalizedValue('sps_status_suspended');
+  String get sps_status_public => _getLocalizedValue('sps_status_public');
   String get sps_technician => _getLocalizedValue('sps_technician');
   String get sps_technician_name => _getLocalizedValue('sps_technician_name');
   String get sps_technician_phone => _getLocalizedValue('sps_technician_phone');
@@ -4518,6 +4865,42 @@ class AppLocalizations {
 
   // All
   String get click_again_to_exit => _getLocalizedValue('click_again_to_exit');
+  String get help_cust_intro_title =>
+      _getLocalizedValue('help_cust_intro_title');
+  String get help_cust_intro_body => _getLocalizedValue('help_cust_intro_body');
+  String get help_cust_nav_title => _getLocalizedValue('help_cust_nav_title');
+  String get help_cust_nav_1 => _getLocalizedValue('help_cust_nav_1');
+  String get help_cust_nav_2 => _getLocalizedValue('help_cust_nav_2');
+  String get help_cust_nav_3 => _getLocalizedValue('help_cust_nav_3');
+  String get help_cust_service_title =>
+      _getLocalizedValue('help_cust_service_title');
+  String get help_cust_service_body =>
+      _getLocalizedValue('help_cust_service_body');
+  String get help_cust_service_1 => _getLocalizedValue('help_cust_service_1');
+  String get help_cust_service_2 => _getLocalizedValue('help_cust_service_2');
+  String get help_cust_service_3 => _getLocalizedValue('help_cust_service_3');
+  String get help_cust_bar_title => _getLocalizedValue('help_cust_bar_title');
+  String get help_cust_bar_body => _getLocalizedValue('help_cust_bar_body');
+  String get help_cust_bar_1 => _getLocalizedValue('help_cust_bar_1');
+  String get help_cust_bar_2 => _getLocalizedValue('help_cust_bar_2');
+  String get help_cust_bar_3 => _getLocalizedValue('help_cust_bar_3');
+  String get help_cust_warranty_title =>
+      _getLocalizedValue('help_cust_warranty_title');
+  String get help_cust_warranty_body =>
+      _getLocalizedValue('help_cust_warranty_body');
+  String get help_cust_warranty_1 => _getLocalizedValue('help_cust_warranty_1');
+  String get help_cust_warranty_2 => _getLocalizedValue('help_cust_warranty_2');
+  String get help_cust_warranty_3 => _getLocalizedValue('help_cust_warranty_3');
+  String get help_cust_ticket_title =>
+      _getLocalizedValue('help_cust_ticket_title');
+  String get help_cust_ticket_body =>
+      _getLocalizedValue('help_cust_ticket_body');
+  String get help_cust_ticket_1 => _getLocalizedValue('help_cust_ticket_1');
+  String get help_cust_ticket_2 => _getLocalizedValue('help_cust_ticket_2');
+  String get help_cust_account_title =>
+      _getLocalizedValue('help_cust_account_title');
+  String get help_cust_account_1 => _getLocalizedValue('help_cust_account_1');
+  String get help_cust_account_2 => _getLocalizedValue('help_cust_account_2');
 
   String deviceCount(int count) {
     return effectiveLanguageCode == 'en' ? '$count devices' : '$count دستگاه';

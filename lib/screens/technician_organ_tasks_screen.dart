@@ -1027,16 +1027,8 @@ class _TechnicianOrganTasksScreenState extends State<TechnicianOrganTasksScreen>
                     // Right side - logo
                     Image.asset(
                       'assets/logouzita.png',
-                      height: ui.scale(
-                        base: screenHeight * 0.08,
-                        min: 28,
-                        max: 56,
-                      ),
-                      width: ui.scale(
-                        base: screenHeight * 0.08,
-                        min: 28,
-                        max: 56,
-                      ),
+                      height: MediaQuery.of(context).size.height * 0.08,
+                      width: MediaQuery.of(context).size.height * 0.08,
                     ),
                   ],
                 ),

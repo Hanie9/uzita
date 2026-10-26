@@ -528,10 +528,7 @@ class _TransportRequestDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              userFacingErrorMessage(
-                e,
-                AppLocalizations.of(context)!,
-              ),
+              userFacingErrorMessage(e, AppLocalizations.of(context)!),
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
@@ -704,9 +701,7 @@ class _TransportRequestDetailScreenState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              userFacingErrorMessage(e, localizations),
-            ),
+            content: Text(userFacingErrorMessage(e, localizations)),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -896,16 +891,8 @@ class _TransportRequestDetailScreenState
                   ),
                   Image.asset(
                     'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),
@@ -1173,7 +1160,10 @@ class _TransportRequestDetailScreenState
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.cancel_outlined, color: Colors.red),
+                          : const Icon(
+                              Icons.cancel_outlined,
+                              color: Colors.red,
+                            ),
                       label: Text(
                         localizations.trd_cancel_request,
                         style: const TextStyle(

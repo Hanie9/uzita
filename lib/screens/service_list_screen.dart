@@ -209,16 +209,8 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                     children: [
                       Image.asset(
                         'assets/logouzita.png',
-                        height: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
-                        width: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
+                        height: MediaQuery.of(context).size.height * 0.08,
+                        width: MediaQuery.of(context).size.height * 0.08,
                       ),
                     ],
                   ),
@@ -433,56 +425,56 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                             },
                             child: Container(
                               margin: EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardTheme.color,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardTheme.color,
                                 borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.black.withValues(alpha: 0.2)
+                                        : AppColors.lapisLazuli.withValues(
+                                            alpha: 0.06,
+                                          ),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(
                                   color:
                                       Theme.of(context).brightness ==
                                           Brightness.dark
-                                        ? Colors.black.withValues(alpha: 0.2)
-                                      : AppColors.lapisLazuli.withValues(
-                                            alpha: 0.06,
-                                        ),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 2),
-                                ),
-                              ],
-                              border: Border.all(
-                                color:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
                                       ? Colors.grey[700]!
-                                    : AppColors.lapisLazuli.withValues(
+                                      : AppColors.lapisLazuli.withValues(
                                           alpha: 0.08,
-                                      ),
-                                width: 1,
+                                        ),
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: Padding(
+                              child: Padding(
                                 padding: EdgeInsets.all(16),
                                 child: Row(
-                                    textDirection: Directionality.of(context),
-                                    children: [
+                                  textDirection: Directionality.of(context),
+                                  children: [
                                     // Status badge
-                                      Container(
+                                    Container(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 10,
                                         vertical: 6,
                                       ),
-                                        decoration: BoxDecoration(
+                                      decoration: BoxDecoration(
                                         color: _getStatusColor(
                                           status,
                                         ).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
+                                        border: Border.all(
                                           color: _getStatusColor(
                                             status,
                                           ).withValues(alpha: 0.3),
-                                            width: 1,
-                                          ),
+                                          width: 1,
                                         ),
+                                      ),
                                       child: Text(
                                         _getStatusText(
                                           status,
@@ -496,92 +488,92 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                         textDirection: Directionality.of(
                                           context,
                                         ),
-                                        ),
                                       ),
+                                    ),
                                     SizedBox(width: 12),
                                     // Service info
-                                      Expanded(
+                                    Expanded(
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                          title,
-                                          style: TextStyle(
+                                            title,
+                                            style: TextStyle(
                                               fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(
-                                              context,
-                                            ).textTheme.bodyMedium?.color,
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.color,
+                                            ),
                                             maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textDirection: Directionality.of(
-                                            context,
+                                            overflow: TextOverflow.ellipsis,
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
                                           ),
-                                  ),
                                           SizedBox(height: 6),
                                           Wrap(
                                             spacing: 12,
                                             runSpacing: 4,
-                                          textDirection: Directionality.of(
-                                            context,
-                                          ),
+                                            textDirection: Directionality.of(
+                                              context,
+                                            ),
                                             children: [
                                               Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 textDirection:
                                                     Directionality.of(context),
-                                          children: [
+                                                children: [
                                                   Icon(
                                                     Icons.attach_money,
                                                     size: 14,
                                                     color: AppColors.maroon,
-                                            ),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   Flexible(
                                                     child: Text(
-                                              '$hazine ${AppLocalizations.of(context)!.sls_tooman}',
-                                              style: TextStyle(
+                                                      '$hazine ${AppLocalizations.of(context)!.sls_tooman}',
+                                                      style: TextStyle(
                                                         fontSize: 13,
                                                         fontWeight:
                                                             FontWeight.w600,
-                                                color: AppColors.maroon,
-                                              ),
+                                                        color: AppColors.maroon,
+                                                      ),
                                                       textDirection:
                                                           Directionality.of(
-                                                context,
-                                              ),
+                                                            context,
+                                                          ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                               Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                                mainAxisSize: MainAxisSize.min,
                                                 textDirection:
                                                     Directionality.of(context),
-                                        children: [
-                                          Icon(
-                                            Icons.calendar_today,
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_today,
                                                     size: 14,
                                                     color:
                                                         AppColors.iranianGray,
-                                          ),
+                                                  ),
                                                   SizedBox(width: 4),
                                                   Flexible(
                                                     child: Text(
                                                       formatDate(createdAt),
-                                            style: TextStyle(
-                                              fontSize: 12,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
                                                         color: AppColors
                                                             .iranianGray,
-                                            ),
+                                                      ),
                                                       textDirection:
                                                           Directionality.of(
-                                              context,
-                                            ),
+                                                            context,
+                                                          ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
@@ -606,7 +598,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
                                           ? TextDirection.ltr
                                           : TextDirection.rtl,
                                     ),
-                                ],
+                                  ],
                                 ),
                               ),
                             ),

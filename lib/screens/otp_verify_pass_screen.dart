@@ -185,7 +185,11 @@ class _OTPVerifyPassScreenState extends State<OTPVerifyPassScreen> {
         actions: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Image.asset('assets/logouzita.png', height: 32),
+            child: Image.asset(
+              'assets/logouzita.png',
+              height: MediaQuery.of(context).size.height * 0.08,
+              width: MediaQuery.of(context).size.height * 0.08,
+            ),
           ),
         ],
       ),

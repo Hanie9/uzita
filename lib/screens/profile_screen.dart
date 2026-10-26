@@ -8,11 +8,14 @@ import 'package:uzita/services.dart'
     show
         baseUrl5,
         AppColors,
-        getLogicalUserLevel; // reuse API base URL and helpers
+        getLogicalUserLevel,
+        isCustomerOrgan,
+        accountHeaderName; // reuse API base URL and helpers
 import 'package:uzita/screens/editpassword_screen.dart';
 import 'package:uzita/screens/help_screen.dart';
 import 'package:uzita/screens/login_screen.dart';
 import 'package:uzita/screens/settings_screen.dart';
+import 'package:uzita/customer/customer_navigation.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
 import 'package:uzita/utils/shared_loading.dart';
@@ -83,7 +86,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Set correct selectedNavIndex based on logical user level
       final int logicalLevel = userLevel;
       final bool isTechOrgan = organType == 'technician';
-      if ((logicalLevel == 1 || logicalLevel == 2) && isTechOrgan) {
+      if (isCustomerOrgan(organType)) {
+        selectedNavIndex = 4;
+      } else if ((logicalLevel == 1 || logicalLevel == 2) && isTechOrgan) {
         // Technicians and their manager: profile at index 1
         selectedNavIndex = 1;
       } else if (logicalLevel == 3) {
@@ -97,7 +102,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Set user role title (modir overrides level, using new 3-level scheme)
       final bool isModir = prefs.getBool('modir') ?? false;
-      if (isModir && logicalLevel == 1 && organType == 'technician') {
+      if (isCustomerOrgan(organType)) {
+        userRoleTitle = AppLocalizations.of(context)!.home_customer;
+      } else if (isModir && logicalLevel == 1 && organType == 'technician') {
         userRoleTitle = AppLocalizations.of(
           context,
         )!.pro_company_representative;
@@ -259,7 +266,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final String organ = (prefs.getString('organ_type') ?? '')
                   .toLowerCase();
 
-              if (isModir && logicalLevel == 1 && organ == 'technician') {
+              if (isCustomerOrgan(organ)) {
+                userRoleTitle = AppLocalizations.of(context)!.home_customer;
+              } else if (isModir &&
+                  logicalLevel == 1 &&
+                  organ == 'technician') {
                 userRoleTitle = AppLocalizations.of(
                   context,
                 )!.pro_company_representative;
@@ -638,6 +649,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     // Handle navigation based on selected index and user level
+    if (isCustomerOrgan(organType)) {
+      openCustomerTab(context, index);
+      return;
+    }
     if (getLogicalUserLevel(userLevel) == 2) {
       // Technician navigation: Home (0), Profile (1), Reports (2), Missions (3)
       switch (index) {
@@ -837,16 +852,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Right side - Logo
                     Image.asset(
                       'assets/logouzita.png',
-                      height: ui.scale(
-                        base: screenHeight * 0.08,
-                        min: 28,
-                        max: 56,
-                      ),
-                      width: ui.scale(
-                        base: screenHeight * 0.08,
-                        min: 28,
-                        max: 56,
-                      ),
+                      height: MediaQuery.of(context).size.height * 0.08,
+                      width: MediaQuery.of(context).size.height * 0.08,
                     ),
                   ],
                 ),
@@ -855,9 +862,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         drawer: SharedAppDrawer(
-          username: username,
+          username: accountHeaderName(
+            organType: organType,
+            username: username,
+            firstName: firstName ?? '',
+            lastName: lastName ?? '',
+          ),
           userRoleTitle: userRoleTitle,
           userModir: userLevel == 1,
+          userLevel: userLevel,
+          organType: organType,
+          refreshUserData: _fetchProfile,
           logout: () async {
             final prefs = await SharedPreferences.getInstance();
             // Preserve user preferences
@@ -897,8 +912,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           },
           userActive: userActive,
-          refreshUserData: _loadUserData,
-          userLevel: userLevel,
         ),
         body: isLoading
             ? Center(
@@ -1194,6 +1207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     // Show allowed devices count only when organ_type is not 'technician'
                                     // and user is not a driver (logical level 3)
                                     if (organType != 'technician' &&
+                                        !isCustomerOrgan(organType) &&
                                         getLogicalUserLevel(userLevel) != 3)
                                       _kvRow(
                                         AppLocalizations.of(

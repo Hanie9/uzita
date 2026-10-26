@@ -231,15 +231,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           return MenuItemButton(
                             onPressed: () => changeLanguage(option.key),
                             style: ButtonStyle(
-                              backgroundColor:
-                                  WidgetStateProperty.resolveWith((states) {
-                                    if (isSelected) {
-                                      return accentColor.withValues(
-                                        alpha: 0.18,
-                                      );
-                                    }
-                                    return Colors.transparent;
-                                  }),
+                              backgroundColor: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (isSelected) {
+                                  return accentColor.withValues(alpha: 0.18);
+                                }
+                                return Colors.transparent;
+                              }),
                             ),
                             child: SizedBox(
                               width: constraints.maxWidth - 24,

@@ -24,7 +24,8 @@ String get neshanMapKey {
 }
 
 /// Geocoding Plus — matches «تبدیل آدرس به نقطه پلاس» in panel.
-const String neshanGeocodingBaseUrl = 'https://api.neshan.org/geocoding/v1/plus';
+const String neshanGeocodingBaseUrl =
+    'https://api.neshan.org/geocoding/v1/plus';
 
 /// Place search — requires «جستجوی مکان‌مبنا» on the Neshan key (optional).
 const String neshanSearchBaseUrl = 'https://api.neshan.org/v1/search';

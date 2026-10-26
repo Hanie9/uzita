@@ -53,10 +53,7 @@ String formatGroupedDigits(String digits) {
 
 /// Format a numeric value (or numeric string) with thousand separators.
 /// Returns [fallback] for null/empty/non-numeric values like `---` / `—`.
-String formatGroupedNumber(
-  dynamic value, {
-  String fallback = '---',
-}) {
+String formatGroupedNumber(dynamic value, {String fallback = '---'}) {
   if (value == null) return fallback;
   if (value is num) {
     final bool negative = value < 0;

@@ -11,8 +11,7 @@ NeshanRoute buildDegradedDirectRoute({
   final from = LatLng(origin.latitude, origin.longitude);
   final to = LatLng(destination.latitude, destination.longitude);
   final meters = distance(from, to);
-  final durationSeconds =
-      (meters / 9.0).clamp(60.0, 86400.0).toDouble();
+  final durationSeconds = (meters / 9.0).clamp(60.0, 86400.0).toDouble();
 
   String distanceText;
   if (meters >= 1000) {

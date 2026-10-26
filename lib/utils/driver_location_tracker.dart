@@ -125,19 +125,17 @@ class DriverLocationTracker {
     _hasAcceptedFix = false;
 
     _subscription?.cancel();
-    _subscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 0,
-      ),
-    ).listen(
-      (position) {
-        if (!_isAcceptableFix(position)) return;
-        _hasAcceptedFix = true;
-        onUpdate(_toSnapshot(position));
-      },
-      onError: onError,
-    );
+    _subscription =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 0,
+          ),
+        ).listen((position) {
+          if (!_isAcceptableFix(position)) return;
+          _hasAcceptedFix = true;
+          onUpdate(_toSnapshot(position));
+        }, onError: onError);
 
     unawaited(_emitBootstrapFix(onUpdate));
 
@@ -164,7 +162,8 @@ class DriverLocationTracker {
     }
   }
 
-  Future<DriverLocationSnapshot?> getCurrentSnapshot() => getBootstrapSnapshot();
+  Future<DriverLocationSnapshot?> getCurrentSnapshot() =>
+      getBootstrapSnapshot();
 
   Future<void> _emitBootstrapFix(
     void Function(DriverLocationSnapshot update) onUpdate,

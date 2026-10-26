@@ -25,6 +25,10 @@ import 'package:uzita/screens/driver_task_detail_screen.dart';
 import 'package:uzita/screens/technician_organ_tasks_screen.dart';
 import 'dart:async';
 import 'package:uzita/screens/login_screen.dart';
+import 'package:uzita/screens/customer_service_screens.dart';
+import 'package:uzita/screens/customer_bar_screens.dart';
+import 'package:uzita/screens/customer_warranty_screens.dart';
+import 'package:uzita/screens/customer_ticket_screens.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services/session_manager.dart';
 import 'package:uzita/api_config.dart';
@@ -190,9 +194,7 @@ class _MyAppState extends State<MyApp> {
                   ModalRoute.of(context)!.settings.arguments
                       as Map<String, dynamic>;
               return TechnicianTaskDetailScreen(
-                task: normalizeTechnicianTask(
-                  Map<String, dynamic>.from(raw),
-                ),
+                task: normalizeTechnicianTask(Map<String, dynamic>.from(raw)),
               );
             },
             '/technician-reports': (context) => TechnicianReportsScreen(),
@@ -201,6 +203,12 @@ class _MyAppState extends State<MyApp> {
                 const DriverPublicLoadsScreen(),
             '/driver-missions': (context) => const DriverMissionsScreen(),
             '/driver-reports': (context) => const DriverReportsScreen(),
+            '/customer-services': (context) =>
+                const CustomerServiceListScreen(),
+            '/customer-bars': (context) => const CustomerBarListScreen(),
+            '/customer-warranties': (context) =>
+                const CustomerWarrantyListScreen(),
+            '/customer-tickets': (context) => const CustomerTicketListScreen(),
             '/driver-task-detail': (context) {
               final args =
                   ModalRoute.of(context)!.settings.arguments

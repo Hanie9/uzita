@@ -148,16 +148,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: ui.scale(
-                            base: MediaQuery.of(context).size.height * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
-                          width: ui.scale(
-                            base: MediaQuery.of(context).size.height * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
+                          height: MediaQuery.of(context).size.height * 0.08,
+                          width: MediaQuery.of(context).size.height * 0.08,
                         ),
                       ],
                     ),

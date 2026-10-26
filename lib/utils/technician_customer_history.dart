@@ -85,13 +85,11 @@ Future<List<Map<String, dynamic>>> fetchCustomerServiceHistory(
   final dynamic data = json.decode(utf8.decode(response.bodyBytes));
   final List<Map<String, dynamic>> tasks = parseCustomerHistoryPayload(data);
   tasks.sort((Map<String, dynamic> a, Map<String, dynamic> b) {
-    final DateTime da = DateTime.tryParse(
-          (a['created_at'] ?? '').toString(),
-        ) ??
+    final DateTime da =
+        DateTime.tryParse((a['created_at'] ?? '').toString()) ??
         DateTime.fromMillisecondsSinceEpoch(0);
-    final DateTime db = DateTime.tryParse(
-          (b['created_at'] ?? '').toString(),
-        ) ??
+    final DateTime db =
+        DateTime.tryParse((b['created_at'] ?? '').toString()) ??
         DateTime.fromMillisecondsSinceEpoch(0);
     return db.compareTo(da);
   });
@@ -242,8 +240,9 @@ class _CustomerHistorySheetState extends State<_CustomerHistorySheet> {
 
   void _openTask(Map<String, dynamic> task) {
     final String status = (task['status'] ?? 'open').toString().toLowerCase();
-    final Map<String, dynamic> taskToSend =
-        normalizeTechnicianTask(Map<String, dynamic>.from(task));
+    final Map<String, dynamic> taskToSend = normalizeTechnicianTask(
+      Map<String, dynamic>.from(task),
+    );
     taskToSend['from_organ_assign_list'] = status != 'done';
     taskToSend['from_reports_list'] = status == 'done';
     Navigator.of(context).pop();
@@ -349,9 +348,7 @@ class _CustomerHistorySheetState extends State<_CustomerHistorySheet> {
                 ),
               ),
             const SizedBox(height: 8),
-            Flexible(
-              child: _buildBody(theme),
-            ),
+            Flexible(child: _buildBody(theme)),
           ],
         ),
       ),

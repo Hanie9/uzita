@@ -328,16 +328,8 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: ui.scale(
-                            base: screenHeight * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
-                          width: ui.scale(
-                            base: screenHeight * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
+                          height: MediaQuery.of(context).size.height * 0.08,
+                          width: MediaQuery.of(context).size.height * 0.08,
                         ),
                       ],
                     ),
@@ -359,429 +351,468 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
                     ? TextDirection.ltr
                     : TextDirection.rtl,
                 child: Column(
-            children: [
-              // Blue header box
-              Container(
-                width: double.infinity,
-                margin: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                  vertical: ui.scale(base: 8, min: 6, max: 12),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: ui.scale(base: 16, min: 12, max: 20),
-                  vertical: ui.scale(base: 12, min: 8, max: 16),
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.lapisLazuli,
-                      AppColors.lapisLazuli.withValues(alpha: 0.85),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(
-                    ui.scale(base: 12, min: 10, max: 14),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.lapisLazuli.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
                   children: [
+                    // Blue header box
                     Container(
-                      width: ui.scale(base: 40, min: 32, max: 48),
-                      height: ui.scale(base: 40, min: 32, max: 48),
+                      width: double.infinity,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                        vertical: ui.scale(base: 8, min: 6, max: 12),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: ui.scale(base: 16, min: 12, max: 20),
+                        vertical: ui.scale(base: 12, min: 8, max: 16),
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.lapisLazuli,
+                            AppColors.lapisLazuli.withValues(alpha: 0.85),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          ui.scale(base: 12, min: 10, max: 14),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.lapisLazuli.withValues(alpha: 0.2),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.inventory_2,
-                        color: Colors.white,
-                        size: ui.scale(base: 20, min: 16, max: 24),
-                      ),
-                    ),
-                    SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
-                    Expanded(
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                localizations.nav_public_loads,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: ui.scale(
-                                    base: 18,
-                                    min: 16,
-                                    max: 20,
-                                  ),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.list_alt,
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  isLoading
-                                      ? SizedBox(
-                                          width: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          height: ui.scale(
-                                            base: 14,
-                                            min: 12,
-                                            max: 16,
-                                          ),
-                                          child: const CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                          ),
-                                        )
-                                      : Text(
-                                          '${loads.length} ${localizations.public_loads_count}',
-                                          style: TextStyle(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.9,
-                                            ),
-                                            fontSize: ui.scale(
-                                              base: 12,
-                                              min: 10,
-                                              max: 14,
-                                            ),
-                                          ),
+                          Container(
+                            width: ui.scale(base: 40, min: 32, max: 48),
+                            height: ui.scale(base: 40, min: 32, max: 48),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.inventory_2,
+                              color: Colors.white,
+                              size: ui.scale(base: 20, min: 16, max: 24),
+                            ),
+                          ),
+                          SizedBox(width: ui.scale(base: 12, min: 8, max: 16)),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      localizations.nav_public_loads,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: ui.scale(
+                                          base: 18,
+                                          min: 16,
+                                          max: 20,
                                         ),
-                                ],
-                              ),
-                            ],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.list_alt,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        isLoading
+                                            ? SizedBox(
+                                                width: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
+                                                ),
+                                                height: ui.scale(
+                                                  base: 14,
+                                                  min: 12,
+                                                  max: 16,
+                                                ),
+                                                child:
+                                                    const CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.white),
+                                                    ),
+                                              )
+                                            : Text(
+                                                '${loads.length} ${localizations.public_loads_count}',
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.9),
+                                                  fontSize: ui.scale(
+                                                    base: 12,
+                                                    min: 10,
+                                                    max: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              // Content
-              Expanded(
-                child: isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.lapisLazuli,
-                          ),
-                          strokeWidth: 3,
-                        ),
-                      )
-                    : loads.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: _fetchLoads,
-                        color: AppColors.lapisLazuli,
-                        child: ListView.builder(
-                          padding: EdgeInsets.only(
-                            left: kSpacing,
-                            right: kSpacing,
-                            top: kSpacing,
-                            bottom:
-                                kSpacing +
-                                MediaQuery.of(context).padding.bottom +
-                                20,
-                          ),
-                          itemCount: loads.length,
-                          itemBuilder: (context, index) {
-                            final load = loads[index] as Map;
-                            final loadId = load['id'];
-                            final String maghsad = (load['maghsad'] ?? '---')
-                                .toString();
-                            final String mabda = (load['mabda'] ?? '---')
-                                .toString();
-                            final String phone = (load['phone'] ?? '---')
-                                .toString();
-                            final String priceTransport = formatGroupedNumber(
-                              load['price_transport'],
-                            );
-                            final dynamic vaznValue = load['vazn'];
-                            final String vazn = vaznValue == null
-                                ? '---'
-                                : vaznValue.toString();
-                            final bool bime = load['bime'] ?? false;
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardTheme.color,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Colors.black.withValues(alpha: 0.2)
-                                        : AppColors.lapisLazuli.withValues(
-                                            alpha: 0.06,
-                                          ),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.grey[700]!
-                                      : AppColors.lapisLazuli.withValues(
-                                          alpha: 0.08,
-                                        ),
-                                  width: 1,
+                    // Content
+                    Expanded(
+                      child: isLoading
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppColors.lapisLazuli,
                                 ),
+                                strokeWidth: 3,
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.local_shipping_outlined,
-                                          color: AppColors.lapisLazuli,
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              // Origin -> Destination
-                                              Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.location_city,
-                                                    size: 14,
-                                                    color:
-                                                        AppColors.iranianGray,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Flexible(
-                                                    child: Text(
-                                                      mabda,
-                                                      style: const TextStyle(
-                                                        fontSize: 13,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: AppColors
-                                                            .iranianGray,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  const Icon(
-                                                    Icons.arrow_forward,
-                                                    size: 16,
-                                                    color:
-                                                        AppColors.iranianGray,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  const Icon(
-                                                    Icons.location_on,
-                                                    size: 14,
-                                                    color:
-                                                        AppColors.lapisLazuli,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Flexible(
-                                                    child: Text(
-                                                      maghsad,
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium
-                                                            ?.color,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 6),
-                                              // Phone
-                                              Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.phone,
-                                                    size: 14,
-                                                    color:
-                                                        AppColors.iranianGray,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Expanded(
-                                                    child: TappablePhone(
-                                                      phone: phone,
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppColors
-                                                            .iranianGray,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 6),
-                                              // Price
-                                              Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.attach_money,
-                                                    size: 14,
-                                                    color:
-                                                        AppColors.iranianGray,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Expanded(
-                                                    child: Text(
-                                                      priceTransport == '---'
-                                                          ? '---'
-                                                          : '$priceTransport ${localizations.sls_tooman}',
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: AppColors
-                                                            .iranianGray,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 6),
-                                              // Weight and Insurance
-                                              Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.scale,
-                                                    size: 14,
-                                                    color:
-                                                        AppColors.iranianGray,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    '${localizations.driver_weight}: $vazn',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          AppColors.iranianGray,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Icon(
-                                                    bime
-                                                        ? Icons.check_circle
-                                                        : Icons.cancel,
-                                                    size: 14,
-                                                    color: bime
-                                                        ? Colors.green
-                                                        : AppColors.iranianGray,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    localizations
-                                                        .driver_insurance,
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: bime
-                                                          ? Colors.green
-                                                          : AppColors
-                                                                .iranianGray,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
+                            )
+                          : loads.isEmpty
+                          ? _buildEmptyState()
+                          : RefreshIndicator(
+                              onRefresh: _fetchLoads,
+                              color: AppColors.lapisLazuli,
+                              child: ListView.builder(
+                                padding: EdgeInsets.only(
+                                  left: kSpacing,
+                                  right: kSpacing,
+                                  top: kSpacing,
+                                  bottom:
+                                      kSpacing +
+                                      MediaQuery.of(context).padding.bottom +
+                                      20,
+                                ),
+                                itemCount: loads.length,
+                                itemBuilder: (context, index) {
+                                  final load = loads[index] as Map;
+                                  final loadId = load['id'];
+                                  final String maghsad =
+                                      (load['maghsad'] ?? '---').toString();
+                                  final String mabda = (load['mabda'] ?? '---')
+                                      .toString();
+                                  final String phone = (load['phone'] ?? '---')
+                                      .toString();
+                                  final String priceTransport =
+                                      formatGroupedNumber(
+                                        load['price_transport'],
+                                      );
+                                  final dynamic vaznValue = load['vazn'];
+                                  final String vazn = vaznValue == null
+                                      ? '---'
+                                      : vaznValue.toString();
+                                  final bool bime = load['bime'] ?? false;
+
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).cardTheme.color,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.black.withValues(
+                                                  alpha: 0.2,
+                                                )
+                                              : AppColors.lapisLazuli
+                                                    .withValues(alpha: 0.06),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
                                         ),
                                       ],
+                                      border: Border.all(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[700]!
+                                            : AppColors.lapisLazuli.withValues(
+                                                alpha: 0.08,
+                                              ),
+                                        width: 1,
+                                      ),
                                     ),
-                                    // Select Load Button
-                                    if (loadId != null) ...[
-                                      const SizedBox(height: 16),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: () =>
-                                              _selectLoad(loadId as int),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                AppColors.lapisLazuli,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 12,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            elevation: 2,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
                                             children: [
                                               const Icon(
-                                                Icons.check_circle,
-                                                size: 20,
+                                                Icons.local_shipping_outlined,
+                                                color: AppColors.lapisLazuli,
+                                                size: 24,
                                               ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                localizations
-                                                    .driver_select_load,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Origin -> Destination
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.location_city,
+                                                          size: 14,
+                                                          color: AppColors
+                                                              .iranianGray,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Flexible(
+                                                          child: Text(
+                                                            mabda,
+                                                            style: const TextStyle(
+                                                              fontSize: 13,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: AppColors
+                                                                  .iranianGray,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        const Icon(
+                                                          Icons.arrow_forward,
+                                                          size: 16,
+                                                          color: AppColors
+                                                              .iranianGray,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        const Icon(
+                                                          Icons.location_on,
+                                                          size: 14,
+                                                          color: AppColors
+                                                              .lapisLazuli,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Flexible(
+                                                          child: Text(
+                                                            maghsad,
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color:
+                                                                  Theme.of(
+                                                                        context,
+                                                                      )
+                                                                      .textTheme
+                                                                      .bodyMedium
+                                                                      ?.color,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    // Phone
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.phone,
+                                                          size: 14,
+                                                          color: AppColors
+                                                              .iranianGray,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Expanded(
+                                                          child: TappablePhone(
+                                                            phone: phone,
+                                                            style: const TextStyle(
+                                                              fontSize: 12,
+                                                              color: AppColors
+                                                                  .iranianGray,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    // Price
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.attach_money,
+                                                          size: 14,
+                                                          color: AppColors
+                                                              .iranianGray,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            priceTransport ==
+                                                                    '---'
+                                                                ? '---'
+                                                                : '$priceTransport ${localizations.sls_tooman}',
+                                                            style: const TextStyle(
+                                                              fontSize: 12,
+                                                              color: AppColors
+                                                                  .iranianGray,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    // Weight and Insurance
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.scale,
+                                                          size: 14,
+                                                          color: AppColors
+                                                              .iranianGray,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          '${localizations.driver_weight}: $vazn',
+                                                          style: const TextStyle(
+                                                            fontSize: 12,
+                                                            color: AppColors
+                                                                .iranianGray,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 16,
+                                                        ),
+                                                        Icon(
+                                                          bime
+                                                              ? Icons
+                                                                    .check_circle
+                                                              : Icons.cancel,
+                                                          size: 14,
+                                                          color: bime
+                                                              ? Colors.green
+                                                              : AppColors
+                                                                    .iranianGray,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          localizations
+                                                              .driver_insurance,
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: bime
+                                                                ? Colors.green
+                                                                : AppColors
+                                                                      .iranianGray,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
+                                          // Select Load Button
+                                          if (loadId != null) ...[
+                                            const SizedBox(height: 16),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton(
+                                                onPressed: () =>
+                                                    _selectLoad(loadId as int),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColors.lapisLazuli,
+                                                  foregroundColor: Colors.white,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 12,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  elevation: 2,
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.check_circle,
+                                                      size: 20,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      localizations
+                                                          .driver_select_load,
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
-                                    ],
-                                  ],
-                                ),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
         drawer: SharedAppDrawer(
           username: username,
           userRoleTitle: userRoleTitle,
@@ -872,8 +903,9 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
             const SizedBox(height: 12),
             // Description
             Text(
-              AppLocalizations.of(context)!
-                  .tls_waiting_for_activation_description,
+              AppLocalizations.of(
+                context,
+              )!.tls_waiting_for_activation_description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

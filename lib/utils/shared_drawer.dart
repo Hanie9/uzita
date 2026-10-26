@@ -21,6 +21,7 @@ class SharedAppDrawer extends StatelessWidget {
   final VoidCallback refreshUserData;
   final VoidCallback logout;
   final bool userActive;
+  final String organType;
 
   const SharedAppDrawer({
     super.key,
@@ -31,6 +32,7 @@ class SharedAppDrawer extends StatelessWidget {
     required this.refreshUserData,
     required this.logout,
     required this.userActive,
+    this.organType = '',
   });
 
   // Builds the "Services" tile conditionally based on user role and organ_type.
@@ -57,8 +59,8 @@ class SharedAppDrawer extends StatelessWidget {
     return FutureBuilder<SharedPreferences>(
       future: SharedPreferences.getInstance(),
       builder: (BuildContext ctx, AsyncSnapshot<SharedPreferences> snap) {
-        final String organType =
-            (snap.data?.getString('organ_type') ?? '').toLowerCase();
+        final String organType = (snap.data?.getString('organ_type') ?? '')
+            .toLowerCase();
         final bool isTechnicianOrgan = organType == 'technician';
 
         if (isTechnicianOrgan) {
@@ -68,10 +70,7 @@ class SharedAppDrawer extends StatelessWidget {
 
         return ListTile(
           minLeadingWidth: leadingWidth,
-          leading: Icon(
-            Icons.settings_outlined,
-            size: iconSize,
-          ),
+          leading: Icon(Icons.settings_outlined, size: iconSize),
           title: Text(
             localizations.shareddrawer_services,
             maxLines: 1,
@@ -81,14 +80,10 @@ class SharedAppDrawer extends StatelessWidget {
           minVerticalPadding: tileMinVerticalPad,
           horizontalTitleGap: horizontalTitleGap,
           dense: useDense,
-          visualDensity: VisualDensity(
-            vertical: verticalDensity,
-          ),
+          visualDensity: VisualDensity(vertical: verticalDensity),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => ServiceListScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => ServiceListScreen()),
           ),
         );
       },
@@ -148,6 +143,46 @@ class SharedAppDrawer extends StatelessWidget {
     if (confirmed == true) {
       logout();
     }
+  }
+
+  List<Widget> _customerTiles({
+    required BuildContext context,
+    required double leadingWidth,
+    required double iconSize,
+    required EdgeInsetsGeometry tilePadding,
+    required double tileMinVerticalPad,
+    required double horizontalTitleGap,
+    required bool useDense,
+    required double verticalDensity,
+  }) {
+    if (!isCustomerOrgan(organType)) return const <Widget>[];
+    final AppLocalizations localizations = AppLocalizations.of(context)!;
+
+    Widget tile({
+      required IconData icon,
+      required String title,
+      required VoidCallback onTap,
+    }) {
+      return ListTile(
+        minLeadingWidth: leadingWidth,
+        leading: Icon(icon, size: iconSize),
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        contentPadding: tilePadding,
+        minVerticalPadding: tileMinVerticalPad,
+        horizontalTitleGap: horizontalTitleGap,
+        dense: useDense,
+        visualDensity: VisualDensity(vertical: verticalDensity),
+        onTap: onTap,
+      );
+    }
+
+    return <Widget>[
+      tile(
+        icon: Icons.verified_user_outlined,
+        title: localizations.cust_warranty_title,
+        onTap: () => Navigator.pushNamed(context, '/customer-warranties'),
+      ),
+    ];
   }
 
   @override
@@ -328,6 +363,16 @@ class SharedAppDrawer extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => HomeScreen()),
                           ),
                         ),
+                        ..._customerTiles(
+                          context: context,
+                          leadingWidth: leadingWidth,
+                          iconSize: iconSize,
+                          tilePadding: tilePadding,
+                          tileMinVerticalPad: tileMinVerticalPad,
+                          horizontalTitleGap: horizontalTitleGap,
+                          useDense: useDense,
+                          verticalDensity: verticalDensity,
+                        ),
                         ListTile(
                           minLeadingWidth: leadingWidth,
                           leading: Icon(Icons.lock_outline, size: iconSize),
@@ -396,31 +441,32 @@ class SharedAppDrawer extends StatelessWidget {
                             );
                           },
                         ),
-                        ListTile(
-                          minLeadingWidth: leadingWidth,
-                          leading: Icon(
-                            Icons.headset_mic_outlined,
-                            size: iconSize,
-                          ),
-                          title: Text(
-                            localizations.shareddrawer_support,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          contentPadding: tilePadding,
-                          minVerticalPadding: tileMinVerticalPad,
-                          horizontalTitleGap: horizontalTitleGap,
-                          dense: useDense,
-                          visualDensity: VisualDensity(
-                            vertical: verticalDensity,
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => TicketListScreen(),
+                        if (!isCustomerOrgan(organType))
+                          ListTile(
+                            minLeadingWidth: leadingWidth,
+                            leading: Icon(
+                              Icons.headset_mic_outlined,
+                              size: iconSize,
+                            ),
+                            title: Text(
+                              localizations.shareddrawer_support,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            contentPadding: tilePadding,
+                            minVerticalPadding: tileMinVerticalPad,
+                            horizontalTitleGap: horizontalTitleGap,
+                            dense: useDense,
+                            visualDensity: VisualDensity(
+                              vertical: verticalDensity,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TicketListScreen(),
+                              ),
                             ),
                           ),
-                        ),
                         // Services – only for real service owners (userLevel 1, modir true, organ_type != technician)
                         _buildServicesTile(
                           context: context,
@@ -434,8 +480,9 @@ class SharedAppDrawer extends StatelessWidget {
                           userLevel: userLevel,
                           userModir: userModir,
                         ),
-                        if (getLogicalUserLevel(userLevel) == 1 ||
-                            getLogicalUserLevel(userLevel) == 2)
+                        if (!isCustomerOrgan(organType) &&
+                            (getLogicalUserLevel(userLevel) == 1 ||
+                                getLogicalUserLevel(userLevel) == 2))
                           ListTile(
                             minLeadingWidth: leadingWidth,
                             leading: Icon(
@@ -461,26 +508,29 @@ class SharedAppDrawer extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ListTile(
-                          minLeadingWidth: leadingWidth,
-                          leading: Icon(Icons.wifi_outlined, size: iconSize),
-                          title: Text(
-                            localizations.shareddrawer_wifi_config,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        if (!isCustomerOrgan(organType))
+                          ListTile(
+                            minLeadingWidth: leadingWidth,
+                            leading: Icon(Icons.wifi_outlined, size: iconSize),
+                            title: Text(
+                              localizations.shareddrawer_wifi_config,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            contentPadding: tilePadding,
+                            minVerticalPadding: tileMinVerticalPad,
+                            horizontalTitleGap: horizontalTitleGap,
+                            dense: useDense,
+                            visualDensity: VisualDensity(
+                              vertical: verticalDensity,
+                            ),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => WifiConfigPage(),
+                              ),
+                            ),
                           ),
-                          contentPadding: tilePadding,
-                          minVerticalPadding: tileMinVerticalPad,
-                          horizontalTitleGap: horizontalTitleGap,
-                          dense: useDense,
-                          visualDensity: VisualDensity(
-                            vertical: verticalDensity,
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => WifiConfigPage()),
-                          ),
-                        ),
                       ]),
                     ),
                     SliverFillRemaining(

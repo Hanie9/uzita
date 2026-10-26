@@ -120,7 +120,9 @@ class ResponsiveAuthBody extends StatelessWidget {
     if (kIsWeb && layout.isMediumOrWider) {
       content = Card(
         elevation: 6,
-        margin: layout.pagePadding.add(const EdgeInsets.symmetric(vertical: 24)),
+        margin: layout.pagePadding.add(
+          const EdgeInsets.symmetric(vertical: 24),
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

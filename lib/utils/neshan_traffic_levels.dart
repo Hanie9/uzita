@@ -232,10 +232,7 @@ NeshanRouteStep? _baselineStepAtDistance(
   return last;
 }
 
-RouteTrafficLevel mergeTrafficLevels(
-  RouteTrafficLevel a,
-  RouteTrafficLevel b,
-) {
+RouteTrafficLevel mergeTrafficLevels(RouteTrafficLevel a, RouteTrafficLevel b) {
   if (a == RouteTrafficLevel.heavy || b == RouteTrafficLevel.heavy) {
     return RouteTrafficLevel.heavy;
   }

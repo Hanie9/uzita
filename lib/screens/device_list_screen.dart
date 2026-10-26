@@ -1706,16 +1706,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
           Navigator.pushReplacementNamed(context, '/profile');
           break;
         case 2: // Reports
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-reports',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-reports');
           break;
         case 3: // Missions (organization tasks)
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-organ-tasks',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-organ-tasks');
           break;
         case 4: // Users
           Navigator.pushReplacementNamed(context, '/users');

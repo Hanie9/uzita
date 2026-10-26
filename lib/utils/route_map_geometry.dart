@@ -42,10 +42,7 @@ class RouteMapGeometry {
   final List<LatLng> fullPolyline;
   final List<RouteMapSegment> segments;
 
-  const RouteMapGeometry({
-    required this.fullPolyline,
-    required this.segments,
-  });
+  const RouteMapGeometry({required this.fullPolyline, required this.segments});
 
   static RouteMapGeometry fromRoute(
     NeshanRoute route, {
@@ -68,9 +65,7 @@ class RouteMapGeometry {
       full = [origin, destination];
       return RouteMapGeometry(
         fullPolyline: full,
-        segments: [
-          RouteMapSegment(points: full),
-        ],
+        segments: [RouteMapSegment(points: full)],
       );
     }
 
@@ -152,7 +147,9 @@ class RouteMapGeometry {
       if (step.distanceMeters <= 0 && step.durationSeconds <= 0) continue;
 
       var stepPoints = _pointsForStep(step);
-      if (stepPoints.length < 2 && overview.length >= 2 && step.distanceMeters > 0) {
+      if (stepPoints.length < 2 &&
+          overview.length >= 2 &&
+          step.distanceMeters > 0) {
         stepPoints = slicePolylineByDistance(
           overview,
           distanceCursor,
@@ -281,8 +278,10 @@ class RouteMapGeometry {
       ];
     }
 
-    final startIndex = findClosestPolylineIndex(merged, ahead.first)
-        .clamp(0, merged.length - 2);
+    final startIndex = findClosestPolylineIndex(
+      merged,
+      ahead.first,
+    ).clamp(0, merged.length - 2);
 
     final trimmed = <RouteMapSegment>[];
     for (final range in ranges) {
@@ -290,8 +289,10 @@ class RouteMapGeometry {
 
       var localStart = 0;
       if (range.start < startIndex) {
-        localStart =
-            (startIndex - range.start).clamp(0, range.segment.points.length - 2);
+        localStart = (startIndex - range.start).clamp(
+          0,
+          range.segment.points.length - 2,
+        );
       }
 
       final points = range.segment.points.sublist(localStart);
@@ -320,8 +321,10 @@ class RouteMapGeometry {
     final first = trimmed.first;
     final firstPoints = List<LatLng>.from(first.points);
     if (firstPoints.length >= 2) {
-      final snapIndex = findClosestPolylineIndex(firstPoints, snapped)
-          .clamp(0, firstPoints.length - 2);
+      final snapIndex = findClosestPolylineIndex(
+        firstPoints,
+        snapped,
+      ).clamp(0, firstPoints.length - 2);
       var tail = firstPoints.sublist(snapIndex);
       if (tail.isEmpty) tail = firstPoints;
       if (tail.first.latitude != snapped.latitude ||
@@ -338,10 +341,7 @@ class RouteMapGeometry {
 }
 
 /// Down-samples polyline points for native map channel payloads.
-List<LatLng> samplePolylinePoints(
-  List<LatLng> points, {
-  int maxPoints = 64,
-}) {
+List<LatLng> samplePolylinePoints(List<LatLng> points, {int maxPoints = 64}) {
   if (points.length <= maxPoints) return points;
   if (maxPoints < 2) return points.take(maxPoints).toList();
 
@@ -372,14 +372,10 @@ List<RouteMapSegment> compactSegmentsForMap(
   final merged = <RouteMapSegment>[];
   for (final segment in segments) {
     if (segment.points.length < 2) continue;
-    final points = samplePolylinePoints(
-      segment.points,
-      maxPoints: pointCap,
-    );
+    final points = samplePolylinePoints(segment.points, maxPoints: pointCap);
     if (points.length < 2) continue;
 
-    if (merged.isNotEmpty &&
-        merged.last.trafficLevel == segment.trafficLevel) {
+    if (merged.isNotEmpty && merged.last.trafficLevel == segment.trafficLevel) {
       final prev = merged.last;
       merged[merged.length - 1] = RouteMapSegment(
         points: _concatPolyline(prev.points, points),
@@ -387,10 +383,7 @@ List<RouteMapSegment> compactSegmentsForMap(
       );
     } else {
       merged.add(
-        RouteMapSegment(
-          points: points,
-          trafficLevel: segment.trafficLevel,
-        ),
+        RouteMapSegment(points: points, trafficLevel: segment.trafficLevel),
       );
     }
   }

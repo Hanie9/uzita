@@ -8,7 +8,11 @@ double normalizeBearingDegrees(double degrees) {
 }
 
 /// Smooth bearing changes and handle 359° ↔ 1° wrap-around.
-double smoothBearingDegrees(double? previous, double next, {double alpha = 0.38}) {
+double smoothBearingDegrees(
+  double? previous,
+  double next, {
+  double alpha = 0.38,
+}) {
   final normalized = normalizeBearingDegrees(next);
   if (previous == null) return normalized;
 
@@ -127,10 +131,10 @@ int resolveLockedRouteSegmentIndex(
   LatLng position,
   int? lastRouteSegmentIndex,
 ) {
-  final raw = findClosestPolylineIndex(routePolyline, position).clamp(
-    0,
-    routePolyline.length - 2,
-  );
+  final raw = findClosestPolylineIndex(
+    routePolyline,
+    position,
+  ).clamp(0, routePolyline.length - 2);
   if (lastRouteSegmentIndex == null) return raw;
   if (raw < lastRouteSegmentIndex) return lastRouteSegmentIndex;
   return raw;
@@ -139,10 +143,10 @@ int resolveLockedRouteSegmentIndex(
 /// Segment index paired with [resolveRouteLockedNavigationBearing].
 int? routeSegmentIndexForPosition(List<LatLng> routePolyline, LatLng position) {
   if (routePolyline.length < 2) return null;
-  return findClosestPolylineIndex(routePolyline, position).clamp(
-    0,
-    routePolyline.length - 2,
-  );
+  return findClosestPolylineIndex(
+    routePolyline,
+    position,
+  ).clamp(0, routePolyline.length - 2);
 }
 
 double bearingDeltaDegrees(double a, double b) {

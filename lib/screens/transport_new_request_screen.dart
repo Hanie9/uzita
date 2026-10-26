@@ -212,15 +212,15 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
         request.headers['Authorization'] = 'Bearer $token';
       }
 
-      request.fields['product_description'] =
-          _productDescriptionController.text.trim();
+      request.fields['product_description'] = _productDescriptionController.text
+          .trim();
       request.fields['output_number'] = _outputController.text.trim();
       request.fields['maghsad'] = _maghsadController.text.trim();
       request.fields['phone'] = _phoneController.text.trim();
       request.fields['description'] = _descriptionController.text.trim();
       request.fields['customer'] = _customerController.text.trim();
-      request.fields['coordination_person'] =
-          _coordinationController.text.trim();
+      request.fields['coordination_person'] = _coordinationController.text
+          .trim();
       request.fields['payment_type'] = _selectedPayment.toString();
       request.fields['price_transport'] =
           (parseGroupedInt(_priceController.text) ?? 0).toString();
@@ -482,7 +482,6 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final ui = UiScale(context);
-    final screenHeight = MediaQuery.of(context).size.height;
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -517,25 +516,11 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                       ),
                     ],
                   ),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Image.asset(
-                          'assets/logouzita.png',
-                          height: ui.scale(
-                            base: screenHeight * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
-                          width: ui.scale(
-                            base: screenHeight * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const Spacer(),
+                  Image.asset(
+                    'assets/logouzita.png',
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),
@@ -1147,14 +1132,15 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                 Theme.of(context).brightness == Brightness.dark
                                 ? Colors.grey[600]!
                                 : Colors.grey[300]!;
-                            final EdgeInsets fieldPadding = EdgeInsets.symmetric(
-                              horizontal: UiScale(
-                                context,
-                              ).scale(base: 16, min: 12, max: 20),
-                              vertical: UiScale(
-                                context,
-                              ).scale(base: 14, min: 12, max: 16),
-                            );
+                            final EdgeInsets fieldPadding =
+                                EdgeInsets.symmetric(
+                                  horizontal: UiScale(
+                                    context,
+                                  ).scale(base: 16, min: 12, max: 20),
+                                  vertical: UiScale(
+                                    context,
+                                  ).scale(base: 14, min: 12, max: 16),
+                                );
 
                             return FormField<String>(
                               initialValue: _selectedPayment,
@@ -1177,8 +1163,9 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                   consumeOutsideTap: true,
                                   alignmentOffset: const Offset(0, 4),
                                   style: MenuStyle(
-                                    backgroundColor:
-                                        WidgetStatePropertyAll(menuColor),
+                                    backgroundColor: WidgetStatePropertyAll(
+                                      menuColor,
+                                    ),
                                     elevation: const WidgetStatePropertyAll(4),
                                     shadowColor: WidgetStatePropertyAll(
                                       Colors.black.withValues(alpha: 0.12),
@@ -1233,8 +1220,9 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                                 : FontWeight.w600,
                                             color: isSelected
                                                 ? AppColors.lapisLazuli
-                                                : (Theme.of(context)
-                                                              .brightness ==
+                                                : (Theme.of(
+                                                            context,
+                                                          ).brightness ==
                                                           Brightness.dark
                                                       ? Colors.white
                                                       : const Color(
@@ -1273,8 +1261,9 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                                   fontFamily: 'Vazir',
                                                   fontSize: 16,
                                                   color:
-                                                      Theme.of(context)
-                                                              .brightness ==
+                                                      Theme.of(
+                                                            context,
+                                                          ).brightness ==
                                                           Brightness.dark
                                                       ? Colors.grey[400]
                                                       : Colors.grey[600],
@@ -1336,9 +1325,8 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                                     ),
                                               ),
                                               child: Align(
-                                                alignment:
-                                                    AlignmentDirectional
-                                                        .centerStart,
+                                                alignment: AlignmentDirectional
+                                                    .centerStart,
                                                 child: Text(
                                                   hasValue
                                                       ? _getpaymentLabel(
@@ -1353,13 +1341,15 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                                         ? FontWeight.w700
                                                         : FontWeight.w400,
                                                     color: hasValue
-                                                        ? (Theme.of(context)
-                                                                    .brightness ==
-                                                                Brightness.dark
-                                                            ? Colors.white
-                                                            : const Color(
-                                                                0xFF111111,
-                                                              ))
+                                                        ? (Theme.of(
+                                                                    context,
+                                                                  ).brightness ==
+                                                                  Brightness
+                                                                      .dark
+                                                              ? Colors.white
+                                                              : const Color(
+                                                                  0xFF111111,
+                                                                ))
                                                         : Colors.transparent,
                                                   ),
                                                   textAlign:
@@ -1537,7 +1527,8 @@ class _TransportNewRequestScreenState extends State<TransportNewRequestScreen> {
                                 localizations.trn_attachment_hint,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Theme.of(context).brightness ==
+                                  color:
+                                      Theme.of(context).brightness ==
                                           Brightness.dark
                                       ? Colors.grey[400]
                                       : Colors.grey[600],

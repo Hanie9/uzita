@@ -119,11 +119,10 @@ class _NeshanNavArrowPainter extends CustomPainter {
         height: h * 0.22,
       ),
       Paint()
-        ..shader = ui.Gradient.radial(
-          Offset(cx, h * 0.80),
-          w * 0.36,
-          [const Color(0xFFFFFFFF), const Color(0xFFE2E8F0)],
-        ),
+        ..shader = ui.Gradient.radial(Offset(cx, h * 0.80), w * 0.36, [
+          const Color(0xFFFFFFFF),
+          const Color(0xFFE2E8F0),
+        ]),
     );
 
     final body = ui.Path()

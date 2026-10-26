@@ -29,9 +29,10 @@ class Ticket {
               ?.map((reply) => TicketReply.fromJson(reply))
               .toList() ??
           [],
-      subjectType: json['subject'] as String? ?? 
-                   json['subject_type'] as String? ?? 
-                   json['subjectType'] as String?,
+      subjectType:
+          json['subject'] as String? ??
+          json['subject_type'] as String? ??
+          json['subjectType'] as String?,
     );
   }
 }

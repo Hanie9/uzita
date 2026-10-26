@@ -24,11 +24,7 @@ import 'package:uzita/utils/ui_scale.dart';
 import 'package:uzita/widgets/tappable_phone.dart';
 
 class _CompleteTaskFormResult {
-  const _CompleteTaskFormResult({
-    required this.report,
-    this.fee,
-    this.receipt,
-  });
+  const _CompleteTaskFormResult({required this.report, this.fee, this.receipt});
 
   final String report;
   final int? fee;
@@ -260,25 +256,18 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         driverLocation: driverLocation,
       );
 
-      if (!geocodedCityMatchesAddress(
-        result: originResult,
-        address: mabda,
-      )) {
+      if (!geocodedCityMatchesAddress(result: originResult, address: mabda)) {
         throw NeshanApiException(
           localizations.driver_route_geocode_city_mismatch,
         );
       }
 
       if (!isPlausibleIranCoordinate(originResult.location)) {
-        throw NeshanApiException(
-          localizations.driver_route_invalid_address,
-        );
+        throw NeshanApiException(localizations.driver_route_invalid_address);
       }
 
       if (isClearlyWrongGeocodingResult(originResult, mabda)) {
-        throw NeshanApiException(
-          localizations.driver_route_invalid_address,
-        );
+        throw NeshanApiException(localizations.driver_route_invalid_address);
       }
 
       final destinationResult = await routingService.resolveCargoAddress(
@@ -297,15 +286,11 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
       }
 
       if (!isPlausibleIranCoordinate(destinationResult.location)) {
-        throw NeshanApiException(
-          localizations.driver_route_invalid_address,
-        );
+        throw NeshanApiException(localizations.driver_route_invalid_address);
       }
 
       if (isClearlyWrongGeocodingResult(destinationResult, maghsad)) {
-        throw NeshanApiException(
-          localizations.driver_route_invalid_address,
-        );
+        throw NeshanApiException(localizations.driver_route_invalid_address);
       }
 
       if (!mounted) return;
@@ -368,21 +353,21 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
     final feeController = TextEditingController();
     PickedTransportAttachment? receipt;
 
-    final _CompleteTaskFormResult? formResult =
-        await showDialog<_CompleteTaskFormResult>(
+    final _CompleteTaskFormResult?
+    formResult = await showDialog<_CompleteTaskFormResult>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             Future<void> pickReceipt() async {
               try {
-                final FilePickerResult? result =
-                    await FilePicker.platform.pickFiles(
-                  type: FileType.custom,
-                  allowedExtensions: kTransportAttachmentExtensions,
-                  withData: true,
-                  allowMultiple: false,
-                );
+                final FilePickerResult? result = await FilePicker.platform
+                    .pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: kTransportAttachmentExtensions,
+                      withData: true,
+                      allowMultiple: false,
+                    );
                 if (result == null || result.files.isEmpty) return;
 
                 final PlatformFile file = result.files.single;
@@ -420,9 +405,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
               } catch (_) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(localizations.trn_attachment_invalid),
-                  ),
+                  SnackBar(content: Text(localizations.trn_attachment_invalid)),
                 );
               }
             }
@@ -647,9 +630,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              userFacingErrorMessage(e, localizations),
-            ),
+            content: Text(userFacingErrorMessage(e, localizations)),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
@@ -732,16 +713,8 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                   ),
                   Image.asset(
                     'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),
@@ -920,9 +893,7 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
                         );
                       } finally {
                         if (mounted) {
-                          setState(
-                            () => isDownloadingFinalAttachment = false,
-                          );
+                          setState(() => isDownloadingFinalAttachment = false);
                         }
                       }
                     },

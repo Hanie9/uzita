@@ -12,11 +12,7 @@ class NeshanApiException implements Exception {
   final int? statusCode;
   final String? neshanStatus;
 
-  const NeshanApiException(
-    this.message, {
-    this.statusCode,
-    this.neshanStatus,
-  });
+  const NeshanApiException(this.message, {this.statusCode, this.neshanStatus});
 
   @override
   String toString() => message;
@@ -67,11 +63,9 @@ class NeshanService {
       if (searchExtent != null) 'extent': searchExtent.toJson(),
     };
 
-    final uri = Uri.parse(neshanGeocodingBaseUrl).replace(
-      queryParameters: {
-        'json': jsonEncode(requestBody),
-      },
-    );
+    final uri = Uri.parse(
+      neshanGeocodingBaseUrl,
+    ).replace(queryParameters: {'json': jsonEncode(requestBody)});
 
     final response = await http.get(
       uri,
@@ -318,9 +312,7 @@ class NeshanService {
       params['bearing'] = bearing.clamp(0, 360).round().toString();
     }
 
-    final uri = Uri.parse(baseUrl).replace(
-      queryParameters: params,
-    );
+    final uri = Uri.parse(baseUrl).replace(queryParameters: params);
 
     final response = await http.get(
       uri,
@@ -407,8 +399,8 @@ class NeshanService {
       neighbourhood: item['neighbourhood']?.toString(),
       unMatchedTerm: item['unMatchedTerm']?.toString(),
       title: item['title']?.toString(),
-      formattedAddress: item['address']?.toString() ??
-          item['formattedAddress']?.toString(),
+      formattedAddress:
+          item['address']?.toString() ?? item['formattedAddress']?.toString(),
     );
   }
 

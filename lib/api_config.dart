@@ -10,7 +10,9 @@ final String apiBaseUrl = _computeApiBaseUrl();
 /// Origin for media files (`/media/...`), without `/api`.
 String get apiOrigin {
   final Uri uri = Uri.parse(apiBaseUrl);
-  return uri.hasPort ? '${uri.scheme}://${uri.host}:${uri.port}' : '${uri.scheme}://${uri.host}';
+  return uri.hasPort
+      ? '${uri.scheme}://${uri.host}:${uri.port}'
+      : '${uri.scheme}://${uri.host}';
 }
 
 /// Builds full download URL for task `attachment` from organ/personal APIs.

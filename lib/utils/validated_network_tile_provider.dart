@@ -38,10 +38,8 @@ bool isRasterImageBytes(Uint8List bytes) {
 /// Prevents Android `ImageDecoder` errors when a CDN returns HTML error pages
 /// or other non-image payloads with HTTP 200.
 class ValidatedNetworkTileProvider extends TileProvider {
-  ValidatedNetworkTileProvider({
-    super.headers,
-    BaseClient? httpClient,
-  }) : _httpClient = httpClient ?? RetryClient(Client());
+  ValidatedNetworkTileProvider({super.headers, BaseClient? httpClient})
+    : _httpClient = httpClient ?? RetryClient(Client());
 
   final BaseClient _httpClient;
   final _tilesInProgress = HashMap<TileCoordinates, Completer<void>>();
@@ -93,12 +91,11 @@ class _ValidatedMapNetworkImageProvider
   ImageStreamCompleter loadImage(
     _ValidatedMapNetworkImageProvider key,
     ImageDecoderCallback decode,
-  ) =>
-      MultiFrameImageStreamCompleter(
-        codec: _load(key, decode),
-        scale: 1,
-        debugLabel: url,
-      );
+  ) => MultiFrameImageStreamCompleter(
+    codec: _load(key, decode),
+    scale: 1,
+    debugLabel: url,
+  );
 
   Future<Codec> _load(
     _ValidatedMapNetworkImageProvider key,
@@ -146,8 +143,7 @@ class _ValidatedMapNetworkImageProvider
   @override
   SynchronousFuture<_ValidatedMapNetworkImageProvider> obtainKey(
     ImageConfiguration configuration,
-  ) =>
-      SynchronousFuture(this);
+  ) => SynchronousFuture(this);
 
   @override
   bool operator ==(Object other) =>
@@ -157,5 +153,6 @@ class _ValidatedMapNetworkImageProvider
           url == other.url);
 
   @override
-  int get hashCode => Object.hashAll([url, if (fallbackUrl != null) fallbackUrl]);
+  int get hashCode =>
+      Object.hashAll([url, if (fallbackUrl != null) fallbackUrl]);
 }

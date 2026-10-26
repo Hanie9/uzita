@@ -113,11 +113,7 @@ Widget maneuverIconWidget(
   Color color = Colors.white,
   double size = 42,
 }) {
-  return Icon(
-    maneuverIcon(step),
-    color: color,
-    size: size,
-  );
+  return Icon(maneuverIcon(step), color: color, size: size);
 }
 
 String guidancePrimaryLabel(NeshanRouteStep step) {

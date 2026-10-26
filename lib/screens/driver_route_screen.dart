@@ -109,8 +109,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
 
   void _invalidateDeliveryGeometry() => _deliveryGeometryCache = null;
 
-  NeshanRoute get _effectiveDeliveryRoute =>
-      _deliveryReroute ?? _deliveryRoute;
+  NeshanRoute get _effectiveDeliveryRoute => _deliveryReroute ?? _deliveryRoute;
 
   NeshanRoute? get _effectivePickupRoute {
     if (_pickupRoute != null) return _pickupRoute;
@@ -226,9 +225,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
   LatLng get _mapMarkerOrigin =>
       _showMissionOverviewRoute ? _originLatLng : _mapDisplayOrigin;
 
-  LatLng get _mapMarkerDestination => _showMissionOverviewRoute
-      ? _destinationLatLng
-      : _mapDisplayDestination;
+  LatLng get _mapMarkerDestination =>
+      _showMissionOverviewRoute ? _destinationLatLng : _mapDisplayDestination;
 
   bool get _mapPickupLeg => _navigationActive && _isPickupLeg;
 
@@ -240,6 +238,7 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
     }
     return _originLatLng;
   }
+
   LatLng get _mapDisplayDestination {
     if (_phase == DriverTripPhase.toPickup) return _originLatLng;
     return _destinationLatLng;
@@ -312,7 +311,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
   @override
   void initState() {
     super.initState();
-    _deliveryRoute = widget.initialRoute ??
+    _deliveryRoute =
+        widget.initialRoute ??
         buildDegradedDirectRoute(
           origin: widget.origin,
           destination: widget.destination,
@@ -608,8 +608,10 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
         ? 0.0
         : smoothBearingDegrees(null, rawBearing, alpha: 0.42);
     _smoothedNavigationBearing = initialBearing;
-    _lockedRouteSegmentIndex =
-        routeSegmentIndexForPosition(_mapRouteCoordinates, driver);
+    _lockedRouteSegmentIndex = routeSegmentIndexForPosition(
+      _mapRouteCoordinates,
+      driver,
+    );
 
     setState(() {
       _navigationActive = true;
@@ -637,7 +639,8 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       }
     } else {
       final overview = _deliveryRoute.overviewPolyline?.trim();
-      final needsRoute = _deliveryRouteLoading ||
+      final needsRoute =
+          _deliveryRouteLoading ||
           overview == null ||
           overview.isEmpty ||
           _deliveryGeometry.fullPolyline.length <= 2;
@@ -729,8 +732,10 @@ class _DriverRouteScreenState extends State<DriverRouteScreen>
       return _smoothedNavigationBearing;
     }
 
-    final segmentIndex =
-        routeSegmentIndexForPosition(_routeCoordinates, position);
+    final segmentIndex = routeSegmentIndexForPosition(
+      _routeCoordinates,
+      position,
+    );
     final double? raw = resolveNavigationBearing(
       position: position,
       routePolyline: _routeCoordinates,
@@ -1550,7 +1555,9 @@ class _NavigationGuidanceCard extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
-                    textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
+                    textDirection: persian
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1561,7 +1568,9 @@ class _NavigationGuidanceCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       height: 1.3,
                     ),
-                    textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
+                    textDirection: persian
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
                   ),
                   if (nextStep != null) ...[
                     const SizedBox(height: 6),
@@ -1573,7 +1582,9 @@ class _NavigationGuidanceCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 12,
                       ),
-                      textDirection: persian ? TextDirection.rtl : TextDirection.ltr,
+                      textDirection: persian
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
                     ),
                   ],
                 ],

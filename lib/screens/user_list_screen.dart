@@ -255,8 +255,8 @@ class _UserListScreenState extends State<UserListScreen> {
         child: StatefulBuilder(
           builder: (context, setDialogState) {
             void syncLevelFieldWidth() {
-              final RenderObject? renderObject =
-                  levelFieldKey.currentContext?.findRenderObject();
+              final RenderObject? renderObject = levelFieldKey.currentContext
+                  ?.findRenderObject();
               if (renderObject is! RenderBox || !renderObject.hasSize) {
                 return;
               }
@@ -339,14 +339,8 @@ class _UserListScreenState extends State<UserListScreen> {
                             : Colors.grey[300]!;
                         const Color accentColor = Color(0xFF007BA7);
                         final List<MapEntry<int, String>> levelOptions = [
-                          MapEntry(
-                            1,
-                            AppLocalizations.of(context)!.uls_level1,
-                          ),
-                          MapEntry(
-                            2,
-                            AppLocalizations.of(context)!.uls_level2,
-                          ),
+                          MapEntry(1, AppLocalizations.of(context)!.uls_level1),
+                          MapEntry(2, AppLocalizations.of(context)!.uls_level2),
                         ];
                         final int selectedLevel = level ?? 1;
                         final String selectedLabel = levelOptions
@@ -377,16 +371,13 @@ class _UserListScreenState extends State<UserListScreen> {
                                 : WidgetStatePropertyAll(Size(menuWidth, 0)),
                             maximumSize: menuWidth == null
                                 ? null
-                                : WidgetStatePropertyAll(
-                                    Size(menuWidth, 240),
-                                  ),
+                                : WidgetStatePropertyAll(Size(menuWidth, 240)),
                             padding: const WidgetStatePropertyAll(
                               EdgeInsets.symmetric(vertical: 4),
                             ),
                           ),
                           menuChildren: levelOptions.map((option) {
-                            final bool isSelected =
-                                selectedLevel == option.key;
+                            final bool isSelected = selectedLevel == option.key;
                             return MenuItemButton(
                               onPressed: () {
                                 setDialogState(() {
@@ -579,164 +570,166 @@ class _UserListScreenState extends State<UserListScreen> {
                 ),
               ),
               actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          AppLocalizations.of(context)!.uls_cancel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            AppLocalizations.of(context)!.uls_cancel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                              if (usernameController.text.isEmpty ||
-                                  passwordController.text.isEmpty ||
-                                  phoneController.text.isEmpty ||
-                                  codeController.text.isEmpty) {
-                                setDialogState(() {
-                                  message = AppLocalizations.of(
-                                    context,
-                                  )!.uls_fill_all;
-                                });
-                                return;
-                              }
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                if (usernameController.text.isEmpty ||
+                                    passwordController.text.isEmpty ||
+                                    phoneController.text.isEmpty ||
+                                    codeController.text.isEmpty) {
+                                  setDialogState(() {
+                                    message = AppLocalizations.of(
+                                      context,
+                                    )!.uls_fill_all;
+                                  });
+                                  return;
+                                }
 
-                              // Phone min length validation: ensure exactly 10 digits (after removing leading zero if present)
-                              String phoneDigits = phoneController.text.trim();
-                              if (phoneDigits.startsWith('0')) {
-                                phoneDigits = phoneDigits.substring(1);
-                              }
-                              if (phoneDigits.length < 10) {
-                                setDialogState(() {
-                                  message = AppLocalizations.of(
-                                    context,
-                                  )!.uls_phone_length;
-                                });
-                                return;
-                              }
-
-                              setDialogState(() {
-                                isLoading = true;
-                                message = '';
-                              });
-
-                              try {
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                final token = prefs.getString('token');
-
-                                // Default level to 3 if not chosen
-                                final int levelToSend =
-                                    (level == null || level == '')
-                                    ? 3
-                                    : int.tryParse('$level') ?? 3;
-
-                                final response = await http.post(
-                                  Uri.parse('$baseUrl/adduser/'),
-                                  headers: {
-                                    'Authorization': 'Bearer $token',
-                                    'Content-Type': 'application/json',
-                                  },
-                                  body: json.encode({
-                                    'username': usernameController.text.trim(),
-                                    'password': passwordController.text,
-                                    'phone': phoneDigits,
-                                    'code': codeController.text.trim(),
-                                    'level': levelToSend,
-                                  }),
-                                );
-
-                                final data = json.decode(
-                                  utf8.decode(response.bodyBytes),
-                                );
+                                // Phone min length validation: ensure exactly 10 digits (after removing leading zero if present)
+                                String phoneDigits = phoneController.text
+                                    .trim();
+                                if (phoneDigits.startsWith('0')) {
+                                  phoneDigits = phoneDigits.substring(1);
+                                }
+                                if (phoneDigits.length < 10) {
+                                  setDialogState(() {
+                                    message = AppLocalizations.of(
+                                      context,
+                                    )!.uls_phone_length;
+                                  });
+                                  return;
+                                }
 
                                 setDialogState(() {
-                                  message =
-                                      data['massage'] ??
-                                      data['error'] ??
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.uls_error_adding_user;
+                                  isLoading = true;
+                                  message = '';
                                 });
 
-                                if (response.statusCode == 200 ||
-                                    response.statusCode == 201) {
-                                  // Refresh user list
-                                  await fetchUsers();
+                                try {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final token = prefs.getString('token');
 
-                                  // Close dialog after a short delay
-                                  Future.delayed(Duration(seconds: 2), () {
-                                    if (Navigator.canPop(context)) {
-                                      Navigator.pop(context);
-                                    }
+                                  // Default level to 3 if not chosen
+                                  final int levelToSend =
+                                      (level == null || level == '')
+                                      ? 3
+                                      : int.tryParse('$level') ?? 3;
+
+                                  final response = await http.post(
+                                    Uri.parse('$baseUrl/adduser/'),
+                                    headers: {
+                                      'Authorization': 'Bearer $token',
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: json.encode({
+                                      'username': usernameController.text
+                                          .trim(),
+                                      'password': passwordController.text,
+                                      'phone': phoneDigits,
+                                      'code': codeController.text.trim(),
+                                      'level': levelToSend,
+                                    }),
+                                  );
+
+                                  final data = json.decode(
+                                    utf8.decode(response.bodyBytes),
+                                  );
+
+                                  setDialogState(() {
+                                    message =
+                                        data['massage'] ??
+                                        data['error'] ??
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.uls_error_adding_user;
+                                  });
+
+                                  if (response.statusCode == 200 ||
+                                      response.statusCode == 201) {
+                                    // Refresh user list
+                                    await fetchUsers();
+
+                                    // Close dialog after a short delay
+                                    Future.delayed(Duration(seconds: 2), () {
+                                      if (Navigator.canPop(context)) {
+                                        Navigator.pop(context);
+                                      }
+                                    });
+                                  }
+                                } catch (e) {
+                                  setDialogState(() {
+                                    message = AppLocalizations.of(
+                                      context,
+                                    )!.uls_error_connecting;
+                                  });
+                                } finally {
+                                  setDialogState(() {
+                                    isLoading = false;
                                   });
                                 }
-                              } catch (e) {
-                                setDialogState(() {
-                                  message = AppLocalizations.of(
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lapisLazuli,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          minimumSize: Size(0, 44),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: isLoading
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  AppLocalizations.of(
                                     context,
-                                  )!.uls_error_connecting;
-                                });
-                              } finally {
-                                setDialogState(() {
-                                  isLoading = false;
-                                });
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lapisLazuli,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        minimumSize: Size(0, 44),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      child: isLoading
-                          ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                                  )!.uls_add_user_title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: false,
+                                  style: TextStyle(color: Colors.white),
                                 ),
                               ),
-                            )
-                          : FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.uls_add_user_title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          );
+                  ],
+                ),
+              ],
+            );
           },
         ),
       ),
@@ -850,8 +843,8 @@ class _UserListScreenState extends State<UserListScreen> {
               GlobalKey key,
               void Function(double width) onWidth,
             ) {
-              final RenderObject? renderObject =
-                  key.currentContext?.findRenderObject();
+              final RenderObject? renderObject = key.currentContext
+                  ?.findRenderObject();
               if (renderObject is! RenderBox || !renderObject.hasSize) {
                 return;
               }
@@ -878,7 +871,8 @@ class _UserListScreenState extends State<UserListScreen> {
             const BorderRadius menuRadius = BorderRadius.all(
               Radius.circular(12),
             );
-            final Color menuColor = Theme.of(context).brightness == Brightness.dark
+            final Color menuColor =
+                Theme.of(context).brightness == Brightness.dark
                 ? Colors.grey[800]!
                 : Colors.grey[50]!;
             final Color borderColor =
@@ -976,7 +970,9 @@ class _UserListScreenState extends State<UserListScreen> {
                             : WidgetStatePropertyAll(Size(levelFieldWidth!, 0)),
                         maximumSize: levelFieldWidth == null
                             ? null
-                            : WidgetStatePropertyAll(Size(levelFieldWidth!, 240)),
+                            : WidgetStatePropertyAll(
+                                Size(levelFieldWidth!, 240),
+                              ),
                         padding: const WidgetStatePropertyAll(
                           EdgeInsets.symmetric(vertical: 4),
                         ),
@@ -1138,10 +1134,14 @@ class _UserListScreenState extends State<UserListScreen> {
                         ),
                         minimumSize: activeFieldWidth == null
                             ? null
-                            : WidgetStatePropertyAll(Size(activeFieldWidth!, 0)),
+                            : WidgetStatePropertyAll(
+                                Size(activeFieldWidth!, 0),
+                              ),
                         maximumSize: activeFieldWidth == null
                             ? null
-                            : WidgetStatePropertyAll(Size(activeFieldWidth!, 240)),
+                            : WidgetStatePropertyAll(
+                                Size(activeFieldWidth!, 240),
+                              ),
                         padding: const WidgetStatePropertyAll(
                           EdgeInsets.symmetric(vertical: 4),
                         ),
@@ -1306,7 +1306,9 @@ class _UserListScreenState extends State<UserListScreen> {
                     fetchUsers();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lapisLazuli.withValues(alpha: 0.8),
+                    backgroundColor: AppColors.lapisLazuli.withValues(
+                      alpha: 0.8,
+                    ),
                     textStyle: TextStyle(color: Colors.white),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -1642,16 +1644,8 @@ class _UserListScreenState extends State<UserListScreen> {
                     // Right side - Logo
                     Image.asset(
                       'assets/logouzita.png',
-                      height: ui.scale(
-                        base: screenHeight * 0.08,
-                        min: 28,
-                        max: 56,
-                      ),
-                      width: ui.scale(
-                        base: screenHeight * 0.08,
-                        min: 28,
-                        max: 56,
-                      ),
+                      height: MediaQuery.of(context).size.height * 0.08,
+                      width: MediaQuery.of(context).size.height * 0.08,
                     ),
                   ],
                 ),

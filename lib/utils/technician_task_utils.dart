@@ -73,10 +73,7 @@ String _normalizedTaskStatus(Map<String, dynamic> task) =>
     (task['status'] ?? '').toString().toLowerCase();
 
 /// Mission list filter: assigned (default) or suspended.
-bool matchesMissionStatusFilter(
-  Map<String, dynamic> task,
-  String filter,
-) {
+bool matchesMissionStatusFilter(Map<String, dynamic> task, String filter) {
   final String status = _normalizedTaskStatus(task);
   switch (filter) {
     case 'suspended':
@@ -88,10 +85,7 @@ bool matchesMissionStatusFilter(
 }
 
 /// Reports list filter: active (default, non-canceled) or canceled.
-bool matchesReportStatusFilter(
-  Map<String, dynamic> task,
-  String filter,
-) {
+bool matchesReportStatusFilter(Map<String, dynamic> task, String filter) {
   final String status = _normalizedTaskStatus(task);
   switch (filter) {
     case 'canceled':

@@ -54,8 +54,10 @@ class NeshanDriverMap extends StatefulWidget {
   }
 
   static const navZoom = 17.5;
+
   /// Matches [NeshanMapPlugin] NAV_TILT (Carto: 0 = horizon, 90 = top-down).
   static const navTilt = 54.0;
+
   /// Matches [NeshanMapPlugin] NAV_FOCUS_OFFSET — native puck lower-third.
   static const navFocusOffset = 0.30;
   static const overviewIdleRefitDuration = Duration(seconds: 10);
@@ -159,7 +161,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         );
         if (trimmed.isNotEmpty) return trimmed;
       }
-      return [_navigationAheadSegment(_snapNavPosition(widget.driverPosition!))];
+      return [
+        _navigationAheadSegment(_snapNavPosition(widget.driverPosition!)),
+      ];
     }
 
     final segments = widget.routeSegments;
@@ -244,10 +248,13 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
   void _scheduleOverviewIdleRefit() {
     _cancelOverviewIdleRefit();
     if (!widget.overviewMode || widget.navigationMode) return;
-    _overviewIdleRefitTimer = Timer(NeshanDriverMap.overviewIdleRefitDuration, () {
-      if (!mounted || !_overviewCameraDetached) return;
-      unawaited(_refitOverview());
-    });
+    _overviewIdleRefitTimer = Timer(
+      NeshanDriverMap.overviewIdleRefitDuration,
+      () {
+        if (!mounted || !_overviewCameraDetached) return;
+        unawaited(_refitOverview());
+      },
+    );
   }
 
   void _onOverviewCameraInteraction() {
@@ -285,7 +292,9 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
     }
     setState(() => _autoFollow = false);
     widget.onCameraDetached?.call(true);
-    unawaited(_setNavigationFollow(false).then((_) => _showDetachedDriverMarker()));
+    unawaited(
+      _setNavigationFollow(false).then((_) => _showDetachedDriverMarker()),
+    );
   }
 
   void _onPointerDown(PointerDownEvent event) {
@@ -376,7 +385,8 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
         widget.origin != oldWidget.origin ||
         widget.destination != oldWidget.destination ||
         widget.pickupLeg != oldWidget.pickupLeg;
-    final structuralChanged = routeChanged ||
+    final structuralChanged =
+        routeChanged ||
         followChanged ||
         navigationModeChanged ||
         overviewChanged ||
@@ -521,7 +531,8 @@ class _NeshanDriverMapState extends State<NeshanDriverMap> {
 
   void _markOverlaySynced(LatLng navPos) {
     _lastOverlaySyncPosition = navPos;
-    _lastOverlayRouteSegment = routeSegmentIndexForPosition(_route, navPos) ?? -1;
+    _lastOverlayRouteSegment =
+        routeSegmentIndexForPosition(_route, navPos) ?? -1;
   }
 
   Future<void> _updateDriverMarkerOnly(LatLng navPos, double? heading) async {

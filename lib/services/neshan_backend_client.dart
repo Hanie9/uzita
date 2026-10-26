@@ -29,9 +29,9 @@ class NeshanBackendClient {
       if (searchExtent != null) 'extent': searchExtent.toJson(),
     };
 
-    final uri = Uri.parse('$apiBaseUrl/transport/neshan/geocode').replace(
-      queryParameters: {'json': jsonEncode(requestBody)},
-    );
+    final uri = Uri.parse(
+      '$apiBaseUrl/transport/neshan/geocode',
+    ).replace(queryParameters: {'json': jsonEncode(requestBody)});
 
     final response = await http.get(
       uri,
@@ -118,9 +118,9 @@ class NeshanBackendClient {
       params['bearing'] = bearing.clamp(0, 360).round().toString();
     }
 
-    final uri = Uri.parse('$apiBaseUrl/transport/neshan/route').replace(
-      queryParameters: params,
-    );
+    final uri = Uri.parse(
+      '$apiBaseUrl/transport/neshan/route',
+    ).replace(queryParameters: params);
 
     final response = await http.get(
       uri,
@@ -188,7 +188,8 @@ class NeshanBackendClient {
       if (decoded is! Map<String, dynamic>) return null;
       final neshanStatus = neshanStatusFromResponse(decoded);
       if (neshanStatus == null) return null;
-      final message = decoded['message']?.toString() ??
+      final message =
+          decoded['message']?.toString() ??
           decoded['error']?.toString() ??
           'Neshan API error ($statusCode)';
       return NeshanApiException(

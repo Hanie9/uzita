@@ -307,7 +307,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -337,22 +336,11 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                     ],
                   ),
 
-                  // Right side - Logo
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Image.asset(
-                          'assets/logouzita.png',
-                          height: UiScale(
-                            context,
-                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
-                          width: UiScale(
-                            context,
-                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
-                        ),
-                      ],
-                    ),
+                  const Spacer(),
+                  Image.asset(
+                    'assets/logouzita.png',
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),
@@ -557,8 +545,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                           final double fieldRadius = UiScale(
                             context,
                           ).scale(base: 12, min: 8, max: 16);
-                          final BorderRadius menuRadius =
-                              BorderRadius.circular(fieldRadius);
+                          final BorderRadius menuRadius = BorderRadius.circular(
+                            fieldRadius,
+                          );
                           final Color menuColor =
                               Theme.of(context).brightness == Brightness.dark
                               ? Colors.grey[800]!
@@ -598,8 +587,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                 consumeOutsideTap: true,
                                 alignmentOffset: const Offset(0, 4),
                                 style: MenuStyle(
-                                  backgroundColor:
-                                      WidgetStatePropertyAll(menuColor),
+                                  backgroundColor: WidgetStatePropertyAll(
+                                    menuColor,
+                                  ),
                                   elevation: const WidgetStatePropertyAll(4),
                                   shadowColor: WidgetStatePropertyAll(
                                     Colors.black.withValues(alpha: 0.12),
@@ -690,8 +680,9 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                                 fontFamily: 'Vazir',
                                                 fontSize: 16,
                                                 color:
-                                                    Theme.of(context)
-                                                            .brightness ==
+                                                    Theme.of(
+                                                          context,
+                                                        ).brightness ==
                                                         Brightness.dark
                                                     ? Colors.grey[400]
                                                     : Colors.grey[600],
@@ -753,9 +744,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                                   .centerStart,
                                               child: Text(
                                                 hasValue
-                                                    ? _getSubjectLabel(
-                                                        selected,
-                                                      )
+                                                    ? _getSubjectLabel(selected)
                                                     : ' ',
                                                 style: TextStyle(
                                                   fontFamily: 'Vazir',
@@ -765,13 +754,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                                                       ? FontWeight.w700
                                                       : FontWeight.w400,
                                                   color: hasValue
-                                                      ? (Theme.of(context)
-                                                                  .brightness ==
-                                                              Brightness.dark
-                                                          ? Colors.white
-                                                          : const Color(
-                                                              0xFF111111,
-                                                            ))
+                                                      ? (Theme.of(
+                                                                  context,
+                                                                ).brightness ==
+                                                                Brightness.dark
+                                                            ? Colors.white
+                                                            : const Color(
+                                                                0xFF111111,
+                                                              ))
                                                       : Colors.transparent,
                                                 ),
                                                 textAlign:

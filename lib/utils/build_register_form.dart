@@ -16,6 +16,7 @@ Widget buildRegisterForm({
   required bool loading,
   required bool isFormValid,
   bool isAdmin = false,
+  bool isCustomer = false,
 }) {
   return Builder(
     builder: (context) {
@@ -78,6 +79,11 @@ Widget buildRegisterForm({
         min: 14.0,
         max: 18.0,
       );
+      final double customerButtonFontSize = ui.scale(
+        base: screenWidth * 0.07,
+        min: 22.0,
+        max: 28.0,
+      );
 
       // Adaptive spacing between elements - ultra-tight for small screens
       final double smallSpacing = ui.scale(
@@ -120,174 +126,185 @@ Widget buildRegisterForm({
                     ),
                   ),
                   child: Column(
-                      children: [
-                        Stack(
-                          children: [
-                            Column(
-                              children: [
-                                // SizedBox(height: topPadding),
-                                // Header with Register text
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Stack(
+                        children: [
+                          Column(
+                            children: [
+                              // SizedBox(height: topPadding),
+                              // Header with Register text
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Image.asset(
+                                    'assets/logouzita.png',
+                                    height:
+                                        MediaQuery.of(context).size.height *
+                                        0.08,
+                                    width:
+                                        MediaQuery.of(context).size.height *
+                                        0.08,
+                                  ),
+                                ],
+                              ),
+
+                              // Main branding section
+                              SizedBox(
+                                height: logoHeight + 20, // Same as login page
+                                child: Stack(
+                                  alignment: Alignment.center,
                                   children: [
-                                    Image.asset(
-                                      'assets/logouzita.png',
-                                      height: ui.scale(
-                                        base: screenHeight * 0.08,
-                                        min: 28,
-                                        max: 56,
+                                    // Main logo image at the top
+                                    Positioned(
+                                      top: -logoHeight * 0.3,
+                                      child: Image.asset(
+                                        'assets/biokaveh.png',
+                                        height: svgHeight,
+                                        width: svgWidth,
+                                        fit: BoxFit.contain,
                                       ),
-                                      width: ui.scale(
-                                        base: screenHeight * 0.08,
-                                        min: 28,
-                                        max: 56,
+                                    ),
+
+                                    // ELARRO text in gold/bronze in the middle
+                                    Positioned(
+                                      top: logoHeight * 0.44,
+                                      child: Builder(
+                                        builder: (_) {
+                                          final double elarroFontSize =
+                                              (screenWidth * 0.08)
+                                                  .clamp(22.0, 32.0)
+                                                  .toDouble();
+                                          return Text(
+                                            'ELARRO',
+                                            style: TextStyle(
+                                              fontSize: elarroFontSize,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.lapisLazuli,
+                                              letterSpacing: 4,
+                                              fontFamily: 'Nasalization',
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+
+                                    // BIOKAVEH text in black at the bottom
+                                    Positioned(
+                                      top:
+                                          (logoHeight * 0.38) +
+                                          ((screenWidth * 0.08)
+                                                  .clamp(22.0, 32.0)
+                                                  .toDouble() *
+                                              1.25) +
+                                          6,
+                                      child: Text(
+                                        'BIOKAVEH',
+                                        style: TextStyle(
+                                          fontSize: (screenWidth * 0.045)
+                                              .clamp(16.0, 22.0)
+                                              .toDouble(),
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 2,
+                                          fontFamily: 'Nasalization',
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
+                              ),
 
-                                // Main branding section
-                                SizedBox(
-                                  height: logoHeight + 20, // Same as login page
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      // Main logo image at the top
-                                      Positioned(
-                                        top: -logoHeight * 0.3,
-                                        child: Image.asset(
-                                          'assets/biokaveh.png',
-                                          height: svgHeight,
-                                          width: svgWidth,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
+                              SizedBox(height: spacingAfterLogo),
 
-                                      // ELARRO text in gold/bronze in the middle
-                                      Positioned(
-                                        top: logoHeight * 0.44,
-                                        child: Builder(
-                                          builder: (_) {
-                                            final double elarroFontSize =
-                                                (screenWidth * 0.08)
-                                                    .clamp(22.0, 32.0)
-                                                    .toDouble();
-                                            return Text(
-                                              'ELARRO',
-                                              style: TextStyle(
-                                                fontSize: elarroFontSize,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.lapisLazuli,
-                                                letterSpacing: 4,
-                                                fontFamily: 'Nasalization',
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-
-                                      // BIOKAVEH text in black at the bottom
-                                      Positioned(
-                                        top:
-                                            (logoHeight * 0.38) +
-                                            ((screenWidth * 0.08)
-                                                    .clamp(22.0, 32.0)
-                                                    .toDouble() *
-                                                1.25) +
-                                            6,
-                                        child: Text(
-                                          'BIOKAVEH',
-                                          style: TextStyle(
-                                            fontSize: (screenWidth * 0.045)
-                                                .clamp(16.0, 22.0)
-                                                .toDouble(),
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 2,
-                                            fontFamily: 'Nasalization',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                              // Registration type indicator
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: ui.scale(
+                                    base: screenWidth * 0.04,
+                                    min: 8.0,
+                                    max: 16.0,
+                                  ),
+                                  vertical: ui.scale(
+                                    base:
+                                        screenHeight *
+                                        0.008, // Reduced from 0.01
+                                    min: 2.0,
+                                    max: 8.0,
                                   ),
                                 ),
-
-                                SizedBox(height: spacingAfterLogo),
-
-                                // Registration type indicator
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: ui.scale(
-                                      base: screenWidth * 0.04,
-                                      min: 8.0,
-                                      max: 16.0,
-                                    ),
-                                    vertical: ui.scale(
-                                      base:
-                                          screenHeight *
-                                          0.008, // Reduced from 0.01
-                                      min: 2.0,
-                                      max: 8.0,
-                                    ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bronzeGold.withValues(
+                                    alpha: 0.6,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.bronzeGold.withValues(
-                                      alpha: 0.6,
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: AppColors.bronzeGold,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        isAdmin
-                                            ? AppLocalizations.of(
-                                                context,
-                                              )!.reg_admin_register
-                                            : AppLocalizations.of(
-                                                context,
-                                              )!.reg_user_register,
-                                        style: TextStyle(
-                                          fontSize: ui.scale(
-                                            base: screenWidth * 0.035,
-                                            min: 12.0,
-                                            max: 16.0,
-                                          ),
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: ui.scale(
-                                          base: screenWidth * 0.02,
-                                          min: 4.0,
-                                          max: 12.0,
-                                        ),
-                                      ),
-                                      Icon(
-                                        isAdmin
-                                            ? Icons.admin_panel_settings
-                                            : Icons.person_add,
-                                        size: ui.scale(
-                                          base: screenHeight * 0.025,
-                                          min: 16.0,
-                                          max: 22.0,
-                                        ),
-                                        color: AppColors.black,
-                                      ),
-                                    ],
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.bronzeGold,
+                                    width: 1,
                                   ),
                                 ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      isCustomer
+                                          ? AppLocalizations.of(
+                                              context,
+                                            )!.cust_register_title
+                                          : isAdmin
+                                          ? AppLocalizations.of(
+                                              context,
+                                            )!.reg_admin_register
+                                          : AppLocalizations.of(
+                                              context,
+                                            )!.reg_user_register,
+                                      style: TextStyle(
+                                        fontSize: ui.scale(
+                                          base: screenWidth * 0.035,
+                                          min: 12.0,
+                                          max: 16.0,
+                                        ),
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: ui.scale(
+                                        base: screenWidth * 0.02,
+                                        min: 4.0,
+                                        max: 12.0,
+                                      ),
+                                    ),
+                                    Icon(
+                                      isCustomer
+                                          ? Icons.person_add
+                                          : isAdmin
+                                          ? Icons.admin_panel_settings
+                                          : Icons.person_add,
+                                      size: ui.scale(
+                                        base: screenHeight * 0.025,
+                                        min: 16.0,
+                                        max: 22.0,
+                                      ),
+                                      color: AppColors.black,
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                                SizedBox(height: extraLargeSpacing),
+                              SizedBox(height: extraLargeSpacing),
+                              if (isCustomer)
+                                _CustomerRegisterFields(
+                                  controllers: controllers,
+                                  phoneError: phoneError,
+                                  fieldFontSize: fieldFontSize,
+                                  hintFontSize: hintFontSize,
+                                  smallSpacing: smallSpacing,
+                                )
+                              else ...[
                                 // Phone field
                                 TextField(
                                   controller: controllers['phone'],
@@ -330,8 +347,8 @@ Widget buildRegisterForm({
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
                                       child: UzitaSvgIcon(
-                                  assetPath:
-                                        'assets/icons/phone-plus.svg',
+                                        assetPath:
+                                            'assets/icons/phone-plus.svg',
                                         colorFilter: ColorFilter.mode(
                                           Theme.of(context).brightness ==
                                                   Brightness.dark
@@ -436,13 +453,20 @@ Widget buildRegisterForm({
                                 SizedBox(height: smallSpacing),
                                 // Username field
                                 TextField(
-                                  controller: controllers['username'],
+                                  controller:
+                                      controllers[isCustomer
+                                          ? 'first_name'
+                                          : 'username'],
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: fieldFontSize),
                                   decoration: InputDecoration(
-                                    hintText: AppLocalizations.of(
-                                      context,
-                                    )!.reg_name,
+                                    hintText: isCustomer
+                                        ? AppLocalizations.of(
+                                            context,
+                                          )!.cust_first_name
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.reg_name,
                                     hintMaxLines: 2,
                                     hintStyle: TextStyle(
                                       color:
@@ -463,8 +487,7 @@ Widget buildRegisterForm({
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
                                       child: UzitaSvgIcon(
-                                  assetPath:
-                                        'assets/icons/user.svg',
+                                        assetPath: 'assets/icons/user.svg',
                                         colorFilter: ColorFilter.mode(
                                           Theme.of(context).brightness ==
                                                   Brightness.dark
@@ -516,6 +539,87 @@ Widget buildRegisterForm({
                                   ),
                                 ),
 
+                                if (isCustomer) ...[
+                                  SizedBox(height: smallSpacing),
+                                  TextField(
+                                    controller: controllers['last_name'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: fieldFontSize),
+                                    decoration: InputDecoration(
+                                      hintText: AppLocalizations.of(
+                                        context,
+                                      )!.cust_last_name,
+                                      hintMaxLines: 2,
+                                      hintStyle: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[400]
+                                            : const Color.fromARGB(
+                                                255,
+                                                99,
+                                                97,
+                                                97,
+                                              ),
+                                        fontSize: hintFontSize,
+                                      ),
+                                      hintTextDirection: TextDirection.rtl,
+                                      suffixIcon: Padding(
+                                        padding: EdgeInsets.all(
+                                          screenWidth * 0.02,
+                                        ),
+                                        child: UzitaSvgIcon(
+                                          assetPath: 'assets/icons/user.svg',
+                                          colorFilter: ColorFilter.mode(
+                                            Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? (Colors.grey[400] ??
+                                                      Colors.grey)
+                                                : const Color.fromARGB(
+                                                    255,
+                                                    80,
+                                                    77,
+                                                    77,
+                                                  ),
+                                            BlendMode.srcIn,
+                                          ),
+                                          width: ui.scale(
+                                            base: screenHeight * 0.03,
+                                            min: 16.0,
+                                            max: 24.0,
+                                          ),
+                                          height: ui.scale(
+                                            base: screenHeight * 0.03,
+                                            min: 16.0,
+                                            max: 24.0,
+                                          ),
+                                        ),
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.only(
+                                        left:
+                                            (screenWidth * 0.035).clamp(
+                                              12.0,
+                                              16.0,
+                                            ) +
+                                            (screenWidth * 0.08),
+                                        right: (screenWidth * 0.035).clamp(
+                                          12.0,
+                                          16.0,
+                                        ),
+                                        top: (screenHeight * 0.018).clamp(
+                                          10.0,
+                                          14.0,
+                                        ),
+                                        bottom: (screenHeight * 0.018).clamp(
+                                          10.0,
+                                          14.0,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+
                                 SizedBox(height: smallSpacing),
                                 // Password field
                                 TextField(
@@ -547,8 +651,7 @@ Widget buildRegisterForm({
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
                                       child: UzitaSvgIcon(
-                                  assetPath:
-                                        'assets/icons/key.svg',
+                                        assetPath: 'assets/icons/key.svg',
                                         colorFilter: ColorFilter.mode(
                                           Theme.of(context).brightness ==
                                                   Brightness.dark
@@ -603,11 +706,19 @@ Widget buildRegisterForm({
                                 SizedBox(height: smallSpacing),
                                 // Organization code field
                                 TextField(
-                                  controller: controllers['organ_code'],
+                                  controller:
+                                      controllers[isCustomer
+                                          ? 'password_confirm'
+                                          : 'organ_code'],
+                                  obscureText: isCustomer,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontSize: fieldFontSize),
                                   decoration: InputDecoration(
-                                    hintText: isAdmin
+                                    hintText: isCustomer
+                                        ? AppLocalizations.of(
+                                            context,
+                                          )!.cust_password_confirm
+                                        : isAdmin
                                         ? AppLocalizations.of(
                                             context,
                                           )!.reg_admin_code
@@ -634,8 +745,9 @@ Widget buildRegisterForm({
                                         screenWidth * 0.02,
                                       ), // 2% of screen width
                                       child: UzitaSvgIcon(
-                                  assetPath:
-                                        isAdmin
+                                        assetPath: isCustomer
+                                            ? 'assets/icons/key.svg'
+                                            : isAdmin
                                             ? 'assets/icons/admin.svg'
                                             : 'assets/icons/office.svg',
                                         colorFilter: ColorFilter.mode(
@@ -688,151 +800,158 @@ Widget buildRegisterForm({
                                     ),
                                   ),
                                 ),
+                              ],
 
-                                SizedBox(height: largeSpacing),
-                                // Submit button
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: isFormValid
-                                            ? AppColors.lapisLazuli.withValues(
-                                                alpha: 0.5,
-                                              )
-                                            : AppColors.black.withValues(
-                                                alpha: 0.2,
-                                              ),
-                                        spreadRadius: 1,
-                                        blurRadius: 10,
-                                        offset: Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    height: buttonHeight,
-                                    child: AbsorbPointer(
-                                      absorbing: loading,
-                                      child: ElevatedButton(
-                                        onPressed: isFormValid
-                                            ? onSubmit
-                                            : null,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: isFormValid
-                                              ? AppColors.lapisLazuli
-                                              : Colors.grey,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
+                              SizedBox(height: largeSpacing),
+                              // Submit button
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isFormValid
+                                          ? AppColors.lapisLazuli.withValues(
+                                              alpha: 0.5,
+                                            )
+                                          : AppColors.black.withValues(
+                                              alpha: 0.2,
                                             ),
+                                      spreadRadius: 1,
+                                      blurRadius: 10,
+                                      offset: Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: isCustomer
+                                      ? ui.scale(
+                                          base: screenHeight * 0.055,
+                                          min: 52.0,
+                                          max: 64.0,
+                                        )
+                                      : buttonHeight,
+                                  child: AbsorbPointer(
+                                    absorbing: loading,
+                                    child: ElevatedButton(
+                                      onPressed: isFormValid ? onSubmit : null,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: isFormValid
+                                            ? AppColors.lapisLazuli
+                                            : Colors.grey,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          elevation: 1,
                                         ),
-                                        child: loading
-                                            ? SizedBox(
-                                                height: ui.scale(
-                                                  base: screenHeight * 0.022,
-                                                  min: 16.0,
-                                                  max: 24.0,
-                                                ),
-                                                width: ui.scale(
-                                                  base: screenHeight * 0.022,
-                                                  min: 16.0,
-                                                  max: 24.0,
-                                                ),
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      color: Colors.white,
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : FittedBox(
-                                                fit: BoxFit.scaleDown,
-                                                child: Text(
-                                                  AppLocalizations.of(
-                                                    context,
-                                                  )!.reg_send_otp,
-                                                  style: TextStyle(
-                                                    fontSize: buttonFontSize,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
+                                        elevation: 1,
                                       ),
+                                      child: loading
+                                          ? SizedBox(
+                                              height: ui.scale(
+                                                base: screenHeight * 0.022,
+                                                min: 16.0,
+                                                max: 24.0,
+                                              ),
+                                              width: ui.scale(
+                                                base: screenHeight * 0.022,
+                                                min: 16.0,
+                                                max: 24.0,
+                                              ),
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Text(
+                                                isCustomer
+                                                    ? AppLocalizations.of(
+                                                        context,
+                                                      )!.cust_register_action
+                                                    : AppLocalizations.of(
+                                                        context,
+                                                      )!.reg_send_otp,
+                                                style: TextStyle(
+                                                  fontSize: isCustomer
+                                                      ? customerButtonFontSize
+                                                      : buttonFontSize,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
                                     ),
                                   ),
                                 ),
+                              ),
 
-                                SizedBox(height: mediumSpacing),
-                                // Error display
-                                if (error.isNotEmpty) ...[
-                                  Container(
-                                    width: double.infinity,
-                                    padding: EdgeInsets.all(
-                                      screenWidth * 0.03,
-                                    ), // 3% of screen width
-                                    decoration: BoxDecoration(
+                              SizedBox(height: mediumSpacing),
+                              // Error display
+                              if (error.isNotEmpty) ...[
+                                Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.all(
+                                    screenWidth * 0.03,
+                                  ), // 3% of screen width
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.red[900]?.withValues(
+                                            alpha: 0.3,
+                                          )
+                                        : Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
                                       color:
                                           Theme.of(context).brightness ==
                                               Brightness.dark
-                                          ? Colors.red[900]?.withValues(
-                                              alpha: 0.3,
-                                            )
-                                          : Colors.red.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
+                                          ? Colors.red[600]!
+                                          : Colors.red.shade200,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline,
                                         color:
                                             Theme.of(context).brightness ==
                                                 Brightness.dark
-                                            ? Colors.red[600]!
-                                            : Colors.red.shade200,
+                                            ? Colors.red[300]
+                                            : Colors.red,
+                                        size:
+                                            screenHeight *
+                                            0.025, // 2.5% of screen height
                                       ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.error_outline,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.red[300]
-                                              : Colors.red,
-                                          size:
-                                              screenHeight *
-                                              0.025, // 2.5% of screen height
-                                        ),
-                                        SizedBox(
-                                          width: screenWidth * 0.02,
-                                        ), // 2% of screen width
-                                        Expanded(
-                                          child: Text(
-                                            error,
-                                            style: TextStyle(
-                                              color:
-                                                  Theme.of(
-                                                        context,
-                                                      ).brightness ==
-                                                      Brightness.dark
-                                                  ? Colors.red[300]
-                                                  : Colors.red.shade700,
-                                              fontSize:
-                                                  screenWidth *
-                                                  0.035, // 3.5% of screen width
-                                            ),
+                                      SizedBox(
+                                        width: screenWidth * 0.02,
+                                      ), // 2% of screen width
+                                      Expanded(
+                                        child: Text(
+                                          error,
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.red[300]
+                                                : Colors.red.shade700,
+                                            fontSize:
+                                                screenWidth *
+                                                0.035, // 3.5% of screen width
                                           ),
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(height: mediumSpacing),
-                                ],
+                                ),
+                                SizedBox(height: mediumSpacing),
+                              ],
 
-                                // Note text
+                              if (!isCustomer)
                                 Text(
                                   isAdmin
                                       ? AppLocalizations.of(
@@ -852,137 +971,432 @@ Widget buildRegisterForm({
                                   textAlign: TextAlign.center,
                                 ),
 
-                                SizedBox(
-                                  height: ui.scale(
-                                    base: screenHeight * 0.007,
-                                    min: 4.0,
-                                    max: 8.0,
-                                  ),
+                              SizedBox(
+                                height: ui.scale(
+                                  base: screenHeight * 0.007,
+                                  min: 4.0,
+                                  max: 8.0,
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (Localizations.localeOf(
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (Localizations.localeOf(
+                                        context,
+                                      ).languageCode ==
+                                      'fa') ...[
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.pushAndRemoveUntil(
                                           context,
-                                        ).languageCode ==
-                                        'fa') ...[
-                                      GestureDetector(
-                                        onTap: () {
-                                          Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  LoginScreen(),
-                                            ),
-                                            (Route<dynamic> route) => false,
-                                          );
-                                        },
-                                        child: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.reg_login,
-                                          style: TextStyle(
-                                            color: AppColors.lapisLazuli,
-                                            fontSize: ui.scale(
-                                              base: screenWidth * 0.035,
-                                              min: 12.0,
-                                              max: 16.0,
-                                            ),
-                                            fontWeight: FontWeight.bold,
+                                          MaterialPageRoute(
+                                            builder: (context) => LoginScreen(),
                                           ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: ui.scale(
-                                          base: screenWidth * 0.01,
-                                          min: 2.0,
-                                          max: 8.0,
-                                        ),
-                                      ),
-                                      Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.reg_login_before,
+                                          (Route<dynamic> route) => false,
+                                        );
+                                      },
+                                      child: Text(
+                                        AppLocalizations.of(context)!.reg_login,
                                         style: TextStyle(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[600],
+                                          color: AppColors.lapisLazuli,
                                           fontSize: ui.scale(
                                             base: screenWidth * 0.035,
                                             min: 12.0,
                                             max: 16.0,
                                           ),
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    ] else ...[
-                                      Text(
-                                        AppLocalizations.of(
+                                    ),
+                                    SizedBox(
+                                      width: ui.scale(
+                                        base: screenWidth * 0.01,
+                                        min: 2.0,
+                                        max: 8.0,
+                                      ),
+                                    ),
+                                    Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.reg_login_before,
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                        fontSize: ui.scale(
+                                          base: screenWidth * 0.035,
+                                          min: 12.0,
+                                          max: 16.0,
+                                        ),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.reg_login_before,
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                        fontSize: ui.scale(
+                                          base: screenWidth * 0.035,
+                                          min: 12.0,
+                                          max: 16.0,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: ui.scale(
+                                        base: screenWidth * 0.01,
+                                        min: 2.0,
+                                        max: 8.0,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.pushAndRemoveUntil(
                                           context,
-                                        )!.reg_login_before,
+                                          MaterialPageRoute(
+                                            builder: (context) => LoginScreen(),
+                                          ),
+                                          (Route<dynamic> route) => false,
+                                        );
+                                      },
+                                      child: Text(
+                                        AppLocalizations.of(context)!.reg_login,
                                         style: TextStyle(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[600],
+                                          color: AppColors.lapisLazuli,
                                           fontSize: ui.scale(
                                             base: screenWidth * 0.035,
                                             min: 12.0,
                                             max: 16.0,
                                           ),
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(
-                                        width: ui.scale(
-                                          base: screenWidth * 0.01,
-                                          min: 2.0,
-                                          max: 8.0,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  LoginScreen(),
-                                            ),
-                                            (Route<dynamic> route) => false,
-                                          );
-                                        },
-                                        child: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.reg_login,
-                                          style: TextStyle(
-                                            color: AppColors.lapisLazuli,
-                                            fontSize: ui.scale(
-                                              base: screenWidth * 0.035,
-                                              min: 12.0,
-                                              max: 16.0,
-                                            ),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ],
-                                ),
-                                SizedBox(height: largeSpacing),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                                ],
+                              ),
+                              SizedBox(height: largeSpacing),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        );
+        ),
+      );
     },
+  );
+}
+
+class _CustomerRegisterFields extends StatelessWidget {
+  const _CustomerRegisterFields({
+    required this.controllers,
+    required this.phoneError,
+    required this.fieldFontSize,
+    required this.hintFontSize,
+    required this.smallSpacing,
+  });
+
+  final Map<String, TextEditingController> controllers;
+  final String phoneError;
+  final double fieldFontSize;
+  final double hintFontSize;
+  final double smallSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final ui = UiScale(context);
+    final phone = controllers['phone']!.text;
+
+    return Column(
+      children: [
+        _RegisterTextField(
+          controller: controllers['first_name']!,
+          hint: AppLocalizations.of(context)!.cust_first_name,
+          iconAsset: 'assets/icons/user.svg',
+          fieldFontSize: fieldFontSize,
+          hintFontSize: hintFontSize,
+          iconScale: screenHeight * 0.03,
+          iconMin: 16,
+          iconMax: 24,
+        ),
+        SizedBox(height: smallSpacing),
+        _RegisterTextField(
+          controller: controllers['last_name']!,
+          hint: AppLocalizations.of(context)!.cust_last_name,
+          iconAsset: 'assets/icons/user.svg',
+          fieldFontSize: fieldFontSize,
+          hintFontSize: hintFontSize,
+          iconScale: screenHeight * 0.03,
+          iconMin: 16,
+          iconMax: 24,
+        ),
+        SizedBox(height: smallSpacing),
+        TextField(
+          controller: controllers['phone'],
+          keyboardType: TextInputType.number,
+          textDirection: Localizations.localeOf(context).languageCode == 'en'
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: fieldFontSize),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.reg_phone,
+            hintStyle: TextStyle(
+              color: _registerHintColor(context),
+              fontSize: hintFontSize,
+            ),
+            hintTextDirection: TextDirection.rtl,
+            prefixText: '${AppLocalizations.of(context)!.reg_phone_98} ',
+            suffixIcon: Padding(
+              padding: EdgeInsets.all(screenWidth * 0.02),
+              child: UzitaSvgIcon(
+                assetPath: 'assets/icons/phone-plus.svg',
+                colorFilter: ColorFilter.mode(
+                  _registerIconColor(context),
+                  BlendMode.srcIn,
+                ),
+                width: ui.scale(
+                  base: screenHeight * 0.05,
+                  min: 20.0,
+                  max: 30.0,
+                ),
+                height: ui.scale(
+                  base: screenHeight * 0.05,
+                  min: 20.0,
+                  max: 30.0,
+                ),
+              ),
+            ),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: (screenWidth * 0.035).clamp(12.0, 16.0),
+              vertical: (screenHeight * 0.018).clamp(10.0, 14.0),
+            ),
+          ),
+        ),
+        if (phone.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(
+              top: ui.scale(base: screenHeight * 0.01, min: 4.0, max: 8.0),
+              right: ui.scale(base: screenWidth * 0.04, min: 8.0, max: 16.0),
+            ),
+            child: Text(
+              '${AppLocalizations.of(context)!.reg_phone_98} ${AppLocalizations.of(context)!.reg_phone_completely} $phone',
+              style: TextStyle(
+                color: phone.length == 10 ? Colors.green : Colors.orange,
+                fontSize: ui.scale(
+                  base: screenWidth * 0.03,
+                  min: 10.0,
+                  max: 14.0,
+                ),
+              ),
+            ),
+          ),
+        if (phoneError.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(
+              top: ui.scale(base: screenHeight * 0.01, min: 4.0, max: 8.0),
+              right: ui.scale(base: screenWidth * 0.04, min: 8.0, max: 16.0),
+            ),
+            child: Text(
+              phoneError,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.red[300]
+                    : Colors.red,
+                fontSize: ui.scale(
+                  base: screenWidth * 0.03,
+                  min: 10.0,
+                  max: 14.0,
+                ),
+              ),
+            ),
+          ),
+        SizedBox(height: smallSpacing),
+        _PasswordEyeField(
+          controller: controllers['password']!,
+          hint: AppLocalizations.of(context)!.reg_password,
+          fieldFontSize: fieldFontSize,
+          hintFontSize: hintFontSize,
+        ),
+        SizedBox(height: smallSpacing),
+        _PasswordEyeField(
+          controller: controllers['password_confirm']!,
+          hint: AppLocalizations.of(context)!.cust_password_confirm,
+          fieldFontSize: fieldFontSize,
+          hintFontSize: hintFontSize,
+        ),
+      ],
+    );
+  }
+}
+
+class _RegisterTextField extends StatelessWidget {
+  const _RegisterTextField({
+    required this.controller,
+    required this.hint,
+    required this.iconAsset,
+    required this.fieldFontSize,
+    required this.hintFontSize,
+    required this.iconScale,
+    required this.iconMin,
+    required this.iconMax,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final String iconAsset;
+  final double fieldFontSize;
+  final double hintFontSize;
+  final double iconScale;
+  final double iconMin;
+  final double iconMax;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final ui = UiScale(context);
+    final iconSize = ui.scale(base: iconScale, min: iconMin, max: iconMax);
+
+    return TextField(
+      controller: controller,
+      textAlign: TextAlign.center,
+      style: TextStyle(fontSize: fieldFontSize),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintMaxLines: 2,
+        hintStyle: TextStyle(
+          color: _registerHintColor(context),
+          fontSize: hintFontSize,
+        ),
+        hintTextDirection: TextDirection.rtl,
+        suffixIcon: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.02),
+          child: UzitaSvgIcon(
+            assetPath: iconAsset,
+            colorFilter: ColorFilter.mode(
+              _registerIconColor(context),
+              BlendMode.srcIn,
+            ),
+            width: iconSize,
+            height: iconSize,
+          ),
+        ),
+        border: InputBorder.none,
+        contentPadding: _registerContentPadding(screenWidth, screenHeight),
+      ),
+    );
+  }
+}
+
+class _PasswordEyeField extends StatefulWidget {
+  const _PasswordEyeField({
+    required this.controller,
+    required this.hint,
+    required this.fieldFontSize,
+    required this.hintFontSize,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final double fieldFontSize;
+  final double hintFontSize;
+
+  @override
+  State<_PasswordEyeField> createState() => _PasswordEyeFieldState();
+}
+
+class _PasswordEyeFieldState extends State<_PasswordEyeField> {
+  bool _obscure = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final ui = UiScale(context);
+    final iconSize = ui.scale(base: screenHeight * 0.035, min: 16.0, max: 26.0);
+    final eyeSize = screenHeight * 0.03;
+
+    return TextField(
+      controller: widget.controller,
+      obscureText: _obscure,
+      textAlign: TextAlign.center,
+      style: TextStyle(fontSize: widget.fieldFontSize),
+      decoration: InputDecoration(
+        hintText: widget.hint,
+        hintMaxLines: 2,
+        hintStyle: TextStyle(
+          color: _registerHintColor(context),
+          fontSize: widget.hintFontSize,
+        ),
+        hintTextDirection: TextDirection.rtl,
+        prefixIcon: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.02),
+          child: GestureDetector(
+            onTap: () => setState(() => _obscure = !_obscure),
+            child: Icon(
+              _obscure ? Icons.visibility_off : Icons.visibility,
+              color: _registerIconColor(context),
+              size: eyeSize,
+            ),
+          ),
+        ),
+        suffixIcon: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.02),
+          child: UzitaSvgIcon(
+            assetPath: 'assets/icons/key.svg',
+            colorFilter: ColorFilter.mode(
+              _registerIconColor(context),
+              BlendMode.srcIn,
+            ),
+            width: iconSize,
+            height: iconSize,
+          ),
+        ),
+        border: InputBorder.none,
+        contentPadding: _registerContentPadding(screenWidth, screenHeight),
+      ),
+    );
+  }
+}
+
+Color _registerHintColor(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? (Colors.grey[400] ?? Colors.grey)
+      : const Color.fromARGB(255, 99, 97, 97);
+}
+
+Color _registerIconColor(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? (Colors.grey[400] ?? Colors.grey)
+      : const Color.fromARGB(255, 80, 77, 77);
+}
+
+EdgeInsets _registerContentPadding(double screenWidth, double screenHeight) {
+  return EdgeInsets.only(
+    left: (screenWidth * 0.035).clamp(12.0, 16.0) + (screenWidth * 0.08),
+    right: (screenWidth * 0.035).clamp(12.0, 16.0),
+    top: (screenHeight * 0.018).clamp(10.0, 14.0),
+    bottom: (screenHeight * 0.018).clamp(10.0, 14.0),
   );
 }

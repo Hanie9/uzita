@@ -352,16 +352,8 @@ class _ServiceProviderServiceDetailScreenState
                   ),
                   Image.asset(
                     'assets/logouzita.png',
-                    height: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
-                    width: ui.scale(
-                      base: screenHeight * 0.08,
-                      min: 28,
-                      max: 56,
-                    ),
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),
@@ -775,7 +767,9 @@ class _ServiceProviderServiceDetailScreenState
                             color: AppColors.lapisLazuli.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.lapisLazuli.withValues(alpha: 0.3),
+                              color: AppColors.lapisLazuli.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           child: Row(
@@ -1254,8 +1248,7 @@ class _ServiceProviderServiceDetailScreenState
         requestBody['comment'] = comment.trim();
       }
 
-      final url =
-          '$baseUrl5/service-confirm/$serviceId';
+      final url = '$baseUrl5/service-confirm/$serviceId';
       print('Sending POST request to: $url');
       print('Request body: ${json.encode(requestBody)}');
 

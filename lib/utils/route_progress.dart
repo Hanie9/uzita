@@ -14,7 +14,11 @@ int findClosestPolylineIndex(List<LatLng> polyline, LatLng point) {
   var closestDistance = double.infinity;
 
   for (var i = 0; i < polyline.length - 1; i++) {
-    final projection = _projectPointOnSegment(polyline[i], polyline[i + 1], point);
+    final projection = _projectPointOnSegment(
+      polyline[i],
+      polyline[i + 1],
+      point,
+    );
     final d = distanceMeters(point, projection);
     if (d < closestDistance) {
       closestDistance = d;
@@ -33,7 +37,11 @@ LatLng snapPointToPolyline(List<LatLng> polyline, LatLng point) {
   var best = polyline.first;
   var bestDistance = double.infinity;
   for (var i = 0; i < polyline.length - 1; i++) {
-    final projection = _projectPointOnSegment(polyline[i], polyline[i + 1], point);
+    final projection = _projectPointOnSegment(
+      polyline[i],
+      polyline[i + 1],
+      point,
+    );
     final d = distanceMeters(point, projection);
     if (d < bestDistance) {
       bestDistance = d;
@@ -50,7 +58,11 @@ double distanceToPolylineMeters(List<LatLng> polyline, LatLng point) {
 
   var closest = double.infinity;
   for (var i = 0; i < polyline.length - 1; i++) {
-    final projection = _projectPointOnSegment(polyline[i], polyline[i + 1], point);
+    final projection = _projectPointOnSegment(
+      polyline[i],
+      polyline[i + 1],
+      point,
+    );
     final d = distanceMeters(point, projection);
     if (d < closest) closest = d;
   }
@@ -69,10 +81,7 @@ LatLng _projectPointOnSegment(LatLng start, LatLng end, LatLng point) {
       lengthSquared;
   t = t.clamp(0.0, 1.0);
 
-  return LatLng(
-    start.latitude + t * dy,
-    start.longitude + t * dx,
-  );
+  return LatLng(start.latitude + t * dy, start.longitude + t * dx);
 }
 
 double polylineLengthMeters(
@@ -178,10 +187,10 @@ List<LatLng> slicePolylineByDistance(
   if (startPoint == null || endPoint == null) return const [];
 
   final startIndex = findClosestPolylineIndex(polyline, startPoint);
-  final endIndex = findClosestPolylineIndex(polyline, endPoint).clamp(
-    startIndex,
-    polyline.length - 1,
-  );
+  final endIndex = findClosestPolylineIndex(
+    polyline,
+    endPoint,
+  ).clamp(startIndex, polyline.length - 1);
 
   final slice = <LatLng>[startPoint];
   if (endIndex > startIndex) {
@@ -203,7 +212,9 @@ LatLng? _pointAtDistance(List<LatLng> polyline, double targetMeters) {
     final segmentLength = distanceMeters(polyline[i], polyline[i + 1]);
     if (walked + segmentLength >= targetMeters) {
       final remaining = targetMeters - walked;
-      final t = segmentLength <= 0 ? 0.0 : (remaining / segmentLength).clamp(0.0, 1.0);
+      final t = segmentLength <= 0
+          ? 0.0
+          : (remaining / segmentLength).clamp(0.0, 1.0);
       return LatLng(
         polyline[i].latitude +
             (polyline[i + 1].latitude - polyline[i].latitude) * t,
@@ -323,7 +334,10 @@ double distanceToManeuverMeters({
   if (routePolyline.length >= 2 && loc != null) {
     final maneuverPoint = LatLng(loc.latitude, loc.longitude);
     final driverProgress = progressAlongPolyline(routePolyline, driver);
-    final maneuverProgress = progressAlongPolyline(routePolyline, maneuverPoint);
+    final maneuverProgress = progressAlongPolyline(
+      routePolyline,
+      maneuverPoint,
+    );
     final remaining = maneuverProgress - driverProgress;
     if (remaining > 5) return remaining;
     if (remaining > 0) return remaining;
@@ -331,10 +345,7 @@ double distanceToManeuverMeters({
   }
 
   if (loc != null) {
-    return distanceMeters(
-      driver,
-      LatLng(loc.latitude, loc.longitude),
-    );
+    return distanceMeters(driver, LatLng(loc.latitude, loc.longitude));
   }
 
   return maneuverStep.distanceMeters;
@@ -396,10 +407,10 @@ bool isNearRoutePolyline({
 double? bearingAlongPolyline(List<LatLng> polyline, LatLng point) {
   if (polyline.length < 2) return null;
 
-  final index = findClosestPolylineIndex(polyline, point).clamp(
-    0,
-    polyline.length - 2,
-  );
+  final index = findClosestPolylineIndex(
+    polyline,
+    point,
+  ).clamp(0, polyline.length - 2);
   return _distance.bearing(polyline[index], polyline[index + 1]);
 }
 
@@ -412,10 +423,10 @@ LatLng? pointAheadOnPolyline(
   if (polyline.length < 2 || meters <= 0) return null;
 
   final snapped = snapPointToPolyline(polyline, point);
-  final startIndex = findClosestPolylineIndex(polyline, snapped).clamp(
-    0,
-    polyline.length - 2,
-  );
+  final startIndex = findClosestPolylineIndex(
+    polyline,
+    snapped,
+  ).clamp(0, polyline.length - 2);
 
   var remaining = meters;
   for (var i = startIndex; i < polyline.length - 1; i++) {
@@ -459,10 +470,10 @@ List<LatLng> polylineAheadOf(List<LatLng> polyline, LatLng point) {
   if (polyline.length < 2) return polyline;
 
   final snapped = snapPointToPolyline(polyline, point);
-  final index = findClosestPolylineIndex(polyline, snapped).clamp(
-    0,
-    polyline.length - 2,
-  );
+  final index = findClosestPolylineIndex(
+    polyline,
+    snapped,
+  ).clamp(0, polyline.length - 2);
   final tail = polyline.sublist(index + 1);
   if (tail.isEmpty) return [snapped];
   return [snapped, ...tail];

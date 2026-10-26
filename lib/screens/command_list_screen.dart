@@ -391,16 +391,10 @@ class _CommandListScreenState extends State<CommandListScreen> {
           Navigator.pushReplacementNamed(context, '/profile');
           break;
         case 2: // Reports
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-reports',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-reports');
           break;
         case 3: // Missions (organization tasks)
-          Navigator.pushReplacementNamed(
-            context,
-            '/technician-organ-tasks',
-          );
+          Navigator.pushReplacementNamed(context, '/technician-organ-tasks');
           break;
         case 4: // Users
           Navigator.pushReplacementNamed(context, '/users');
@@ -1310,12 +1304,8 @@ class _CommandListScreenState extends State<CommandListScreen> {
                       children: [
                         Image.asset(
                           'assets/logouzita.png',
-                          height: UiScale(
-                            context,
-                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
-                          width: UiScale(
-                            context,
-                          ).scale(base: screenHeight * 0.08, min: 28, max: 56),
+                          height: MediaQuery.of(context).size.height * 0.08,
+                          width: MediaQuery.of(context).size.height * 0.08,
                         ),
                       ],
                     ),
@@ -1478,7 +1468,7 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                         ),
                                         SizedBox(height: 4),
                                         Row(
-                                                children: [
+                                          children: [
                                             Icon(
                                               Icons.list_alt,
                                               color: Colors.white.withValues(
@@ -1498,18 +1488,19 @@ class _CommandListScreenState extends State<CommandListScreen> {
                                                             Color
                                                           >(Colors.white),
                                                     ),
-                                              )
-                                            : Text(
-                                                '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
-                                                style: TextStyle(
-                                                      color: Colors.white.withValues(
-                                                        alpha: 0.9,
-                                                      ),
+                                                  )
+                                                : Text(
+                                                    '${commands.length} ${AppLocalizations.of(context)!.cls_command}',
+                                                    style: TextStyle(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.9,
+                                                          ),
                                                       fontSize: 12,
                                                     ),
-                                                ),
+                                                  ),
                                           ],
-                                              ),
+                                        ),
                                       ],
                                     ),
                                     Container(

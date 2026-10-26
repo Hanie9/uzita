@@ -32,12 +32,9 @@ class DriverRoutingService {
     final terms = buildGeocodeSearchTerms(address, hints: hints);
     final poi = isPoiAddress(address);
 
-    var center = searchCenter ??
-        _searchCenterForAddress(
-          hints: hints,
-          searchCenter: null,
-          plus: null,
-        );
+    var center =
+        searchCenter ??
+        _searchCenterForAddress(hints: hints, searchCenter: null, plus: null);
 
     NeshanGeocodingResult? best;
     NeshanGeocodingResult? fallback;
@@ -113,7 +110,10 @@ class DriverRoutingService {
             geocodedCityMatchesAddress(result: refined, address: address) &&
             (!isCityCentreGeocodingSnap(refined, address) ||
                 !hasSpecificLocationTerms(address))) {
-          var fb = geocodingMatchScore(refined, address) + bonus + (ranked.length - i);
+          var fb =
+              geocodingMatchScore(refined, address) +
+              bonus +
+              (ranked.length - i);
           final unmatched = (refined.unMatchedTerm ?? '').trim();
           if (unmatched.isNotEmpty &&
               !isPoiAddress(address) &&
@@ -132,11 +132,7 @@ class DriverRoutingService {
     Future<void> runPlaceSearch() async {
       for (final term in terms) {
         consider(
-          await _tryPlaceSearch(
-            term,
-            address: address,
-            center: center,
-          ),
+          await _tryPlaceSearch(term, address: address, center: center),
           bonus: poi ? 8 : 4,
         );
       }

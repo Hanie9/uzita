@@ -33,10 +33,6 @@ class UzitaSvgIcon extends StatelessWidget {
       );
     }
 
-    return SvgPicture.asset(
-      normalizedPath,
-      width: width,
-      height: height,
-    );
+    return SvgPicture.asset(normalizedPath, width: width, height: height);
   }
 }

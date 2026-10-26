@@ -9,7 +9,7 @@ class DriverMapController {
   void bind({
     required Future<void> Function() refitOverview,
     required Future<void> Function(LatLng position, double? heading)
-        resumeNavigation,
+    resumeNavigation,
     Future<void> Function(LatLng position, double? heading)? tickNavigation,
   }) {
     _refitOverview = refitOverview;

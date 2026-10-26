@@ -97,7 +97,9 @@ Future<void> launchPhoneCall(
       final AppLocalizations? loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(failureMessage ?? loc?.phone_call_failed ?? 'Call failed'),
+          content: Text(
+            failureMessage ?? loc?.phone_call_failed ?? 'Call failed',
+          ),
         ),
       );
     }
@@ -106,7 +108,9 @@ Future<void> launchPhoneCall(
     final AppLocalizations? loc = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(failureMessage ?? loc?.phone_call_failed ?? 'Call failed'),
+        content: Text(
+          failureMessage ?? loc?.phone_call_failed ?? 'Call failed',
+        ),
       ),
     );
   }

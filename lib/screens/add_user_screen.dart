@@ -55,18 +55,17 @@ class _AddUserScreenState extends State<AddUserScreen> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.adduser_title),
         actions: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: ui.scale(base: 16, min: 12, max: 20),
-            ),
-            child: Image.asset(
-              'assets/logouzita.png',
-              height: ui.scale(base: 32, min: 24, max: 40),
-            ),
-          ),
           IconButton(
             onPressed: () => setState(() {}),
             icon: Icon(Icons.refresh),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Image.asset(
+              'assets/logouzita.png',
+              height: MediaQuery.of(context).size.height * 0.08,
+              width: MediaQuery.of(context).size.height * 0.08,
+            ),
           ),
         ],
       ),

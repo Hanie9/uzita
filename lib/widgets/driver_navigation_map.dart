@@ -304,8 +304,7 @@ class _FlutterDriverNavigationMapState
     _followDriverAt(position, widget.driverHeading);
   }
 
-  List<LatLng> get _route =>
-      widget.routeCoordinates.isNotEmpty
+  List<LatLng> get _route => widget.routeCoordinates.isNotEmpty
       ? widget.routeCoordinates
       : [widget.origin, widget.destination];
 
@@ -351,9 +350,7 @@ class _FlutterDriverNavigationMapState
         : <LatLng>[];
 
     return ColoredBox(
-      color: widget.isDark
-          ? const Color(0xFF1A2332)
-          : const Color(0xFFE8EEF4),
+      color: widget.isDark ? const Color(0xFF1A2332) : const Color(0xFFE8EEF4),
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) {
@@ -445,27 +442,27 @@ class _FlutterDriverNavigationMapState
                     ),
                   ),
                 ],
-            if (widget.driverPosition != null)
-              Marker(
-                point: widget.driverPosition!,
-                width: widget.followDriver ? 44 : 20,
-                height: widget.followDriver ? 48 : 20,
-                alignment: Alignment.center,
-                rotate: !widget.followDriver,
-                child: widget.followDriver
-                    ? const DriverHeadingArrow(
-                        headingDegrees: 0,
-                        size: 44,
-                        pulse: false,
-                      )
-                    : Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                      ),
-              ),
+                if (widget.driverPosition != null)
+                  Marker(
+                    point: widget.driverPosition!,
+                    width: widget.followDriver ? 44 : 20,
+                    height: widget.followDriver ? 48 : 20,
+                    alignment: Alignment.center,
+                    rotate: !widget.followDriver,
+                    child: widget.followDriver
+                        ? const DriverHeadingArrow(
+                            headingDegrees: 0,
+                            size: 44,
+                            pulse: false,
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2563EB),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                  ),
               ],
             ),
           ],

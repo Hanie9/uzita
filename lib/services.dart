@@ -43,3 +43,20 @@ int getLogicalUserLevel(int rawLevel) {
 bool isTechnicianOrgan(String? organType) {
   return (organType ?? '').toLowerCase() == 'technician';
 }
+
+/// Store customers are a separate role from technician, driver, and office.
+bool isCustomerOrgan(String? organType) {
+  return (organType ?? '').trim().toLowerCase() == 'customer';
+}
+
+/// Customers sign in with a phone number, so the header shows their name.
+String accountHeaderName({
+  required String organType,
+  required String username,
+  String firstName = '',
+  String lastName = '',
+}) {
+  if (!isCustomerOrgan(organType)) return username;
+  final String fullName = '$firstName $lastName'.trim();
+  return fullName.isEmpty ? username : fullName;
+}

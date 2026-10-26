@@ -102,11 +102,7 @@ Future<bool> assignOrganTask({
 }
 
 class OrgTaskSuspendOutcome {
-  const OrgTaskSuspendOutcome({
-    required this.ok,
-    this.message,
-    this.error,
-  });
+  const OrgTaskSuspendOutcome({required this.ok, this.message, this.error});
 
   final bool ok;
   final String? message;
@@ -141,8 +137,7 @@ Future<OrgTaskSuspendOutcome> suspendOrganTask({
 
     final dynamic data = json.decode(utf8.decode(response.bodyBytes));
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final String? message =
-          data is Map ? data['message']?.toString() : null;
+      final String? message = data is Map ? data['message']?.toString() : null;
       return OrgTaskSuspendOutcome(ok: true, message: message);
     }
 
@@ -155,9 +150,7 @@ Future<OrgTaskSuspendOutcome> suspendOrganTask({
   }
 }
 
-Future<OrgTaskSuspendOutcome> cancelOrganTask({
-  required dynamic taskId,
-}) async {
+Future<OrgTaskSuspendOutcome> cancelOrganTask({required dynamic taskId}) async {
   try {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('token');
@@ -182,8 +175,7 @@ Future<OrgTaskSuspendOutcome> cancelOrganTask({
 
     final dynamic data = json.decode(utf8.decode(response.bodyBytes));
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final String? message =
-          data is Map ? data['message']?.toString() : null;
+      final String? message = data is Map ? data['message']?.toString() : null;
       return OrgTaskSuspendOutcome(ok: true, message: message);
     }
 

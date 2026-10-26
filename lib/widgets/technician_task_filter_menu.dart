@@ -3,10 +3,7 @@ import 'package:uzita/app_localizations.dart';
 import 'package:uzita/services.dart';
 
 class TechnicianTaskFilterOption {
-  const TechnicianTaskFilterOption({
-    required this.value,
-    required this.label,
-  });
+  const TechnicianTaskFilterOption({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -157,9 +154,10 @@ class _TechnicianTaskFilterMenuState extends State<TechnicianTaskFilterMenu>
                       ),
                     ),
                     RotationTransition(
-                      turns: Tween<double>(begin: 0, end: 0.5).animate(
-                        _expandAnimation,
-                      ),
+                      turns: Tween<double>(
+                        begin: 0,
+                        end: 0.5,
+                      ).animate(_expandAnimation),
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
                         color: theme.textTheme.bodyMedium?.color?.withValues(

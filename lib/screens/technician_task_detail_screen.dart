@@ -72,8 +72,7 @@ class _TechnicianTaskDetailScreenState
   void _applyAttachmentFromTask(Map<String, dynamic> task) {
     _attachmentPath = taskAttachmentPath(task);
     final String? name = task['attachment_name']?.toString().trim();
-    _attachmentName =
-        (name != null && name.isNotEmpty) ? name : null;
+    _attachmentName = (name != null && name.isNotEmpty) ? name : null;
   }
 
   Map<String, dynamic> get _taskForAttachment {
@@ -100,8 +99,9 @@ class _TechnicianTaskDetailScreenState
       final String? token = prefs.getString('token');
       await SessionManager().onNetworkRequest();
 
-      final List<String> fetchUrls =
-          technicianAttachmentFetchUrls(_taskForAttachment);
+      final List<String> fetchUrls = technicianAttachmentFetchUrls(
+        _taskForAttachment,
+      );
 
       http.Response? response;
       for (final String url in fetchUrls) {
@@ -199,7 +199,9 @@ class _TechnicianTaskDetailScreenState
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: OutlinedButton.icon(
-            onPressed: _isDownloadingAttachment ? null : _downloadTaskAttachment,
+            onPressed: _isDownloadingAttachment
+                ? null
+                : _downloadTaskAttachment,
             icon: _isDownloadingAttachment
                 ? const SizedBox(
                     width: 18,
@@ -279,9 +281,10 @@ class _TechnicianTaskDetailScreenState
   Future<void> _loadViewerRole() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final int level = prefs.getInt('level') ?? 2;
-    final String organType = (prefs.getString('organ_type') ?? '').toLowerCase();
-    final bool isOrgManager = getLogicalUserLevel(level) == 1 &&
-        organType == 'technician';
+    final String organType = (prefs.getString('organ_type') ?? '')
+        .toLowerCase();
+    final bool isOrgManager =
+        getLogicalUserLevel(level) == 1 && organType == 'technician';
     if (!mounted) return;
     setState(() {
       _isTechnicianOrgManager = isOrgManager;
@@ -325,8 +328,10 @@ class _TechnicianTaskDetailScreenState
         if (response.statusCode != 200) continue;
 
         final dynamic data = json.decode(utf8.decode(response.bodyBytes));
-        final Map<String, dynamic>? found =
-            findTechnicianTaskInPayload(data, taskId);
+        final Map<String, dynamic>? found = findTechnicianTaskInPayload(
+          data,
+          taskId,
+        );
         if (found == null || !taskHasAttachment(found)) continue;
 
         if (!mounted) return;
@@ -405,14 +410,14 @@ class _TechnicianTaskDetailScreenState
       await saveTaskAttachmentFile(
         bytes: response.bodyBytes,
         fileName: fileName,
-        contentType: contentTypeFromHeaders(response.headers) ??
-            'application/pdf',
+        contentType:
+            contentTypeFromHeaders(response.headers) ?? 'application/pdf',
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.tech_invoice_download_failed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.tech_invoice_download_failed)));
     } finally {
       if (mounted) {
         setState(() => _isDownloadingInvoice = false);
@@ -489,8 +494,10 @@ class _TechnicianTaskDetailScreenState
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.lapisLazuli),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -576,7 +583,8 @@ class _TechnicianTaskDetailScreenState
 
   Map<int, int> _pieceCountsForDisplay() {
     if (selectedPieceCounts.isNotEmpty) return selectedPieceCounts;
-    final fromSnap = _checkTaskSnapshot?['pieces'] ?? _checkTaskSnapshot?['piece_ids'];
+    final fromSnap =
+        _checkTaskSnapshot?['pieces'] ?? _checkTaskSnapshot?['piece_ids'];
     if (fromSnap != null) return technicianIdCountMapFromList(fromSnap);
     return technicianIdCountMapFromList(widget.task['pieces']);
   }
@@ -707,11 +715,10 @@ class _TechnicianTaskDetailScreenState
   }
 
   String? _customerPhoneForHistory() {
-    final String raw = (widget.task['phone'] ??
-            widget.task['customer_phone'] ??
-            '')
-        .toString()
-        .trim();
+    final String raw =
+        (widget.task['phone'] ?? widget.task['customer_phone'] ?? '')
+            .toString()
+            .trim();
     if (raw.isEmpty || raw == '---') return null;
     final String digits = normalizeCustomerPhoneForHistory(raw);
     return digits.isEmpty ? null : digits;
@@ -991,14 +998,12 @@ class _TechnicianTaskDetailScreenState
   }
 
   void _applyCheckTaskSnapshot(Map<String, dynamic> snap) {
-    final List<Map<String, int>> pieces =
-        technicianIdCountMapToApiList(
-          technicianIdCountMapFromList(snap['pieces'] ?? snap['piece_ids']),
-        );
-    final List<Map<String, int>> tariffs =
-        technicianIdCountMapToApiList(
-          technicianIdCountMapFromList(snap['tariffs'] ?? snap['tariff_ids']),
-        );
+    final List<Map<String, int>> pieces = technicianIdCountMapToApiList(
+      technicianIdCountMapFromList(snap['pieces'] ?? snap['piece_ids']),
+    );
+    final List<Map<String, int>> tariffs = technicianIdCountMapToApiList(
+      technicianIdCountMapFromList(snap['tariffs'] ?? snap['tariff_ids']),
+    );
     if (widget.task['pieces'] == null && pieces.isNotEmpty) {
       widget.task['pieces'] = pieces;
     }
@@ -2322,9 +2327,7 @@ class _TechnicianTaskDetailScreenState
           _missionListNeedsRefresh = true;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message ?? loc.tech_cancel_success),
-          ),
+          SnackBar(content: Text(result.message ?? loc.tech_cancel_success)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2397,365 +2400,395 @@ class _TechnicianTaskDetailScreenState
         }
       },
       child: Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
-        child: Container(
-          color: Theme.of(context).appBarTheme.backgroundColor,
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: ui.scale(base: 16, min: 12, max: 20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.arrow_back,
-                          color: Theme.of(context).appBarTheme.iconTheme?.color,
-                        ),
-                        onPressed: _popDetail,
-                      ),
-                      Text(
-                        isFromReportsList
-                            ? localizations.tech_report_details
-                            : localizations.tech_task_details,
-                        style: Theme.of(context).appBarTheme.titleTextStyle
-                            ?.copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showOrgAssignAction)
-                        TextButton.icon(
-                          onPressed: () {
-                            showOrganTaskAssignmentDialog(
-                              context: context,
-                              task: widget.task,
-                              onAssigned: (
-                                String username,
-                                Map<String, dynamic> updated,
-                              ) {
-                                if (!mounted) return;
-                                setState(() {
-                                  widget.task.addAll(updated);
-                                });
-                              },
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.assignment_ind,
-                            color: AppColors.lapisLazuli,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight),
+          child: Container(
+            color: Theme.of(context).appBarTheme.backgroundColor,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ui.scale(base: 16, min: 12, max: 20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: Theme.of(
+                              context,
+                            ).appBarTheme.iconTheme?.color,
                           ),
-                          label: Text(
-                            localizations.tech_assign_dialog_assign,
-                            style: const TextStyle(
+                          onPressed: _popDetail,
+                        ),
+                        Text(
+                          isFromReportsList
+                              ? localizations.tech_report_details
+                              : localizations.tech_task_details,
+                          style: Theme.of(context).appBarTheme.titleTextStyle
+                              ?.copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showOrgAssignAction)
+                          TextButton.icon(
+                            onPressed: () {
+                              showOrganTaskAssignmentDialog(
+                                context: context,
+                                task: widget.task,
+                                onAssigned:
+                                    (
+                                      String username,
+                                      Map<String, dynamic> updated,
+                                    ) {
+                                      if (!mounted) return;
+                                      setState(() {
+                                        widget.task.addAll(updated);
+                                      });
+                                    },
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.assignment_ind,
                               color: AppColors.lapisLazuli,
-                              fontWeight: FontWeight.w600,
+                            ),
+                            label: Text(
+                              localizations.tech_assign_dialog_assign,
+                              style: const TextStyle(
+                                color: AppColors.lapisLazuli,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
+                        Image.asset(
+                          'assets/logouzita.png',
+                          height: MediaQuery.of(context).size.height * 0.08,
+                          width: MediaQuery.of(context).size.height * 0.08,
                         ),
-                      Image.asset(
-                        'assets/logouzita.png',
-                        height: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
-                        width: ui.scale(
-                          base: screenHeight * 0.08,
-                          min: 28,
-                          max: 56,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      body: Directionality(
-        textDirection:
-            Provider.of<SettingsProvider>(
-                  context,
-                  listen: false,
-                ).selectedLanguage ==
-                'en'
-            ? TextDirection.ltr
-            : TextDirection.rtl,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await _syncAttachmentFromTaskLists();
-          },
-          color: AppColors.lapisLazuli,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(
-              left: kSpacing,
-              right: kSpacing,
-              top: kSpacing,
-              bottom: kSpacing + 40, // Extra padding at bottom for date
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Status Banner
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: _getStatusBackgroundColor(status),
-                    borderRadius: BorderRadius.circular(16),
+        body: Directionality(
+          textDirection:
+              Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).selectedLanguage ==
+                  'en'
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await _syncAttachmentFromTaskLists();
+            },
+            color: AppColors.lapisLazuli,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: kSpacing,
+                right: kSpacing,
+                top: kSpacing,
+                bottom: kSpacing + 40, // Extra padding at bottom for date
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Status Banner
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: _getStatusBackgroundColor(status),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.white, size: 24),
+                        SizedBox(width: 12),
+                        Text(
+                          _getStatusText(status, localizations),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.white, size: 24),
-                      SizedBox(width: 12),
-                      Text(
-                        _getStatusText(status, localizations),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                  if (showSuspendAction ||
+                      showUnsuspendAction ||
+                      showCancelAction) ...[
+                    const SizedBox(height: 16),
+                    if (showSuspendAction || showUnsuspendAction)
+                      SizedBox(
+                        width: double.infinity,
+                        child: showSuspendAction
+                            ? OutlinedButton.icon(
+                                onPressed: orgActionInProgress
+                                    ? null
+                                    : () => _confirmOrgTaskSuspension(
+                                        suspend: true,
+                                      ),
+                                icon: _isSuspendingTask
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.pause_circle_outline,
+                                        color: AppColors.lapisLazuli,
+                                      ),
+                                label: Text(
+                                  localizations.tech_suspend_service,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: AppColors.lapisLazuli.withValues(
+                                      alpha: 0.45,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                            : ElevatedButton.icon(
+                                onPressed: orgActionInProgress
+                                    ? null
+                                    : () => _confirmOrgTaskSuspension(
+                                        suspend: false,
+                                      ),
+                                icon: _isSuspendingTask
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.play_circle_outline),
+                                label: Text(
+                                  localizations.tech_unsuspend_service,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.lapisLazuli,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: AppColors.lapisLazuli
+                                      .withValues(alpha: 0.4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    if ((showSuspendAction || showUnsuspendAction) &&
+                        showCancelAction)
+                      const SizedBox(height: 10),
+                    if (showCancelAction)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: orgActionInProgress
+                              ? null
+                              : _confirmOrgTaskCancel,
+                          icon: _isCancelingTask
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.red,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.cancel_outlined,
+                                  color: Colors.red,
+                                ),
+                          label: Text(
+                            localizations.tech_cancel_service,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: Colors.red.withValues(alpha: 0.45),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                if (showSuspendAction || showUnsuspendAction || showCancelAction) ...[
-                  const SizedBox(height: 16),
-                  if (showSuspendAction || showUnsuspendAction)
-                    SizedBox(
-                      width: double.infinity,
-                      child: showSuspendAction
-                          ? OutlinedButton.icon(
-                              onPressed: orgActionInProgress
-                                  ? null
-                                  : () =>
-                                        _confirmOrgTaskSuspension(suspend: true),
-                              icon: _isSuspendingTask
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.pause_circle_outline,
-                                      color: AppColors.lapisLazuli,
-                                    ),
-                              label: Text(
-                                localizations.tech_suspend_service,
-                                style: const TextStyle(
+                  ],
+                  SizedBox(height: 24),
+
+                  // Task Title
+                  Container(
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.assignment,
+                              color: AppColors.lapisLazuli,
+                              size: 24,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.lapisLazuli.withValues(
+                              alpha: 0.05,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.lapisLazuli.withValues(
+                                alpha: 0.1,
+                              ),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                localizations.sls_description,
+                                style: TextStyle(
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.lapisLazuli,
                                 ),
                               ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: AppColors.lapisLazuli.withValues(
-                                    alpha: 0.45,
-                                  ),
+                              SizedBox(height: 8),
+                              Text(
+                                description,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color
+                                      ?.withValues(alpha: 0.8),
+                                  height: 1.4,
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                textDirection: _contentTextDirection(),
+                                textAlign: _isPersianLocale()
+                                    ? TextAlign.right
+                                    : TextAlign.left,
                               ),
-                            )
-                          : ElevatedButton.icon(
-                              onPressed: orgActionInProgress
-                                  ? null
-                                  : () => _confirmOrgTaskSuspension(
-                                      suspend: false,
-                                    ),
-                              icon: _isSuspendingTask
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.play_circle_outline),
-                              label: Text(
-                                localizations.tech_unsuspend_service,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lapisLazuli,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor: AppColors.lapisLazuli
-                                    .withValues(alpha: 0.4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                    ),
-                  if ((showSuspendAction || showUnsuspendAction) &&
-                      showCancelAction)
-                    const SizedBox(height: 10),
-                  if (showCancelAction)
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: orgActionInProgress
-                            ? null
-                            : _confirmOrgTaskCancel,
-                        icon: _isCancelingTask
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.red,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.cancel_outlined,
-                                color: Colors.red,
-                              ),
-                        label: Text(
-                          localizations.tech_cancel_service,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.red,
+                            ],
                           ),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                            color: Colors.red.withValues(alpha: 0.45),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-                SizedBox(height: 24),
-
-                // Task Title
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                      width: 1,
+                      ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.assignment,
-                            color: AppColors.lapisLazuli,
-                            size: 24,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.color,
-                              ),
-                            ),
+
+                  if (_subjectLabelsForTask().isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.black.withValues(alpha: 0.2)
+                                : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
-                      ),
-                      SizedBox(height: 16),
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.lapisLazuli.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.lapisLazuli.withValues(alpha: 0.1),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              localizations.sls_description,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              description,
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withValues(alpha: 0.8),
-                                height: 1.4,
-                              ),
-                              textDirection: _contentTextDirection(),
-                              textAlign: _isPersianLocale()
-                                  ? TextAlign.right
-                                  : TextAlign.left,
-                            ),
-                          ],
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[700]!
+                              : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                          width: 1,
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                      child: _buildSubjectsSection(localizations),
+                    ),
+                  ],
+                  SizedBox(height: 20),
 
-                if (_subjectLabelsForTask().isNotEmpty) ...[
-                  const SizedBox(height: 20),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -2778,311 +2811,83 @@ class _TechnicianTaskDetailScreenState
                         width: 1,
                       ),
                     ),
-                    child: _buildSubjectsSection(localizations),
-                  ),
-                ],
-                SizedBox(height: 20),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.tag_outlined,
-                            color: AppColors.lapisLazuli,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            localizations.tech_service_id,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.lapisLazuli.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.lapisLazuli.withValues(alpha: 0.18),
-                          ),
-                        ),
-                        child: Text(
-                          serviceId,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.lapisLazuli,
-                            letterSpacing: 0.4,
-                          ),
-                          textDirection: _contentTextDirection(),
-                          textAlign: _isPersianLocale()
-                              ? TextAlign.right
-                              : TextAlign.left,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-
-                // Location Information
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            color: AppColors.lapisLazuli,
-                            size: 24,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            localizations.tech_location,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      // Address field - larger and more visible
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_city,
-                                size: 18,
-                                color: AppColors.iranianGray,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                localizations.tech_address,
-                                style: TextStyle(
-                                  fontSize: _detailFieldLabelFontSize,
-                                  color: AppColors.iranianGray,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.04,
-                                    ),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.lapisLazuli.withValues(
-                                  alpha: 0.2,
-                                ),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              address,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12),
-                      _buildInfoRow(
-                        localizations.tech_phone,
-                        phone,
-                        Icons.phone,
-                        isPhone: true,
-                      ),
-                      if (_isTechnicianOrgManager) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _openCustomerServiceHistory,
-                            icon: const Icon(
-                              Icons.history,
-                              size: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.tag_outlined,
                               color: AppColors.lapisLazuli,
+                              size: 24,
                             ),
-                            label: Text(
-                              localizations.tech_customer_service_history,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
+                            const SizedBox(width: 12),
+                            Text(
+                              localizations.tech_service_id,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: AppColors.lapisLazuli.withValues(
-                                  alpha: 0.45,
-                                ),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.lapisLazuli.withValues(
+                              alpha: 0.06,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.lapisLazuli.withValues(
+                                alpha: 0.18,
                               ),
                             ),
                           ),
+                          child: Text(
+                            serviceId,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.lapisLazuli,
+                              letterSpacing: 0.4,
+                            ),
+                            textDirection: _contentTextDirection(),
+                            textAlign: _isPersianLocale()
+                                ? TextAlign.right
+                                : TextAlign.left,
+                          ),
                         ),
                       ],
-                      SizedBox(height: 12),
-                      _buildInfoRow(
-                        localizations.dls_serial_number,
-                        serialNumber,
-                        Icons.confirmation_number_outlined,
-                      ),
-                      if (assignedUsername != null &&
-                          assignedUsername.isNotEmpty) ...[
-                        SizedBox(height: 12),
-                        _buildInfoRow(
-                          localizations.tech_assigned_to,
-                          assignedUsername,
-                          Icons.person,
-                        ),
-                      ],
-                      if (urgency != null) ...[
-                        SizedBox(height: 12),
-                        _buildInfoRow(
-                          localizations.tech_urgency,
-                          _getUrgencyText(urgency, localizations),
-                          Icons.priority_high,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-
-                if (_hasCustomerOrAdminInfo()) ...[
-                  _buildCustomerAdminSection(localizations),
-                  const SizedBox(height: 20),
-                ],
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black.withValues(alpha: 0.2)
-                            : AppColors.lapisLazuli.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[700]!
-                          : AppColors.lapisLazuli.withValues(alpha: 0.08),
-                      width: 1,
                     ),
                   ),
-                  child: _buildWarrantySection(localizations),
-                ),
-                const SizedBox(height: 20),
+                  SizedBox(height: 20),
 
-                if (isReadOnlyDetail && _shouldShowCheckMissionCard(true))
-                  Builder(
-                    builder: (context) {
-                      final card = _buildCheckMissionDetailsCard(
-                        localizations,
-                        readOnly: true,
-                      );
-                      if (card == null) return const SizedBox.shrink();
-                      return Column(
-                        children: [card, const SizedBox(height: 20)],
-                      );
-                    },
-                  ),
-
-                // Step 1: First Visit Date
-                if (!isReadOnlyDetail && !firstVisitDateSet && !isConfirmed)
+                  // Location Information
                   Container(
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                       border: Border.all(
-                        color: AppColors.lapisLazuli,
-                        width: 2,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
                       ),
                     ),
                     child: Column(
@@ -3091,134 +2896,218 @@ class _TechnicianTaskDetailScreenState
                         Row(
                           children: [
                             Icon(
-                              Icons.calendar_today,
+                              Icons.location_on,
                               color: AppColors.lapisLazuli,
                               size: 24,
                             ),
                             SizedBox(width: 12),
                             Text(
-                              localizations.tech_first_visit_date,
+                              localizations.tech_location,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.lapisLazuli,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ],
                         ),
                         SizedBox(height: 16),
-                        GestureDetector(
-                          onTap: () => _selectDate(context, true),
-                          child: Container(
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppColors.lapisLazuli.withValues(
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.lapisLazuli,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Address field - larger and more visible
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    firstVisitDate != null
-                                        ? formatDate(
-                                            formatDateForAPI(firstVisitDate!),
-                                            context,
-                                          )
-                                        : localizations
-                                              .tech_first_visit_date_hint,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: firstVisitDate != null
-                                          ? AppColors.lapisLazuli
-                                          : Colors.grey,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                Icon(
+                                  Icons.location_city,
+                                  size: 18,
+                                  color: AppColors.iranianGray,
                                 ),
                                 SizedBox(width: 8),
-                                Icon(
-                                  Icons.calendar_today,
-                                  color: AppColors.lapisLazuli,
+                                Text(
+                                  localizations.tech_address,
+                                  style: TextStyle(
+                                    fontSize: _detailFieldLabelFontSize,
+                                    color: AppColors.iranianGray,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : _submitFirstVisitDate,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lapisLazuli,
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
+                            SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[800]
+                                    : AppColors.lapisLazuli.withValues(
+                                        alpha: 0.04,
+                                      ),
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                address,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                  height: 1.5,
+                                ),
                               ),
                             ),
-                            child: isLoading
-                                ? SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : Text(
-                                    localizations.tech_set_first_visit,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
+                          ],
                         ),
+                        SizedBox(height: 12),
+                        _buildInfoRow(
+                          localizations.tech_phone,
+                          phone,
+                          Icons.phone,
+                          isPhone: true,
+                        ),
+                        if (_isTechnicianOrgManager) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _openCustomerServiceHistory,
+                              icon: const Icon(
+                                Icons.history,
+                                size: 20,
+                                color: AppColors.lapisLazuli,
+                              ),
+                              label: Text(
+                                localizations.tech_customer_service_history,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: 12),
+                        _buildInfoRow(
+                          localizations.dls_serial_number,
+                          serialNumber,
+                          Icons.confirmation_number_outlined,
+                        ),
+                        if (assignedUsername != null &&
+                            assignedUsername.isNotEmpty) ...[
+                          SizedBox(height: 12),
+                          _buildInfoRow(
+                            localizations.tech_assigned_to,
+                            assignedUsername,
+                            Icons.person,
+                          ),
+                        ],
+                        if (urgency != null) ...[
+                          SizedBox(height: 12),
+                          _buildInfoRow(
+                            localizations.tech_urgency,
+                            _getUrgencyText(urgency, localizations),
+                            Icons.priority_high,
+                          ),
+                        ],
                       ],
                     ),
                   ),
+                  SizedBox(height: 20),
 
-                // Step 2: Check Task Form
-                if (!isReadOnlyDetail &&
-                    firstVisitDateSet &&
-                    !checkTaskSubmitted &&
-                    !isConfirmed)
+                  if (_hasCustomerOrAdminInfo()) ...[
+                    _buildCustomerAdminSection(localizations),
+                    const SizedBox(height: 20),
+                  ],
+
                   Container(
-                    padding: EdgeInsets.all(20),
-                    margin: EdgeInsets.only(top: 20),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.2)
+                              : AppColors.lapisLazuli.withValues(alpha: 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                       border: Border.all(
-                        color: AppColors.lapisLazuli,
-                        width: 2,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[700]!
+                            : AppColors.lapisLazuli.withValues(alpha: 0.08),
+                        width: 1,
                       ),
                     ),
-                    child: Form(
-                      key: _checkTaskFormKey,
+                    child: _buildWarrantySection(localizations),
+                  ),
+                  const SizedBox(height: 20),
+
+                  if (isReadOnlyDetail && _shouldShowCheckMissionCard(true))
+                    Builder(
+                      builder: (context) {
+                        final card = _buildCheckMissionDetailsCard(
+                          localizations,
+                          readOnly: true,
+                        );
+                        if (card == null) return const SizedBox.shrink();
+                        return Column(
+                          children: [card, const SizedBox(height: 20)],
+                        );
+                      },
+                    ),
+
+                  // Step 1: First Visit Date
+                  if (!isReadOnlyDetail && !firstVisitDateSet && !isConfirmed)
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.lapisLazuli,
+                          width: 2,
+                        ),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               Icon(
-                                Icons.check_circle_outline,
+                                Icons.calendar_today,
                                 color: AppColors.lapisLazuli,
                                 size: 24,
                               ),
                               SizedBox(width: 12),
                               Text(
-                                localizations.tech_check_task,
+                                localizations.tech_first_visit_date,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -3227,247 +3116,9 @@ class _TechnicianTaskDetailScreenState
                               ),
                             ],
                           ),
-                          SizedBox(height: 20),
-                          // Pieces (multi-select, searchable)
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              localizations.tech_piece_name,
-                              style: TextStyle(
-                                fontSize: _checkFormFieldLabelFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              textDirection: _contentTextDirection(),
-                              textAlign: TextAlign.start,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          InkWell(
-                            onTap: _openPiecePicker,
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                hintText: localizations.tech_piece_name_hint,
-                                filled: true,
-                                fillColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey[800]
-                                    : AppColors.lapisLazuli.withValues(
-                                        alpha: 0.04,
-                                      ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: AppColors.lapisLazuli,
-                                    width: 2,
-                                  ),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.arrow_drop_down,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                              child: Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Text(
-                                  _selectedPiecesSummary(localizations),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: selectedPieceCounts.isNotEmpty
-                                        ? Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.color
-                                        : Theme.of(context).hintColor,
-                                  ),
-                                  textDirection: _contentTextDirection(),
-                                  textAlign: TextAlign.start,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          // Tariffs (multi-select, searchable)
-                          Text(
-                            localizations.tech_tariffs,
-                            style: TextStyle(
-                              fontSize: _checkFormFieldLabelFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.lapisLazuli,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          InkWell(
-                            onTap: _openTariffPicker,
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                hintText: localizations.tech_tariffs_hint,
-                                filled: true,
-                                fillColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.grey[800]
-                                    : AppColors.lapisLazuli.withValues(
-                                        alpha: 0.04,
-                                      ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: AppColors.lapisLazuli,
-                                    width: 2,
-                                  ),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.arrow_drop_down,
-                                  color: AppColors.lapisLazuli,
-                                ),
-                              ),
-                              child: Text(
-                                _selectedTariffsSummary(localizations),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: selectedTariffCounts.isNotEmpty
-                                      ? Theme.of(
-                                          context,
-                                        ).textTheme.bodyLarge?.color
-                                      : Theme.of(context).hintColor,
-                                ),
-                                textDirection: Directionality.of(context),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          // Other Costs
-                          Text(
-                            localizations.tech_other_costs,
-                            style: TextStyle(
-                              fontSize: _checkFormFieldLabelFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.lapisLazuli,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          TextFormField(
-                            controller: _otherCostsController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: <TextInputFormatter>[
-                              ThousandSeparatorInputFormatter(),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: localizations.tech_other_costs_hint,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.04,
-                                    ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.lapisLazuli,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return localizations.tech_other_costs_error;
-                              }
-                              if (parseGroupedInt(value) == null) {
-                                return localizations
-                                    .sss_other_costs_error_number;
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 20),
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              localizations.tech_serial_number_correction,
-                              style: TextStyle(
-                                fontSize: _checkFormFieldLabelFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              textDirection: _contentTextDirection(),
-                              textAlign: TextAlign.start,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          TextFormField(
-                            controller: _serialNumberController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: <TextInputFormatter>[
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            decoration: InputDecoration(
-                              hintText: localizations.tech_serial_number_hint,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.04,
-                                    ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.lapisLazuli,
-                                  width: 2,
-                                ),
-                              ),
-                              prefixIcon: const Icon(
-                                Icons.qr_code,
-                                color: AppColors.lapisLazuli,
-                              ),
-                            ),
-                            validator: (String? value) {
-                              final String trimmed = value?.trim() ?? '';
-                              if (trimmed.isEmpty) return null;
-                              if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
-                                return localizations
-                                    .tech_serial_number_digits_error;
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 20),
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              localizations.tech_second_visit_date,
-                              style: TextStyle(
-                                fontSize: _checkFormFieldLabelFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lapisLazuli,
-                              ),
-                              textDirection: _contentTextDirection(),
-                              textAlign: TextAlign.start,
-                            ),
-                          ),
-                          SizedBox(height: 8),
+                          SizedBox(height: 16),
                           GestureDetector(
-                            onTap: () => _selectDate(context, false),
+                            onTap: () => _selectDate(context, true),
                             child: Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -3486,18 +3137,16 @@ class _TechnicianTaskDetailScreenState
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      secondVisitDate != null
+                                      firstVisitDate != null
                                           ? formatDate(
-                                              formatDateForAPI(
-                                                secondVisitDate!,
-                                              ),
+                                              formatDateForAPI(firstVisitDate!),
                                               context,
                                             )
                                           : localizations
-                                                .tech_second_visit_date_hint,
+                                                .tech_first_visit_date_hint,
                                       style: TextStyle(
                                         fontSize: 16,
-                                        color: secondVisitDate != null
+                                        color: firstVisitDate != null
                                             ? AppColors.lapisLazuli
                                             : Colors.grey,
                                       ),
@@ -3513,58 +3162,13 @@ class _TechnicianTaskDetailScreenState
                               ),
                             ),
                           ),
-                          if (!_taskHasWarranty()) ...<Widget>[
-                            const SizedBox(height: 20),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.lapisLazuli.withValues(
-                                  alpha: 0.05,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.lapisLazuli.withValues(
-                                    alpha: 0.18,
-                                  ),
-                                ),
-                              ),
-                              child: CheckboxListTile(
-                                value: applyWarranty,
-                                activeColor: AppColors.lapisLazuli,
-                                controlAffinity: ListTileControlAffinity.leading,
-                                title: Text(
-                                  localizations.tech_apply_warranty,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge?.color,
-                                  ),
-                                  textDirection: _contentTextDirection(),
-                                ),
-                                subtitle: Text(
-                                  localizations.tech_apply_warranty_hint,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.color
-                                        ?.withValues(alpha: 0.7),
-                                  ),
-                                  textDirection: _contentTextDirection(),
-                                ),
-                                onChanged: (bool? value) {
-                                  setState(() => applyWarranty = value ?? false);
-                                },
-                              ),
-                            ),
-                          ],
-                          SizedBox(height: 20),
+                          SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: isLoading ? null : _submitCheckTask,
+                              onPressed: isLoading
+                                  ? null
+                                  : _submitFirstVisitDate,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.lapisLazuli,
                                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -3585,7 +3189,7 @@ class _TechnicianTaskDetailScreenState
                                       ),
                                     )
                                   : Text(
-                                      localizations.tech_submit_check_task,
+                                      localizations.tech_set_first_visit,
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -3597,226 +3201,640 @@ class _TechnicianTaskDetailScreenState
                         ],
                       ),
                     ),
-                  ),
 
-                if (!isReadOnlyDetail &&
-                    _shouldShowCheckMissionCard(false) &&
-                    !isConfirmed)
-                  Builder(
-                    builder: (context) {
-                      final card = _buildCheckMissionDetailsCard(
-                        localizations,
-                        readOnly: false,
-                      );
-                      if (card == null) return const SizedBox.shrink();
-                      return Column(
-                        children: [card, const SizedBox(height: 20)],
-                      );
-                    },
-                  ),
-
-                // Step 3: Report and Final Confirmation
-                if (!isReadOnlyDetail &&
-                    firstVisitDateSet &&
-                    checkTaskSubmitted &&
-                    !isConfirmed)
-                  Container(
-                    padding: EdgeInsets.all(20),
-                    margin: EdgeInsets.only(top: 20),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.lapisLazuli,
-                        width: 2,
+                  // Step 2: Check Task Form
+                  if (!isReadOnlyDetail &&
+                      firstVisitDateSet &&
+                      !checkTaskSubmitted &&
+                      !isConfirmed)
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      margin: EdgeInsets.only(top: 20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.lapisLazuli,
+                          width: 2,
+                        ),
                       ),
-                    ),
-                    child: Form(
-                      key: _reportFormKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.description,
-                                color: AppColors.lapisLazuli,
-                                size: 24,
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                localizations.tech_report,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                      child: Form(
+                        key: _checkTaskFormKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline,
                                   color: AppColors.lapisLazuli,
+                                  size: 24,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  localizations.tech_check_task,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            // Pieces (multi-select, searchable)
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                localizations.tech_piece_name,
+                                style: TextStyle(
+                                  fontSize: _checkFormFieldLabelFontSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                                textDirection: _contentTextDirection(),
+                                textAlign: TextAlign.start,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            InkWell(
+                              onTap: _openPiecePicker,
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  hintText: localizations.tech_piece_name_hint,
+                                  filled: true,
+                                  fillColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[800]
+                                      : AppColors.lapisLazuli.withValues(
+                                          alpha: 0.04,
+                                        ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppColors.lapisLazuli,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                ),
+                                child: Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Text(
+                                    _selectedPiecesSummary(localizations),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: selectedPieceCounts.isNotEmpty
+                                          ? Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge?.color
+                                          : Theme.of(context).hintColor,
+                                    ),
+                                    textDirection: _contentTextDirection(),
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            // Tariffs (multi-select, searchable)
+                            Text(
+                              localizations.tech_tariffs,
+                              style: TextStyle(
+                                fontSize: _checkFormFieldLabelFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            InkWell(
+                              onTap: _openTariffPicker,
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  hintText: localizations.tech_tariffs_hint,
+                                  filled: true,
+                                  fillColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[800]
+                                      : AppColors.lapisLazuli.withValues(
+                                          alpha: 0.04,
+                                        ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppColors.lapisLazuli,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.arrow_drop_down,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                ),
+                                child: Text(
+                                  _selectedTariffsSummary(localizations),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: selectedTariffCounts.isNotEmpty
+                                        ? Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge?.color
+                                        : Theme.of(context).hintColor,
+                                  ),
+                                  textDirection: Directionality.of(context),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            // Other Costs
+                            Text(
+                              localizations.tech_other_costs,
+                              style: TextStyle(
+                                fontSize: _checkFormFieldLabelFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lapisLazuli,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            TextFormField(
+                              controller: _otherCostsController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                ThousandSeparatorInputFormatter(),
+                              ],
+                              decoration: InputDecoration(
+                                hintText: localizations.tech_other_costs_hint,
+                                filled: true,
+                                fillColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[800]
+                                    : AppColors.lapisLazuli.withValues(
+                                        alpha: 0.04,
+                                      ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.lapisLazuli,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return localizations.tech_other_costs_error;
+                                }
+                                if (parseGroupedInt(value) == null) {
+                                  return localizations
+                                      .sss_other_costs_error_number;
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                localizations.tech_serial_number_correction,
+                                style: TextStyle(
+                                  fontSize: _checkFormFieldLabelFontSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                                textDirection: _contentTextDirection(),
+                                textAlign: TextAlign.start,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            TextFormField(
+                              controller: _serialNumberController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              decoration: InputDecoration(
+                                hintText: localizations.tech_serial_number_hint,
+                                filled: true,
+                                fillColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[800]
+                                    : AppColors.lapisLazuli.withValues(
+                                        alpha: 0.04,
+                                      ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.lapisLazuli,
+                                    width: 2,
+                                  ),
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.qr_code,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                              ),
+                              validator: (String? value) {
+                                final String trimmed = value?.trim() ?? '';
+                                if (trimmed.isEmpty) return null;
+                                if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
+                                  return localizations
+                                      .tech_serial_number_digits_error;
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                localizations.tech_second_visit_date,
+                                style: TextStyle(
+                                  fontSize: _checkFormFieldLabelFontSize,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.lapisLazuli,
+                                ),
+                                textDirection: _contentTextDirection(),
+                                textAlign: TextAlign.start,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () => _selectDate(context, false),
+                              child: Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.lapisLazuli,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        secondVisitDate != null
+                                            ? formatDate(
+                                                formatDateForAPI(
+                                                  secondVisitDate!,
+                                                ),
+                                                context,
+                                              )
+                                            : localizations
+                                                  .tech_second_visit_date_hint,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: secondVisitDate != null
+                                              ? AppColors.lapisLazuli
+                                              : Colors.grey,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      Icons.calendar_today,
+                                      color: AppColors.lapisLazuli,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (!_taskHasWarranty()) ...<Widget>[
+                              const SizedBox(height: 20),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.lapisLazuli.withValues(
+                                    alpha: 0.05,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.lapisLazuli.withValues(
+                                      alpha: 0.18,
+                                    ),
+                                  ),
+                                ),
+                                child: CheckboxListTile(
+                                  value: applyWarranty,
+                                  activeColor: AppColors.lapisLazuli,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  title: Text(
+                                    localizations.tech_apply_warranty,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color,
+                                    ),
+                                    textDirection: _contentTextDirection(),
+                                  ),
+                                  subtitle: Text(
+                                    localizations.tech_apply_warranty_hint,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withValues(alpha: 0.7),
+                                    ),
+                                    textDirection: _contentTextDirection(),
+                                  ),
+                                  onChanged: (bool? value) {
+                                    setState(
+                                      () => applyWarranty = value ?? false,
+                                    );
+                                  },
                                 ),
                               ),
                             ],
-                          ),
-                          SizedBox(height: 20),
-                          TextFormField(
-                            controller: _reportController,
-                            maxLines: 5,
-                            decoration: InputDecoration(
-                              hintText: localizations.tech_report_hint,
-                              filled: true,
-                              fillColor:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.grey[800]
-                                  : AppColors.lapisLazuli.withValues(
-                                      alpha: 0.04,
-                                    ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.lapisLazuli,
-                                  width: 2,
+                            SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _submitCheckTask,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.lapisLazuli,
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return localizations.tech_report_error;
-                              }
-                              return null;
-                            },
-                          ),
-                          SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: isLoading ? null : _confirmTask,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lapisLazuli,
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: isLoading
-                                  ? SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                      ),
-                                    )
-                                  : Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.check_circle,
+                                child: isLoading
+                                    ? SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
+                                      )
+                                    : Text(
+                                        localizations.tech_submit_check_task,
+                                        style: TextStyle(
                                           color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          localizations.tech_submit_report,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Footer: invoice → attachment → assignment dates
-                Builder(
-                  builder: (context) {
-                    final Widget? invoice =
-                        _buildInvoiceDownloadSection(isReadOnlyDetail);
-                    final bool showAttachment = _showsAttachment;
-                    final bool showOrgAssignedDate =
-                        _isTechnicianOrgManager && createdAt.isNotEmpty;
-                    final bool showTechnicianAssignedDate =
-                        assignedToTechnicianAt.trim().isNotEmpty;
-
-                    if (invoice == null &&
-                        !showAttachment &&
-                        !showOrgAssignedDate &&
-                        !showTechnicianAssignedDate) {
-                      return const SizedBox.shrink();
-                    }
-
-                    Widget buildDateCard(String label, String rawDate) {
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.iranianGray.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.calendar_today,
-                              size: 20,
-                              color: AppColors.iranianGray,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '$label ${formatDate(rawDate, context, includeTime: true)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.iranianGray,
-                                fontWeight: FontWeight.w500,
+                                      ),
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }
+                      ),
+                    ),
 
-                    return Column(
-                      children: [
-                        if (invoice != null) ...[
-                          const SizedBox(height: 20),
-                          invoice,
-                        ],
-                        if (showAttachment) ...[
-                          const SizedBox(height: 20),
-                          _buildAttachmentSection(localizations),
-                        ],
-                        if (showOrgAssignedDate) ...[
-                          const SizedBox(height: 20),
-                          buildDateCard(
-                            localizations.tech_assigned_org_date,
-                            createdAt,
+                  if (!isReadOnlyDetail &&
+                      _shouldShowCheckMissionCard(false) &&
+                      !isConfirmed)
+                    Builder(
+                      builder: (context) {
+                        final card = _buildCheckMissionDetailsCard(
+                          localizations,
+                          readOnly: false,
+                        );
+                        if (card == null) return const SizedBox.shrink();
+                        return Column(
+                          children: [card, const SizedBox(height: 20)],
+                        );
+                      },
+                    ),
+
+                  // Step 3: Report and Final Confirmation
+                  if (!isReadOnlyDetail &&
+                      firstVisitDateSet &&
+                      checkTaskSubmitted &&
+                      !isConfirmed)
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      margin: EdgeInsets.only(top: 20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.lapisLazuli,
+                          width: 2,
+                        ),
+                      ),
+                      child: Form(
+                        key: _reportFormKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.description,
+                                  color: AppColors.lapisLazuli,
+                                  size: 24,
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  localizations.tech_report,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.lapisLazuli,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            TextFormField(
+                              controller: _reportController,
+                              maxLines: 5,
+                              decoration: InputDecoration(
+                                hintText: localizations.tech_report_hint,
+                                filled: true,
+                                fillColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.grey[800]
+                                    : AppColors.lapisLazuli.withValues(
+                                        alpha: 0.04,
+                                      ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.lapisLazuli,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return localizations.tech_report_error;
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: isLoading ? null : _confirmTask,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.lapisLazuli,
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: isLoading
+                                    ? SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            localizations.tech_submit_report,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Footer: invoice → attachment → assignment dates
+                  Builder(
+                    builder: (context) {
+                      final Widget? invoice = _buildInvoiceDownloadSection(
+                        isReadOnlyDetail,
+                      );
+                      final bool showAttachment = _showsAttachment;
+                      final bool showOrgAssignedDate =
+                          _isTechnicianOrgManager && createdAt.isNotEmpty;
+                      final bool showTechnicianAssignedDate =
+                          assignedToTechnicianAt.trim().isNotEmpty;
+
+                      if (invoice == null &&
+                          !showAttachment &&
+                          !showOrgAssignedDate &&
+                          !showTechnicianAssignedDate) {
+                        return const SizedBox.shrink();
+                      }
+
+                      Widget buildDateCard(String label, String rawDate) {
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.iranianGray.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ],
-                        if (showTechnicianAssignedDate) ...[
-                          const SizedBox(height: 20),
-                          buildDateCard(
-                            localizations.tech_assigned_technician_date,
-                            assignedToTechnicianAt,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 20,
+                                color: AppColors.iranianGray,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$label ${formatDate(rawDate, context, includeTime: true)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.iranianGray,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          if (invoice != null) ...[
+                            const SizedBox(height: 20),
+                            invoice,
+                          ],
+                          if (showAttachment) ...[
+                            const SizedBox(height: 20),
+                            _buildAttachmentSection(localizations),
+                          ],
+                          if (showOrgAssignedDate) ...[
+                            const SizedBox(height: 20),
+                            buildDateCard(
+                              localizations.tech_assigned_org_date,
+                              createdAt,
+                            ),
+                          ],
+                          if (showTechnicianAssignedDate) ...[
+                            const SizedBox(height: 20),
+                            buildDateCard(
+                              localizations.tech_assigned_technician_date,
+                              assignedToTechnicianAt,
+                            ),
+                          ],
                         ],
-                      ],
-                    );
-                  },
-                ),
-              ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -3956,9 +3974,7 @@ class _TechnicianTaskDetailScreenState
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: Text(
-            _taskHasWarranty()
-                ? localizations.home_yes
-                : localizations.home_no,
+            _taskHasWarranty() ? localizations.home_yes : localizations.home_no,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -4033,8 +4049,9 @@ class _TechnicianTaskDetailScreenState
     );
 
     final bool isPersian = _isPersianLocale();
-    final TextDirection rowDir =
-        isPersian ? TextDirection.rtl : TextDirection.ltr;
+    final TextDirection rowDir = isPersian
+        ? TextDirection.rtl
+        : TextDirection.ltr;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -4301,7 +4318,8 @@ class _OrgTaskCancelConfirmDialog extends StatefulWidget {
       _OrgTaskCancelConfirmDialogState();
 }
 
-class _OrgTaskCancelConfirmDialogState extends State<_OrgTaskCancelConfirmDialog> {
+class _OrgTaskCancelConfirmDialogState
+    extends State<_OrgTaskCancelConfirmDialog> {
   bool _confirmEnabled = false;
 
   @override
@@ -4329,9 +4347,7 @@ class _OrgTaskCancelConfirmDialogState extends State<_OrgTaskCancelConfirmDialog
           horizontal: ui.scale(base: 20, min: 16, max: 28),
           vertical: ui.scale(base: 24, min: 18, max: 32),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
         title: Row(
           children: <Widget>[
@@ -4388,9 +4404,7 @@ class _OrgTaskCancelConfirmDialogState extends State<_OrgTaskCancelConfirmDialog
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.red.withValues(alpha: 0.18),
-                  ),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.18)),
                 ),
                 child: Row(
                   children: <Widget>[
@@ -4422,10 +4436,7 @@ class _OrgTaskCancelConfirmDialogState extends State<_OrgTaskCancelConfirmDialog
             onPressed: () => Navigator.of(context).pop(false),
             style: TextButton.styleFrom(
               foregroundColor: theme.textTheme.bodyMedium?.color,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
             child: Text(
               loc.tech_assign_dialog_cancel,
@@ -4441,10 +4452,7 @@ class _OrgTaskCancelConfirmDialogState extends State<_OrgTaskCancelConfirmDialog
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             ),
             onPressed: _confirmEnabled
                 ? () => Navigator.of(context).pop(true)
@@ -4508,9 +4516,7 @@ class _OrgTaskSuspendConfirmDialogState
           horizontal: ui.scale(base: 20, min: 16, max: 28),
           vertical: ui.scale(base: 24, min: 18, max: 32),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
         title: Row(
           children: <Widget>[
@@ -4521,11 +4527,7 @@ class _OrgTaskSuspendConfirmDialogState
                 color: AppColors.lapisLazuli.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                dialogIcon,
-                color: AppColors.lapisLazuli,
-                size: 22,
-              ),
+              child: Icon(dialogIcon, color: AppColors.lapisLazuli, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -4605,10 +4607,7 @@ class _OrgTaskSuspendConfirmDialogState
             onPressed: () => Navigator.of(context).pop(false),
             style: TextButton.styleFrom(
               foregroundColor: theme.textTheme.bodyMedium?.color,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
             child: Text(
               loc.tech_assign_dialog_cancel,
@@ -4619,16 +4618,14 @@ class _OrgTaskSuspendConfirmDialogState
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.lapisLazuli,
               foregroundColor: Colors.white,
-              disabledBackgroundColor:
-                  AppColors.lapisLazuli.withValues(alpha: 0.4),
+              disabledBackgroundColor: AppColors.lapisLazuli.withValues(
+                alpha: 0.4,
+              ),
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             ),
             onPressed: _confirmEnabled
                 ? () => Navigator.of(context).pop(true)

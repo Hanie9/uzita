@@ -175,7 +175,6 @@ class _TicketListScreenState extends State<TicketListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
     final theme = Theme.of(context);
     return Scaffold(
@@ -208,26 +207,11 @@ class _TicketListScreenState extends State<TicketListScreen> {
                     ],
                   ),
 
-                  // Right side - Logo
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Image.asset(
-                          'assets/logouzita.png',
-                          height: ui.scale(
-                            base: screenHeight * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
-                          width: ui.scale(
-                            base: screenHeight * 0.08,
-                            min: 28,
-                            max: 56,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const Spacer(),
+                  Image.asset(
+                    'assets/logouzita.png',
+                    height: MediaQuery.of(context).size.height * 0.08,
+                    width: MediaQuery.of(context).size.height * 0.08,
                   ),
                 ],
               ),

@@ -24,7 +24,8 @@ class UzitaSvgIcon extends StatelessWidget {
       assetPath,
       width: width,
       height: height,
-      colorFilter: colorFilter ??
+      colorFilter:
+          colorFilter ??
           (color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null),
     );
   }

@@ -48,8 +48,84 @@ class SharedBottomNavigation extends StatelessWidget {
         ],
       ),
       child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: (getLogicalUserLevel(userLevel) == 2)
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: isCustomerOrgan(organType)
+            ? isRTL
+                  ? [
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 4,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(4),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.confirmation_number_outlined,
+                        label: localizations.nav_tickets,
+                        isActive: selectedIndex == 3,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(3),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.local_shipping_outlined,
+                        label: localizations.nav_cargo,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.home_repair_service_outlined,
+                        label: localizations.nav_services,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                    ]
+                  : [
+                      _buildNavItem(
+                        icon: Icons.home,
+                        label: localizations.nav_home,
+                        isActive: selectedIndex == 0,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(0),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.home_repair_service_outlined,
+                        label: localizations.nav_services,
+                        isActive: selectedIndex == 1,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(1),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.local_shipping_outlined,
+                        label: localizations.nav_cargo,
+                        isActive: selectedIndex == 2,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(2),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.confirmation_number_outlined,
+                        label: localizations.nav_tickets,
+                        isActive: selectedIndex == 3,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(3),
+                      ),
+                      _buildNavItem(
+                        icon: Icons.person,
+                        label: localizations.nav_profile,
+                        isActive: selectedIndex == 4,
+                        color: AppColors.lapisLazuli,
+                        onTap: () => onItemTapped(4),
+                      ),
+                    ]
+            : (getLogicalUserLevel(userLevel) == 2)
             ? isRTL
                   ? [
                       // For technician users in RTL: Profile (leftmost), Reports, Missions, Home (rightmost)

@@ -12,9 +12,7 @@ import 'package:uzita/api_config.dart';
 /// Endpoint: `POST {apiBaseUrl}/transport/location/{assignmentId}`
 /// Body: `{"latitude": .., "longitude": ..}`
 class DriverLocationReporter {
-  DriverLocationReporter({
-    this.interval = const Duration(seconds: 10),
-  });
+  DriverLocationReporter({this.interval = const Duration(seconds: 10)});
 
   final Duration interval;
 
