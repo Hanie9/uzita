@@ -611,12 +611,10 @@ class _CustomerServiceDetailScreenState
     final String? subjects = _subjectNames(item?['subjects']);
     final String? address = customerText(item?['address']);
     final String? serial = customerText(item?['serial_number']);
-    final String? phone = customerText(item?['phone']);
     final String? customerPhone = customerText(item?['customer_phone']);
     final String? customerName = customerText(item?['customer_full_name']);
     final String? organ = customerText(item?['organ_name']);
-    final String? assignment =
-        customerText(item?['assignment']) ?? customerText(item?['technician']);
+    final Map<String, dynamic>? technician = _technicianMap(item);
     final String? note = customerText(item?['admin_note']);
     final String? created =
         customerText(item?['created_jalali']) ??
@@ -710,13 +708,12 @@ class _CustomerServiceDetailScreenState
             label: loc.cust_serial,
             value: serial,
           ),
-        if (phone != null) _phoneRow(loc.driver_phone, phone),
         if (customerPhone != null)
           _phoneRow(loc.cust_customer_phone, customerPhone),
         if (customerName != null)
           CustomerInfoRow(
             icon: Icons.person,
-            label: loc.trn_customer,
+            label: loc.tech_customer_name,
             value: customerName,
           ),
         if (organ != null)
@@ -725,12 +722,7 @@ class _CustomerServiceDetailScreenState
             label: loc.tech_organ_name,
             value: organ,
           ),
-        if (assignment != null)
-          CustomerInfoRow(
-            icon: Icons.engineering_outlined,
-            label: loc.sps_technician,
-            value: assignment,
-          ),
+        if (technician != null) _technicianPanel(loc, technician),
         if (note != null)
           CustomerInfoRow(
             icon: Icons.notes,
@@ -981,6 +973,7 @@ class _CustomerServiceDetailScreenState
       'tariffs_items',
       'can_confirm',
       'assignment',
+      'technician',
       'created_jalali',
       'created_at',
       'invoice_file',
@@ -988,14 +981,9 @@ class _CustomerServiceDetailScreenState
       'time',
       'grade',
     };
-    final String? shownAssignment = customerText(item['assignment']);
     final List<Widget> rows = <Widget>[];
     for (final MapEntry<String, dynamic> entry in item.entries) {
       if (shown.contains(entry.key)) continue;
-      if (entry.key == 'technician' && entry.value is! Map) {
-        final String? text = customerText(entry.value);
-        if (text == null || text == shownAssignment) continue;
-      }
       if (entry.value is Map) {
         final Map<String, dynamic> nested = Map<String, dynamic>.from(
           entry.value as Map,
@@ -1003,7 +991,6 @@ class _CustomerServiceDetailScreenState
         for (final MapEntry<String, dynamic> sub in nested.entries) {
           final String? text = _serviceFieldText(sub.key, sub.value, loc);
           if (text == null) continue;
-          if (shownAssignment != null && text == shownAssignment) continue;
           rows.add(
             CustomerInfoRow(
               label: _serviceFieldLabel(sub.key, loc),
@@ -1031,6 +1018,154 @@ class _CustomerServiceDetailScreenState
       );
     }
     return rows;
+  }
+
+  Widget _technicianPanel(
+    AppLocalizations loc,
+    Map<String, dynamic> technician,
+  ) {
+    final String? name = _technicianName(technician);
+    final String? phone =
+        customerText(technician['technician_phone']) ??
+        customerText(technician['phone']);
+    final String? organ =
+        customerText(technician['technician_organ_name']) ??
+        customerText(technician['organ_name']);
+    final String? firstVisit = customerText(technician['first_visit_jalali']);
+    final String? secondVisit = customerText(technician['second_visit_jalali']);
+    final String? comment = customerText(technician['comment']);
+    final String? report = customerText(technician['report']);
+    final String? grade = customerText(technician['grade']);
+    final String? customerConfirm = technician['customer_confirm'] == null
+        ? null
+        : _withDate(
+            _yesNo(technician['customer_confirm'], loc),
+            technician['customer_confirm_date'],
+          );
+    final String? technicianConfirm = technician['technician_confirm'] == null
+        ? null
+        : _withDate(
+            _yesNo(technician['technician_confirm'], loc),
+            technician['technician_confirm_date'],
+          );
+    if (name == null &&
+        phone == null &&
+        organ == null &&
+        firstVisit == null &&
+        secondVisit == null &&
+        comment == null &&
+        report == null &&
+        grade == null &&
+        customerConfirm == null &&
+        technicianConfirm == null) {
+      return const SizedBox.shrink();
+    }
+    return _detailPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.engineering_outlined,
+                color: AppColors.lapisLazuli,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                loc.sps_technician,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.lapisLazuli,
+                ),
+              ),
+            ],
+          ),
+          if (name != null)
+            CustomerInfoRow(
+              icon: Icons.person_outline,
+              label: loc.sps_technician_name,
+              value: name,
+            ),
+          if (phone != null) _phoneRow(loc.sps_technician_phone, phone),
+          if (organ != null)
+            CustomerInfoRow(
+              icon: Icons.apartment_outlined,
+              label: loc.tech_organ_name,
+              value: organ,
+            ),
+          if (firstVisit != null)
+            CustomerInfoRow(
+              icon: Icons.event_outlined,
+              label: loc.tech_first_visit_date,
+              value: firstVisit,
+            ),
+          if (secondVisit != null)
+            CustomerInfoRow(
+              icon: Icons.event_repeat_outlined,
+              label: loc.tech_second_visit_date,
+              value: secondVisit,
+            ),
+          if (grade != null)
+            CustomerInfoRow(
+              icon: Icons.star_outline,
+              label: loc.sps_technician_grade,
+              value: grade,
+            ),
+          if (comment != null)
+            CustomerInfoRow(
+              icon: Icons.notes,
+              label: loc.sps_comment,
+              value: comment,
+            ),
+          if (report != null)
+            CustomerInfoRow(
+              icon: Icons.description_outlined,
+              label: loc.tech_report,
+              value: report,
+            ),
+          if (customerConfirm != null)
+            CustomerInfoRow(
+              icon: Icons.fact_check_outlined,
+              label: loc.driver_customer_confirm,
+              value: customerConfirm,
+            ),
+          if (technicianConfirm != null)
+            CustomerInfoRow(
+              icon: Icons.verified_outlined,
+              label: loc.cust_technician_confirm,
+              value: technicianConfirm,
+            ),
+          ..._objectRows(
+            loc,
+            technician,
+            skip: const <String>{
+              'id',
+              'first_name',
+              'last_name',
+              'full_name',
+              'name',
+              'username',
+              'phone',
+              'technician_name',
+              'technician_phone',
+              'technician_organ_name',
+              'organ_name',
+              'first_visit_jalali',
+              'second_visit_jalali',
+              'grade',
+              'comment',
+              'report',
+              'customer_confirm',
+              'technician_confirm',
+              'customer_confirm_date',
+              'technician_confirm_date',
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _phoneRow(String label, String phone) {
@@ -1301,7 +1436,7 @@ String _serviceFieldLabel(String key, AppLocalizations loc) {
     case 'can_confirm':
       return loc.cust_can_confirm;
     case 'customer_full_name':
-      return loc.trn_customer;
+      return loc.tech_customer_name;
     case 'subjects':
     case 'subject':
       return loc.cust_subjects;
@@ -1377,4 +1512,42 @@ List<Map<String, dynamic>> _itemMaps(dynamic raw) {
       .whereType<Map>()
       .map((Map item) => Map<String, dynamic>.from(item))
       .toList();
+}
+
+Map<String, dynamic>? _technicianMap(Map<String, dynamic>? item) {
+  if (item == null) return null;
+  final dynamic technician = item['technician'];
+  if (technician is Map && technician.isNotEmpty) {
+    return Map<String, dynamic>.from(technician);
+  }
+  final dynamic assignment = item['assignment'];
+  if (assignment is Map && assignment.isNotEmpty) {
+    return Map<String, dynamic>.from(assignment);
+  }
+  final String? name =
+      customerText(technician is Map ? null : technician) ??
+      customerText(assignment is Map ? null : assignment);
+  if (name == null) return null;
+  return <String, dynamic>{'full_name': name};
+}
+
+String? _withDate(String? value, dynamic date) {
+  final String? when = customerText(date);
+  if (value == null) return when;
+  if (when == null) return value;
+  return '$value - $when';
+}
+
+String? _technicianName(Map<String, dynamic> technician) {
+  final String? assigned = customerText(technician['technician_name']);
+  if (assigned != null) return assigned;
+  final String? full = customerText(technician['full_name']);
+  if (full != null) return full;
+  final String? named = customerText(technician['name']);
+  if (named != null) return named;
+  final String joined =
+      '${customerText(technician['first_name']) ?? ''} ${customerText(technician['last_name']) ?? ''}'
+          .trim();
+  if (joined.isNotEmpty) return joined;
+  return customerText(technician['username']);
 }

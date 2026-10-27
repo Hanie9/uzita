@@ -1371,7 +1371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       // Less height for drivers to reduce spacing
                                       SizedBox(
                                         height: isCustomerOrgan(organType)
-                                            ? logoHeight * 0.62
+                                            ? logoHeight * 0.52
                                             : (getLogicalUserLevel(userLevel) ==
                                                   3)
                                             ? logoHeight + 18

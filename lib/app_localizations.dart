@@ -808,6 +808,7 @@ class AppLocalizations {
       'cust_customer_phone': 'Customer phone',
       'cust_fixed_price': 'Fixed price',
       'cust_can_confirm': 'Customer confirmation',
+      'cust_technician_confirm': 'Technician confirmation',
       'cust_field_id': 'ID',
       'cust_login_again': 'Please sign in again.',
       'cust_connecting': 'Connection error. Try again.',
@@ -2289,6 +2290,7 @@ class AppLocalizations {
       'cust_customer_phone': 'تلفن مشتری',
       'cust_fixed_price': 'قیمت ثابت',
       'cust_can_confirm': 'تایید مشتری',
+      'cust_technician_confirm': 'تایید تکنسین',
       'cust_field_id': 'شناسه',
       'cust_login_again': 'دوباره وارد شوید.',
       'cust_connecting': 'خطا در اتصال. دوباره تلاش کنید.',
@@ -3729,6 +3731,8 @@ class AppLocalizations {
   String get cust_customer_phone => _getLocalizedValue('cust_customer_phone');
   String get cust_fixed_price => _getLocalizedValue('cust_fixed_price');
   String get cust_can_confirm => _getLocalizedValue('cust_can_confirm');
+  String get cust_technician_confirm =>
+      _getLocalizedValue('cust_technician_confirm');
   String get cust_field_id => _getLocalizedValue('cust_field_id');
   String get cust_login_again => _getLocalizedValue('cust_login_again');
   String get cust_connecting => _getLocalizedValue('cust_connecting');
