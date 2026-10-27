@@ -849,6 +849,16 @@ class CustomerFileField extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 6),
+        Text(
+          loc.cust_file_formats_hint,
+          style: const TextStyle(
+            fontFamily: 'Vazir',
+            fontSize: 12,
+            height: 1.4,
+            color: AppColors.iranianGray,
+          ),
+        ),
       ],
     );
   }
@@ -1295,9 +1305,275 @@ class CustomerPrimaryButton extends StatelessWidget {
 }
 
 String customerFailure(Object error, AppLocalizations loc) {
-  if (error is CustomerCallException) {
-    if (error.message == 'auth') return loc.cust_login_again;
-    return error.message;
+  if (error is! CustomerCallException) return loc.cust_connecting;
+  if (error.message == 'auth') return loc.cust_login_again;
+  final String? text = _customerErrorText(error.data, loc);
+  if (text != null && text.isNotEmpty) return text;
+  if (error.data == null &&
+      error.message.isNotEmpty &&
+      error.statusCode == null) {
+    return _translateCustomerMessage(error.message, loc) ?? error.message;
   }
-  return loc.cust_connecting;
+  switch (error.statusCode) {
+    case 401:
+      return loc.cust_login_again;
+    case 403:
+      return loc.cust_err_forbidden;
+    case 404:
+      return loc.cust_err_not_found;
+    case 413:
+      return loc.cust_err_file_too_large;
+    default:
+      if ((error.statusCode ?? 0) >= 500) return loc.cust_err_server;
+      return loc.cust_err_invalid;
+  }
+}
+
+String? _customerErrorText(dynamic data, AppLocalizations loc) {
+  final List<String> lines = <String>[];
+  void add(String? text) {
+    final String value = text?.trim() ?? '';
+    if (value.isNotEmpty && !lines.contains(value)) lines.add(value);
+  }
+
+  if (data is Map) {
+    final dynamic detail = data['detail'];
+    if (detail is String || detail is List) {
+      add(_translateCustomerValue(detail, loc));
+    } else {
+      for (final MapEntry<dynamic, dynamic> entry in data.entries) {
+        final String key = entry.key.toString();
+        if (key == 'data') continue;
+        if (key == 'message' && data['data'] != null) continue;
+        final String? field =
+            key == 'error' || key == 'message' || key == 'non_field_errors'
+            ? null
+            : key;
+        add(_translateCustomerValue(entry.value, loc, field: field));
+      }
+    }
+  } else {
+    add(_translateCustomerValue(data, loc));
+  }
+  if (lines.isEmpty) return null;
+  return lines.join('\n');
+}
+
+String? _translateCustomerValue(
+  dynamic value,
+  AppLocalizations loc, {
+  String? field,
+}) {
+  if (value is List) {
+    final List<String> lines = <String>[];
+    for (final dynamic item in value) {
+      final String? text = _translateCustomerValue(item, loc, field: field);
+      if (text != null && text.isNotEmpty && !lines.contains(text)) {
+        lines.add(text);
+      }
+    }
+    if (lines.isEmpty) return null;
+    return lines.join('\n');
+  }
+  if (value == null) return null;
+  return _translateCustomerMessage(value.toString(), loc, field: field);
+}
+
+String? _translateCustomerMessage(
+  String raw,
+  AppLocalizations loc, {
+  String? field,
+}) {
+  final String text = raw.trim();
+  if (text.isEmpty || text == 'null' || text == 'auth') return null;
+  final String lower = text.toLowerCase();
+  final bool persian = RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+
+  if (text.contains('فرمت فایل مجاز نیست') ||
+      (lower.contains('file') && lower.contains('not allowed'))) {
+    return loc.cust_err_file_format;
+  }
+  if (text.contains('شماره') && text.contains('قبلاً')) {
+    return loc.cust_err_phone_exists;
+  }
+  if (text.contains('یکسان نیستند')) return loc.cust_passwords_mismatch;
+  if (text.contains('طول شماره تماس')) return loc.cust_phone_invalid;
+  if (text.contains('موضوع') && text.contains('نامعتبر')) {
+    return loc.cust_err_invalid_subjects;
+  }
+  if (text.contains('سرویس') && text.contains('قابل حذف')) {
+    return loc.cust_err_service_delete_status;
+  }
+  if (text.contains('سرویس') && text.contains('قابل ویرایش')) {
+    return loc.cust_err_service_edit_status;
+  }
+  if (text.contains('گارانتی') && text.contains('قابل حذف')) {
+    return loc.cust_err_warranty_delete_status;
+  }
+  if (text.contains('گارانتی') && text.contains('قابل ویرایش')) {
+    return loc.cust_err_warranty_edit_status;
+  }
+  if (text.contains('بار') && text.contains('قابل تایید')) {
+    return loc.cust_err_bar_confirm_status;
+  }
+  if (text.contains('تیکت') &&
+      text.contains('پاسخ') &&
+      (text.contains('۳') || text.contains('3'))) {
+    return loc.cust_err_ticket_reply_limit;
+  }
+
+  final RegExpMatch? missing = RegExp(
+    r'^no (\w+) matches the given query\.?$',
+    caseSensitive: false,
+  ).firstMatch(text);
+  if (missing != null) {
+    switch (missing.group(1)!.toLowerCase()) {
+      case 'service':
+        return loc.cust_err_not_found_service;
+      case 'bar':
+        return loc.cust_err_not_found_bar;
+      case 'ticket':
+        return loc.cust_err_not_found_ticket;
+      case 'warranty':
+        return loc.cust_err_not_found_warranty;
+      default:
+        return loc.cust_err_not_found;
+    }
+  }
+  if (lower.contains('not found') || text.contains('یافت نشد')) {
+    if (lower.contains('file') || text.contains('فایل')) {
+      return loc.cust_err_not_found_file;
+    }
+    return loc.cust_err_not_found;
+  }
+  if (lower.contains('authentication credentials') ||
+      lower.contains('not authenticated')) {
+    return loc.cust_login_again;
+  }
+  if (lower.contains('no active account') ||
+      lower.contains('invalid credentials') ||
+      lower.contains('unable to log in')) {
+    return loc.cust_err_bad_credentials;
+  }
+  if (lower.contains('permission') ||
+      lower.contains('not allowed') ||
+      text.contains('دسترسی')) {
+    return loc.cust_err_forbidden;
+  }
+  if (lower.contains('unsupported media type')) return loc.cust_err_invalid;
+
+  final String label = _customerFieldLabel(field, loc);
+  if (lower == 'this field is required.') {
+    return loc.cust_err_required_field.replaceAll('{field}', label);
+  }
+  if (lower == 'this field may not be blank.') {
+    return loc.cust_err_blank_field.replaceAll('{field}', label);
+  }
+  final RegExpMatch? maxLength = RegExp(
+    r'no more than (\d+) characters',
+  ).firstMatch(lower);
+  if (maxLength != null) {
+    return loc.cust_err_max_length
+        .replaceAll('{field}', label)
+        .replaceAll('{count}', _customerDigits(maxLength.group(1)!, loc));
+  }
+  final RegExpMatch? minLength = RegExp(
+    r'at least (\d+) characters',
+  ).firstMatch(lower);
+  if (minLength != null) {
+    return loc.cust_err_min_length
+        .replaceAll('{field}', label)
+        .replaceAll('{count}', _customerDigits(minLength.group(1)!, loc));
+  }
+  if (lower.contains('is not a valid choice')) {
+    return loc.cust_err_invalid_choice.replaceAll('{field}', label);
+  }
+  if (lower.contains('no file was submitted') ||
+      lower.contains('submitted data was not a file') ||
+      lower.contains('empty file')) {
+    return loc.cust_err_file_missing.replaceAll('{field}', label);
+  }
+  if (field == 'grade' &&
+      (lower.contains('less than or equal') ||
+          lower.contains('greater than or equal') ||
+          lower.contains('valid integer'))) {
+    return loc.cust_err_grade;
+  }
+  if (lower.contains('too large') ||
+      lower.contains('file size') ||
+      lower.contains('request body exceeded') ||
+      text.contains('مگابایت') ||
+      text.contains('حجم فایل')) {
+    return loc.cust_err_file_too_large;
+  }
+
+  if (persian && loc.locale.languageCode == 'fa') return text;
+  if (!persian &&
+      loc.locale.languageCode == 'en' &&
+      text.length < 180 &&
+      !text.startsWith('{') &&
+      !text.startsWith('<') &&
+      !lower.startsWith('this field') &&
+      !lower.startsWith('ensure this')) {
+    return text;
+  }
+  return null;
+}
+
+String _customerFieldLabel(String? field, AppLocalizations loc) {
+  switch (field) {
+    case 'title':
+      return loc.cust_title;
+    case 'description':
+      return loc.cust_description;
+    case 'subject':
+      return loc.cust_subject;
+    case 'subject_ids':
+      return loc.cust_subjects;
+    case 'address':
+      return loc.cust_address;
+    case 'serial_number':
+      return loc.cust_serial;
+    case 'invoice_file':
+      return loc.cust_invoice_file;
+    case 'warranty_file':
+      return loc.cust_warranty_file;
+    case 'attachment':
+    case 'attachment_file':
+      return loc.cust_attachment;
+    case 'mabda':
+      return loc.cust_origin;
+    case 'maghsad':
+      return loc.cust_destination;
+    case 'grade':
+      return loc.cust_grade;
+    case 'comment':
+      return loc.cust_comment;
+    case 'massage':
+      return loc.cust_reply;
+    case 'phone':
+      return loc.pro_phone;
+    case 'password':
+      return loc.login_password;
+    case 'password_confirm':
+      return loc.cust_password_confirm;
+    case 'first_name':
+      return loc.cust_first_name;
+    case 'last_name':
+      return loc.cust_last_name;
+    default:
+      return loc.cust_err_this_field;
+  }
+}
+
+String _customerDigits(String value, AppLocalizations loc) {
+  if (loc.locale.languageCode != 'fa') return value;
+  const String english = '0123456789';
+  const String persian = '۰۱۲۳۴۵۶۷۸۹';
+  final StringBuffer buffer = StringBuffer();
+  for (final int code in value.codeUnits) {
+    final int index = english.indexOf(String.fromCharCode(code));
+    buffer.write(index < 0 ? String.fromCharCode(code) : persian[index]);
+  }
+  return buffer.toString();
 }

@@ -749,6 +749,16 @@ class _CustomerTicketDetailScreenState
                 ),
               ),
             ),
+            const SizedBox(height: 6),
+            Text(
+              loc.cust_file_formats_hint,
+              style: const TextStyle(
+                fontFamily: 'Vazir',
+                fontSize: 12,
+                height: 1.4,
+                color: AppColors.iranianGray,
+              ),
+            ),
             const SizedBox(height: 16),
             CustomerPrimaryButton(
               onPressed: _sending ? null : _sendReply,

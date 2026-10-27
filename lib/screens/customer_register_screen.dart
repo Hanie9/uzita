@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uzita/app_localizations.dart';
 import 'package:uzita/customer/customer_api.dart';
+import 'package:uzita/customer/customer_widgets.dart';
 import 'package:uzita/utils/build_register_form.dart';
 
 class CustomerRegisterScreen extends StatefulWidget {
@@ -119,7 +120,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } on CustomerCallException catch (error) {
       if (!mounted) return;
-      setState(() => _error = error.message);
+      setState(() => _error = customerFailure(error, loc));
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = loc.cust_connecting);

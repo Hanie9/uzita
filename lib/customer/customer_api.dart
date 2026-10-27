@@ -24,10 +24,11 @@ class CustomerPage {
 }
 
 class CustomerCallException implements Exception {
-  CustomerCallException(this.message, {this.statusCode});
+  CustomerCallException(this.message, {this.statusCode, this.data});
 
   final String message;
   final int? statusCode;
+  final dynamic data;
 
   @override
   String toString() => message;
@@ -209,6 +210,7 @@ Future<dynamic> _decode(http.Response response, String fallback) async {
   throw CustomerCallException(
     customerErrorMessage(data, fallback),
     statusCode: response.statusCode,
+    data: data,
   );
 }
 
@@ -366,6 +368,7 @@ Future<Map<String, dynamic>> registerCustomer({
   throw CustomerCallException(
     customerErrorMessage(data, fallback),
     statusCode: response.statusCode,
+    data: data,
   );
 }
 
@@ -419,6 +422,7 @@ Future<void> signInCustomer({
     throw CustomerCallException(
       customerErrorMessage(data, fallback),
       statusCode: response.statusCode,
+      data: data,
     );
   }
 

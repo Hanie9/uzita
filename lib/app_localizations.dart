@@ -739,9 +739,11 @@ class AppLocalizations {
       'cust_phone_hint': 'Mobile number, 10 digits',
       'cust_register_action': 'Register',
       'cust_register_success': 'Registration completed. Signing in...',
-      'cust_phone_invalid': 'Enter a valid mobile number.',
-      'cust_passwords_mismatch': 'Password and confirmation do not match.',
-      'cust_required': 'Fill in the required fields.',
+      'cust_phone_invalid':
+          'Enter a valid 10-digit mobile number, without the leading zero.',
+      'cust_passwords_mismatch':
+          'The password and its confirmation do not match.',
+      'cust_required': 'Please fill in the required fields.',
       'cust_home_intro': 'Your services',
       'cust_service_title': 'Service request',
       'cust_service_subtitle': 'Register and track a repair request',
@@ -755,7 +757,7 @@ class AppLocalizations {
       'cust_ticket_subtitle': 'Send a message to support',
       'cust_new_request': 'New request',
       'cust_empty': 'Nothing has been registered yet.',
-      'cust_load_failed': 'Could not load the list.',
+      'cust_load_failed': 'The list could not be loaded. Please try again.',
       'cust_save': 'Submit',
       'cust_edit': 'Edit',
       'cust_delete': 'Delete',
@@ -767,15 +769,18 @@ class AppLocalizations {
       'cust_address': 'Address',
       'cust_serial': 'Serial number',
       'cust_subjects': 'Service subjects',
-      'cust_subjects_required': 'Choose at least one subject.',
+      'cust_subjects_required': 'Please choose at least one subject.',
       'cust_origin': 'Origin',
       'cust_destination': 'Destination',
       'cust_invoice_file': 'Invoice file',
       'cust_warranty_file': 'Warranty card',
       'cust_attachment': 'Attachment',
       'cust_pick_file': 'Choose file',
-      'cust_file_required': 'Invoice file is required.',
-      'cust_serial_invalid': 'Serial number must be 6 to 30 characters.',
+      'cust_file_formats_hint':
+          'Allowed formats: PDF, JPEG, PNG, HEIC (max 5 MB)',
+      'cust_file_required': 'Please choose the invoice file.',
+      'cust_serial_invalid':
+          'The serial number must be between 6 and 30 characters.',
       'cust_confirm_delivery': 'Confirm delivery',
       'cust_grade': 'Score',
       'cust_comment': 'Comment',
@@ -810,8 +815,49 @@ class AppLocalizations {
       'cust_can_confirm': 'Customer confirmation',
       'cust_technician_confirm': 'Technician confirmation',
       'cust_field_id': 'ID',
-      'cust_login_again': 'Please sign in again.',
-      'cust_connecting': 'Connection error. Try again.',
+      'cust_login_again': 'Your session has ended. Please sign in again.',
+      'cust_connecting':
+          'Could not reach the server. Check your connection and try again.',
+      'cust_err_required_field': 'Please enter {field}.',
+      'cust_err_blank_field': '{field} cannot be empty.',
+      'cust_err_max_length': '{field} must be at most {count} characters.',
+      'cust_err_min_length': '{field} must be at least {count} characters.',
+      'cust_err_invalid_choice': 'The selected {field} is not valid.',
+      'cust_err_file_missing': 'Please choose {field}.',
+      'cust_err_file_format':
+          'This file type is not allowed. Use PDF, JPEG, PNG, or HEIC (up to 5 MB).',
+      'cust_err_file_too_large':
+          'The file is larger than 5 MB. Please choose a smaller file.',
+      'cust_err_service_delete_status':
+          'Only open service requests can be deleted.',
+      'cust_err_service_edit_status':
+          'Only open service requests can be edited.',
+      'cust_err_warranty_delete_status':
+          'Only open warranty requests can be deleted.',
+      'cust_err_warranty_edit_status':
+          'Only open warranty requests can be edited.',
+      'cust_err_bar_confirm_status':
+          'You can confirm the transport only after it has been assigned.',
+      'cust_err_not_found_service': 'This service request could not be found.',
+      'cust_err_not_found_bar': 'This transport request could not be found.',
+      'cust_err_not_found_ticket': 'This ticket could not be found.',
+      'cust_err_not_found_warranty':
+          'This warranty request could not be found.',
+      'cust_err_not_found_file': 'The file could not be found.',
+      'cust_err_not_found':
+          'This item could not be found. It may have been removed.',
+      'cust_err_forbidden': 'You do not have permission to do this.',
+      'cust_err_invalid_subjects':
+          'One or more selected subjects are not valid. Please choose them again.',
+      'cust_err_phone_exists': 'This mobile number is already registered.',
+      'cust_err_bad_credentials': 'The mobile number or password is incorrect.',
+      'cust_err_server':
+          'The server could not complete the request. Please try again in a moment.',
+      'cust_err_invalid': 'Please review the information and try again.',
+      'cust_err_ticket_reply_limit':
+          'You already have 3 tickets waiting for a reply. Please wait until support answers them.',
+      'cust_err_grade': 'The score must be a number from 1 to 5.',
+      'cust_err_this_field': 'This field',
 
       // Transport Requests (trr_, trn_, trd_)
       'shareddrawer_transport_requests': 'Transport requests',
@@ -1536,8 +1582,7 @@ class AppLocalizations {
       'help_cust_warranty_title': 'Warranty registration',
       'help_cust_warranty_body':
           'Open warranty registration from Home or the menu.',
-      'help_cust_warranty_1':
-          'The serial number must be 6 to 30 characters.',
+      'help_cust_warranty_1': 'The serial number must be 6 to 30 characters.',
       'help_cust_warranty_2':
           'The invoice file is required. The warranty card is optional.',
       'help_cust_warranty_3':
@@ -1545,7 +1590,8 @@ class AppLocalizations {
       'help_cust_ticket_title': 'Support ticket',
       'help_cust_ticket_body':
           'Choose a subject and write the title and message. An attachment is optional.',
-      'help_cust_ticket_1': 'The list shows whether the ticket has been answered.',
+      'help_cust_ticket_1':
+          'The list shows whether the ticket has been answered.',
       'help_cust_ticket_2':
           'Open a ticket to read the reply and send your own, with an optional file.',
       'help_cust_account_title': 'Account',
@@ -2221,9 +2267,10 @@ class AppLocalizations {
       'cust_phone_hint': 'شماره موبایل، ۱۰ رقم',
       'cust_register_action': 'ثبت‌نام',
       'cust_register_success': 'ثبت‌نام انجام شد. در حال ورود...',
-      'cust_phone_invalid': 'شماره تماس معتبر نیست.',
+      'cust_phone_invalid':
+          'شماره موبایل معتبر نیست. آن را بدون صفر اول و به‌صورت ۱۰ رقم وارد کنید.',
       'cust_passwords_mismatch': 'رمز عبور و تکرار آن یکسان نیستند.',
-      'cust_required': 'فیلدهای ضروری را کامل کنید.',
+      'cust_required': 'لطفاً فیلدهای ضروری را کامل کنید.',
       'cust_home_intro': 'خدمات شما',
       'cust_service_title': 'درخواست سرویس',
       'cust_service_subtitle': 'ثبت و پیگیری درخواست تعمیر',
@@ -2237,7 +2284,7 @@ class AppLocalizations {
       'cust_ticket_subtitle': 'ارسال پیام به پشتیبانی',
       'cust_new_request': 'درخواست جدید',
       'cust_empty': 'هنوز موردی ثبت نشده است.',
-      'cust_load_failed': 'بارگذاری فهرست انجام نشد.',
+      'cust_load_failed': 'بارگذاری فهرست انجام نشد. لطفاً دوباره تلاش کنید.',
       'cust_save': 'ثبت',
       'cust_edit': 'ویرایش',
       'cust_delete': 'حذف',
@@ -2249,14 +2296,16 @@ class AppLocalizations {
       'cust_address': 'آدرس',
       'cust_serial': 'شماره سریال',
       'cust_subjects': 'موضوعات سرویس',
-      'cust_subjects_required': 'حداقل یک موضوع را انتخاب کنید.',
+      'cust_subjects_required': 'لطفاً حداقل یک موضوع را انتخاب کنید.',
       'cust_origin': 'مبدا',
       'cust_destination': 'مقصد',
       'cust_invoice_file': 'فایل فاکتور',
       'cust_warranty_file': 'کارت گارانتی',
       'cust_attachment': 'پیوست',
       'cust_pick_file': 'انتخاب فایل',
-      'cust_file_required': 'فایل فاکتور الزامی است.',
+      'cust_file_formats_hint':
+          'فرمت‌های مجاز: PDF، JPEG، PNG، HEIC (حداکثر 5 مگابایت)',
+      'cust_file_required': 'لطفاً فایل فاکتور را انتخاب کنید.',
       'cust_serial_invalid': 'شماره سریال باید بین ۶ تا ۳۰ نویسه باشد.',
       'cust_confirm_delivery': 'تایید تحویل',
       'cust_grade': 'امتیاز',
@@ -2292,8 +2341,48 @@ class AppLocalizations {
       'cust_can_confirm': 'تایید مشتری',
       'cust_technician_confirm': 'تایید تکنسین',
       'cust_field_id': 'شناسه',
-      'cust_login_again': 'دوباره وارد شوید.',
-      'cust_connecting': 'خطا در اتصال. دوباره تلاش کنید.',
+      'cust_login_again':
+          'نشست شما به پایان رسیده است. لطفاً دوباره وارد شوید.',
+      'cust_connecting':
+          'ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید.',
+      'cust_err_required_field': 'لطفاً {field} را وارد کنید.',
+      'cust_err_blank_field': '{field} نمی‌تواند خالی باشد.',
+      'cust_err_max_length': '{field} نباید بیشتر از {count} نویسه باشد.',
+      'cust_err_min_length': '{field} باید حداقل {count} نویسه باشد.',
+      'cust_err_invalid_choice': 'مقدار انتخاب‌شده برای {field} معتبر نیست.',
+      'cust_err_file_missing': 'لطفاً {field} را انتخاب کنید.',
+      'cust_err_file_format':
+          'این فرمت فایل مجاز نیست. فقط PDF، JPEG، PNG و HEIC تا ۵ مگابایت پذیرفته می‌شود.',
+      'cust_err_file_too_large':
+          'حجم فایل بیشتر از ۵ مگابایت است. لطفاً فایل کوچک‌تری انتخاب کنید.',
+      'cust_err_service_delete_status':
+          'فقط درخواست‌های سرویس با وضعیت «باز» قابل حذف هستند.',
+      'cust_err_service_edit_status':
+          'فقط درخواست‌های سرویس با وضعیت «باز» قابل ویرایش هستند.',
+      'cust_err_warranty_delete_status':
+          'فقط درخواست‌های گارانتی با وضعیت «باز» قابل حذف هستند.',
+      'cust_err_warranty_edit_status':
+          'فقط درخواست‌های گارانتی با وضعیت «باز» قابل ویرایش هستند.',
+      'cust_err_bar_confirm_status':
+          'تایید درخواست حمل فقط وقتی ممکن است که وضعیت آن «واگذار شده» باشد.',
+      'cust_err_not_found_service': 'این درخواست سرویس پیدا نشد.',
+      'cust_err_not_found_bar': 'این درخواست حمل پیدا نشد.',
+      'cust_err_not_found_ticket': 'این تیکت پیدا نشد.',
+      'cust_err_not_found_warranty': 'این درخواست گارانتی پیدا نشد.',
+      'cust_err_not_found_file': 'فایل موردنظر پیدا نشد.',
+      'cust_err_not_found': 'مورد درخواستی پیدا نشد. ممکن است حذف شده باشد.',
+      'cust_err_forbidden': 'شما اجازه انجام این کار را ندارید.',
+      'cust_err_invalid_subjects':
+          'یکی از موضوع‌های انتخاب‌شده معتبر نیست. لطفاً دوباره انتخاب کنید.',
+      'cust_err_phone_exists': 'این شماره موبایل قبلاً ثبت شده است.',
+      'cust_err_bad_credentials': 'شماره موبایل یا رمز عبور درست نیست.',
+      'cust_err_server':
+          'سرور نتوانست درخواست را انجام دهد. لطفاً کمی بعد دوباره تلاش کنید.',
+      'cust_err_invalid': 'اطلاعات را بررسی کنید و دوباره تلاش کنید.',
+      'cust_err_ticket_reply_limit':
+          'شما ۳ تیکت بی‌پاسخ دارید. لطفاً تا پاسخ پشتیبانی صبر کنید.',
+      'cust_err_grade': 'امتیاز باید عددی بین ۱ تا ۵ باشد.',
+      'cust_err_this_field': 'این فیلد',
 
       // Transport Requests (trr_, trn_, trd_)
       'shareddrawer_transport_requests': 'درخواست حمل',
@@ -3693,6 +3782,8 @@ class AppLocalizations {
   String get cust_warranty_file => _getLocalizedValue('cust_warranty_file');
   String get cust_attachment => _getLocalizedValue('cust_attachment');
   String get cust_pick_file => _getLocalizedValue('cust_pick_file');
+  String get cust_file_formats_hint =>
+      _getLocalizedValue('cust_file_formats_hint');
   String get cust_file_required => _getLocalizedValue('cust_file_required');
   String get cust_serial_invalid => _getLocalizedValue('cust_serial_invalid');
   String get cust_confirm_delivery =>
@@ -3736,6 +3827,52 @@ class AppLocalizations {
   String get cust_field_id => _getLocalizedValue('cust_field_id');
   String get cust_login_again => _getLocalizedValue('cust_login_again');
   String get cust_connecting => _getLocalizedValue('cust_connecting');
+  String get cust_err_required_field =>
+      _getLocalizedValue('cust_err_required_field');
+  String get cust_err_blank_field => _getLocalizedValue('cust_err_blank_field');
+  String get cust_err_max_length => _getLocalizedValue('cust_err_max_length');
+  String get cust_err_min_length => _getLocalizedValue('cust_err_min_length');
+  String get cust_err_invalid_choice =>
+      _getLocalizedValue('cust_err_invalid_choice');
+  String get cust_err_file_missing =>
+      _getLocalizedValue('cust_err_file_missing');
+  String get cust_err_file_format => _getLocalizedValue('cust_err_file_format');
+  String get cust_err_file_too_large =>
+      _getLocalizedValue('cust_err_file_too_large');
+  String get cust_err_service_delete_status =>
+      _getLocalizedValue('cust_err_service_delete_status');
+  String get cust_err_service_edit_status =>
+      _getLocalizedValue('cust_err_service_edit_status');
+  String get cust_err_warranty_delete_status =>
+      _getLocalizedValue('cust_err_warranty_delete_status');
+  String get cust_err_warranty_edit_status =>
+      _getLocalizedValue('cust_err_warranty_edit_status');
+  String get cust_err_bar_confirm_status =>
+      _getLocalizedValue('cust_err_bar_confirm_status');
+  String get cust_err_not_found_service =>
+      _getLocalizedValue('cust_err_not_found_service');
+  String get cust_err_not_found_bar =>
+      _getLocalizedValue('cust_err_not_found_bar');
+  String get cust_err_not_found_ticket =>
+      _getLocalizedValue('cust_err_not_found_ticket');
+  String get cust_err_not_found_warranty =>
+      _getLocalizedValue('cust_err_not_found_warranty');
+  String get cust_err_not_found_file =>
+      _getLocalizedValue('cust_err_not_found_file');
+  String get cust_err_not_found => _getLocalizedValue('cust_err_not_found');
+  String get cust_err_forbidden => _getLocalizedValue('cust_err_forbidden');
+  String get cust_err_invalid_subjects =>
+      _getLocalizedValue('cust_err_invalid_subjects');
+  String get cust_err_phone_exists =>
+      _getLocalizedValue('cust_err_phone_exists');
+  String get cust_err_bad_credentials =>
+      _getLocalizedValue('cust_err_bad_credentials');
+  String get cust_err_server => _getLocalizedValue('cust_err_server');
+  String get cust_err_invalid => _getLocalizedValue('cust_err_invalid');
+  String get cust_err_ticket_reply_limit =>
+      _getLocalizedValue('cust_err_ticket_reply_limit');
+  String get cust_err_grade => _getLocalizedValue('cust_err_grade');
+  String get cust_err_this_field => _getLocalizedValue('cust_err_this_field');
 
   // Registration Forms getters (reg_*)
   String get reg_user_register => _getLocalizedValue('reg_user_register');
