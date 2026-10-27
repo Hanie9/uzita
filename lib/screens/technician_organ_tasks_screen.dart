@@ -924,7 +924,6 @@ class _TechnicianOrganTasksScreenState extends State<TechnicianOrganTasksScreen>
     final localizations = AppLocalizations.of(context)!;
     final ui = UiScale(context);
     final theme = Theme.of(context);
-    final double screenHeight = MediaQuery.of(context).size.height;
     final List<Map<String, dynamic>> statusFilteredOrgTasks =
         _applyMissionStatusFilter(orgTasks);
     final List<Map<String, dynamic>> statusFilteredPersonalTasks =

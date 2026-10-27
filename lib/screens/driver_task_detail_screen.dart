@@ -643,7 +643,6 @@ class _DriverTaskDetailScreenState extends State<DriverTaskDetailScreen> {
   Widget build(BuildContext context) {
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
-    final screenHeight = MediaQuery.of(context).size.height;
 
     final String maghsad = (taskData['maghsad'] ?? '---').toString();
     final String mabda = (taskData['mabda'] ?? '---').toString();

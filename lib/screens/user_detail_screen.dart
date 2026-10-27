@@ -684,7 +684,6 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final user = widget.user;
     final theme = Theme.of(context);
     final ui = UiScale(context);

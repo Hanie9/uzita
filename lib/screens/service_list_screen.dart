@@ -168,7 +168,6 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

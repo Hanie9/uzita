@@ -2361,7 +2361,6 @@ class _TechnicianTaskDetailScreenState
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final ui = UiScale(context);
-    final screenHeight = MediaQuery.of(context).size.height;
 
     // If the task comes from the organization assignment list (سرگروه تکنسین),
     // only the basic task information should be shown – without visit date

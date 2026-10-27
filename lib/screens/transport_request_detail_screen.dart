@@ -809,7 +809,6 @@ class _TransportRequestDetailScreenState
   Widget build(BuildContext context) {
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
-    final screenHeight = MediaQuery.of(context).size.height;
 
     // final List<dynamic> pieces = (requestData['pieces'] as List?) ?? [];
     final String maghsad = (requestData['maghsad'] ?? '---').toString();

@@ -1217,7 +1217,6 @@ class _CommandListScreenState extends State<CommandListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
     return PopScope(
       canPop: false,

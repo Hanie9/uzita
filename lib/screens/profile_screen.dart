@@ -766,7 +766,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
     final ui = UiScale(context);
 

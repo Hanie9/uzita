@@ -246,7 +246,6 @@ class _DriverPublicLoadsScreenState extends State<DriverPublicLoadsScreen> {
   @override
   Widget build(BuildContext context) {
     final ui = UiScale(context);
-    final screenHeight = MediaQuery.of(context).size.height;
     final localizations = AppLocalizations.of(context)!;
 
     return PopScope(

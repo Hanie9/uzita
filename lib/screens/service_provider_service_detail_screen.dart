@@ -294,7 +294,6 @@ class _ServiceProviderServiceDetailScreenState
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final ui = UiScale(context);
-    final screenHeight = MediaQuery.of(context).size.height;
 
     final title = widget.service['title'] ?? '---';
     final description = widget.service['description'] ?? '---';

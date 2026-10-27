@@ -298,7 +298,6 @@ class _TechnicianTasksScreenState extends State<TechnicianTasksScreen>
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
     final localizations = AppLocalizations.of(context)!;
     final List<Map<String, dynamic>> visibleTasks = _filteredTasksForSearch();

@@ -77,7 +77,6 @@ class _WifiConfigPageState extends State<WifiConfigPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
 
     return Scaffold(

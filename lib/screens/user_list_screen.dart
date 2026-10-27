@@ -1555,7 +1555,6 @@ class _UserListScreenState extends State<UserListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
     final ui = UiScale(context);
     final theme = Theme.of(context);
 
