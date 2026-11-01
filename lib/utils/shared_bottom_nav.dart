@@ -49,7 +49,7 @@ class SharedBottomNavigation extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: isCustomerOrgan(organType)
+        children: isCustomerRole(organType, userLevel)
             ? isRTL
                   ? [
                       _buildNavItem(

@@ -49,14 +49,21 @@ bool isCustomerOrgan(String? organType) {
   return (organType ?? '').trim().toLowerCase() == 'customer';
 }
 
+/// Drivers stay drivers even when the organization type is also `customer`.
+bool isCustomerRole(String? organType, int level) {
+  if (getLogicalUserLevel(level) == 3) return false;
+  return isCustomerOrgan(organType);
+}
+
 /// Customers sign in with a phone number, so the header shows their name.
 String accountHeaderName({
   required String organType,
   required String username,
   String firstName = '',
   String lastName = '',
+  int level = 2,
 }) {
-  if (!isCustomerOrgan(organType)) return username;
+  if (!isCustomerRole(organType, level)) return username;
   final String fullName = '$firstName $lastName'.trim();
   return fullName.isEmpty ? username : fullName;
 }

@@ -16,6 +16,7 @@ import 'package:uzita/screens/settings_screen.dart';
 import 'package:uzita/screens/user_list_screen.dart';
 import 'package:uzita/screens/technician_reports_screen.dart';
 import 'package:uzita/screens/driver_reports_screen.dart';
+import 'package:uzita/customer/customer_api.dart';
 import 'package:uzita/customer/customer_navigation.dart';
 import 'package:uzita/utils/shared_bottom_nav.dart';
 import 'package:uzita/utils/shared_drawer.dart';
@@ -36,11 +37,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String firstName = '';
   String lastName = '';
 
+  bool get _customerRole => isCustomerRole(organType, userLevel);
+
   String get _headerName => accountHeaderName(
     organType: organType,
     username: username,
     firstName: firstName,
     lastName: lastName,
+    level: userLevel,
   );
   int userLevel = 3;
   bool userActive = false; // تغییر پیش‌فرض به false
@@ -363,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final storedUsername = (prefs.getString('username') ?? '').toString();
         if (returnedUsername.isNotEmpty &&
             storedUsername.isNotEmpty &&
-            returnedUsername.toLowerCase() != storedUsername.toLowerCase()) {
+            !customerLoginNamesMatch(returnedUsername, storedUsername)) {
           print(
             'Home: Username mismatch (stored=$storedUsername, returned=$returnedUsername). Ignoring server response.',
           );
@@ -402,11 +406,17 @@ class _HomeScreenState extends State<HomeScreen> {
         final bool bannerChanged =
             displayBanner.isNotEmpty && displayBanner != bannerUrl;
 
-        String organTypeVal = ((data['organ_type'] ?? '') as String)
+        String organTypeVal = (data['organ_type'] ?? '')
             .toString()
+            .trim()
             .toLowerCase();
+        if (organTypeVal == 'null') organTypeVal = '';
         if (organTypeVal.isEmpty) {
-          organTypeVal = (prefs.getString('organ_type') ?? '').toLowerCase();
+          organTypeVal = (prefs.getString('organ_type') ?? '')
+              .trim()
+              .toLowerCase();
+        } else {
+          await prefs.setString('organ_type', organTypeVal);
         }
 
         if (mounted) {
@@ -429,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final int level = data['level'] ?? 3;
             final bool isModir = data['modir'] ?? false;
             final int logicalLevel = getLogicalUserLevel(level);
-            if (isCustomerOrgan(organType)) {
+            if (_customerRole) {
               userRoleTitle = AppLocalizations.of(context)!.home_customer;
             } else if (isModir &&
                 logicalLevel == 1 &&
@@ -456,10 +466,10 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           // Fetch statistics based on logical user level
           final int logicalLevel = getLogicalUserLevel(userLevel);
-          if (!isCustomerOrgan(organType) &&
+          if (!_customerRole &&
               (logicalLevel == 2 || logicalLevel == 3)) {
             fetchAndCountMissions();
-          } else if (!isCustomerOrgan(organType) && logicalLevel == 1) {
+          } else if (!_customerRole && logicalLevel == 1) {
             fetchAndCountActiveDevices();
             fetchAndCountActiveUsers();
           }
@@ -516,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final int logicalStoredLevel = getLogicalUserLevel(storedLevel ?? 3);
           final String storedOrgan = (prefs.getString('organ_type') ?? '')
               .toLowerCase();
-          if (isCustomerOrgan(storedOrgan)) {
+          if (isCustomerRole(storedOrgan, storedLevel ?? 2)) {
             userRoleTitle = AppLocalizations.of(context)!.home_customer;
           } else if (storedModir == true &&
               logicalStoredLevel == 1 &&
@@ -543,11 +553,11 @@ class _HomeScreenState extends State<HomeScreen> {
       // After user data is loaded, fetch statistics
       if (mounted) {
         final int logicalLevel = getLogicalUserLevel(userLevel);
-        if (!isCustomerOrgan(organType) &&
+        if (!_customerRole &&
             (logicalLevel == 2 || logicalLevel == 3)) {
           // Technicians and drivers: fetch missions
           fetchAndCountMissions();
-        } else if (!isCustomerOrgan(organType) && logicalLevel == 1) {
+        } else if (!_customerRole && logicalLevel == 1) {
           // Admin: fetch both devices and users
           fetchAndCountActiveDevices();
           fetchAndCountActiveUsers();
@@ -567,10 +577,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await loadUserDataFromServer();
     // Refresh statistics based on logical user level
     final int logicalLevel = getLogicalUserLevel(userLevel);
-    if (!isCustomerOrgan(organType) &&
+    if (!_customerRole &&
         (logicalLevel == 2 || logicalLevel == 3)) {
       await fetchAndCountMissions();
-    } else if (!isCustomerOrgan(organType) && logicalLevel == 1) {
+    } else if (!_customerRole && logicalLevel == 1) {
       await fetchAndCountActiveDevices();
       await fetchAndCountActiveUsers();
     }
@@ -889,7 +899,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Handle navigation based on selected index and user level
     final int logicalLevel = getLogicalUserLevel(userLevel);
-    if (isCustomerOrgan(organType)) {
+    if (_customerRole) {
       openCustomerTab(context, index);
       return;
     }
@@ -1018,7 +1028,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Level 2: if technician org -> "سرویس کار" (installer),
     //          else -> "کاربر" (user)
     // Level 3: always "راننده" (driver)
-    if (isCustomerOrgan(organ)) return localizations.home_customer;
+    if (isCustomerRole(organ, userLevel)) return localizations.home_customer;
     switch (logicalLevel) {
       case 1:
         if (organ == 'technician') {
@@ -1370,7 +1380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       // Logo section with extra space to accommodate overlay cards
                                       // Less height for drivers to reduce spacing
                                       SizedBox(
-                                        height: isCustomerOrgan(organType)
+                                        height: _customerRole
                                             ? logoHeight * 0.52
                                             : (getLogicalUserLevel(userLevel) ==
                                                   3)
@@ -1393,7 +1403,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
 
                                       // Statistics Cards with Positioning
-                                      if (!isCustomerOrgan(organType))
+                                      if (!_customerRole)
                                         Positioned(
                                           top: logoHeight * 0.54,
                                           left: 0,
@@ -1402,7 +1412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             children: [
                                               // For technicians and drivers: show missions count (single card)
                                               // For other levels: show devices and users count (two cards)
-                                              if (!isCustomerOrgan(organType) &&
+                                              if (!_customerRole &&
                                                   (getLogicalUserLevel(
                                                             userLevel,
                                                           ) ==
@@ -1790,10 +1800,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Navigation Cards
                                   Column(
                                     children: [
-                                      if (isCustomerOrgan(organType))
+                                      if (_customerRole)
                                         _buildCustomerFeatureGrid(),
                                       // User list - only for level 1 (not for normal technicians level 2/4)
-                                      if (!isCustomerOrgan(organType) &&
+                                      if (!_customerRole &&
                                           userLevel == 1)
                                         _buildNavigationCard(
                                           icon: UzitaSvgIcon(
@@ -1846,7 +1856,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               organType != 'technician'))
                                         SizedBox(height: 12),
                                       // Reports card
-                                      if (!isCustomerOrgan(organType))
+                                      if (!_customerRole)
                                         _buildNavigationCard(
                                           icon: UzitaSvgIcon(
                                             assetPath:
@@ -1916,7 +1926,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             }
                                           },
                                         ),
-                                      if (!isCustomerOrgan(organType))
+                                      if (!_customerRole)
                                         SizedBox(height: 12),
                                       _buildNavigationCard(
                                         icon: UzitaSvgIcon(

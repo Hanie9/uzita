@@ -9,7 +9,7 @@ echo ""
 
 DEBUG_KS="${HOME}/.android/debug.keystore"
 if [[ -f "$DEBUG_KS" ]]; then
-  echo "--- Debug keystore (flutter run / current release APK) ---"
+  echo "--- Debug keystore (flutter run only) ---"
   keytool -list -v -keystore "$DEBUG_KS" -alias androiddebugkey \
     -storepass android -keypass android 2>/dev/null | grep -E "SHA1:|SHA256:" || true
   echo ""

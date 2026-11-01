@@ -160,6 +160,26 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<dynamic> _loadLoginProfile(String token) async {
+    if (token.isEmpty) return null;
+    try {
+      final int ts = DateTime.now().millisecondsSinceEpoch;
+      final http.Response response = await http.get(
+        Uri.parse('$apiBaseUrl/load_data_user/?ts=$ts'),
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Connection': 'close',
+        },
+      );
+      if (response.statusCode != 200) return null;
+      return json.decode(utf8.decode(response.bodyBytes));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> login() async {
     setState(() {
       loading = true;
@@ -200,18 +220,55 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       var response = await postLogin(enteredUsername);
+      String signedInAs = enteredUsername;
       final String? retryUsername = customerLoginRetryUsername(enteredUsername);
       if (response.statusCode == 401 && retryUsername != null) {
         response = await postLogin(retryUsername);
+        if (response.statusCode == 200) signedInAs = retryUsername;
       }
 
       final body = utf8.decode(response.bodyBytes);
-      final data = json.decode(body);
+      var data = json.decode(body);
+
+      if (response.statusCode == 200 &&
+          data is Map &&
+          retryUsername != null &&
+          signedInAs != retryUsername) {
+        final dynamic firstProfile = await _loadLoginProfile(
+          (data['token'] ?? '').toString(),
+        );
+        if (firstProfile is Map &&
+            isCustomerRole(
+              (firstProfile['organ_type'] ?? '').toString(),
+              int.tryParse('${firstProfile['level']}') ?? 2,
+            )) {
+          final http.Response altResponse = await postLogin(retryUsername);
+          if (altResponse.statusCode == 200) {
+            final dynamic altData = json.decode(
+              utf8.decode(altResponse.bodyBytes),
+            );
+            final dynamic altProfile = altData is Map
+                ? await _loadLoginProfile((altData['token'] ?? '').toString())
+                : null;
+            final bool altIsCustomer =
+                altProfile is Map &&
+                isCustomerRole(
+                  (altProfile['organ_type'] ?? '').toString(),
+                  int.tryParse('${altProfile['level']}') ?? 2,
+                );
+            if (altProfile is Map && !altIsCustomer) {
+              response = altResponse;
+              data = altData;
+              signedInAs = retryUsername;
+            }
+          }
+        }
+      }
 
       if (response.statusCode == 200) {
         await prefs.setString('token', data['token']);
         await prefs.setString('phone', data['phone'] ?? '');
-        await prefs.setString('username', enteredUsername);
+        await prefs.setString('username', signedInAs);
         // Start session timers for 15-minute timeout/inactivity
         try {
           await SessionManager().startSession();
@@ -284,7 +341,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // Safety check: phone numbers match with or without a leading zero.
             if (returnedUsername.isNotEmpty &&
-                !customerLoginNamesMatch(returnedUsername, enteredUsername)) {
+                !customerLoginNamesMatch(returnedUsername, enteredUsername) &&
+                !customerLoginNamesMatch(returnedUsername, signedInAs)) {
               final preservedSavedUsername = prefs.getString('saved_username');
               final preservedLanguage = prefs.getString('selectedLanguage');
               await prefs.clear();

@@ -155,7 +155,7 @@ class SharedAppDrawer extends StatelessWidget {
     required bool useDense,
     required double verticalDensity,
   }) {
-    if (!isCustomerOrgan(organType)) return const <Widget>[];
+    if (!isCustomerRole(organType, userLevel)) return const <Widget>[];
     final AppLocalizations localizations = AppLocalizations.of(context)!;
 
     Widget tile({
@@ -441,7 +441,7 @@ class SharedAppDrawer extends StatelessWidget {
                             );
                           },
                         ),
-                        if (!isCustomerOrgan(organType))
+                        if (!isCustomerRole(organType, userLevel))
                           ListTile(
                             minLeadingWidth: leadingWidth,
                             leading: Icon(
@@ -480,7 +480,7 @@ class SharedAppDrawer extends StatelessWidget {
                           userLevel: userLevel,
                           userModir: userModir,
                         ),
-                        if (!isCustomerOrgan(organType) &&
+                        if (!isCustomerRole(organType, userLevel) &&
                             (getLogicalUserLevel(userLevel) == 1 ||
                                 getLogicalUserLevel(userLevel) == 2))
                           ListTile(
@@ -508,7 +508,7 @@ class SharedAppDrawer extends StatelessWidget {
                               ),
                             ),
                           ),
-                        if (!isCustomerOrgan(organType))
+                        if (!isCustomerRole(organType, userLevel))
                           ListTile(
                             minLeadingWidth: leadingWidth,
                             leading: Icon(Icons.wifi_outlined, size: iconSize),

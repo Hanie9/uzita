@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -31,10 +34,22 @@ android {
 
     }
 
+    val keystoreProperties = Properties()
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    val hasReleaseKeystore = keystorePropertiesFile.exists()
+    if (hasReleaseKeystore) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
     // Real phones are ARM only. Drop x86_64 native libs in release builds to
     // shrink the APK. Keep them for debug so x86_64 emulators can run the app.
     val isReleaseBuild = gradle.startParameter.taskNames.any {
         it.contains("Release", ignoreCase = true)
+    }
+    if (isReleaseBuild && !hasReleaseKeystore) {
+        throw GradleException(
+            "Release builds must be signed with android/key.properties. The debug keystore is not used.",
+        )
     }
     packaging {
         jniLibs {
@@ -52,13 +67,24 @@ android {
             enableV2Signing = true
             enableV3Signing = true
         }
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             // Neshan MapView + Carto JNI break when R8 strips SDK classes.
             isMinifyEnabled = false
             isShrinkResources = false

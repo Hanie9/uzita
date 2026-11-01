@@ -9,7 +9,7 @@ import 'package:uzita/services.dart'
         baseUrl5,
         AppColors,
         getLogicalUserLevel,
-        isCustomerOrgan,
+        isCustomerRole,
         accountHeaderName; // reuse API base URL and helpers
 import 'package:uzita/screens/editpassword_screen.dart';
 import 'package:uzita/screens/help_screen.dart';
@@ -86,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Set correct selectedNavIndex based on logical user level
       final int logicalLevel = userLevel;
       final bool isTechOrgan = organType == 'technician';
-      if (isCustomerOrgan(organType)) {
+      if (isCustomerRole(organType, userLevel)) {
         selectedNavIndex = 4;
       } else if ((logicalLevel == 1 || logicalLevel == 2) && isTechOrgan) {
         // Technicians and their manager: profile at index 1
@@ -102,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Set user role title (modir overrides level, using new 3-level scheme)
       final bool isModir = prefs.getBool('modir') ?? false;
-      if (isCustomerOrgan(organType)) {
+      if (isCustomerRole(organType, userLevel)) {
         userRoleTitle = AppLocalizations.of(context)!.home_customer;
       } else if (isModir && logicalLevel == 1 && organType == 'technician') {
         userRoleTitle = AppLocalizations.of(
@@ -266,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               final String organ = (prefs.getString('organ_type') ?? '')
                   .toLowerCase();
 
-              if (isCustomerOrgan(organ)) {
+              if (isCustomerRole(organ, userLevel)) {
                 userRoleTitle = AppLocalizations.of(context)!.home_customer;
               } else if (isModir &&
                   logicalLevel == 1 &&
@@ -649,7 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     // Handle navigation based on selected index and user level
-    if (isCustomerOrgan(organType)) {
+    if (isCustomerRole(organType, userLevel)) {
       openCustomerTab(context, index);
       return;
     }
@@ -866,6 +866,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             username: username,
             firstName: firstName ?? '',
             lastName: lastName ?? '',
+            level: userLevel,
           ),
           userRoleTitle: userRoleTitle,
           userModir: userLevel == 1,
@@ -1206,7 +1207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     // Show allowed devices count only when organ_type is not 'technician'
                                     // and user is not a driver (logical level 3)
                                     if (organType != 'technician' &&
-                                        !isCustomerOrgan(organType) &&
+                                        !isCustomerRole(organType, userLevel) &&
                                         getLogicalUserLevel(userLevel) != 3)
                                       _kvRow(
                                         AppLocalizations.of(

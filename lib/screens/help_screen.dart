@@ -13,6 +13,7 @@ class HelpScreen extends StatefulWidget {
 
 class _HelpScreenState extends State<HelpScreen> {
   String _organType = '';
+  int _level = 2;
   bool _ready = false;
 
   @override
@@ -26,6 +27,7 @@ class _HelpScreenState extends State<HelpScreen> {
     if (!mounted) return;
     setState(() {
       _organType = prefs.getString('organ_type') ?? '';
+      _level = prefs.getInt('level') ?? 2;
       _ready = true;
     });
   }
@@ -318,7 +320,7 @@ class _HelpScreenState extends State<HelpScreen> {
                 padding: EdgeInsets.only(top: 48),
                 child: Center(child: CircularProgressIndicator()),
               )
-            : isCustomerOrgan(_organType)
+            : isCustomerRole(_organType, _level)
             ? _customerHelp(context)
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
